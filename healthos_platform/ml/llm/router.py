@@ -61,7 +61,7 @@ class AnthropicProvider(LLMProvider):
             import anthropic
             settings = get_settings()
             self.client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
-            self.default_model = settings.llm_default_model
+            self.default_model = settings.default_llm_model
         except ImportError:
             logger.warning("llm.anthropic.not_installed")
             self.client = None
@@ -180,7 +180,7 @@ class LLMRouter:
         # Always register Ollama (local, no key needed)
         self._providers["ollama"] = OllamaProvider()
 
-        self._default_provider = settings.llm_default_provider
+        self._default_provider = settings.default_llm_provider
 
         logger.info(
             "llm.router.initialized",
