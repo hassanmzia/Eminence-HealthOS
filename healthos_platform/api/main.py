@@ -60,6 +60,14 @@ def _register_agents() -> None:
     except ImportError:
         logger.warning("agents.rpm.not_available")
 
+    # Register telehealth agents
+    try:
+        from modules.telehealth.agents import register_telehealth_agents
+        register_telehealth_agents()
+        logger.info("agents.telehealth.registered")
+    except ImportError:
+        logger.warning("agents.telehealth.not_available")
+
 
 def create_app() -> FastAPI:
     settings = get_settings()
@@ -91,6 +99,14 @@ def create_app() -> FastAPI:
     app.include_router(alerts.router, prefix=api_prefix)
     app.include_router(agents.router, prefix=api_prefix)
     app.include_router(fhir.router, prefix=api_prefix)
+
+    # Module routes
+    try:
+        from modules.telehealth.routes import router as telehealth_router
+        app.include_router(telehealth_router, prefix=api_prefix)
+        logger.info("routes.telehealth.registered")
+    except ImportError:
+        logger.warning("routes.telehealth.not_available")
 
     # Health check
     @app.get("/health")

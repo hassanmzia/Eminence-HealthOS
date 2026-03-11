@@ -47,6 +47,37 @@ ROUTING_TABLE: dict[str, list[str]] = {
         "risk_scoring",
         "adherence_monitoring",
     ],
+    # ── Telehealth Events ──────────────────────────────────────────────────
+    # Pre-visit preparation
+    "telehealth.visit.prepare": [
+        "context_assembly",
+        "visit_preparation",
+        "medication_review",
+    ],
+    # Visit started
+    "telehealth.visit.started": [
+        "context_assembly",
+        "symptom_checker",
+        "visit_preparation",
+    ],
+    # Visit completed — documentation workflow
+    "telehealth.visit.completed": [
+        "clinical_note",
+        "visit_summarizer",
+        "follow_up_plan",
+        "scheduling",
+        "patient_communication",
+    ],
+    # Escalation needed
+    "telehealth.escalation": [
+        "context_assembly",
+        "policy_rules",
+        "escalation_routing",
+    ],
+    # Symptom check (pre-visit)
+    "telehealth.symptom_check": [
+        "symptom_checker",
+    ],
 }
 
 
