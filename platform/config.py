@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     # ── LLM Providers ────────────────────────────────────────────────────────
     anthropic_api_key: str = ""
     openai_api_key: str = ""
-    ollama_base_url: str = "http://localhost:11434"
+    ollama_base_url: str = "http://localhost:12434"
     llm_default_provider: str = "anthropic"
     llm_default_model: str = "claude-sonnet-4-20250514"
 
