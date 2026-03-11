@@ -16,7 +16,10 @@ from platform.config.settings import get_settings
 from platform.config.database import init_db, close_db
 from services.api.middleware.tenant import TenantMiddleware
 from services.api.middleware.tracing import TracingMiddleware
-from services.api.routes import health, patients, providers, observations, agents, alerts, fhir, orchestrator
+from services.api.routes import (
+    health, patients, providers, observations, agents, alerts,
+    fhir, orchestrator, dashboard, websocket,
+)
 
 logger = logging.getLogger("healthos.api")
 
@@ -91,6 +94,8 @@ def create_app() -> FastAPI:
     app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["Alerts"])
     app.include_router(fhir.router, prefix="/api/v1/fhir", tags=["FHIR R4"])
     app.include_router(orchestrator.router, prefix="/api/v1/orchestrator", tags=["Orchestrator"])
+    app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["Dashboard"])
+    app.include_router(websocket.router, tags=["WebSocket"])
 
     return app
 
