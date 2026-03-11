@@ -19,21 +19,27 @@
 6. [Technology Stack](#6-technology-stack)
 7. [Database & Data Platform Architecture](#7-database--data-platform-architecture)
 8. [Healthcare Interoperability Layer](#8-healthcare-interoperability-layer)
+8A. [Medical Imaging, Lab Report & Document Ingestion Pipeline](#8a-medical-imaging-lab-report--document-ingestion-pipeline)
 9. [AI & ML Pipeline Architecture](#9-ai--ml-pipeline-architecture)
 10. [Control Plane & Orchestration](#10-control-plane--orchestration)
 11. [Frontend Architecture](#11-frontend-architecture)
 12. [Project Structure](#12-project-structure)
 13. [Product Modules & Packaging](#13-product-modules--packaging)
-14. [Future Expansion Modules](#14-future-expansion-modules)
-15. [LLM Provider Abstraction Layer](#14a-llm-provider-abstraction-layer)
-16. [Gap Analysis — Existing Repos vs HealthOS](#14b-gap-analysis--existing-repos-vs-healthos)
-17. [Implementation Phases](#15-implementation-phases)
-18. [Deployment Architecture](#16-deployment-architecture)
-19. [Security & HIPAA Compliance](#17-security--hipaa-compliance)
-20. [Multi-Tenant Architecture](#18-multi-tenant-architecture)
-21. [Testing Strategy](#19-testing-strategy)
-22. [IP Protection & Product Boundaries](#20-ip-protection--product-boundaries)
-23. [5-Year Product Roadmap](#21-5-year-product-roadmap)
+14. [All 13 Modules — 79 Agents](#14-future-expansion-modules) (RPM, Telehealth, Ops, Analytics, Pharmacy, Labs, Ambient AI, RCM, Imaging, Patient Engagement, Digital Twin, Compliance, Research, Mental Health)
+14A. [LLM Provider Abstraction Layer](#14a-llm-provider-abstraction-layer)
+14B. [Gap Analysis — Existing Repos vs HealthOS](#14b-gap-analysis--existing-repos-vs-healthos)
+15. [Implementation Phases](#15-implementation-phases)
+16. [Deployment Architecture](#16-deployment-architecture)
+17. [Comprehensive Security, Compliance & Regulatory Framework](#16-comprehensive-security-compliance--regulatory-framework) (HIPAA, HITRUST, SOC2, FDA SaMD, EU AI Act, NIST, GDPR, 21 CFR Part 11, TEFCA, 42 CFR Part 2, ONC Cures Act + 7 more)
+17A. [Continuous Compliance Monitoring Engine](#162-continuous-compliance-monitoring-engine)
+17B. [PHI / PII Protection Framework](#163-phi--pii-protection-framework) (5-level classification, 13 enforcement points)
+17C. [AI Regulatory Compliance](#164-ai-regulatory-compliance-framework) (FDA SaMD, EU AI Act, PCCP, Model Governance)
+17D. [Zero Trust Security Architecture](#165-security-architecture-zero-trust)
+17E. [Consent Management Platform](#166-consent-management-platform)
+18. [Multi-Tenant Architecture](#17-multi-tenant-architecture)
+19. [Testing Strategy](#18-testing-strategy)
+20. [IP Protection & Product Boundaries](#19-ip-protection--product-boundaries)
+21. [5-Year Product Roadmap](#20-5-year-product-roadmap)
 
 ---
 
@@ -688,6 +694,361 @@ Collections for AI reasoning:
 
 ---
 
+## 8A. Medical Imaging, Lab Report & Document Ingestion Pipeline
+
+### How X-Rays, CT Scans, Lab Reports, and Clinical Documents Enter HealthOS
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                    DATA INGESTION SOURCES                             │
+│                                                                      │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐             │
+│  │  PACS/VNA    │  │  Modalities  │  │   Lab Systems  │             │
+│  │  (Radiology  │  │  (X-ray, CT, │  │  (LIS/LIMS)   │             │
+│  │   Archive)   │  │   MRI, US)   │  │               │             │
+│  └──────┬───────┘  └──────┬───────┘  └───────┬───────┘             │
+│         │ DICOM            │ DICOM            │ HL7/FHIR            │
+│         ▼                  ▼                  ▼                      │
+│  ┌───────────────────────────────────────────────────────────┐      │
+│  │              HEALTHOS INGESTION GATEWAY                    │      │
+│  │                                                            │      │
+│  │  ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐  │      │
+│  │  │ DICOM       │  │ HL7 v2       │  │ FHIR R4         │  │      │
+│  │  │ Receiver    │  │ MLLP Listener│  │ REST API        │  │      │
+│  │  │ (Port 4242) │  │ (Port 2575)  │  │ (Port 443)      │  │      │
+│  │  └──────┬──────┘  └──────┬───────┘  └────────┬────────┘  │      │
+│  │         │                │                    │            │      │
+│  │         ▼                ▼                    ▼            │      │
+│  │  ┌─────────────────────────────────────────────────┐      │      │
+│  │  │          INGESTION PROCESSING PIPELINE           │      │      │
+│  │  │                                                  │      │      │
+│  │  │  1. PHI Scan → classify sensitivity level        │      │      │
+│  │  │  2. Validate → schema, format, completeness      │      │      │
+│  │  │  3. Normalize → map to HealthOS data model       │      │      │
+│  │  │  4. Enrich → link to patient, encounter, order   │      │      │
+│  │  │  5. Store → encrypted object storage + DB ref    │      │      │
+│  │  │  6. Index → full-text + vector embeddings        │      │      │
+│  │  │  7. Event → publish to Kafka for agent routing   │      │      │
+│  │  └─────────────────────────────────────────────────┘      │      │
+│  └───────────────────────────────────────────────────────────┘      │
+│                                                                      │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐             │
+│  │ Document     │  │  Fax/PDF     │  │  Patient      │             │
+│  │ Scanners     │  │  Inbound     │  │  Uploaded     │             │
+│  │ (OCR ready)  │  │  (eFax)      │  │  Photos/Docs  │             │
+│  └──────┬───────┘  └──────┬───────┘  └───────┬───────┘             │
+│         │                  │                  │                      │
+│         ▼                  ▼                  ▼                      │
+│  ┌───────────────────────────────────────────────────────────┐      │
+│  │              DOCUMENT PROCESSING PIPELINE                  │      │
+│  │                                                            │      │
+│  │  1. OCR (Tesseract / cloud vision) → extract text          │      │
+│  │  2. Document Classification Agent → type the document      │      │
+│  │  3. NLP Extraction → structured data from unstructured     │      │
+│  │  4. PHI Scan → detect and tag all PHI                     │      │
+│  │  5. Link to patient record                                │      │
+│  │  6. Store in encrypted object storage                     │      │
+│  │  7. Generate embeddings for RAG search                    │      │
+│  └───────────────────────────────────────────────────────────┘      │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### Medical Imaging Pipeline (DICOM)
+
+#### Supported Imaging Modalities
+
+| Modality | Format | AI Analysis Available |
+|----------|--------|---------------------|
+| **X-Ray (CR/DR)** | DICOM | Chest X-ray screening (pneumonia, cardiomegaly, fracture, nodule) |
+| **CT Scan** | DICOM (multi-slice) | Lung nodule detection, hemorrhage detection, PE screening |
+| **MRI** | DICOM | Brain lesion detection, cardiac MRI analysis |
+| **Ultrasound** | DICOM / video | Echo measurement, OB measurement |
+| **Mammography** | DICOM (MG) | Breast density classification, mass detection |
+| **Retinal Imaging** | DICOM / JPEG | Diabetic retinopathy screening, macular degeneration |
+| **ECG/EKG** | DICOM / SCP-ECG / PDF | STEMI detection, arrhythmia classification, QT prolongation |
+| **Pathology** | DICOM (WSI) / SVS | Digital pathology slide analysis |
+
+#### DICOM Ingestion Architecture
+
+```python
+class DICOMIngestionService:
+    """Receives and processes DICOM medical images"""
+
+    async def receive_dicom(self, dataset: pydicom.Dataset) -> ImageRecord:
+        # 1. Extract DICOM metadata
+        metadata = self.extract_metadata(dataset)
+        # Patient ID, study UID, series UID, modality, body part,
+        # acquisition date, referring physician, study description
+
+        # 2. PHI handling — de-identify pixel data headers
+        clean_metadata = await self.phi_guard.scan_dicom_tags(metadata)
+
+        # 3. Link to patient record
+        patient = await self.patient_service.match(
+            mrn=metadata.patient_id,
+            name=metadata.patient_name,
+            dob=metadata.patient_dob
+        )
+
+        # 4. Store image securely
+        storage_path = await self.object_storage.store(
+            bucket=f"healthos-{patient.org_id}/imaging",
+            key=f"{metadata.study_uid}/{metadata.series_uid}/{metadata.sop_uid}.dcm",
+            data=dataset,
+            encryption="AES-256",
+            metadata=clean_metadata
+        )
+
+        # 5. Generate image preview (JPEG thumbnail)
+        thumbnail = self.generate_thumbnail(dataset.pixel_array)
+
+        # 6. Create DB record
+        image_record = await self.db.create_image(
+            patient_id=patient.id,
+            study_uid=metadata.study_uid,
+            modality=metadata.modality,
+            body_part=metadata.body_part,
+            storage_path=storage_path,
+            thumbnail_path=thumbnail,
+            status="received"
+        )
+
+        # 7. Publish event for AI analysis
+        await self.kafka.publish("imaging.received", {
+            "image_id": image_record.id,
+            "patient_id": patient.id,
+            "modality": metadata.modality,
+            "study_uid": metadata.study_uid,
+        })
+
+        return image_record
+```
+
+#### AI Image Analysis Pipeline
+
+```
+DICOM Image Received
+       │
+       ▼
+┌──────────────────┐
+│ Image Preprocessing │
+│ • Normalization      │
+│ • Resizing           │
+│ • Windowing (CT)     │
+│ • Augmentation       │
+└──────────┬───────────┘
+           ▼
+┌──────────────────┐     ┌────────────────────────┐
+│ Image Analysis   │     │  AI Models (per modality)│
+│ Agent (#52)      │────▶│  • CheXNet (Chest X-ray)│
+│                  │     │  • ResNet/EfficientNet   │
+│                  │     │  • MONAI (CT/MRI)        │
+│                  │     │  • Custom PyTorch models  │
+└──────────┬───────┘     └────────────────────────┘
+           │
+           ▼
+┌──────────────────┐
+│ Findings:         │
+│ • Detected: Y/N   │
+│ • Region (bbox)   │
+│ • Confidence: 0.94│
+│ • Classification   │
+└──────────┬───────┘
+           │
+     ┌─────┴──────┐
+     ▼            ▼
+┌─────────┐  ┌──────────────────┐
+│ Normal  │  │ Abnormal Finding  │
+│ → Queue │  │ → Priority Queue  │
+│   for   │  │ → Radiologist     │
+│  batch  │  │   notification    │
+│  read   │  │ → If critical:    │
+│         │  │   STAT alert      │
+└─────────┘  └──────────────────┘
+```
+
+### Lab Report Ingestion Pipeline
+
+#### Supported Lab Report Formats
+
+| Source | Format | Integration Method |
+|--------|--------|-------------------|
+| **Laboratory Information System (LIS)** | HL7 v2 ORU messages | HL7 MLLP listener |
+| **Reference Lab (Quest, LabCorp)** | HL7 v2 / FHIR | Direct interface or health information exchange |
+| **Point-of-Care Testing** | Device API / manual | Device integration API |
+| **PDF Lab Reports** | PDF (structured/unstructured) | OCR + NLP extraction |
+| **Patient-Uploaded Results** | PDF / image / CSV | Document processing pipeline |
+| **Genomic Reports** | VCF / FASTQ / PDF | Genomics processing pipeline |
+
+#### Lab Result Processing
+
+```python
+class LabIngestionService:
+    """Processes lab results from multiple sources"""
+
+    async def process_lab_result(self, source: str, raw_data: Any) -> LabResult:
+        # 1. Parse based on source format
+        if source == "hl7":
+            result = self.parse_hl7_oru(raw_data)
+        elif source == "fhir":
+            result = self.parse_fhir_observation(raw_data)
+        elif source == "pdf":
+            result = await self.ocr_extract_lab(raw_data)
+        elif source == "genomic":
+            result = await self.parse_genomic(raw_data)
+
+        # 2. Normalize to LOINC codes
+        result.loinc_code = self.map_to_loinc(result.test_name, result.source_code)
+
+        # 3. Apply reference ranges (age/sex-adjusted)
+        result.reference_range = self.get_reference_range(
+            loinc=result.loinc_code,
+            age=result.patient_age,
+            sex=result.patient_sex
+        )
+        result.flag = self.evaluate_flag(result.value, result.reference_range)
+        # flag: normal, low, high, critical_low, critical_high, panic
+
+        # 4. Link to patient and encounter
+        patient = await self.patient_service.match(result.patient_identifiers)
+
+        # 5. Store result
+        lab_record = await self.db.create_lab_result(
+            patient_id=patient.id,
+            loinc_code=result.loinc_code,
+            value=result.value,
+            unit=result.unit,
+            flag=result.flag,
+            reference_range=result.reference_range,
+            collected_at=result.collection_time,
+            resulted_at=result.result_time,
+            performing_lab=result.lab_name,
+        )
+
+        # 6. Trigger agent processing
+        if result.flag in ["critical_low", "critical_high", "panic"]:
+            # CRITICAL VALUE — immediate escalation
+            await self.kafka.publish("lab.critical", {
+                "lab_id": lab_record.id,
+                "patient_id": patient.id,
+                "test": result.test_name,
+                "value": result.value,
+                "flag": result.flag,
+            })
+        else:
+            # Normal processing — trend analysis, risk re-scoring
+            await self.kafka.publish("lab.resulted", {
+                "lab_id": lab_record.id,
+                "patient_id": patient.id,
+            })
+
+        return lab_record
+```
+
+#### Lab-Specific Database Tables
+
+```sql
+CREATE TABLE lab_results (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id UUID REFERENCES patients(id),
+    org_id UUID REFERENCES organizations(id),
+    encounter_id UUID REFERENCES encounters(id),
+    order_id UUID,
+    loinc_code VARCHAR(20),
+    test_name VARCHAR(255),
+    value VARCHAR(100),
+    value_numeric FLOAT,
+    unit VARCHAR(50),
+    flag VARCHAR(20),              -- normal, low, high, critical_low, critical_high, panic
+    reference_range_low FLOAT,
+    reference_range_high FLOAT,
+    performing_lab VARCHAR(255),
+    collected_at TIMESTAMPTZ,
+    resulted_at TIMESTAMPTZ,
+    verified_by UUID REFERENCES users(id),
+    source VARCHAR(50),            -- lis, reference_lab, poc, patient_upload, genomic
+    raw_message JSONB,             -- original HL7/FHIR preserved
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_lab_patient_time ON lab_results(patient_id, resulted_at DESC);
+CREATE INDEX idx_lab_loinc ON lab_results(org_id, loinc_code, resulted_at DESC);
+CREATE INDEX idx_lab_critical ON lab_results(org_id, flag) WHERE flag IN ('critical_low', 'critical_high', 'panic');
+
+CREATE TABLE imaging_studies (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id UUID REFERENCES patients(id),
+    org_id UUID REFERENCES organizations(id),
+    encounter_id UUID REFERENCES encounters(id),
+    study_uid VARCHAR(255) UNIQUE,
+    modality VARCHAR(10),          -- CR, CT, MR, US, MG, ECG, PT
+    body_part VARCHAR(100),
+    study_description TEXT,
+    num_series INTEGER,
+    num_images INTEGER,
+    storage_path VARCHAR(500),
+    thumbnail_path VARCHAR(500),
+    status VARCHAR(30),            -- received, queued, ai_analyzed, read, final
+    ai_findings JSONB,             -- AI analysis results
+    ai_confidence FLOAT,
+    radiologist_report TEXT,
+    critical_finding BOOLEAN DEFAULT FALSE,
+    referring_provider UUID REFERENCES users(id),
+    reading_provider UUID REFERENCES users(id),
+    study_date TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE clinical_documents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id UUID REFERENCES patients(id),
+    org_id UUID REFERENCES organizations(id),
+    document_type VARCHAR(50),     -- lab_report, radiology_report, referral, consent, discharge_summary
+    title VARCHAR(255),
+    source VARCHAR(50),            -- scan, fax, upload, ehr, generated
+    storage_path VARCHAR(500),
+    content_text TEXT,             -- OCR-extracted or generated text
+    content_structured JSONB,      -- NLP-extracted structured data
+    embedding_id VARCHAR(100),     -- Vector DB reference for RAG
+    status VARCHAR(30),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Edge Computing & Offline-First Architecture
+
+For rural healthcare and areas with unreliable connectivity:
+
+```
+┌─────────────────────────────────────────────┐
+│           CLINIC / PATIENT EDGE              │
+│                                              │
+│  ┌──────────────────────────────────┐       │
+│  │  Edge Agent Runtime (lightweight) │       │
+│  │  • Vitals collection (offline)    │       │
+│  │  • Critical threshold alerting    │       │
+│  │  • Local risk scoring (TFLite)    │       │
+│  │  • Encrypted data queue           │       │
+│  └──────────────┬───────────────────┘       │
+│                 │                             │
+│  ┌──────────────▼───────────────────┐       │
+│  │  Sync Engine                      │       │
+│  │  • Queue when offline             │       │
+│  │  • Sync when connected            │       │
+│  │  • Conflict resolution            │       │
+│  │  • Bandwidth optimization         │       │
+│  └──────────────┬───────────────────┘       │
+└─────────────────┼───────────────────────────┘
+                  │ (when connected)
+                  ▼
+┌─────────────────────────────────────────────┐
+│           HEALTHOS CLOUD PLATFORM            │
+│  Full agent processing, analytics, storage   │
+└─────────────────────────────────────────────┘
+```
+
+---
+
 ## 9. AI & ML Pipeline Architecture
 
 ### Risk Prediction Models
@@ -1161,15 +1522,104 @@ eminence-healthos/
 | 39 | **Lab Trend Agent** | Analyzes lab value trends (A1C, creatinine, lipids) over time |
 | 40 | **Critical Value Alert Agent** | Immediately escalates critical lab values to care team |
 
-### Future Module Candidates
+### HealthOS Ambient AI Documentation Module (THE #1 Feature in Healthcare AI)
 
-| Module | Description | New Agents | Revenue Potential |
-|--------|------------|-----------|------------------|
-| **HealthOS Imaging** | Radiology order workflows, AI image analysis, PACS integration | 3 agents | $100K–$150K/yr |
-| **HealthOS Compliance** | Automated HIPAA audits, compliance dashboards, policy enforcement | 3 agents | $80K–$120K/yr |
-| **HealthOS Patient Engagement** | Patient app, health literacy content, gamification, SDOH tracking | 4 agents | $50K–$80K/yr |
-| **HealthOS Research** | Clinical trial matching, de-identified exports, research cohort builder | 4 agents | $120K–$180K/yr |
-| **HealthOS Mental Health** | PHQ-9/GAD-7 screening, behavioral health workflows, crisis detection | 3 agents | $80K–$100K/yr |
+| # | Agent | Responsibility |
+|---|-------|---------------|
+| 41 | **Ambient Listening Agent** | Captures and transcribes doctor-patient conversation during telehealth/in-person visits |
+| 42 | **Speaker Diarization Agent** | Distinguishes doctor vs patient vs family member in conversation |
+| 43 | **SOAP Note Generator Agent** | Generates structured clinical notes (Subjective, Objective, Assessment, Plan) from transcript |
+| 44 | **Auto-Coding Agent** | Suggests ICD-10, CPT, E&M billing codes from the encounter conversation |
+| 45 | **Provider Attestation Agent** | Routes AI-generated notes to provider for review, edit, and digital signature |
+
+### HealthOS Revenue Cycle Management (RCM) Module
+
+| # | Agent | Responsibility |
+|---|-------|---------------|
+| 46 | **Charge Capture Agent** | Identifies billable services from encounters, procedures, and care activities |
+| 47 | **Claims Optimization Agent** | Reviews claims before submission, catches coding errors, suggests corrections |
+| 48 | **Denial Management Agent** | Analyzes denied claims, identifies root cause, auto-generates appeal documents |
+| 49 | **Revenue Integrity Agent** | Scans charts pre-bill to surface missed diagnoses and under-coded services |
+| 50 | **Payment Posting Agent** | Reconciles payments, identifies underpayments, flags discrepancies |
+
+### HealthOS Imaging & Radiology Module
+
+| # | Agent | Responsibility |
+|---|-------|---------------|
+| 51 | **Imaging Ingestion Agent** | Receives DICOM images from PACS/modalities, normalizes metadata, stores securely |
+| 52 | **Image Analysis Agent** | AI-powered analysis: chest X-ray screening, fracture detection, retinal scan analysis |
+| 53 | **Radiology Report Agent** | Generates structured preliminary radiology reports from image analysis |
+| 54 | **Imaging Workflow Agent** | Routes images for radiologist review, tracks read status, manages priority queue |
+| 55 | **Critical Finding Alert Agent** | Immediately escalates critical imaging findings (pneumothorax, stroke, fracture) |
+
+### HealthOS Patient Engagement & SDOH Module
+
+| # | Agent | Responsibility |
+|---|-------|---------------|
+| 56 | **Health Literacy Agent** | Adapts clinical content to patient's reading level (5th grade to college) |
+| 57 | **Multilingual Communication Agent** | Auto-translates patient messages and content (40+ languages) |
+| 58 | **Conversational Triage Agent** | Patient-facing AI chatbot for symptom triage before scheduling |
+| 59 | **Care Navigation Agent** | Guides patients through complex care journeys step by step |
+| 60 | **SDOH Screening Agent** | Automated screening for food insecurity, housing, transportation, social isolation |
+| 61 | **Community Resource Agent** | Connects patients to local food banks, transportation, housing, social services |
+| 62 | **Motivational Engagement Agent** | Behavioral nudges for medication adherence, lifestyle changes, gamification |
+
+### HealthOS Digital Twin & Simulation Module
+
+| # | Agent | Responsibility |
+|---|-------|---------------|
+| 63 | **Patient Digital Twin Agent** | Maintains living computational model of each patient's health trajectory |
+| 64 | **What-If Scenario Agent** | Simulates "What if we change this medication?" or "What if patient stops monitoring?" |
+| 65 | **Predictive Trajectory Agent** | Forecasts health outcomes 30/60/90 days out based on current trends |
+| 66 | **Treatment Optimization Agent** | Simulates different care plans and recommends optimal path |
+
+### HealthOS Compliance & Governance Module
+
+| # | Agent | Responsibility |
+|---|-------|---------------|
+| 67 | **HIPAA Compliance Monitor Agent** | Continuous automated HIPAA compliance scanning across all platform operations |
+| 68 | **AI Governance Agent** | Tracks all AI model usage, accuracy, drift, bias across the platform |
+| 69 | **Consent Management Agent** | Manages granular patient consent for data sharing, research, AI processing |
+| 70 | **Regulatory Reporting Agent** | Auto-generates compliance reports for HIPAA, SOC2, HITRUST, state regulations |
+
+### HealthOS Research & Genomics Module
+
+| # | Agent | Responsibility |
+|---|-------|---------------|
+| 71 | **Clinical Trial Matching Agent** | Matches patients to eligible clinical trials based on conditions, demographics, labs |
+| 72 | **De-Identification Agent** | Produces HIPAA Safe Harbor de-identified datasets for research export |
+| 73 | **Research Cohort Agent** | Builds research cohorts using complex clinical criteria |
+| 74 | **Pharmacogenomics Agent** | Matches medications to patient's genetic profile for precision medicine |
+| 75 | **Genetic Risk Agent** | Incorporates genetic markers into risk scoring models |
+
+### HealthOS Mental Health Module
+
+| # | Agent | Responsibility |
+|---|-------|---------------|
+| 76 | **Mental Health Screening Agent** | Automated PHQ-9, GAD-7, AUDIT-C screening and scoring |
+| 77 | **Behavioral Health Workflow Agent** | Manages behavioral health referrals, therapy scheduling, follow-ups |
+| 78 | **Crisis Detection Agent** | Detects suicidal ideation, self-harm risk from patient interactions and scores |
+| 79 | **Therapeutic Engagement Agent** | Between-session check-ins, CBT exercises, mood tracking |
+
+### Total Agent Count: 79 Agents Across 13 Modules
+
+| Module | Agents | Status |
+|--------|--------|--------|
+| Platform Control | #25–30 (6) | Core — Phase 1 |
+| RPM | #1–6 (6) | Phase 1 MVP |
+| Telehealth | #7–12 (6) | Phase 2 |
+| Operations Automation | #13–18 (6) | Phase 3 |
+| Population Analytics | #19–24 (6) | Phase 4 |
+| Pharmacy | #31–36 (6) | Phase 2+ |
+| Labs | #37–40 (4) | Phase 2+ |
+| Ambient AI Documentation | #41–45 (5) | Phase 2 (HIGH PRIORITY) |
+| Revenue Cycle Management | #46–50 (5) | Phase 2 (HIGH PRIORITY) |
+| Imaging & Radiology | #51–55 (5) | Phase 3 |
+| Patient Engagement & SDOH | #56–62 (7) | Phase 3 |
+| Digital Twin & Simulation | #63–66 (4) | Phase 4 |
+| Compliance & Governance | #67–70 (4) | Phase 1 (BUILT INTO CORE) |
+| Research & Genomics | #71–75 (5) | Phase 5 |
+| Mental Health | #76–79 (4) | Phase 3 |
 
 ### How to Add a New Module
 
@@ -1499,41 +1949,425 @@ qdrant:
 
 ---
 
-## 16. Security & HIPAA Compliance
+## 16. Comprehensive Security, Compliance & Regulatory Framework
 
-### Security Controls
+### 16.1 Healthcare Compliance Standards Matrix
 
-| Control | Implementation |
-|---------|---------------|
-| **Encryption at Rest** | AES-256 for all databases and object storage |
-| **Encryption in Transit** | TLS 1.3 for all network communication |
-| **Authentication** | OAuth2/OIDC via Keycloak, MFA required |
-| **Authorization** | RBAC with tenant-scoped permissions |
-| **PHI Protection** | Automated PHI detection and masking (PHI Filter Agent) |
-| **Secret Management** | HashiCorp Vault for all secrets, keys, certificates |
-| **Audit Logging** | Immutable append-only audit log for all data access and agent actions |
-| **Network Security** | Kubernetes network policies, pod security standards |
-| **Vulnerability Scanning** | Automated container and dependency scanning in CI |
+HealthOS implements continuous compliance monitoring across ALL major healthcare regulatory frameworks:
 
-### HIPAA Technical Safeguards
+| Standard | Scope | Status Tracking | HealthOS Implementation |
+|----------|-------|----------------|------------------------|
+| **HIPAA** (Privacy Rule) | PHI protection, patient rights, breach notification | Continuous monitoring | PHI detection, consent management, breach detection agent, minimum necessary principle |
+| **HIPAA** (Security Rule) | Administrative, physical, technical safeguards | Continuous monitoring | Encryption, access controls, audit logging, risk assessments, workforce training tracking |
+| **HIPAA** (Breach Notification) | Breach detection and reporting | Real-time alerting | Automated breach detection, 60-day notification workflow, HHS reporting automation |
+| **HITECH Act** | Enhanced HIPAA enforcement, meaningful use | Audit-ready | Enhanced penalties tracking, business associate management, EHR incentive compliance |
+| **HITRUST CSF** | Comprehensive healthcare security framework | Quarterly assessment | 156 control mapping, risk-based assessment automation, certification readiness dashboard |
+| **SOC 2 Type II** | Trust service criteria (security, availability, confidentiality) | Continuous evidence collection | Automated evidence gathering, control testing, auditor-ready reports |
+| **SOC 2 + HIPAA** | Combined SOC2 and HIPAA audit | Annual | Dual-framework control mapping, unified evidence repository |
+| **NIST CSF 2.0** | Cybersecurity framework | Continuous | Identify, Protect, Detect, Respond, Recover functions mapped |
+| **NIST 800-53** | Federal security controls | Control mapping | 1000+ controls mapped and tracked |
+| **21 CFR Part 11** | FDA electronic records and signatures | Built-in | Digital signatures, audit trails, system validation, change control |
+| **FDA SaMD** | Software as a Medical Device | Per-agent classification | Risk classification, clinical validation, predetermined change control plan |
+| **EU AI Act** | AI system risk classification and transparency | Built-in | High-risk AI classification, transparency logs, human oversight, bias monitoring |
+| **EU MDR** | Medical Device Regulation (if marketed in EU) | Phase 5 | CE marking readiness, technical documentation, post-market surveillance |
+| **GDPR** | EU data protection (if serving EU patients) | Built-in | Data subject rights, data protection impact assessment, consent management, right to erasure |
+| **State Privacy Laws** | CCPA, CMIA, state-specific PHI laws | Configurable per tenant | Per-state rule engine, consumer rights workflows, data inventory |
+| **TEFCA** | Trusted Exchange Framework and Common Agreement | Built-in | QHINs integration readiness, USCDI data exchange, patient matching |
+| **42 CFR Part 2** | Substance abuse treatment records (extra protection) | Built-in | Segmented consent, enhanced access controls, re-disclosure prevention |
+| **CLIA** | Clinical Laboratory Improvement Amendments | Labs module | Lab result validation, quality control tracking |
+| **ONC Cures Act** | Information blocking prevention, patient access | Built-in | Patient API access, no information blocking, USCDI support |
 
-| Safeguard | Implementation |
+### 16.2 Continuous Compliance Monitoring Engine
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              COMPLIANCE MONITORING DASHBOARD                     │
+│                                                                  │
+│  Overall Score: 94/100        ┌──────────────────────────┐      │
+│  ████████████████████░░       │ Active Gaps: 7           │      │
+│                               │ Critical: 0              │      │
+│  HIPAA:  97%  ███████████░    │ High: 2                  │      │
+│  HITRUST: 92% █████████░░░    │ Medium: 3                │      │
+│  SOC2:   96%  ██████████░░    │ Low: 2                   │      │
+│  FDA:    89%  ████████░░░░    │                          │      │
+│  AI Act: 91%  █████████░░░    │ Next Audit: 45 days      │      │
+│  NIST:   95%  █████████░░░    │ Remediation Due: 3 items │      │
+│                               └──────────────────────────┘      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Compliance Timeline                                             │
+│  ─────────────────────────────────────────────────────           │
+│  [Jan][Feb][Mar][Apr][May][Jun]                                  │
+│   96   95   94   97   96   94    ← Score Trend                  │
+│                                                                  │
+│  Recent Events:                                                  │
+│  ⚠ PHI access without valid consent (auto-blocked, 2h ago)      │
+│  ✓ SOC2 evidence auto-collected (daily backup verification)      │
+│  ✓ HIPAA risk assessment completed (quarterly)                   │
+│  ⚠ AI model drift detected — Anomaly Detection Agent (review)   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Compliance Monitoring Architecture
+
+```python
+class ComplianceMonitoringEngine:
+    """Continuous compliance monitoring — runs 24/7"""
+
+    frameworks = [
+        HIPAAMonitor(),        # 72 controls
+        HITRUSTMonitor(),      # 156 controls
+        SOC2Monitor(),         # 64 criteria
+        NISTMonitor(),         # 110 controls
+        FDASaMDMonitor(),      # per-agent classification
+        EUAIActMonitor(),      # risk-based AI monitoring
+        StatePrivacyMonitor(), # per-state rules
+    ]
+
+    async def continuous_scan(self):
+        """Runs every 15 minutes"""
+        for framework in self.frameworks:
+            # 1. Check all controls
+            results = await framework.evaluate_controls()
+
+            # 2. Identify gaps
+            gaps = [r for r in results if r.status != "compliant"]
+
+            # 3. Calculate risk score
+            risk_score = self.calculate_risk(gaps)
+
+            # 4. Auto-remediate where possible
+            for gap in gaps:
+                if gap.auto_remediable:
+                    await self.auto_remediate(gap)
+
+            # 5. Generate alerts for human review
+            for gap in gaps:
+                if gap.severity in ["critical", "high"]:
+                    await self.alert_compliance_team(gap)
+
+            # 6. Update compliance dashboard
+            await self.update_dashboard(framework, results, gaps)
+
+    async def generate_audit_package(self, framework: str) -> AuditPackage:
+        """Generate auditor-ready evidence package"""
+        return AuditPackage(
+            controls=self.get_control_evidence(framework),
+            policies=self.get_policy_documents(),
+            audit_logs=self.get_audit_logs(framework),
+            risk_assessments=self.get_risk_assessments(),
+            remediation_history=self.get_remediation_log(),
+            screenshots=self.get_compliance_screenshots(),
+        )
+```
+
+#### Compliance Gap Detection & Remediation
+
+| Gap Type | Detection Method | Auto-Remediation | Human Action |
+|----------|-----------------|-----------------|-------------|
+| Unencrypted PHI at rest | Storage scan every 6 hours | Auto-encrypt and alert | Review encryption policy |
+| PHI access without audit log | Real-time access monitoring | Block access + alert | Investigate incident |
+| Expired user access | Daily RBAC scan | Auto-disable account | Manager notification |
+| Missing BAA for vendor | Vendor registry check | Block data sharing | Legal review |
+| AI model accuracy drift | Continuous model monitoring | Auto-flag for retraining | Data science review |
+| Consent expired/missing | Per-operation consent check | Block processing + notify patient | Care team follow-up |
+| Backup failure | Hourly backup verification | Auto-retry + failover | Infrastructure review |
+| SSL certificate expiring | Certificate monitor (30-day warning) | Auto-renew via Let's Encrypt | Verify renewal |
+| Failed penetration test control | Quarterly pen test | Patch deployment | Security team review |
+| Unauthorized AI tool usage | Shadow AI detection | Block + quarantine | Governance review |
+
+### 16.3 PHI / PII Protection Framework
+
+#### Data Classification Engine
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                 DATA CLASSIFICATION LEVELS                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Level 5 — CRITICAL PHI                                         │
+│  ├── SSN, full DOB + name combination                           │
+│  ├── Genetic / genomic data                                     │
+│  ├── Substance abuse records (42 CFR Part 2)                    │
+│  ├── Mental health / psychotherapy notes                        │
+│  └── HIV/AIDS status                                            │
+│  Protection: AES-256 + field-level encryption + tokenization     │
+│  Access: Named individuals only, break-glass emergency access    │
+│                                                                  │
+│  Level 4 — SENSITIVE PHI                                        │
+│  ├── Patient name + medical record number                       │
+│  ├── Diagnosis codes (ICD-10)                                   │
+│  ├── Medication lists                                           │
+│  ├── Lab results                                                │
+│  ├── Imaging reports                                            │
+│  └── Provider notes                                             │
+│  Protection: AES-256 + role-based access + audit logging        │
+│  Access: Care team + authorized roles                           │
+│                                                                  │
+│  Level 3 — STANDARD PHI                                         │
+│  ├── Appointment dates and times                                │
+│  ├── Billing amounts                                            │
+│  ├── Insurance information                                      │
+│  └── Contact information (address, phone, email)                │
+│  Protection: Encryption at rest/transit + RBAC                  │
+│  Access: Administrative + care team roles                       │
+│                                                                  │
+│  Level 2 — DE-IDENTIFIED DATA                                   │
+│  ├── HIPAA Safe Harbor de-identified datasets                   │
+│  ├── Statistical de-identification (expert determination)       │
+│  └── Aggregated population metrics                              │
+│  Protection: Standard encryption + access controls              │
+│  Access: Research, analytics, reporting roles                   │
+│                                                                  │
+│  Level 1 — PUBLIC / NON-SENSITIVE                               │
+│  ├── General health education content                           │
+│  ├── Facility information                                       │
+│  └── Published clinical guidelines                              │
+│  Protection: Standard security                                  │
+│  Access: All authenticated users                                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### PHI Detection & Masking Pipeline (Every Data Path)
+
+```python
+class PHIGuardRail:
+    """Runs on EVERY data path in HealthOS — no exceptions"""
+
+    # 18 HIPAA identifiers + additional sensitive fields
+    PHI_PATTERNS = {
+        "ssn": r"\b\d{3}-\d{2}-\d{4}\b",
+        "mrn": r"\bMRN[\s:]*\d+\b",
+        "dob": r"\b\d{2}/\d{2}/\d{4}\b",
+        "phone": r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b",
+        "email": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
+        "ip_address": r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b",
+        # ... 12 more HIPAA Safe Harbor identifiers
+    }
+
+    # NLP-based entity detection (Microsoft Presidio + custom models)
+    nlp_detectors = [
+        PresidioDetector(),       # Named entity recognition for PHI
+        MedicalNERDetector(),     # Medical-specific entity detection
+        ContextualPHIDetector(),  # Detects PHI by clinical context
+    ]
+
+    async def scan_and_protect(self, data: Any, context: DataContext) -> ProtectedData:
+        # 1. Classify data sensitivity level
+        level = self.classify_sensitivity(data)
+
+        # 2. Detect all PHI entities
+        phi_entities = await self.detect_phi(data)
+
+        # 3. Apply protection based on context
+        if context.destination == "llm_prompt":
+            return self.redact_for_llm(data, phi_entities)
+        elif context.destination == "api_response":
+            return self.filter_by_rbac(data, phi_entities, context.user_role)
+        elif context.destination == "audit_log":
+            return self.tokenize_phi(data, phi_entities)
+        elif context.destination == "research_export":
+            return self.deidentify_safe_harbor(data, phi_entities)
+        elif context.destination == "agent_input":
+            return self.minimize_phi(data, phi_entities, context.agent_needs)
+
+    async def detect_phi(self, data: Any) -> List[PHIEntity]:
+        """Multi-layer PHI detection"""
+        entities = []
+        # Layer 1: Regex pattern matching
+        entities += self.regex_scan(data)
+        # Layer 2: NLP entity recognition
+        entities += await self.nlp_scan(data)
+        # Layer 3: Contextual detection
+        entities += await self.context_scan(data)
+        return self.deduplicate(entities)
+```
+
+#### PHI Protection Points (Where Guards Are Enforced)
+
+| Protection Point | Guard Type | What It Protects |
+|-----------------|-----------|-----------------|
+| **API Gateway** | Request/Response filter | All PHI in API traffic |
+| **LLM Prompt Assembly** | PHI redaction before LLM call | Prevents PHI leaking to cloud LLMs |
+| **LLM Response Processing** | Output scanning | Catches PHI hallucinated by LLMs |
+| **Agent Input** | PHI minimization | Agents receive only needed PHI fields |
+| **Agent Output** | Output scanning + policy gate | Prevents PHI in agent decisions/actions |
+| **Audit Logging** | PHI tokenization | Logs actions without exposing raw PHI |
+| **Database Queries** | Row-level security + field encryption | Enforces tenant isolation and access controls |
+| **Event Bus (Kafka)** | Message-level encryption | PHI in transit between agents |
+| **Object Storage** | Server-side encryption + access policies | Documents, images, artifacts |
+| **Frontend Rendering** | Role-based field masking | UI shows only authorized PHI |
+| **Export / Download** | De-identification pipeline | Research exports, reports |
+| **Backup / Disaster Recovery** | Encrypted backups | PHI at rest in backups |
+| **Third-Party Integrations** | PHI boundary filter | Controls what PHI leaves the system |
+
+### 16.4 AI Regulatory Compliance Framework
+
+#### FDA Software as a Medical Device (SaMD) Classification
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│               FDA SaMD RISK CLASSIFICATION PER AGENT             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Class I (Low Risk — Exempt)                                    │
+│  ├── Scheduling Agent                                           │
+│  ├── Patient Communication Agent                                │
+│  ├── Billing Readiness Agent                                    │
+│  ├── Task Orchestration Agent                                   │
+│  ├── Health Literacy Agent                                      │
+│  └── All administrative/operations agents                       │
+│  FDA Path: General Wellness / Exempt                            │
+│                                                                  │
+│  Class II (Moderate Risk — 510(k))                              │
+│  ├── Anomaly Detection Agent (vitals monitoring)                │
+│  ├── Risk Scoring Agent (deterioration prediction)              │
+│  ├── Trend Analysis Agent (pattern detection)                   │
+│  ├── Readmission Risk Agent                                     │
+│  ├── Drug Interaction Agent                                     │
+│  ├── Mental Health Screening Agent                              │
+│  └── Image Analysis Agent (screening assistance)                │
+│  FDA Path: 510(k) clearance required                            │
+│  Controls: Clinical validation, predetermined change control    │
+│                                                                  │
+│  Class III (High Risk — PMA)                                    │
+│  ├── Treatment Optimization Agent (if autonomous)               │
+│  ├── SOAP Note Generator (if used for clinical decisions)       │
+│  └── Any agent making autonomous treatment decisions            │
+│  FDA Path: Premarket Approval (PMA)                             │
+│  Controls: Full clinical trials, post-market surveillance       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### FDA Predetermined Change Control Plan (PCCP)
+
+For AI/ML models that evolve over time, FDA requires a PCCP:
+
+```python
+class FDAPCCPManager:
+    """Manages FDA Predetermined Change Control Plan for AI models"""
+
+    async def validate_model_change(self, model_id: str, change: ModelChange) -> PCCPResult:
+        # 1. Is this change within the predetermined envelope?
+        within_envelope = self.check_change_envelope(model_id, change)
+
+        # 2. Clinical validation against reference dataset
+        validation = await self.run_clinical_validation(model_id, change)
+
+        # 3. Performance metrics comparison
+        metrics = await self.compare_performance(
+            model_id, change,
+            thresholds={
+                "sensitivity": 0.95,   # Must maintain >= 95% sensitivity
+                "specificity": 0.90,   # Must maintain >= 90% specificity
+                "auc_roc": 0.92,       # AUC-ROC minimum
+                "fairness_gap": 0.05,  # Max disparity across demographics
+            }
+        )
+
+        # 4. Bias and fairness re-validation
+        fairness = await self.validate_fairness(model_id, change)
+
+        # 5. Log change and result
+        await self.audit_log.record(model_id, change, validation, metrics, fairness)
+
+        return PCCPResult(
+            approved=within_envelope and validation.passed and metrics.passed and fairness.passed,
+            evidence=self.generate_evidence_package(model_id, change),
+        )
+```
+
+#### EU AI Act Compliance
+
+| Requirement | HealthOS Implementation |
+|------------|------------------------|
+| **Risk Classification** | All agents classified as minimal/limited/high-risk/unacceptable |
+| **Transparency** | Every AI decision includes human-readable explanation |
+| **Human Oversight** | Human-in-the-Loop agent for all high-risk decisions |
+| **Data Governance** | Training data documentation, bias testing, data quality metrics |
+| **Technical Documentation** | Auto-generated model cards for every AI model/agent |
+| **Accuracy & Robustness** | Continuous performance monitoring, adversarial testing |
+| **Bias Monitoring** | Demographic fairness analysis across age, sex, race, ethnicity, zip code |
+| **Incident Reporting** | Automated serious incident detection and reporting workflow |
+| **Conformity Assessment** | Self-assessment (limited risk) or notified body assessment (high risk) |
+| **Post-Market Monitoring** | Continuous monitoring plan auto-executed for all deployed models |
+
+#### AI Model Governance Dashboard
+
+| Metric | Monitoring | Alert Threshold |
+|--------|-----------|----------------|
+| **Model Accuracy** | Real-time inference tracking | < 90% accuracy triggers review |
+| **Model Drift** | Daily statistical comparison vs baseline | > 5% distribution shift |
+| **Prediction Bias** | Per-demographic performance breakdown | > 3% fairness gap |
+| **Hallucination Rate** | LLM output fact-checking against source | > 2% hallucination rate |
+| **Confidence Distribution** | Per-agent confidence score analysis | > 20% low-confidence outputs |
+| **Human Override Rate** | How often clinicians override AI | > 30% override triggers retraining |
+| **Latency** | Inference time per agent | > 2s mean latency |
+| **Data Quality** | Input completeness and validity | < 95% data quality score |
+
+### 16.5 Security Architecture (Zero Trust)
+
+#### Zero Trust Implementation
+
+| Principle | Implementation |
 |-----------|---------------|
-| **Access Controls** | Unique user IDs, emergency access procedures, automatic logoff, encryption |
-| **Audit Controls** | All PHI access logged with user, timestamp, resource, action |
-| **Integrity Controls** | Data validation, checksums, tamper-evident logging |
-| **Transmission Security** | End-to-end encryption, TLS everywhere, VPN for admin |
-| **BAA Compliance** | Business Associate Agreement support per tenant |
+| **Never Trust, Always Verify** | Every request authenticated and authorized, even internal service-to-service |
+| **Least Privilege** | Agents receive only minimum required PHI and permissions |
+| **Microsegmentation** | Kubernetes network policies isolate each service |
+| **Continuous Verification** | Token validation on every request, session timeout enforcement |
+| **Assume Breach** | Encrypted data at rest/transit, lateral movement prevention |
 
-### Agent-Specific Security
+#### Security Controls Matrix
 
-| Control | Description |
-|---------|------------|
-| **Agent Audit Trail** | Every agent decision logged with inputs, outputs, confidence, rationale |
-| **Confidence Gating** | Outputs below threshold require human review |
-| **PHI Minimization** | Agents receive only the minimum PHI needed for their task |
-| **Policy Enforcement** | All agent actions pass through policy engine before execution |
-| **Human-in-the-Loop** | Critical healthcare decisions require clinician approval |
+| Control | Implementation | Compliance Mapping |
+|---------|---------------|-------------------|
+| **Encryption at Rest** | AES-256 for all databases, object storage, backups | HIPAA §164.312(a)(2)(iv), NIST SC-28 |
+| **Encryption in Transit** | TLS 1.3 for all network communication, mTLS for service mesh | HIPAA §164.312(e)(1), NIST SC-8 |
+| **Authentication** | OAuth2/OIDC via Keycloak, MFA required, biometric optional | HIPAA §164.312(d), NIST IA-2 |
+| **Authorization** | RBAC + ABAC with tenant-scoped permissions | HIPAA §164.312(a)(1), NIST AC-3 |
+| **Secret Management** | HashiCorp Vault for all secrets, keys, certificates, auto-rotation | NIST SC-12, SC-17 |
+| **Audit Logging** | Immutable append-only audit log (write-once storage) | HIPAA §164.312(b), NIST AU-3 |
+| **Network Security** | K8s network policies, pod security standards, WAF, DDoS protection | NIST SC-7, SC-5 |
+| **Vulnerability Scanning** | Automated container + dependency scanning in CI, weekly pen tests | NIST RA-5, SI-2 |
+| **Intrusion Detection** | AI-powered threat detection agent, anomaly-based IDS | NIST SI-4, IR-4 |
+| **Data Loss Prevention** | PHI boundary enforcement, egress filtering, clipboard protection | NIST SC-7, MP-5 |
+| **Disaster Recovery** | Automated failover, encrypted backups, RPO < 1 hour, RTO < 4 hours | HIPAA §164.308(a)(7), NIST CP-10 |
+| **Incident Response** | Automated incident detection, 1-hour escalation, HIPAA breach workflow | HIPAA §164.308(a)(6), NIST IR-1 |
+| **Federated Learning** | Train models across organizations without sharing raw data | Privacy-preserving AI |
+| **Homomorphic Encryption** | Compute on encrypted PHI without decrypting (for select analytics) | Advanced PHI protection |
+
+### 16.6 Consent Management Platform
+
+```python
+class ConsentManager:
+    """Granular patient consent management — supports all regulations"""
+
+    consent_types = {
+        "treatment": "Consent to use data for direct care",
+        "ai_processing": "Consent for AI-powered analysis of health data",
+        "research": "Consent for de-identified data use in research",
+        "data_sharing": "Consent to share data with specific organizations",
+        "genetic": "Specific consent for genetic/genomic data processing",
+        "substance_abuse": "42 CFR Part 2 consent for substance abuse records",
+        "mental_health": "Consent for mental health record sharing",
+        "marketing": "Consent for health-related marketing communications",
+        "third_party_ai": "Consent for data processing by external AI providers",
+    }
+
+    async def check_consent(self, patient_id: str, operation: str, data_types: List[str]) -> ConsentResult:
+        """Called before EVERY data operation"""
+        consents = await self.get_active_consents(patient_id)
+        required = self.determine_required_consents(operation, data_types)
+
+        missing = [r for r in required if r not in consents]
+        if missing:
+            return ConsentResult(
+                allowed=False,
+                missing_consents=missing,
+                action="block_and_request_consent"
+            )
+        return ConsentResult(allowed=True)
+```
 
 ---
 
@@ -1666,53 +2500,73 @@ These components form the **technology moat** and remain exclusive property of E
 
 ## 20. 5-Year Product Roadmap
 
-### Year 1 — Platform Foundation + RPM (A)
+### Year 1 — Platform Foundation + RPM + Compliance Core (Phase A)
 
 **Build the HealthOS core platform and deploy with first client**
 
 - Core platform: agent orchestration, data ingestion, FHIR integration, security
-- 10-agent MVP: RPM monitoring → anomaly detection → escalation
-- First product: **HealthOS RPM**
+- 10-agent RPM MVP: monitoring → anomaly detection → escalation
+- Compliance & Governance module (built into core from day 1)
+- PHI/PII guardrails operational on every data path
+- Continuous compliance monitoring engine (HIPAA, SOC2)
+- FDA SaMD classification for all clinical agents
+- Edge computing foundation for rural/offline scenarios
+- Products: **HealthOS RPM** + **HealthOS Compliance**
 - Target: 1–3 healthcare clients
 - Revenue target: $500K – $1M
 
-### Year 2 — Telehealth Integration (D)
+### Year 2 — Telehealth + Ambient AI + RCM + Pharmacy + Labs (Phase D)
 
-**Expand into complete digital care platform**
+**Expand into complete digital care platform with revenue-generating modules**
 
-- 6 new telehealth agents: visit preparation, clinical notes, follow-up, medication review
-- Product: **HealthOS Telehealth**
+- 6 telehealth agents + 5 ambient AI documentation agents
+- 5 RCM agents (charge capture, claims, denial management)
+- 6 pharmacy agents + 4 lab agents
+- Lab report & imaging ingestion pipelines (HL7 ORU, DICOM, PDF/OCR)
+- Patient engagement & multilingual communication agents
+- SMART on FHIR app platform foundation
 - RAG-powered clinical knowledge base
-- Patient portal and communication automation
-- Target: 5–8 customers, ARR: $2M – $3M
+- Products: **HealthOS Telehealth** + **HealthOS Ambient AI** + **HealthOS RCM** + **HealthOS Pharmacy** + **HealthOS Labs**
+- Target: 5–10 customers, ARR: $3M – $5M
 
-### Year 3 — Healthcare Operations Automation (C)
+### Year 3 — Operations Automation + Imaging + Mental Health + SDOH (Phase C)
 
-**Introduce agentic workflow automation**
+**Introduce agentic workflow automation and expand clinical modules**
 
-- 6 new operations agents: prior auth, insurance, referrals, billing, scheduling
-- Product: **HealthOS Ops**
-- Temporal workflow engine for complex multi-step processes
-- Target: 10–15 customers, ARR: $5M – $6M
+- 6 operations agents: prior auth, insurance, referrals, billing, scheduling
+- 5 imaging/radiology agents with AI image analysis (X-ray, CT)
+- 4 mental health agents (screening, crisis detection, behavioral health)
+- 7 patient engagement + SDOH agents
+- TEFCA compliance and national health information network integration
+- EU AI Act compliance framework
+- Products: **HealthOS Ops** + **HealthOS Imaging** + **HealthOS Mental Health** + **HealthOS Patient Engagement**
+- Target: 15–25 customers, ARR: $8M – $12M
 
-### Year 4 — Population Health Analytics (B)
+### Year 4 — Population Health + Digital Twin + Advanced Analytics (Phase B)
 
-**Transform into intelligence platform**
+**Transform into intelligence and simulation platform**
 
-- 6 analytics agents: cohort analysis, readmission risk, population health, executive insights
-- Product: **HealthOS Intelligence**
-- Advanced dashboards and reporting
-- Target: 20–25 customers, ARR: $10M – $12M
+- 6 analytics agents: cohort analysis, readmission risk, population health
+- 4 digital twin agents: patient simulation, what-if scenarios, trajectory prediction
+- Advanced AI governance with EU MDR compliance
+- Federated learning across multi-tenant deployments
+- Homomorphic encryption for privacy-preserving analytics
+- Products: **HealthOS Intelligence** + **HealthOS Digital Twin**
+- Target: 30–40 customers, ARR: $15M – $20M
 
-### Year 5 — Autonomous Healthcare Operations
+### Year 5 — Autonomous Healthcare + Genomics + AI Marketplace (Phase Full)
 
-**Full agentic healthcare operations platform**
+**Full autonomous healthcare operations platform and ecosystem**
 
-- Proactive care alerts and automated interventions
-- Workflow orchestration across departments
-- Healthcare AI marketplace for third-party modules
-- Target: 40–50 enterprise customers, ARR: $20M+
-- Potential valuation: $150M+ (at 8x ARR)
+- 5 research & genomics agents (clinical trials, pharmacogenomics, precision medicine)
+- Healthcare AI marketplace — third parties build on HealthOS
+- Developer SDK and API ecosystem
+- Autonomous healthcare workflow orchestration
+- Full FDA SaMD clearance for select clinical agents
+- Global expansion (EU, Middle East, Asia-Pacific)
+- Products: **HealthOS Research** + **HealthOS Genomics** + **HealthOS Marketplace**
+- Target: 50–75 enterprise customers, ARR: $25M–$40M+
+- Potential valuation: $200M–$400M (at 8–10x ARR)
 
 ---
 
@@ -1723,7 +2577,32 @@ Eminence HealthOS is not a telehealth app or RPM tool. It is a **multi-agent hea
 **Platform:** Eminence HealthOS
 **Company:** Eminence Tech Solutions
 **Category:** Agentic AI Infrastructure for Digital Health Platforms
-**Moat:** 30-agent orchestration architecture with 5-layer operational design
-**Business Model:** Enterprise SaaS licensing with modular product packaging
+
+### By the Numbers
+
+| Metric | Value |
+|--------|-------|
+| **Total Agents** | 79 across 13 modules |
+| **Agent Layers** | 5 (Sensing → Interpretation → Decisioning → Action → Measurement) |
+| **Platform Control Agents** | 6 (core IP — never transfer) |
+| **Compliance Frameworks** | 18+ (HIPAA, HITRUST, SOC2, FDA SaMD, EU AI Act, NIST, GDPR, etc.) |
+| **PHI Protection Points** | 13 enforcement points across every data path |
+| **Supported Imaging Modalities** | 8 (X-ray, CT, MRI, US, Mammography, Retinal, ECG, Pathology) |
+| **Lab Integration Formats** | 6 (HL7 ORU, FHIR, LIS, PDF/OCR, Patient Upload, Genomic) |
+| **LLM Providers Supported** | 3+ (Local/Ollama, Claude, OpenAI — extensible) |
+| **Product Modules** | 13 licensable modules |
+| **Year 5 Target ARR** | $25M–$40M+ |
+| **Year 5 Target Valuation** | $200M–$400M |
+
+### Core Moats
+
+1. **79-agent orchestration architecture** with 5-layer operational design
+2. **Confidence-gated policy engine** — every AI action passes through compliance before execution
+3. **Continuous compliance monitoring** — 18+ regulatory frameworks tracked in real-time
+4. **PHI guardrails on every data path** — 13 enforcement points, zero-trust architecture
+5. **FDA SaMD-ready architecture** — predetermined change control plan built in
+6. **Multi-provider LLM abstraction** — no vendor lock-in, per-tenant configuration
+7. **Medical imaging AI pipeline** — DICOM ingestion through AI analysis to radiologist workflow
+8. **Edge computing** — works offline in rural healthcare settings
 
 The platform is built once and licensed many times — each client builds their digital health business on top of HealthOS while Eminence retains full IP ownership.
