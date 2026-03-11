@@ -78,7 +78,7 @@ HealthOS uses a **30-agent multi-agent architecture** organized across 5 operati
 |---|---|
 | **HealthCare-Agentic-Platform** | Django backend, clinical agents, MCP servers, FHIR APIs, IoT simulator, React clinician dashboard |
 | **Health_Assistant** | A2A protocol, PHI filter/masker, HITL agent, MCP server (TypeScript), classifier/executor agents, observability, audit/agent/observability dashboards, FHIR statistics API, workflow visualization, risk scoring UI |
-| **Inhealth-Capstone-Project** | 25-agent architecture patterns, FHIR PostgreSQL schema, Neo4j knowledge graph, Helm charts, tier-based agent system |
+| **Inhealth-Capstone-Project** | 25-agent architecture patterns, FHIR PostgreSQL schema, Neo4j knowledge graph, Helm charts, tier-based agent system, NL2SQL tool suite, clinical decision support scoring, Kafka event streaming, 20+ frontend components, CI/CD pipeline, production K8s |
 | **InhealthUSA** | Patient portal patterns, EHR schema, IoT vitals submission, billing system, treatment plans |
 | **AI-Healthcare-Embodiment** | AI health assistant patterns, Streamlit UI, clinical decision support flows |
 | **Eminence-HealthOS** | Platform strategy docs, architecture diagrams, business/IP documentation |
@@ -1991,6 +1991,17 @@ tenant_config:
 > - **Analytics (7):** Audit metrics dashboard (query type/status distributions), agent monitoring dashboard (health/success rate/response time), observability dashboard (LangSmith/Langfuse + decision rationale + confidence scores), FHIR statistics API (demographics, top conditions/medications, encounter types, 30-day activity), workflow visualization (3 Mermaid diagram types), HITL risk score visualization (color-coded thresholds)
 > - **Deployment (7):** Docker Compose setup, environment-based configuration
 
+> **Inhealth-Capstone Score Rationale (128/130 — PRIMARY SOURCE):**
+> - **Agent Architecture (20):** 25 agents across 5 tiers with LangGraph supervisor, conditional router, MCPAgent base class, AgentMemory (Redis), 14 LangChain tools, HITL system, multi-LLM factory
+> - **FHIR/HL7 (20):** Full FHIR R4 PostgreSQL schema, HL7v2 message parsing, SMART on FHIR launch context, FHIR query tools
+> - **Database Schema (15):** PostgreSQL (patients, encounters, vitals, risk scores, labs, conditions, medications, agent_decisions, consent_records, care_plans, etc.) + Neo4j knowledge graph (DrugInteraction, Symptom, RiskFactor, GeneticMarker, ClinicalGuideline nodes)
+> - **Frontend (15):** 20+ components — PatientRiskHeatmap, CriticalAlertsBanner, AgentActivityFeed, SystemHealthWidget, VitalsTrendChart, RiskScoreGauge, CarePlanView, AlertHistory, LabResultsPanel, DeviceDataPanel, TierVisualization, AgentConfigPanel, AgentDebugPage, ResearchPage, LiteratureSearchPanel, TrialMatchingPanel, EvidenceSynthesisView
+> - **Security/HIPAA (15):** PHI detector, guardrails, audit logger, JWT auth, RBAC, consent records, rate limiting
+> - **RPM/Vitals (10):** Glucose (trend+meal pattern), cardiac (rhythm+QRS/QTc+ST), activity (steps+sleep+fall detection), temperature (fever+circadian) monitoring agents
+> - **Analytics (10):** Prometheus + 5 Grafana dashboards, population analytics, risk distribution, NL2SQL for ad-hoc clinical queries
+> - **Deployment (10):** Helm charts with HPA/PDB/NetworkPolicies, Docker multi-stage, CI/CD (GitHub Actions: lint, test, security scan, deploy), Locust load testing, E2E test suite
+> - **Additional (not scored):** NL2SQL 3-tier tool suite, 8 clinical decision support scores (CURB-65, NEWS/MEWS, CHA2DS2-VASc, HEART, ESI, Charlson, eGFR/CKD, dose adjustment), Kafka 5-topic event streaming, health literacy adaptation, seed data system, per-environment YAML configs, agent control API, webhook receivers, WebSocket endpoints
+
 ### What ONLY HealthOS Will Have (Not in Any Repo)
 
 | Capability | Description |
@@ -2007,11 +2018,11 @@ tenant_config:
 
 | Repo | Contribution to HealthOS | Percentage |
 |------|------------------------|-----------|
-| **Inhealth-Capstone** | Primary foundation: 25-agent patterns, FHIR schema, Neo4j, multi-tenant, Helm, analytics | ~50% |
-| **HealthCare-Agentic** | Specialty agents (oncology, radiology, coding), physician review, clinical document pipeline | ~15% |
-| **InhealthUSA** | Production EHR schema (30+ models), enterprise auth (7 methods, MFA/TOTP, CAC), IoT REST API, two-stage vital alerts (Email/SMS/WhatsApp), billing/payments, 5-role RBAC, AI treatment plans, notification preferences | ~15% |
+| **Inhealth-Capstone** | Primary foundation: 25-agent patterns, FHIR schema, Neo4j knowledge graph, multi-tenant, Helm/K8s (HPA, PDB, NetworkPolicies), NL2SQL tool suite, clinical decision support (CURB-65, NEWS, CHA2DS2-VASc, HEART, ESI), Kafka 5-topic event streaming, 20+ frontend components (risk heatmap, vitals trending, care plan, agent debug), CI/CD pipeline, load testing, research UI, rate limiting, consent tracking, health literacy adaptation, seed data | ~60% |
+| **HealthCare-Agentic** | Specialty agents (oncology, radiology, coding), physician review, clinical document pipeline | ~10% |
+| **InhealthUSA** | Production EHR schema (30+ models), enterprise auth (7 methods, MFA/TOTP, CAC), IoT REST API, two-stage vital alerts (Email/SMS/WhatsApp), billing/payments, 5-role RBAC, AI treatment plans, notification preferences | ~10% |
 | **AI-Embodiment** | Safety governance, fairness analysis, what-if simulator, policy engine, phenotyping | ~10% |
-| **Health_Assistant** | NL2SQL, PHI masking (4 levels), toxicity filter, A2A protocol, HITL approval, FHIR browser, audit metrics dashboard, agent monitoring dashboard, observability dashboard (LangSmith/Langfuse), FHIR statistics API (demographics/clinical analytics), workflow visualization (Mermaid), HITL risk scoring UI | ~10% |
+| **Health_Assistant** | NL2SQL chat interface (user-facing), PHI masking (4 levels), toxicity filter, A2A protocol, HITL approval, FHIR browser, audit metrics dashboard, agent monitoring dashboard, observability dashboard (LangSmith/Langfuse), FHIR statistics API, workflow visualization (Mermaid), HITL risk scoring UI | ~10% |
 
 ---
 
@@ -2899,9 +2910,9 @@ The platform is built once and licensed many times — each client builds their 
 
 After deep analysis of all 5 healthcare repositories, here is the complete feature matrix showing what each repo contributes and what gets imported into HealthOS:
 
-### 1. InHealth-Capstone-Project (80% Reusable — PRIMARY SOURCE)
+### 1. InHealth-Capstone-Project (85% Reusable — PRIMARY SOURCE)
 
-**Status**: Most complete implementation. 25 agents across 5 tiers with production-ready LangGraph orchestration.
+**Status**: Most complete implementation. 25 agents across 5 tiers with production-ready LangGraph orchestration, NL2SQL clinical query tools, clinical decision support scoring (CURB-65, NEWS, CHA2DS2-VASc, HEART, ESI), Neo4j knowledge graph, Kafka event streaming, 20+ frontend components, CI/CD pipeline, and production K8s infrastructure.
 
 | Feature | Files | Reusability | Import Priority |
 |---------|-------|-------------|-----------------|
@@ -2924,6 +2935,36 @@ After deep analysis of all 5 healthcare repositories, here is the complete featu
 | **Frontend Components** | `frontend/` | Adapt — AgentStatusGrid, AgentExecutionLog, PatientTimeline, clinical types | P2 |
 | **Multi-LLM Factory** | `supervisor.py:_build_llm()` | Direct import — Ollama → OpenAI → Anthropic fallback chain with Langfuse callbacks | P0 |
 | **Telemetry** | `agents/telemetry.py` | Direct import — OpenTelemetry integration for agent tracing | P1 |
+| **NL2SQL Tool Suite** | `agents/tools/nl2sql_tool.py` + `agents/base/tools.py` (lines 402-433) | Direct import — 3-tier NL2SQL (generate → validate → execute), forbidden pattern blocking (DROP/DELETE/TRUNCATE/ALTER/INSERT/UPDATE), patient-scoped queries, integrated into QA Agent | P0 — NEW for HealthOS |
+| **Clinical Decision Support** | Embedded in Tier 3-4 agents | Direct import — CURB-65, NEWS/MEWS, CHA2DS2-VASc, HEART Score, ESI, Charlson Comorbidity Index, eGFR/CKD staging, dose adjustment for renal/hepatic | P0 — NEW for HealthOS |
+| **Neo4j Knowledge Graph Schema** | `database/neo4j_schema.cypher` | Direct import — ClinicalGuideline, DrugInteraction, Symptom, RiskFactor, GeneticMarker nodes; INTERACTS_WITH, INDICATES, INCREASES_RISK, TREATED_BY, CONTRAINDICATED_FOR edges | P1 — NEW for HealthOS |
+| **Agent Control API** | `api/routes/agents.py` | Direct import — start/stop/status/configure agents via REST, runtime agent management | P1 — NEW for HealthOS |
+| **Webhook Receivers** | `api/routes/webhooks.py` | Direct import — external integration webhook endpoints | P1 — NEW for HealthOS |
+| **WebSocket Endpoints** | `api/routes/websocket.py` | Direct import — real-time data streaming for dashboards | P1 — NEW for HealthOS |
+| **Patient Risk Heatmap** | `frontend/src/components/dashboard/PatientRiskHeatmap.tsx` | Direct import — population-level risk distribution visualization | P1 — NEW for HealthOS |
+| **Critical Alerts Banner** | `frontend/src/components/dashboard/CriticalAlertsBanner.tsx` | Direct import — real-time critical alerts dashboard banner | P1 — NEW for HealthOS |
+| **Agent Activity Feed** | `frontend/src/components/dashboard/AgentActivityFeed.tsx` | Direct import — live agent action stream | P1 — NEW for HealthOS |
+| **System Health Widget** | `frontend/src/components/dashboard/SystemHealthWidget.tsx` | Direct import — system health status widget | P1 — NEW for HealthOS |
+| **VitalsTrendChart** | `frontend/src/components/patient/VitalsTrendChart.tsx` | Direct import — interactive vitals trending with annotations | P1 — NEW for HealthOS |
+| **RiskScoreGauge** | `frontend/src/components/patient/RiskScoreGauge.tsx` | Direct import — visual risk score gauge display | P1 — NEW for HealthOS |
+| **CarePlanView** | `frontend/src/components/patient/CarePlanView.tsx` | Direct import — care plan display with progress tracking | P1 — NEW for HealthOS |
+| **AlertHistory** | `frontend/src/components/patient/AlertHistory.tsx` | Direct import — patient alert history panel | P1 — NEW for HealthOS |
+| **LabResultsPanel** | `frontend/src/components/patient/LabResultsPanel.tsx` | Direct import — lab results display panel | P1 — NEW for HealthOS |
+| **DeviceDataPanel** | `frontend/src/components/patient/DeviceDataPanel.tsx` | Direct import — wearable/device data display | P1 — NEW for HealthOS |
+| **TierVisualization** | `frontend/src/components/agents/TierVisualization.tsx` | Direct import — 5-tier agent pipeline visualization | P1 — NEW for HealthOS |
+| **AgentConfigPanel** | `frontend/src/components/agents/AgentConfigPanel.tsx` | Direct import — runtime agent configuration UI | P1 — NEW for HealthOS |
+| **Agent Debug Page** | `frontend/src/pages/AgentDebugPage.tsx` | Direct import — interactive agent testing/debugging interface | P2 — NEW for HealthOS |
+| **Research UI** | `frontend/src/components/research/` (3 components) | Direct import — LiteratureSearchPanel, TrialMatchingPanel, EvidenceSynthesisView | P1 — NEW for HealthOS |
+| **CI/CD Pipeline** | `.github/workflows/ci.yml` | Direct import — linting, tests, security scanning (bandit/safety), Docker build, Helm validation, staging deploy | P1 — NEW for HealthOS |
+| **Load Testing** | `tests/load/locustfile.py` | Direct import — Locust-based load testing with clinical workflow scenarios | P2 — NEW for HealthOS |
+| **E2E Test Suite** | `tests/e2e/` | Direct import — patient monitoring flow, emergency escalation, research pipeline E2E tests | P1 — NEW for HealthOS |
+| **Production K8s** | `helm/templates/` (hpa, pdb, networkpolicy) | Direct import — HorizontalPodAutoscaler, PodDisruptionBudget, NetworkPolicies | P1 — NEW for HealthOS |
+| **Kafka Event Streaming** | Agent code + config | Direct import — 5 topics (vitals, alerts, agent-decisions, audit-events, notifications) | P1 — NEW for HealthOS |
+| **Seed Data System** | `database/seeds/` | Direct import — synthetic patient/vitals/encounter generation | P2 — NEW for HealthOS |
+| **Consent Records** | `database/schema.sql` (consent_records table) | Direct import — HIPAA patient consent tracking | P0 — NEW for HealthOS |
+| **Rate Limiting** | `api/middleware/rate_limit.py` | Direct import — per-endpoint and per-user rate limiting | P1 — NEW for HealthOS |
+| **Health Literacy Adaptation** | `agents/tier5_action/patient_notify.py` | Direct import — reading-level adapted patient notifications, CLIA critical results | P1 — NEW for HealthOS |
+| **Configuration Management** | `config/` (4 YAML files) | Direct import — per-environment configs (default, dev, prod, test), per-agent thresholds | P1 — NEW for HealthOS |
 
 ### 2. HealthCare-Agentic-Platform (70% Reusable — SPECIALTY AGENTS)
 
@@ -3073,20 +3114,42 @@ These are features found in your repos that are NOT yet in the HealthOS plan:
 | 34 | **FHIR Statistics API** (patient demographics analytics: gender distribution, age group breakdown; top 10 conditions/medications by prevalence; encounter types; observation categories; recent 30-day activity) | Health_Assistant | High — population insights |
 | 35 | **Workflow Visualization** (3 Mermaid diagram types: LangGraph query processing flow, agent sequence diagrams, decision tree routing logic — with fullscreen mode) | Health_Assistant | Medium — developer/admin tool |
 | 36 | **HITL Risk Score Visualization** (0-100% risk score with color-coded thresholds: red ≥70%, yellow 40-69%, green <40%; risk assessment text display; approval history table) | Health_Assistant | High — clinical safety UX |
+| 37 | **NLP-to-SQL Clinical Query Interface** (dual-mode: user-facing chat for clinicians to query patient data in natural language + agent-internal tool; query classification READ/WRITE/UNSAFE, HITL approval for writes, PHI masking on results, SQL injection prevention, patient-scoped queries) | Health_Assistant + Inhealth-Capstone | Critical — clinician productivity |
+| 38 | **Clinical Decision Support Scoring** (CURB-65 pneumonia, NEWS/MEWS early warning, CHA2DS2-VASc stroke risk, HEART Score chest pain, ESI triage — embedded in Tier 3-4 agents) | Inhealth-Capstone | Critical — evidence-based care |
+| 39 | **Neo4j Clinical Knowledge Graph** (drug interaction graph, symptom-condition relationships, risk factor linkages, genetic marker nodes, treatment mappings, contraindication edges) | Inhealth-Capstone | High — clinical reasoning |
+| 40 | **Agent Control API** (REST endpoints to start/stop/status/configure agents at runtime, webhook receivers for external integrations, WebSocket endpoints for real-time streaming) | Inhealth-Capstone | High — operational control |
+| 41 | **Agent Debug Page** (interactive agent testing/debugging interface with tier visualization, agent config panel, execution log) | Inhealth-Capstone | Medium — developer tooling |
+| 42 | **Patient Risk Heatmap** (population-level risk distribution visualization, critical alerts banner, system health widget) | Inhealth-Capstone | High — population health |
+| 43 | **Clinical Viewer Components** (VitalsTrendChart with annotations, RiskScoreGauge, CarePlanView with progress, AlertHistory, LabResultsPanel, DeviceDataPanel — 8 patient-facing components) | Inhealth-Capstone | High — clinician UX |
+| 44 | **Research UI Components** (LiteratureSearchPanel for PubMed, TrialMatchingPanel for ClinicalTrials.gov, EvidenceSynthesisView — 3 research components) | Inhealth-Capstone | High — clinical research |
+| 45 | **CI/CD Pipeline** (GitHub Actions: linting, unit/integration/E2E tests, security scanning with bandit/safety, Docker build, Helm validation, staging deploy) | Inhealth-Capstone | High — DevOps maturity |
+| 46 | **Load Testing Infrastructure** (Locust-based load testing with clinical workflow scenarios, E2E test suite for monitoring/escalation/research flows) | Inhealth-Capstone | Medium — production readiness |
+| 47 | **Production K8s Features** (HorizontalPodAutoscaler, PodDisruptionBudget, NetworkPolicies, production docker-compose) | Inhealth-Capstone | High — enterprise deployment |
+| 48 | **Seed Data System** (synthetic patient/vitals/encounter generation for development and demos) | Inhealth-Capstone | Medium — developer experience |
+| 49 | **Kafka Event Streaming** (5 topics: vitals, alerts, agent-decisions, audit-events, notifications — agent-to-agent messaging, vital streaming, audit events) | Inhealth-Capstone | High — event architecture |
+| 50 | **Health Literacy Adaptation** (patient notifications adapted to reading level, plain language generation, channel preference awareness, CLIA critical result notification) | Inhealth-Capstone | High — patient engagement |
+| 51 | **Consent Records & HIPAA Tracking** (patient consent management table, data access consent, treatment consent tracking) | Inhealth-Capstone | Critical — HIPAA compliance |
+| 52 | **Rate Limiting Middleware** (per-endpoint and per-user API rate limiting, request/response logging middleware) | Inhealth-Capstone | High — API security |
 
 ### Import Execution Order
 
 ```
-Phase 1 (Core + EHR Foundation — Week 1-2):
+Phase 1 (Core + EHR Foundation + Infrastructure — Week 1-2):
 ├── InHealth-Capstone → LangGraph orchestrator, 25 agents, tools, HITL, memory, MCP server
+├── InHealth-Capstone → NL2SQL tool suite (3-tier: generate → validate → execute)
+├── InHealth-Capstone → Kafka event streaming (5 topics), Redis caching, rate limiting
+├── InHealth-Capstone → Neo4j knowledge graph schema (drug interactions, symptom-condition, risk factors)
+├── InHealth-Capstone → Consent records table, configuration management (YAML per-env)
 ├── InhealthUSA → Production EHR schema (30+ models), 5-role RBAC, enterprise auth (MFA/TOTP, CAC, OIDC, SAML), password validators, session security
 ├── HealthCare-Agentic → Clinical models (ClinicalAssessment, PhysicianReview, EHROrder), diagnostician, coding agent
 └── InhealthUSA → Billing/BillingItem/Payment/Insurance models, internal messaging
 
-Phase 2 (Specialty + Safety + IoT — Week 3-4):
+Phase 2 (Specialty + Safety + IoT + CDS — Week 3-4):
+├── InHealth-Capstone → Clinical decision support (CURB-65, NEWS/MEWS, CHA2DS2-VASc, HEART, ESI, Charlson)
+├── InHealth-Capstone → Agent control API (start/stop/configure), webhook receivers, WebSocket endpoints
 ├── HealthCare-Agentic → Oncology, radiology, cardiology, pathology, GI agents
 ├── AI-Healthcare-Embodiment → Governance rules engine, safety agent, fairness analytics
-├── Health_Assistant → Toxicity filter, A2A protocol, PHI filter
+├── Health_Assistant → Toxicity filter, A2A protocol, PHI filter, NLP-to-SQL chat interface (user-facing)
 ├── InhealthUSA → Two-stage vital alerts, IoT REST API (v1 DRF + function views), IoT data processor
 └── InhealthUSA → Multi-channel notifications (Email/SMS/WhatsApp/Dashboard), notification preferences, DeviceAlertRule
 
@@ -3097,9 +3160,16 @@ Phase 3 (Clinical Workflow + AI + Observability — Week 5-6):
 ├── InhealthUSA → AI treatment plan pipeline (Ollama → doctor review → patient publish → acknowledge)
 ├── Health_Assistant → FHIR browser, chat interface, observability traces API
 ├── Health_Assistant → Audit metrics API, agent stats API, FHIR statistics API
-└── Health_Assistant → Observability dashboard (LangSmith/Langfuse), agent monitoring dashboard
+├── Health_Assistant → Observability dashboard (LangSmith/Langfuse), agent monitoring dashboard
+├── InHealth-Capstone → Health literacy adaptation for patient notifications
+└── InHealth-Capstone → Seed data system (synthetic patients/vitals/encounters)
 
-Phase 4 (Frontend + Analytics + Polish — Week 7-8):
+Phase 4 (Frontend + Analytics + DevOps + Polish — Week 7-8):
+├── InHealth-Capstone → Patient Risk Heatmap, Critical Alerts Banner, Agent Activity Feed, System Health Widget
+├── InHealth-Capstone → VitalsTrendChart, RiskScoreGauge, CarePlanView, AlertHistory, LabResultsPanel, DeviceDataPanel
+├── InHealth-Capstone → TierVisualization, AgentConfigPanel, Agent Debug Page
+├── InHealth-Capstone → Research UI (LiteratureSearch, TrialMatching, EvidenceSynthesis)
+├── InHealth-Capstone → CI/CD pipeline, E2E tests, load testing (Locust), production K8s (HPA, PDB, NetworkPolicies)
 ├── HealthCare-Agentic → Clinician dashboard components
 ├── AI-Healthcare-Embodiment → Fairness, governance, audit, workflow dashboards
 ├── Health_Assistant → HITL approval UI with risk score visualization, WebSocket hooks
@@ -3114,7 +3184,7 @@ Phase 4 (Frontend + Analytics + Polish — Week 7-8):
 |----------|--------------|-------------|--------|
 | AI Agents | 79 | 95 (+16) | +Diagnostician, Oncology, Coding, Radiology, Cardiology, Pathology, GI, Phenotyping V1/V2, Safety, Notes/Imaging, Retrieval, Toxicity, Classifier, SQL, LLM, AI Treatment Plan Generator |
 | Clinical Models | ~20 | ~55 (+35) | +InhealthUSA EHR (30+ models: Patient, Provider, Nurse, OfficeAdmin, Encounter, VitalSign, Diagnosis, Prescription, Allergy, MedicalHistory, SocialHistory, FamilyHistory, LabTest, Billing, BillingItem, Payment, Insurance, Device, Notification, NotificationPrefs, VitalSignAlertResponse, AIProposedTreatmentPlan, DoctorTreatmentPlan, APIKey, AuthConfig, DeviceAPIKey, DeviceDataReading, DeviceActivityLog, DeviceAlertRule) + HealthCare-Agentic (ClinicalAssessment, PhysicianReview, EHROrder, ClinicalDocument) + AI-Embodiment (GovernanceRule, ComplianceReport) |
-| Tools | ~10 | 24 (+14) | +Drug interactions, NL2SQL, PubMed, ClinicalTrials.gov, geospatial, Whisper, risk scoring, etc. |
+| Tools | ~10 | 26 (+16) | +Drug interactions, NL2SQL (3-tier tool suite + user-facing chat), PubMed, ClinicalTrials.gov, geospatial, Whisper, risk scoring, etc. |
 | Imaging Models | 50+ | 50+ (enhanced) | +Radiology pattern databases (X-ray, CT) with ICD-10 mapping |
 | Notification Channels | 3 | 5 (+2) | +WhatsApp (InhealthUSA Twilio), In-App Dashboard (InhealthUSA Notification model) |
 | Auth Features | Basic | Enterprise (7 methods) | +MFA/TOTP with QR+backup codes, CAC/PKI, OIDC (Azure AD/Okta/Cognito), SAML 2.0, session security middleware, 4 password validators, account lockout, AuthenticationConfig admin model |
@@ -3122,9 +3192,15 @@ Phase 4 (Frontend + Analytics + Polish — Week 7-8):
 | IoT/RPM | Basic | Production | +IoT REST API v1 (DRF class-based), file processor, DeviceAlertRule, device API key management (from InhealthUSA) |
 | RBAC/Roles | Basic | 5-role system | +Patient, Doctor, Nurse, OfficeAdmin, SystemAdmin with decorator-based permissions (from InhealthUSA) |
 | Analytics | Basic | Advanced | +Fairness subgroup analysis, calibration, what-if simulation, audit metrics dashboard, agent monitoring dashboard (health/success rate/response time), observability dashboard (LangSmith/Langfuse + decision rationale + confidence scores), FHIR statistics API (demographics/clinical analytics), workflow visualization (Mermaid), HITL risk score UI |
-| Compliance | 18 frameworks | 18 + governance engine | +Configurable rules, compliance reports |
+| Clinical Decision Support | None | 8 scoring systems | +CURB-65, NEWS/MEWS, CHA2DS2-VASc, HEART Score, ESI, Charlson Comorbidity, eGFR/CKD, dose adjustment (from Inhealth-Capstone) |
+| Knowledge Graph | None | Neo4j schema | +DrugInteraction, Symptom-Condition, RiskFactor, GeneticMarker, Treatment, Contraindication edges (from Inhealth-Capstone) |
+| Event Streaming | None | Kafka 5-topic | +vitals, alerts, agent-decisions, audit-events, notifications topics (from Inhealth-Capstone) |
+| NLP-to-SQL | None | Dual-mode | +Agent-internal 3-tier tool (Inhealth-Capstone) + user-facing chat with HITL/PHI masking (Health_Assistant) |
+| Compliance | 18 frameworks | 18 + governance engine | +Configurable rules, compliance reports, consent records tracking (from Inhealth-Capstone) |
 | Messaging | None | Full | +Threaded internal messaging with inbox/sent/compose (from InhealthUSA) |
-| Frontend Pages | ~15 | ~50 (+35) | +InhealthUSA (5 role dashboards, patient portal, vitals charts, questionnaires, billing/payment views, IoT mgmt, API key mgmt) + Fairness, Governance, Audit, What-If, Policies, FHIR Browser, etc. |
+| CI/CD & Testing | None | Full pipeline | +GitHub Actions (lint, test, security scan, Docker, Helm), Locust load tests, E2E tests (from Inhealth-Capstone) |
+| Production K8s | Helm charts | Enterprise K8s | +HPA, PDB, NetworkPolicies, production docker-compose (from Inhealth-Capstone) |
+| Frontend Pages | ~15 | ~70 (+55) | +InhealthUSA (5 role dashboards, patient portal, vitals charts, questionnaires, billing/payment views, IoT mgmt, API key mgmt) + Inhealth-Capstone (Risk Heatmap, Alerts Banner, Activity Feed, System Health, VitalsTrend, RiskGauge, CarePlan, AlertHistory, LabResults, DeviceData, TierViz, AgentConfig, Debug Page, Research UI) + Fairness, Governance, Audit, What-If, Policies, FHIR Browser, etc. |
 
 ### Architecture After Import
 
@@ -3133,18 +3209,23 @@ Phase 4 (Frontend + Analytics + Polish — Week 7-8):
 │                     EMINENCE HEALTHOS v2.0                              │
 │                (Post Cross-Repository Import)                           │
 │                                                                        │
-│  95 AI Agents │ 55+ DB Models │ 24 Tools │ 50+ Imaging Models         │
+│  95 AI Agents │ 55+ DB Models │ 26 Tools │ 50+ Imaging Models         │
 │  5 Notification Channels │ 7 Enterprise Auth Methods │ 5-Role RBAC    │
 │  Full Billing/Payments │ IoT REST API │ Fairness Analytics             │
 │  What-If Simulation │ Governance Engine │ FDA SaMD Ready               │
 │  Agent Monitoring │ Observability (LangSmith/Langfuse) │ Workflow Viz  │
+│  NLP-to-SQL (dual-mode) │ 8 CDS Scoring Systems │ Neo4j Knowledge    │
+│  Kafka 5-Topic Streaming │ CI/CD Pipeline │ Production K8s             │
+│  70+ Frontend Pages │ Consent Tracking │ Health Literacy Adaptation   │
 │                                                                        │
 │  Source Code:                                                           │
-│  ├── InHealth-Capstone   (50%) → Core orchestrator + 25 agents         │
-│  ├── HealthCare-Agentic  (15%) → Specialty agents + clinical models    │
-│  ├── InhealthUSA         (15%) → EHR schema + IoT + auth + billing     │
+│  ├── InHealth-Capstone   (60%) → Core orchestrator + 25 agents + NL2SQL│
+│  │   + CDS scoring + Neo4j + Kafka + 20+ UI components + CI/CD + K8s  │
+│  ├── HealthCare-Agentic  (10%) → Specialty agents + clinical models    │
+│  ├── InhealthUSA         (10%) → EHR schema + IoT + auth + billing     │
 │  ├── AI-Embodiment       (10%) → Governance + fairness + what-if       │
-│  └── Health_Assistant    (10%) → A2A + PHI + HITL + FHIR + Analytics  │
+│  └── Health_Assistant    (10%) → A2A + PHI + HITL + NL2SQL chat +     │
+│       FHIR + Analytics dashboards                                     │
 │                                                                        │
 │  New for HealthOS (not in any repo):                                    │
 │  ├── 50+ Specialized Imaging AI Models (MONAI, MedSAM, etc.)          │
