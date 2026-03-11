@@ -1,7 +1,19 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+const PUBLIC_ROUTES = ["/login"];
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isPublic = PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
+
+  if (isPublic) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
