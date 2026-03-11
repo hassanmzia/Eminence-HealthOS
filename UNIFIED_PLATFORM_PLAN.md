@@ -2244,6 +2244,252 @@ qdrant:
 
 ---
 
+## 15.1 Scaling & Elasticity Architecture
+
+HealthOS is designed to **scale out under load and scale in when idle**, keeping costs proportional to actual usage while guaranteeing clinical SLAs (vital alerts < 2s, API p99 < 500ms).
+
+### How the System Grows (Scale-Out)
+
+#### Tier 1 — Kubernetes Horizontal Pod Autoscaler (HPA)
+
+Every stateless workload has an HPA that adds pods when CPU or memory crosses a threshold:
+
+| Workload | Min Replicas | Max Replicas | Scale-Up Trigger | Scale-Down Trigger | Cooldown |
+|---|---|---|---|---|---|
+| **API (FastAPI/Django)** | 5 | 50 | CPU > 60% or Mem > 75% | CPU < 30% for 5 min | 300s |
+| **Agent Runtime** | 3 | 20 | CPU > 70% or Mem > 80% | CPU < 25% for 10 min | 300s |
+| **Celery Workers** | 8 | 60 | CPU > 70% or queue depth > 100 | CPU < 25% for 5 min | 180s |
+| **WebSocket Server** | 4 | 30 | Active connections > 80% capacity | Connections < 20% for 10 min | 300s |
+| **Notification Agent** | 3 | 15 | Queue depth > 50 | Queue empty for 5 min | 120s |
+| **LLM Serving** | 3 | 10 | GPU util > 80% or request queue > 20 | GPU idle > 15 min | 600s |
+
+**Already implemented in Helm charts** (from Inhealth-Capstone):
+- `templates/application/django-deployment.yaml` — HPA with CPU + memory metrics (autoscaling/v2)
+- `templates/application/celery-deployment.yaml` — HPA for Celery workers
+- `production-values.yaml` — production-tuned replica counts (10-50 API, 20-60 Celery)
+- Pod anti-affinity rules spread replicas across nodes for HA
+
+```yaml
+# Example: API HPA (already in Helm templates)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: healthos-api
+  minReplicas: 5
+  maxReplicas: 50
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 75
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60    # React fast to load spikes
+      policies:
+      - type: Percent
+        value: 50                        # Add up to 50% more pods per minute
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300   # Wait 5 min before removing pods
+      policies:
+      - type: Percent
+        value: 25                        # Remove max 25% per 2 minutes
+        periodSeconds: 120
+```
+
+#### Tier 2 — Cluster Node Autoscaler
+
+When HPAs request more pods than existing nodes can fit, the **Cluster Autoscaler** adds nodes:
+
+```
+Pod Pending (insufficient resources)
+  → Cluster Autoscaler detects unschedulable pods
+  → Provisions new node from node pool (2-5 min)
+  → Pods scheduled on new node
+  → When nodes underutilized (<50% for 10 min) → drain and terminate
+```
+
+| Node Pool | Instance Type | Min Nodes | Max Nodes | Purpose |
+|---|---|---|---|---|
+| **app-pool** | 8 vCPU / 32 GB | 3 | 30 | API, agents, Celery workers |
+| **gpu-pool** | A100 GPU | 1 | 5 | LLM inference, imaging agents |
+| **data-pool** | 16 vCPU / 64 GB (SSD) | 3 | 10 | PostgreSQL, Neo4j, Elasticsearch |
+| **monitoring-pool** | 4 vCPU / 16 GB | 2 | 5 | Prometheus, Grafana, Jaeger, Loki |
+
+#### Tier 3 — Data Layer Scaling
+
+| Component | Horizontal Scale | Vertical Scale | Partitioning Strategy |
+|---|---|---|---|
+| **PostgreSQL** | Read replicas (2→6) auto-promoted on primary failure | 8→32 GB RAM, 4→8 vCPU | Monthly table partitioning for vitals, alerts, audit_logs (already in schema) |
+| **Redis** | Sentinel replication (1 master + 2→6 replicas) | Memory resize | Key prefix `{org_id}:cache:*` per tenant |
+| **Kafka** | 3→12 brokers, partition rebalancing | Disk resize (100 GB→1 TB) | 5 topics: vitals, alerts, clinical-events, agent-comms, audit |
+| **Neo4j** | Causal cluster (3→5 read replicas) | RAM resize | Fabric sharding by tenant_id |
+| **Qdrant** | 2→6 replicas, collection sharding | RAM + SSD resize | Shard by embedding collection (clinical, research, patient) |
+| **MinIO** | Distributed mode (4→16 nodes), erasure coding | Disk resize (1→10 TB) | Bucket-per-org: `{org_id}-medical-images`, `{org_id}-documents` |
+| **Elasticsearch** | 3→10 data nodes + index lifecycle management | RAM resize | Index-per-month: `audit-2026-03`, auto-roll + warm/cold tiering |
+
+#### Tier 4 — Celery Task Queue Scaling
+
+```
+                     ┌──────────────────────────────────────────┐
+                     │           RABBITMQ CLUSTER (3 nodes)      │
+                     │                                           │
+                     │  Queues (priority-ordered):               │
+                     │  ├── medical_alerts   (priority: 10)      │
+                     │  ├── high_priority    (priority: 8)       │
+                     │  ├── clinical         (priority: 6)       │
+                     │  ├── notifications    (priority: 5)       │
+                     │  ├── reports          (priority: 3)       │
+                     │  ├── research         (priority: 2)       │
+                     │  └── default          (priority: 1)       │
+                     └───────────┬──────────────────────────┬────┘
+                                 │                          │
+            ┌────────────────────▼──┐          ┌────────────▼────────────┐
+            │  Celery Workers (HPA) │          │  Celery Workers (HPA)   │
+            │  concurrency=4/pod    │          │  concurrency=8/pod      │
+            │  prefetch=1           │          │  prefetch=1             │
+            │  max_tasks=1000/child │          │  max_tasks=200/child    │
+            │  (standard)           │          │  (production)           │
+            └───────────────────────┘          └─────────────────────────┘
+```
+
+- Workers scale 8→60 pods via HPA (CPU > 70%)
+- Each pod runs 4-8 concurrent tasks with `prefetch_multiplier=1` (prevents task hoarding)
+- `max_tasks_per_child=200` (production) prevents memory leaks — worker processes recycle
+- Priority queues ensure `medical_alerts` always get processed first, even under heavy load
+- Celery Beat (singleton) handles scheduled jobs — only 1 replica, no scaling needed
+
+### How the System Shrinks (Scale-In)
+
+#### Automatic Cost Reduction
+
+```
+Load Decreases
+  → HPA detects CPU/memory below threshold
+  → 5-minute stabilization window (prevents flapping)
+  → Removes 25% of pods per 2-minute cycle (gradual)
+  → Pods drain gracefully (finish in-flight requests)
+  → Nodes become underutilized (<50% for 10 min)
+  → Cluster Autoscaler cordons + drains node
+  → Node terminated, cloud billing stops
+```
+
+#### Scale-to-Zero for Non-Critical Workloads
+
+| Workload | Can Scale to Zero? | Minimum Always-On | Wake-Up Trigger |
+|---|---|---|---|
+| API / Agent Runtime | No (always on) | 3 replicas | — |
+| LLM GPU Pods | Yes (nights/weekends) | 0 | Request queue > 0 (KEDA) |
+| Research Agents | Yes | 0 | Scheduled job or manual trigger |
+| Analytics Pipeline | Yes | 0 | Cron schedule or API trigger |
+| Imaging Agent (GPU) | Yes | 0 | Study uploaded to MinIO (event) |
+| Celery Workers | Partial (min 8) | 8 replicas | Queue depth > 0 |
+
+#### KEDA (Kubernetes Event-Driven Autoscaling) for Advanced Scale-to-Zero
+
+```yaml
+# Example: Scale LLM pods based on RabbitMQ queue depth
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: llm-serving-scaler
+spec:
+  scaleTargetRef:
+    name: healthos-llm-serving
+  minReplicaCount: 0          # Scale to zero when idle
+  maxReplicaCount: 10
+  cooldownPeriod: 600         # 10 min before scale-down
+  triggers:
+  - type: rabbitmq
+    metadata:
+      queueName: llm-inference
+      queueLength: "5"        # 1 pod per 5 pending requests
+      host: amqp://rabbitmq:5672
+  - type: prometheus
+    metadata:
+      serverAddress: http://prometheus:9090
+      metricName: gpu_utilization
+      threshold: "80"
+```
+
+### Multi-Tenant Scaling
+
+HealthOS is multi-tenant by design. Each healthcare org gets isolated scaling:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                    SHARED CLUSTER                          │
+│                                                           │
+│  Org A (50 clinics, 200K patients)                        │
+│  ├── Namespace: healthos-org-a                            │
+│  ├── Resource Quota: 100 CPU, 400 GB RAM                  │
+│  ├── DB: Row-level isolation (org_id FK on every table)   │
+│  └── Cache: Key prefix org_a:*                            │
+│                                                           │
+│  Org B (5 clinics, 10K patients)                          │
+│  ├── Namespace: healthos-org-b                            │
+│  ├── Resource Quota: 20 CPU, 80 GB RAM                    │
+│  ├── DB: Same tables, filtered by org_id                  │
+│  └── Cache: Key prefix org_b:*                            │
+│                                                           │
+│  Shared Services (not duplicated per tenant):             │
+│  ├── Kafka cluster (topic partitions per org)             │
+│  ├── Monitoring stack (labels per org)                    │
+│  └── LLM serving pool (request routing by org header)     │
+└──────────────────────────────────────────────────────────┘
+```
+
+- **ResourceQuota** per namespace prevents one tenant from starving others
+- **LimitRange** sets default pod sizes per namespace
+- **NetworkPolicy** isolates tenants (already in Helm charts)
+- Database uses `org_id` foreign key on every table (row-level isolation)
+
+### Capacity Planning Reference
+
+| Scale Tier | Patients | API Pods | Celery Pods | DB Replicas | Kafka Brokers | Est. Cloud Cost/mo |
+|---|---|---|---|---|---|---|
+| **Starter** (1 clinic) | 1K | 3 | 4 | 1 primary | 1 | ~$2K |
+| **Growth** (10 clinics) | 20K | 8 | 12 | 1 primary + 2 read | 3 | ~$8K |
+| **Enterprise** (50 clinics) | 200K | 20 | 30 | 1 primary + 3 read | 3 | ~$25K |
+| **Large Health System** (500 clinics) | 2M | 50 | 60 | 1 primary + 6 read | 6 | ~$80K |
+| **National Network** | 10M+ | 50+ (multi-region) | 60+ | Sharded (Citus/Aurora) | 12+ | ~$250K+ |
+
+### Scaling Guardrails
+
+| Guardrail | Purpose | Implementation |
+|---|---|---|
+| **PodDisruptionBudget** | Prevent scale-down from killing too many pods at once | `minAvailable: 60%` on API, agent, Celery deployments |
+| **Pod Anti-Affinity** | Spread replicas across failure domains | `preferredDuringSchedulingIgnoredDuringExecution` on hostname topology |
+| **Resource Requests/Limits** | Prevent OOM kills and noisy neighbors | Every pod has CPU + memory requests AND limits |
+| **Priority Classes** | Critical workloads survive node pressure | `system-critical` for vital alerts, `high-priority` for API, `low-priority` for analytics |
+| **Rate Limiting** | Prevent API abuse from triggering unnecessary scaling | Kong/Nginx rate limits (100 req/s default, configurable per tenant) |
+| **Circuit Breakers** | Prevent cascading failures during scale events | Retry with exponential backoff on inter-service calls |
+
+### Observability for Scaling Decisions
+
+All scaling events are monitored via the existing Prometheus + Grafana stack:
+
+| Metric | Alert Threshold | Response |
+|---|---|---|
+| `kube_hpa_status_current_replicas` vs `maxReplicas` | HPA at 90% max | Warn ops: approaching ceiling, increase maxReplicas |
+| `kube_pod_status_phase{phase="Pending"}` > 0 for 5m | Pods can't schedule | Cluster Autoscaler not keeping up — check node pool limits |
+| `container_memory_working_set_bytes` / limit > 90% | Near OOM | Increase memory limits or add replicas |
+| `celery_queue_length{queue="medical_alerts"}` > 10 | Alert processing delayed | Scale Celery workers immediately (patient safety) |
+| `pg_stat_replication_lag_bytes` > 100MB | Read replicas falling behind | Add replica or investigate query load |
+| `kafka_consumer_group_lag` > 10K | Event processing backlog | Scale consumer pods |
+
+---
+
 ## 16. Comprehensive Security, Compliance & Regulatory Framework
 
 ### 16.1 Healthcare Compliance Standards Matrix
