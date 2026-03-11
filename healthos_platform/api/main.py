@@ -26,8 +26,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     settings = get_settings()
     logger.info(
         "healthos.startup",
-        env=settings.app_env,
-        debug=settings.app_debug,
+        env=settings.environment,
+        debug=settings.debug,
     )
 
     # Register all agents on startup
@@ -68,7 +68,7 @@ def create_app() -> FastAPI:
     # Middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins,
+        allow_origins=settings.cors_origins_list,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -90,7 +90,7 @@ def create_app() -> FastAPI:
         return {
             "status": "healthy",
             "version": "0.1.0",
-            "environment": settings.app_env,
+            "environment": settings.environment,
             "platform": "Eminence HealthOS",
         }
 
