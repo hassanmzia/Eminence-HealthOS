@@ -4,7 +4,7 @@ RPM Agent Registry.
 Registers all RPM module agents with the orchestrator engine.
 """
 
-from platform.orchestrator.engine import OrchestratorEngine
+from healthos_platform.orchestrator.engine import OrchestratorEngine
 
 
 def register_rpm_agents(engine: OrchestratorEngine) -> None:

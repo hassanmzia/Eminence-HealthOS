@@ -8,7 +8,7 @@ conditions, and agent pipeline outputs. Requires HITL approval.
 import logging
 from datetime import datetime, timezone
 
-from platform.agents.base import (
+from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
     AgentOutput,

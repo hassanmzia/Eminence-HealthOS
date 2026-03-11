@@ -6,7 +6,7 @@ and generates effectiveness reports for quality improvement.
 """
 
 import logging
-from platform.agents.base import (
+from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
     AgentOutput,

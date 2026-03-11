@@ -4,7 +4,7 @@ from sqlalchemy import Boolean, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from platform.config.database import Base
+from healthos_platform.config.database import Base
 from shared.models.base import UUIDMixin, TimestampMixin
 
 

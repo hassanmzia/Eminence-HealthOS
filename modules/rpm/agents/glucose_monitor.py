@@ -6,7 +6,7 @@ logic, trend analysis, and time-in-range calculations.
 """
 
 import logging
-from platform.agents.base import (
+from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
     AgentOutput,

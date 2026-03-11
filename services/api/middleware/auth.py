@@ -12,7 +12,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
-from platform.config.settings import get_settings
+from healthos_platform.config.settings import get_settings
 
 logger = logging.getLogger("healthos.middleware.auth")
 

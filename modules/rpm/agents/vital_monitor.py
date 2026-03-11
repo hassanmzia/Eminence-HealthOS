@@ -8,7 +8,7 @@ thresholds and clinical guidelines. Generates alerts for abnormal values.
 import logging
 from typing import Optional
 
-from platform.agents.base import (
+from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
     AgentOutput,

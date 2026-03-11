@@ -26,7 +26,7 @@ async def readiness_check(request: Request):
 
     # Database
     try:
-        from platform.config.database import get_session_factory
+        from healthos_platform.config.database import get_session_factory
         factory = get_session_factory()
         async with factory() as session:
             await session.execute(

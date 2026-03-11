@@ -9,7 +9,7 @@ and audit completeness.
 import logging
 from datetime import datetime, timedelta, timezone
 
-from platform.agents.base import (
+from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
     AgentOutput,

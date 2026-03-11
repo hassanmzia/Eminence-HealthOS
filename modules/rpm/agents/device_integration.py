@@ -9,7 +9,7 @@ and routes device data into the ingestion pipeline.
 import logging
 from datetime import datetime, timezone
 
-from platform.agents.base import (
+from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
     AgentOutput,

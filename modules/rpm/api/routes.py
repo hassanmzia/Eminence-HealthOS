@@ -10,10 +10,10 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from platform.api.middleware.tenant import TenantContext, get_current_user
-from platform.api.schemas import AgentTriggerRequest, PipelineResultResponse
-from platform.orchestrator.engine import ExecutionEngine
-from platform.security.rbac import Permission
+from healthos_platform.api.middleware.tenant import TenantContext, get_current_user
+from healthos_platform.api.schemas import AgentTriggerRequest, PipelineResultResponse
+from healthos_platform.orchestrator.engine import ExecutionEngine
+from healthos_platform.security.rbac import Permission
 
 router = APIRouter(prefix="/rpm", tags=["RPM"])
 

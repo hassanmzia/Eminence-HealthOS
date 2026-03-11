@@ -8,15 +8,15 @@ import uuid
 
 import pytest
 
-from platform.security.auth import (
+from healthos_platform.security.auth import (
     create_access_token,
     create_tokens,
     decode_token,
     hash_password,
     verify_password,
 )
-from platform.security.phi_filter import PHIFilter
-from platform.security.rbac import Permission, Role, get_permissions, has_permission
+from healthos_platform.security.phi_filter import PHIFilter
+from healthos_platform.security.rbac import Permission, Role, get_permissions, has_permission
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

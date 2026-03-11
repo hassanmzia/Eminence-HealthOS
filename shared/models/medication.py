@@ -6,7 +6,7 @@ from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, Stri
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from platform.config.database import Base
+from healthos_platform.config.database import Base
 from shared.models.base import UUIDMixin, TimestampMixin, TenantMixin
 
 

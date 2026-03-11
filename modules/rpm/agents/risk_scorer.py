@@ -7,7 +7,7 @@ scoring models (NEWS2, MEWS, custom ML ensemble).
 """
 
 import logging
-from platform.agents.base import (
+from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
     AgentOutput,

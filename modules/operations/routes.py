@@ -4,7 +4,7 @@ import logging
 
 from fastapi import APIRouter, Depends
 
-from platform.agents.base import AgentInput
+from healthos_platform.agents.base import AgentInput
 from services.api.middleware.auth import CurrentUser, require_auth, require_role
 from services.api.middleware.tenant import get_tenant_id
 
