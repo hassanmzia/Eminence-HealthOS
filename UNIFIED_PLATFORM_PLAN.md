@@ -2910,9 +2910,9 @@ The platform is built once and licensed many times — each client builds their 
 
 After deep analysis of all 5 healthcare repositories, here is the complete feature matrix showing what each repo contributes and what gets imported into HealthOS:
 
-### 1. InHealth-Capstone-Project (85% Reusable — PRIMARY SOURCE)
+### 1. InHealth-Capstone-Project (90% Reusable — PRIMARY SOURCE)
 
-**Status**: Most complete implementation. 25 agents across 5 tiers with production-ready LangGraph orchestration, NL2SQL clinical query tools, clinical decision support scoring (CURB-65, NEWS, CHA2DS2-VASc, HEART, ESI), Neo4j knowledge graph, Kafka event streaming, 20+ frontend components, CI/CD pipeline, and production K8s infrastructure.
+**Status**: Enterprise-grade healthcare AI platform. 25 agents across 5 tiers with production-ready LangGraph orchestration. Full-stack: NL2SQL tools, 8 clinical decision support scores, Neo4j knowledge graph, Kafka event streaming, blockchain-style audit logging, multi-layer guardrails (25+ prompt injection patterns), voice-to-SOAP transcription, telemedicine with AI notes, SDOH assessment (PRAPARE/AHC-HRSN), HL7 v2 ingestion/parsing, smart order sets (5 conditions), care gap detection, RPM episode tracking with CMS codes, population health analytics (8 risk types + 10 KPIs), 6-role auth system, Celery async tasks, 18 frontend pages, 26 React components, CI/CD pipeline, production K8s, Nginx gateway.
 
 | Feature | Files | Reusability | Import Priority |
 |---------|-------|-------------|-----------------|
@@ -2965,6 +2965,25 @@ After deep analysis of all 5 healthcare repositories, here is the complete featu
 | **Rate Limiting** | `api/middleware/rate_limit.py` | Direct import — per-endpoint and per-user rate limiting | P1 — NEW for HealthOS |
 | **Health Literacy Adaptation** | `agents/tier5_action/patient_notify.py` | Direct import — reading-level adapted patient notifications, CLIA critical results | P1 — NEW for HealthOS |
 | **Configuration Management** | `config/` (4 YAML files) | Direct import — per-environment configs (default, dev, prod, test), per-agent thresholds | P1 — NEW for HealthOS |
+| **Blockchain Audit Logger** | `agents/security/audit_logger.py` | Direct import — SHA-256 chained tamper-evident trail, 18 HIPAA event types (ACCESS, MODIFY, DELETE, EXPORT, LOGIN, AGENT_RUN, HITL_INTERRUPT, PRESCRIPTION, EMERGENCY_ALERT, SECURITY_VIOLATION), multi-backend (PostgreSQL+Redis+file), chain verification | P0 — NEW for HealthOS |
+| **Guardrails Engine** | `agents/security/guardrails.py` | Direct import — 25+ prompt injection patterns, jailbreak detection, DAN mode block, clinical scope validation, output sanitization, SQL injection prevention, per-tenant rate limiting | P0 — NEW for HealthOS |
+| **Voice Tool + SOAP** | `agents/tools/voice_tool.py` | Direct import — voice-to-text transcription with 9-section SOAP note auto-structuring, clinical entity extraction (medications, vitals, conditions) | P1 — NEW for HealthOS |
+| **Geospatial Tools** | `agents/tools/geospatial_tools.py` | Direct import — OSRM/Mapbox hospital routing, capability-filtered searches (cath lab, stroke center), multi-mode (driving/ambulance/walking), GeoJSON | P1 — NEW for HealthOS |
+| **Vector Search Tools** | `agents/tools/vector_tools.py` | Direct import — Qdrant semantic search for clinical guidelines and PubMed, relevance scoring | P1 — NEW for HealthOS |
+| **Telemedicine App** | `backend/apps/telemedicine/` | Direct import — VideoSession model (scheduled→active→completed→cancelled), recording URLs, AI-generated SOAP notes, ICD-10 suggestions, duration tracking | P1 — NEW for HealthOS |
+| **SDOH Assessment App** | `backend/apps/sdoh/` | Direct import — PRAPARE/AHC-HRSN 5-domain scoring (food/housing/transportation/social/financial), risk stratification, auto-generated interventions with community resources | P0 — NEW for HealthOS |
+| **HL7 v2 Ingestion App** | `backend/apps/hl7/` | Direct import — ADT/ORU/ORM message parsing, OBX with LOINC codes, ORC order extraction, ACK generation, MLLP frame handling | P0 — NEW for HealthOS |
+| **Smart Order Sets** | `backend/apps/clinical/order_sets.py` | Direct import — evidence-based templates for 5 conditions (DM2, HTN, COPD, HF, CKD), pre-populated meds/labs/imaging/referrals/education, AI personalization (renal dosing, age-adjusted, allergy conflicts) | P0 — NEW for HealthOS |
+| **CareGap & VitalTargetPolicy** | `backend/apps/clinical/` | Direct import — preventive/chronic care gap detection, quality measure tracking, personalized vital monitoring targets | P1 — NEW for HealthOS |
+| **Billing & RPM Episodes** | `backend/apps/billing/` | Direct import — Claim (8 statuses), CPT/ICD-10/HCPCS codes, prior auth, RPM episodes with CMS codes (99453/99454/99457/99458), monthly summaries, monitoring minutes | P0 — NEW for HealthOS |
+| **Population Health App** | `backend/apps/analytics/` | Direct import — PopulationCohort, 8 RiskScore types, XGBoost feature importance, 10 ClinicalKPIs (A1C, readmission, adherence, satisfaction, etc.), async cohort refresh | P0 — NEW for HealthOS |
+| **6-Role User System** | `backend/apps/accounts/` | Direct import — patient/clinician/nurse/admin/pharmacist/researcher roles, MFA (TOTP+QR), email verification, JWT+refresh token blacklisting | P0 — NEW for HealthOS |
+| **Celery Task Queue** | `backend/config/celery.py` | Direct import — async processing for research, analytics, notifications, HL7, clinical tasks | P1 — NEW for HealthOS |
+| **Nginx Gateway** | `nginx/` | Direct import — reverse proxy, load balancing, 4096 connections/worker | P1 — NEW for HealthOS |
+| **A2A Bridge** | `backend/apps/a2a_bridge/` | Direct import — Redis pub/sub inter-agent bus, correlation IDs, tenant-scoped channels, task request/result patterns | P1 — NEW for HealthOS |
+| **Multi-Channel Notifications** | `backend/apps/notifications/` | Direct import — 6 channels (SMS/email/push/EHR/phone/all), 6 types (CRITICAL→APPOINTMENT), health literacy variants, delivery tracking, escalation levels, multilingual | P0 — NEW for HealthOS |
+| **18 Frontend Pages** | `frontend/src/pages/` | Adapt — 5 role dashboards, billing, clinical workspace, secure messaging, telemedicine, vitals, research, settings, simulators (vitals + what-if), alerts, agent control, tenant admin, auth suite | P1 — NEW for HealthOS |
+| **26 Frontend Components** | `frontend/src/components/` | Direct import — UI (5), layout (3), clinical (5: PatientCard, MedicationList, AIRecommendationPanel, CareGapList, VitalsMonitor), FHIR (4), agent (3), charts (6: EcgWaveform, GlucoseChart, PopulationRiskPyramid, AgentActivityTimeline) | P1 — NEW for HealthOS |
 
 ### 2. HealthCare-Agentic-Platform (70% Reusable — SPECIALTY AGENTS)
 
@@ -3130,6 +3149,20 @@ These are features found in your repos that are NOT yet in the HealthOS plan:
 | 50 | **Health Literacy Adaptation** (patient notifications adapted to reading level, plain language generation, channel preference awareness, CLIA critical result notification) | Inhealth-Capstone | High — patient engagement |
 | 51 | **Consent Records & HIPAA Tracking** (patient consent management table, data access consent, treatment consent tracking) | Inhealth-Capstone | Critical — HIPAA compliance |
 | 52 | **Rate Limiting Middleware** (per-endpoint and per-user API rate limiting, request/response logging middleware) | Inhealth-Capstone | High — API security |
+| 53 | **Blockchain-Style Audit Logger** (SHA-256 chained tamper-evident audit trail, 18 HIPAA event types, multi-backend: PostgreSQL + Redis + append-only file, chain integrity verification, 90-day Redis retention) | Inhealth-Capstone | Critical — HIPAA audit |
+| 54 | **Multi-Layer Guardrails Engine** (25+ prompt injection patterns, jailbreak/DAN mode detection, restricted topic checking, clinical scope validation, output sanitization, SQL injection prevention in agent output, per-tenant rate limiting) | Inhealth-Capstone | Critical — AI safety |
+| 55 | **Voice Transcription + SOAP Structuring** (voice-to-text with automatic SOAP note generation, 9 SOAP sections, clinical entity extraction: medications/vitals/conditions via regex) | Inhealth-Capstone | High — ambient clinical AI |
+| 56 | **Telemedicine VideoSession System** (session state management: scheduled→active→completed→cancelled, recording URL storage, AI-generated SOAP notes, ICD-10 suggestions, duration tracking) | Inhealth-Capstone | High — telehealth module |
+| 57 | **SDOH Assessment System** (PRAPARE/AHC-HRSN protocol, 5-domain scoring: food/housing/transportation/social/financial, risk stratification, auto-generated interventions with community resources) | Inhealth-Capstone | Critical — social determinants |
+| 58 | **HL7 v2 Ingestion & Parsing** (ADT/ORU/ORM message parsing, patient demographics extraction, OBX segments with LOINC codes, ORC order extraction, ACK generation, MLLP frame handling) | Inhealth-Capstone | Critical — EHR interoperability |
+| 59 | **Smart Clinical Order Sets** (evidence-based templates for 5 conditions: Type 2 Diabetes/Hypertension/COPD/Heart Failure/CKD — pre-populated medications with dosing, labs, imaging, referrals, patient education, AI personalization for renal dosing/age/allergies) | Inhealth-Capstone | Critical — clinical workflow |
+| 60 | **CareGap & Quality Measures** (preventive/chronic care gap detection, quality measure tracking, VitalTargetPolicy for personalized monitoring targets) | Inhealth-Capstone | High — value-based care |
+| 61 | **Celery Async Task Queue** (research query processing, analytics cohort refresh, notification dispatch, patient data processing, HL7 message processing, clinical tasks — all async) | Inhealth-Capstone | High — scalability |
+| 62 | **Nginx API Gateway** (reverse proxy, load balancing, request logging, connection pooling 4096/worker, A2A gateway microservice) | Inhealth-Capstone | High — production infrastructure |
+| 63 | **6-Role User System** (patient, clinician, nurse, admin, pharmacist, researcher — with MFA/TOTP, email verification, JWT + refresh token blacklisting) | Inhealth-Capstone | High — access control |
+| 64 | **RPM Episode & CMS Billing** (RPM episode tracking with CMS billing code eligibility: 99453/99454/99457/99458, monthly summaries with monitoring minutes, device tracking per episode, claim management with 8 statuses) | Inhealth-Capstone | Critical — revenue cycle |
+| 65 | **Population Health Analytics** (PopulationCohort with ICD-10/age/risk filtering, 8 RiskScore types: 7d-hospitalization/30d-mortality/30d-readmission/30d-ED/medication-adherence/glucose-control/falls/sepsis, XGBoost feature importance, 10 ClinicalKPIs, cohort refresh scheduling) | Inhealth-Capstone | Critical — population health |
+| 66 | **18 Frontend Pages** (5 role-based dashboards: Clinician/Nurse/Patient/Pharmacist/Researcher + BillingPage + ClinicalWorkspacePage + SecureMessagingPage + TelemedicinePage + VitalsPage + ResearchPage + SettingsPage + 2 SimulatorPages + AlertsPage + AgentControlPage + TenantAdminPage + AuthPages) | Inhealth-Capstone | High — complete UI |
 
 ### Import Execution Order
 
@@ -3137,23 +3170,35 @@ These are features found in your repos that are NOT yet in the HealthOS plan:
 Phase 1 (Core + EHR Foundation + Infrastructure — Week 1-2):
 ├── InHealth-Capstone → LangGraph orchestrator, 25 agents, tools, HITL, memory, MCP server
 ├── InHealth-Capstone → NL2SQL tool suite (3-tier: generate → validate → execute)
+├── InHealth-Capstone → Blockchain audit logger (SHA-256 chaining, 18 event types)
+├── InHealth-Capstone → Guardrails engine (25+ prompt injection patterns, jailbreak detection)
 ├── InHealth-Capstone → Kafka event streaming (5 topics), Redis caching, rate limiting
 ├── InHealth-Capstone → Neo4j knowledge graph schema (drug interactions, symptom-condition, risk factors)
-├── InHealth-Capstone → Consent records table, configuration management (YAML per-env)
-├── InhealthUSA → Production EHR schema (30+ models), 5-role RBAC, enterprise auth (MFA/TOTP, CAC, OIDC, SAML), password validators, session security
+├── InHealth-Capstone → 6-role user system (patient/clinician/nurse/admin/pharmacist/researcher, MFA, JWT)
+├── InHealth-Capstone → Consent records, configuration management (YAML per-env), Celery task queue
+├── InHealth-Capstone → Nginx API gateway, A2A bridge (Redis pub/sub)
+├── InhealthUSA → Production EHR schema (30+ models), enterprise auth (MFA/TOTP, CAC, OIDC, SAML)
 ├── HealthCare-Agentic → Clinical models (ClinicalAssessment, PhysicianReview, EHROrder), diagnostician, coding agent
 └── InhealthUSA → Billing/BillingItem/Payment/Insurance models, internal messaging
 
-Phase 2 (Specialty + Safety + IoT + CDS — Week 3-4):
+Phase 2 (Specialty + Safety + IoT + CDS + Interop — Week 3-4):
 ├── InHealth-Capstone → Clinical decision support (CURB-65, NEWS/MEWS, CHA2DS2-VASc, HEART, ESI, Charlson)
+├── InHealth-Capstone → HL7 v2 ingestion/parsing (ADT/ORU/ORM, MLLP), smart order sets (5 conditions)
 ├── InHealth-Capstone → Agent control API (start/stop/configure), webhook receivers, WebSocket endpoints
+├── InHealth-Capstone → RPM episodes with CMS billing codes (99453/99454/99457/99458), claim management
+├── InHealth-Capstone → SDOH assessment (PRAPARE/AHC-HRSN, 5-domain scoring, interventions)
 ├── HealthCare-Agentic → Oncology, radiology, cardiology, pathology, GI agents
 ├── AI-Healthcare-Embodiment → Governance rules engine, safety agent, fairness analytics
 ├── Health_Assistant → Toxicity filter, A2A protocol, PHI filter, NLP-to-SQL chat interface (user-facing)
 ├── InhealthUSA → Two-stage vital alerts, IoT REST API (v1 DRF + function views), IoT data processor
 └── InhealthUSA → Multi-channel notifications (Email/SMS/WhatsApp/Dashboard), notification preferences, DeviceAlertRule
 
-Phase 3 (Clinical Workflow + AI + Observability — Week 5-6):
+Phase 3 (Clinical Workflow + AI + Observability + Telehealth — Week 5-6):
+├── InHealth-Capstone → Telemedicine system (VideoSession, AI SOAP notes, ICD-10 suggestions)
+├── InHealth-Capstone → Voice transcription + SOAP structuring (9 sections, entity extraction)
+├── InHealth-Capstone → CareGap detection, VitalTargetPolicy, quality measures
+├── InHealth-Capstone → Population health (cohorts, 8 risk score types, 10 ClinicalKPIs)
+├── InHealth-Capstone → Multi-channel notifications (6 channels, health literacy variants, multilingual)
 ├── HealthCare-Agentic → ClinicalAssessment → PhysicianReview → EHROrder pipeline
 ├── HealthCare-Agentic → Clinical document generation (HTML/PDF/FHIR/CCD)
 ├── AI-Healthcare-Embodiment → What-if analysis, phenotyping agents, policy management
@@ -3165,8 +3210,9 @@ Phase 3 (Clinical Workflow + AI + Observability — Week 5-6):
 └── InHealth-Capstone → Seed data system (synthetic patients/vitals/encounters)
 
 Phase 4 (Frontend + Analytics + DevOps + Polish — Week 7-8):
+├── InHealth-Capstone → 18 frontend pages (5 role dashboards, billing, clinical workspace, telemedicine, etc.)
+├── InHealth-Capstone → 26 React components (clinical, FHIR, agent, charts: EcgWaveform, GlucoseChart, PopulationRiskPyramid)
 ├── InHealth-Capstone → Patient Risk Heatmap, Critical Alerts Banner, Agent Activity Feed, System Health Widget
-├── InHealth-Capstone → VitalsTrendChart, RiskScoreGauge, CarePlanView, AlertHistory, LabResultsPanel, DeviceDataPanel
 ├── InHealth-Capstone → TierVisualization, AgentConfigPanel, Agent Debug Page
 ├── InHealth-Capstone → Research UI (LiteratureSearch, TrialMatching, EvidenceSynthesis)
 ├── InHealth-Capstone → CI/CD pipeline, E2E tests, load testing (Locust), production K8s (HPA, PDB, NetworkPolicies)
@@ -3183,14 +3229,23 @@ Phase 4 (Frontend + Analytics + DevOps + Polish — Week 7-8):
 | Category | Before Import | After Import | Source |
 |----------|--------------|-------------|--------|
 | AI Agents | 79 | 95 (+16) | +Diagnostician, Oncology, Coding, Radiology, Cardiology, Pathology, GI, Phenotyping V1/V2, Safety, Notes/Imaging, Retrieval, Toxicity, Classifier, SQL, LLM, AI Treatment Plan Generator |
-| Clinical Models | ~20 | ~55 (+35) | +InhealthUSA EHR (30+ models: Patient, Provider, Nurse, OfficeAdmin, Encounter, VitalSign, Diagnosis, Prescription, Allergy, MedicalHistory, SocialHistory, FamilyHistory, LabTest, Billing, BillingItem, Payment, Insurance, Device, Notification, NotificationPrefs, VitalSignAlertResponse, AIProposedTreatmentPlan, DoctorTreatmentPlan, APIKey, AuthConfig, DeviceAPIKey, DeviceDataReading, DeviceActivityLog, DeviceAlertRule) + HealthCare-Agentic (ClinicalAssessment, PhysicianReview, EHROrder, ClinicalDocument) + AI-Embodiment (GovernanceRule, ComplianceReport) |
+| Clinical Models | ~20 | ~80 (+60) | +Inhealth-Capstone (ResearchQuery, ClinicalTrial, MedicalEvidence, VideoSession, SDOHAssessment, CareGap, SmartOrderSet, VitalTargetPolicy, Claim, RPMEpisode, PopulationCohort, RiskScore, ClinicalKPI, NotificationTemplate, PatientEngagement, DeviceRegistration) + InhealthUSA EHR (30+ models) + HealthCare-Agentic (ClinicalAssessment, PhysicianReview, EHROrder, ClinicalDocument) + AI-Embodiment (GovernanceRule, ComplianceReport) |
 | Tools | ~10 | 26 (+16) | +Drug interactions, NL2SQL (3-tier tool suite + user-facing chat), PubMed, ClinicalTrials.gov, geospatial, Whisper, risk scoring, etc. |
 | Imaging Models | 50+ | 50+ (enhanced) | +Radiology pattern databases (X-ray, CT) with ICD-10 mapping |
-| Notification Channels | 3 | 5 (+2) | +WhatsApp (InhealthUSA Twilio), In-App Dashboard (InhealthUSA Notification model) |
+| Notification Channels | 3 | 8 (+5) | +WhatsApp (InhealthUSA Twilio), In-App Dashboard, Push, EHR In-App, Phone (Inhealth-Capstone 6-channel system with health literacy variants + multilingual) |
 | Auth Features | Basic | Enterprise (7 methods) | +MFA/TOTP with QR+backup codes, CAC/PKI, OIDC (Azure AD/Okta/Cognito), SAML 2.0, session security middleware, 4 password validators, account lockout, AuthenticationConfig admin model |
-| Billing/Revenue | None | Full cycle | +Billing, BillingItem, Payment, InsuranceInformation (from InhealthUSA) |
-| IoT/RPM | Basic | Production | +IoT REST API v1 (DRF class-based), file processor, DeviceAlertRule, device API key management (from InhealthUSA) |
-| RBAC/Roles | Basic | 5-role system | +Patient, Doctor, Nurse, OfficeAdmin, SystemAdmin with decorator-based permissions (from InhealthUSA) |
+| Billing/Revenue | None | Full cycle + CMS RPM | +Billing, BillingItem, Payment, InsuranceInformation (InhealthUSA) + Claim (8 statuses), RPM Episodes with CMS codes 99453/99454/99457/99458, prior auth, CPT/HCPCS (Inhealth-Capstone) |
+| IoT/RPM | Basic | Production | +IoT REST API v1 (DRF class-based), file processor, DeviceAlertRule, device API key management (InhealthUSA) + RPM episode tracking with monitoring minutes (Inhealth-Capstone) |
+| RBAC/Roles | Basic | 6-role system | +Patient, Clinician, Nurse, Admin, Pharmacist, Researcher (Inhealth-Capstone) + OfficeAdmin, SystemAdmin (InhealthUSA) — merged to 6 unique roles with decorator-based permissions |
+| Telehealth | None | Full system | +VideoSession with AI-generated SOAP notes, ICD-10 suggestions, recording, duration tracking (Inhealth-Capstone) |
+| Interoperability | FHIR R4 | FHIR R4 + HL7v2 | +ADT/ORU/ORM message parsing, MLLP framing, LOINC-coded OBX, ACK generation (Inhealth-Capstone) |
+| Clinical Order Sets | None | 5 condition templates | +DM2, HTN, COPD, Heart Failure, CKD — pre-populated meds/labs/imaging/referrals with AI personalization (Inhealth-Capstone) |
+| SDOH | None | PRAPARE/AHC-HRSN | +5-domain scoring (food/housing/transportation/social/financial), risk stratification, auto-interventions (Inhealth-Capstone) |
+| Voice/Ambient AI | None | SOAP structuring | +Voice transcription with 9-section SOAP note auto-generation, clinical entity extraction (Inhealth-Capstone) |
+| Audit Security | Basic logging | Blockchain-style | +SHA-256 chained tamper-evident trail, 18 HIPAA event types, multi-backend persistence, chain verification (Inhealth-Capstone) |
+| AI Safety | Basic | Multi-layer | +25+ prompt injection patterns, jailbreak/DAN detection, clinical scope validation, output sanitization (Inhealth-Capstone) |
+| Population Health | None | Full analytics | +Cohorts with ICD-10/age/risk filters, 8 risk score types (XGBoost), 10 ClinicalKPIs, async cohort refresh (Inhealth-Capstone) |
+| Task Queue | None | Celery | +Async processing for research, analytics, notifications, HL7, clinical tasks (Inhealth-Capstone) |
 | Analytics | Basic | Advanced | +Fairness subgroup analysis, calibration, what-if simulation, audit metrics dashboard, agent monitoring dashboard (health/success rate/response time), observability dashboard (LangSmith/Langfuse + decision rationale + confidence scores), FHIR statistics API (demographics/clinical analytics), workflow visualization (Mermaid), HITL risk score UI |
 | Clinical Decision Support | None | 8 scoring systems | +CURB-65, NEWS/MEWS, CHA2DS2-VASc, HEART Score, ESI, Charlson Comorbidity, eGFR/CKD, dose adjustment (from Inhealth-Capstone) |
 | Knowledge Graph | None | Neo4j schema | +DrugInteraction, Symptom-Condition, RiskFactor, GeneticMarker, Treatment, Contraindication edges (from Inhealth-Capstone) |
@@ -3200,7 +3255,7 @@ Phase 4 (Frontend + Analytics + DevOps + Polish — Week 7-8):
 | Messaging | None | Full | +Threaded internal messaging with inbox/sent/compose (from InhealthUSA) |
 | CI/CD & Testing | None | Full pipeline | +GitHub Actions (lint, test, security scan, Docker, Helm), Locust load tests, E2E tests (from Inhealth-Capstone) |
 | Production K8s | Helm charts | Enterprise K8s | +HPA, PDB, NetworkPolicies, production docker-compose (from Inhealth-Capstone) |
-| Frontend Pages | ~15 | ~70 (+55) | +InhealthUSA (5 role dashboards, patient portal, vitals charts, questionnaires, billing/payment views, IoT mgmt, API key mgmt) + Inhealth-Capstone (Risk Heatmap, Alerts Banner, Activity Feed, System Health, VitalsTrend, RiskGauge, CarePlan, AlertHistory, LabResults, DeviceData, TierViz, AgentConfig, Debug Page, Research UI) + Fairness, Governance, Audit, What-If, Policies, FHIR Browser, etc. |
+| Frontend Pages | ~15 | ~88 (+73) | +Inhealth-Capstone (18 pages: 5 role dashboards, billing, clinical workspace, telemedicine, vitals, research, messaging, simulators, alerts, agent control, tenant admin, auth suite + 26 React components) + InhealthUSA (5 role dashboards, patient portal, vitals charts, questionnaires, billing/payment, IoT mgmt) + Health_Assistant (6 dashboards) + AI-Embodiment (fairness, governance, audit, what-if, policies) + FHIR Browser |
 
 ### Architecture After Import
 
@@ -3209,18 +3264,23 @@ Phase 4 (Frontend + Analytics + DevOps + Polish — Week 7-8):
 │                     EMINENCE HEALTHOS v2.0                              │
 │                (Post Cross-Repository Import)                           │
 │                                                                        │
-│  95 AI Agents │ 55+ DB Models │ 26 Tools │ 50+ Imaging Models         │
-│  5 Notification Channels │ 7 Enterprise Auth Methods │ 5-Role RBAC    │
-│  Full Billing/Payments │ IoT REST API │ Fairness Analytics             │
+│  95 AI Agents │ 80+ DB Models │ 26 Tools │ 50+ Imaging Models         │
+│  8 Notification Channels │ 7 Enterprise Auth Methods │ 6-Role RBAC    │
+│  Full Billing + CMS RPM │ IoT REST API │ Fairness Analytics            │
 │  What-If Simulation │ Governance Engine │ FDA SaMD Ready               │
 │  Agent Monitoring │ Observability (LangSmith/Langfuse) │ Workflow Viz  │
 │  NLP-to-SQL (dual-mode) │ 8 CDS Scoring Systems │ Neo4j Knowledge    │
 │  Kafka 5-Topic Streaming │ CI/CD Pipeline │ Production K8s             │
-│  70+ Frontend Pages │ Consent Tracking │ Health Literacy Adaptation   │
+│  88+ Frontend Pages │ Consent Tracking │ Health Literacy Adaptation   │
+│  Blockchain Audit │ 25+ Guardrails │ Voice-to-SOAP │ Telemedicine    │
+│  HL7v2 Ingestion │ SDOH Assessment │ Smart Order Sets │ CareGaps     │
+│  Population Health (8 Risk Types, 10 KPIs) │ Celery Task Queue        │
 │                                                                        │
 │  Source Code:                                                           │
 │  ├── InHealth-Capstone   (60%) → Core orchestrator + 25 agents + NL2SQL│
-│  │   + CDS scoring + Neo4j + Kafka + 20+ UI components + CI/CD + K8s  │
+│  │   + CDS + Neo4j + Kafka + HL7v2 + SDOH + Telehealth + Order Sets  │
+│  │   + Population Health + Blockchain Audit + Guardrails + Voice/SOAP  │
+│  │   + 18 pages + 26 components + CI/CD + K8s + Celery + RPM/CMS     │
 │  ├── HealthCare-Agentic  (10%) → Specialty agents + clinical models    │
 │  ├── InhealthUSA         (10%) → EHR schema + IoT + auth + billing     │
 │  ├── AI-Embodiment       (10%) → Governance + fairness + what-if       │
