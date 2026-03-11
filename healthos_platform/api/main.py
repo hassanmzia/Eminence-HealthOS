@@ -23,16 +23,67 @@ logger = structlog.get_logger()
 async def _seed_if_empty() -> None:
     """Seed default data when the database is freshly created."""
     from sqlalchemy import select, func
-    from healthos_platform.models import User
+    from healthos_platform.models import Organization, Patient, User
+    from healthos_platform.security.auth import hash_password
 
     async with get_db_context() as db:
         result = await db.execute(select(func.count()).select_from(User))
         count = result.scalar()
-        if count == 0:
-            logger.info("healthos.seeding_database")
-            from scripts.seed_data import seed
-            await seed()
-            logger.info("healthos.seed_complete")
+        if count and count > 0:
+            return
+
+        logger.info("healthos.seeding_database")
+
+        org = Organization(
+            name="Eminence Health Demo",
+            slug="eminence-demo",
+            tier="enterprise",
+            hipaa_baa_signed=True,
+            settings={
+                "features": ["rpm", "telehealth", "analytics"],
+                "max_patients": 10000,
+                "ai_enabled": True,
+            },
+        )
+        db.add(org)
+        await db.flush()
+
+        users = [
+            User(
+                org_id=org.id,
+                email="admin@eminence.health",
+                hashed_password=hash_password("admin123"),
+                role="admin",
+                full_name="System Administrator",
+            ),
+            User(
+                org_id=org.id,
+                email="dr.smith@eminence.health",
+                hashed_password=hash_password("doctor123"),
+                role="clinician",
+                full_name="Dr. Sarah Smith",
+                profile={"specialty": "cardiology", "npi": "1234567890"},
+            ),
+        ]
+        for u in users:
+            db.add(u)
+        await db.flush()
+
+        patients = [
+            Patient(
+                org_id=org.id,
+                mrn="MRN001",
+                demographics={"name": "John Williams", "dob": "1955-03-15", "gender": "male"},
+                conditions=[{"code": "I10", "display": "Essential hypertension", "onset": "2018-06-01"}],
+                medications=[{"name": "Lisinopril", "dose": "20mg", "frequency": "daily"}],
+                risk_level="high",
+                care_team=[{"user_id": str(users[1].id), "role": "primary_physician"}],
+            ),
+        ]
+        for p in patients:
+            db.add(p)
+
+        logger.info("healthos.seed_complete", users=len(users), patients=len(patients))
 
 
 @asynccontextmanager
