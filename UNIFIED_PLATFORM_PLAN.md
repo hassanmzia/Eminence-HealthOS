@@ -2912,6 +2912,371 @@ class ConsentManager:
 
 ---
 
+## 16.5 Agent Observability & Explainability
+
+HealthOS agents make clinical decisions that affect patient outcomes. Every decision must be **traceable** (who decided what, when, why), **explainable** (what features drove the decision), and **auditable** (tamper-proof record for HIPAA/regulatory review). This section documents how we achieve all three.
+
+### 16.5.1 Observability Stack — 5 Layers
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    AGENT OBSERVABILITY STACK                         │
+│                                                                     │
+│  Layer 5: DASHBOARDS & UI                                           │
+│  ┌──────────────────┐ ┌──────────────────┐ ┌────────────────────┐  │
+│  │ ObservabilityDash │ │ AgentExecutionLog│ │ Grafana Agent Ops  │  │
+│  │ (React — decision │ │ (React — filter  │ │ (latency, cost,    │  │
+│  │  rationale, A2A   │ │  by tier/status, │ │  error rates,      │  │
+│  │  timeline, conf.) │ │  expandable)     │ │  token usage)      │  │
+│  └────────┬─────────┘ └────────┬─────────┘ └────────┬───────────┘  │
+│           │                     │                     │              │
+│  Layer 4: TRACING BACKENDS                                          │
+│  ┌──────────────────┐ ┌──────────────────┐ ┌────────────────────┐  │
+│  │ LangSmith         │ │ Langfuse         │ │ Jaeger/OTel        │  │
+│  │ (LangChain traces,│ │ (sessions, spans,│ │ (distributed trace │  │
+│  │  project-based)   │ │  scoring, cost)  │ │  across services)  │  │
+│  └────────┬─────────┘ └────────┬─────────┘ └────────┬───────────┘  │
+│           │                     │                     │              │
+│  Layer 3: DECISION & RATIONALE CAPTURE                              │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │ ObservabilityManager (Health_Assistant)                       │   │
+│  │  log_agent_decision() → agent, decision, rationale,          │   │
+│  │                         confidence, alternatives, duration    │   │
+│  │  log_agent_conversation() → sender→receiver, A2A messages    │   │
+│  │  @trace_agent_action / @trace_decision decorators            │   │
+│  │                                                               │   │
+│  │ PatientMonitoringState (Inhealth-Capstone)                    │   │
+│  │  monitoring_results → diagnostic_results → risk_scores →      │   │
+│  │  interventions → actions_taken → alerts (full tier flow)      │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  Layer 2: AUDIT TRAIL (TAMPER-PROOF)                                │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │ AuditLogger (Inhealth-Capstone) — blockchain-style           │   │
+│  │  SHA-256 hash chaining (each record includes prev hash)      │   │
+│  │  28 HIPAA event types (ACCESS, AGENT_RUN, PHI_DETECTED,      │   │
+│  │    HITL_APPROVE, PRESCRIPTION, EMERGENCY_ALERT, etc.)        │   │
+│  │  3 backends: PostgreSQL + Redis (90d TTL) + JSONL file       │   │
+│  │  verify_chain_integrity() for tamper detection               │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  Layer 1: METRICS & ALERTING                                        │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │ Prometheus Metrics                                            │   │
+│  │  AGENT_RUNS counter [agent_name, status]                      │   │
+│  │  REQUEST_LATENCY histogram [endpoint]                         │   │
+│  │  inhealth_llm_cost_usd_total (cumulative LLM spend)          │   │
+│  │  inhealth_llm_tokens_total (token consumption)                │   │
+│  │                                                               │   │
+│  │ AlertManager Rules                                            │   │
+│  │  AgentDown: error_rate > 0 for 5 min                          │   │
+│  │  AgentHighLatency: p95 > 30s                                  │   │
+│  │  AgentQueueDepth: Celery queue > 100                          │   │
+│  │  CriticalAlertUnacknowledged: clinical alert unack'd 5 min    │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 16.5.2 Decision Rationale Capture
+
+Every agent decision is logged with **why** it was made, not just **what** was decided.
+
+#### Decision Record Schema
+
+```python
+# From Health_Assistant ObservabilityManager.log_agent_decision()
+{
+    "timestamp": "2026-03-11T14:23:07.123Z",
+    "trace_id": "a1b2c3d4-...",
+    "agent": "ml_ensemble_agent",
+    "decision": "CRITICAL_RISK — escalate to physician",
+    "rationale": "Unified risk score 0.78 driven by 7-day hospitalization prediction (35%)
+                  and active monitoring alerts (20%). CCI=6 indicates high comorbidity burden.",
+    "confidence": 0.85,
+    "alternatives": [
+        {"decision": "HIGH_RISK — schedule within 48h", "score": 0.72},
+        {"decision": "MEDIUM_RISK — routine follow-up", "score": 0.31}
+    ],
+    "input": {"patient_id": "P-12345", "vital_signs": {...}, "labs": {...}},
+    "output": {"risk_level": "CRITICAL", "unified_score": 0.78, "top_drivers": [...]},
+    "duration_ms": 2340
+}
+```
+
+#### How Rationale Flows Through the System
+
+```
+Tier 1 (Monitoring Agent)
+  → Logs: "SpO2 dropped to 88%, below critical threshold 90%"
+  → Confidence: 0.98 (direct measurement)
+
+Tier 2 (Diagnostic Agent)
+  → Logs: "Lab CRP 45mg/L (normal <5), trending up 3x in 48h"
+  → Confidence: 0.91 (lab-confirmed)
+
+Tier 3 (ML Ensemble Agent)
+  → Logs: "Unified risk score 0.78 (CRITICAL)"
+  → Domain contributions:
+      hospitalization_7d: raw=0.82, weight=0.35, contribution=0.287 (37%)
+      monitoring_alerts:  raw=0.60, weight=0.20, contribution=0.120 (15%)
+      comorbidity_risk:   raw=0.60, weight=0.20, contribution=0.120 (15%)
+      sdoh_risk:          raw=0.45, weight=0.15, contribution=0.068 (9%)
+      family_history:     raw=0.33, weight=0.10, contribution=0.033 (4%)
+  → Top risk drivers: [hospitalization_7d, monitoring_alerts, comorbidity_risk]
+  → Confidence interval: [0.68, 0.88]
+  → Alternatives: HIGH_RISK scored 0.72, MEDIUM_RISK scored 0.31
+
+Tier 4 (Intervention Agent)
+  → Logs: "Recommend Lisinopril uptitration 10mg→20mg per ACC/AHA 2023"
+  → Evidence: "A" level, source_guideline: "ACC/AHA 2023 Hypertension Guidelines"
+  → Feature importance: [Avg Systolic BP: 0.94, Current Dose: 0.60, Comorbidity Count: 0.45]
+  → requires_hitl: true
+
+Tier 5 (HITL Approval)
+  → Logs: physician_id=DR-456, decision=APPROVE, notes="Agree with uptitration"
+  → Audit: SHA-256 chained record → PostgreSQL + Redis + JSONL
+```
+
+### 16.5.3 Explainability — Per-Feature Attribution
+
+HealthOS provides explainability at **three levels**: model-level, recommendation-level, and population-level.
+
+#### Level 1: Model-Level Explainability (ML Ensemble)
+
+The `MLEnsembleAgent` (Agent 14) provides per-domain weighted contributions:
+
+```python
+# From Inhealth-Capstone ml_ensemble_agent.py
+domain_contributions = {
+    "hospitalization_7d": {
+        "raw_score": 0.82,                    # Domain-specific score (0-1)
+        "weight": 0.35,                        # Attention weight for this domain
+        "weighted_contribution": 0.287,        # raw × weight
+        "pct_of_total": 37.1                   # % of final unified score
+    },
+    "comorbidity_risk": { ... },
+    "sdoh_risk": { ... },
+    "family_history_risk": { ... },
+    "monitoring_alerts": { ... }
+}
+```
+
+**Confidence intervals** — wider when fewer data domains contribute:
+- 5 domains contributing: CI = ±0.05
+- 3 domains contributing: CI = ±0.09
+- 1 domain contributing: CI = ±0.13
+
+**Emergency override** — any EMERGENCY alert forces minimum score to 0.70 regardless of ensemble.
+
+#### Level 2: Recommendation-Level Explainability (Feature Importance)
+
+Every clinical recommendation includes the features that triggered it:
+
+```python
+# From Inhealth-Capstone seed_recommendations.py & fhir/tasks.py
+{
+    "title": "Blood Pressure Above ACC/AHA Target",
+    "recommendation": "Patient's average systolic BP over last 3 readings is 152 mmHg...",
+    "evidence_level": "A",                   # ADA/ACC grading (A/B/C/D/E)
+    "confidence": 0.91,
+    "source_guideline": "ACC/AHA 2023 Hypertension Guidelines",
+    "feature_importance": [
+        {"feature": "Avg Systolic BP",       "value": 0.94, "direction": "negative"},
+        {"feature": "Current Medication Dose","value": 0.60, "direction": "positive"},
+        {"feature": "Comorbidity Count",     "value": 0.45, "direction": "negative"}
+    ]
+}
+```
+
+**10 recommendation types** with feature importance already seeded:
+- Drug interaction score, A1c level, eGFR (medication safety)
+- Days since last A1c, last A1c value (screening)
+- NT-proBNP, weight change 7d, ejection fraction (urgent care)
+- eGFR decline rate, creatinine trend, proteinuria (CKD management)
+- CHA2DS2-VASc score components (stroke risk)
+- CKD stage, heart failure status, NSAID use (contraindications)
+
+#### Level 3: Population-Level Explainability (Fairness & Bias)
+
+From `AI-Healthcare-Embodiment` analytics services:
+
+| Analysis Type | Implementation | Output |
+|---|---|---|
+| **Subgroup Analysis** | `subgroup_analysis(run_id, group_by)` | Flagged rate, avg risk, auto-action rate, safety flag rate per demographic group (sex, age band, diagnosis) |
+| **Calibration** | `calibration_data(run_id, n_bins=10)` | Predicted risk vs actual at-risk rate per decile — checks if "0.7 risk" really means 70% chance |
+| **What-If Policy Simulation** | `what_if_analysis(run_id, overrides)` | Re-evaluate all assessments with different thresholds — see impact on precision/recall/TP/FP before deploying |
+| **Risk Distribution** | `risk_distribution(run_id)` | 20-bin histogram with mean, median, std, quartiles |
+| **Action Distribution** | `action_distribution(run_id)` | Count of AUTO_ORDER, DRAFT_ORDER, RECOMMEND, NO_ACTION |
+| **Model Metrics** | `compute_workflow_metrics(run_id)` | Precision, recall, F1, TP/FP/TN/FN, safety flag rate, avg risk score |
+
+**Fairness metrics per subgroup:**
+```python
+{
+    "group": "F",              # Female subgroup
+    "n": 150,                  # Sample size
+    "flagged_rate": 0.42,      # 42% flagged for review
+    "avg_risk": 0.38,          # Average risk score
+    "auto_rate": 0.05,         # 5% got auto-ordered MRI
+    "safety_flag_rate": 0.12,  # 12% triggered safety flags
+    "true_at_risk_rate": 0.40, # Ground truth at-risk rate
+}
+# Compare against male subgroup → detect disparities
+```
+
+### 16.5.4 Distributed Tracing (OpenTelemetry)
+
+Two tracing implementations merge into HealthOS:
+
+| Component | Source | Instrumentation |
+|---|---|---|
+| **Django backend** | Capstone `config/telemetry.py` | DjangoInstrumentor + Psycopg2Instrumentor + RedisInstrumentor → OTLP → Jaeger |
+| **FastAPI agents** | Capstone `agents/telemetry.py` | FastAPIInstrumentor + HTTPXClientInstrumentor + custom `agent_span()` context manager |
+| **LangChain pipeline** | Health_Assistant `callbacks.py` | `HealthcareCallbackHandler` → on_llm_start/end, on_chain_start/end, on_tool_start/end, on_agent_action/finish |
+| **LLM calls** | Both repos | Auto-captured by Langfuse (token count, latency, cost per call) |
+
+**Agent span example:**
+```python
+# From Capstone agents/telemetry.py
+async with agent_span("cardiac_agent", patient_id="P-12345", risk_level="HIGH"):
+    # Everything inside is traced with agent metadata
+    result = await cardiac_agent.analyze(patient_id, state, context)
+    # Span auto-captures duration, status, errors
+```
+
+**Trace waterfall view in Jaeger:**
+```
+[API Request 245ms]
+  └─[Orchestrator 230ms]
+      ├─[Tier1: Glucose Agent 45ms]
+      ├─[Tier1: Cardiac Agent 38ms]
+      ├─[Tier1: SpO2 Agent 22ms]
+      ├─[Tier2: Lab Agent 52ms]  ←── includes DB query spans
+      ├─[Tier3: ML Ensemble 89ms] ←── includes LLM call span
+      │    └─[LLM: Claude Sonnet 72ms] tokens_in=1200, tokens_out=450, cost=$0.008
+      └─[Tier4: Intervention Agent 34ms]
+           └─[HITL Interrupt 0ms → awaiting physician]
+```
+
+### 16.5.5 HITL Decision Audit Trail
+
+Every human-in-the-loop decision is captured with full context:
+
+```python
+# From Capstone agents/orchestrator/hitl.py
+HITLDecision = {
+    "thread_id": "lg-thread-abc123",      # LangGraph execution ID
+    "decision": "approve | modify | reject",
+    "notes": "Agree with Lisinopril uptitration, but start 15mg not 20mg",
+    "modified_intervention": {...},         # Only if decision == "modify"
+    "physician_id": "DR-456",
+    "pending_since": "2026-03-11T14:23:07Z",
+    "resolved_at": "2026-03-11T14:25:12Z", # 2 min review time
+}
+```
+
+**Audit chain for this decision:**
+```
+Record #1: AGENT_RUN — intervention_agent produced recommendation
+  → hash: sha256("...") = "a1b2c3..."
+Record #2: HITL_INTERRUPT — paused for physician review
+  → prev_hash: "a1b2c3...", hash: "d4e5f6..."
+Record #3: HITL_APPROVE — physician approved with modification
+  → prev_hash: "d4e5f6...", hash: "g7h8i9..."
+Record #4: PRESCRIPTION — modified prescription executed
+  → prev_hash: "g7h8i9...", hash: "j0k1l2..."
+
+verify_chain_integrity() → ✅ All hashes valid, no tampering
+```
+
+### 16.5.6 LLM Cost & Token Tracking
+
+| Metric | Prometheus Counter | Grafana Dashboard |
+|---|---|---|
+| **Cumulative LLM spend** | `inhealth_llm_cost_usd_total` | Currency formatting, 24h aggregation, threshold alerts |
+| **Token consumption** | `inhealth_llm_tokens_total` | Input/output breakdown per agent |
+| **API call count** | `inhealth_llm_calls_total` | Per-model (Claude/GPT/Ollama) breakdown |
+| **Per-agent latency** | `REQUEST_LATENCY` histogram | p50, p95, p99 by agent_name |
+| **Error rate** | `AGENT_RUNS{status="error"}` | Agent-specific failure rates |
+
+**Cost allocation example:**
+```
+Agent Tier    | Avg Tokens/Run | Model Used      | Cost/Run  | Daily (1000 patients)
+Tier 1 (Vitals) | 200 in, 100 out | Ollama (local) | $0.00     | $0.00
+Tier 2 (Diag)   | 800 in, 400 out | Claude Sonnet   | $0.006    | $6.00
+Tier 3 (Risk)   | 1200 in, 450 out| Claude Sonnet   | $0.008    | $8.00
+Tier 4 (Interv) | 600 in, 300 out | Claude Sonnet   | $0.004    | $4.00
+Tier 5 (Action)  | 100 in, 50 out  | Ollama (local) | $0.00     | $0.00
+                                                     TOTAL/day:   ~$18.00
+```
+
+### 16.5.7 Prometheus Alert Rules for Agents
+
+From `monitoring/prometheus/rules/agent_alerts.yml`:
+
+| Alert | Condition | Severity | Impact |
+|---|---|---|---|
+| **AgentDown** | Error rate > 0 for 5 min | Critical | Agent pipeline broken — page on-call |
+| **AgentHighLatency** | p95 latency > 30s | Warning | Patients waiting too long for results |
+| **AgentQueueDepth** | Celery queue > 100 tasks | Warning | Processing backlog — scale workers |
+| **A2AMessageFailures** | > 10 failures/min on A2A gateway | Critical | Inter-agent communication broken |
+| **AgentOrchestrationFailed** | LangGraph pipeline failure | Critical | Multi-agent workflow crashed |
+| **CriticalAlertUnacknowledged** | Clinical alert unack'd 5 min | Critical | **Patient safety** — escalate immediately |
+
+### 16.5.8 Frontend Dashboards
+
+#### Observability Dashboard (Health_Assistant)
+- **LangSmith/Langfuse connection status** — green/red badges
+- **Decision Rationale Panel** — expandable accordion per agent decision:
+  - Agent badge (color-coded: toxicity_filter→red, sql_agent→blue, etc.)
+  - Decision text + rationale + confidence score (0-1)
+  - Duration in ms
+  - Full input/output JSON inspection (expandable)
+- **Agent Conversations Timeline** — vertical timeline with:
+  - sender_agent → receiver_agent relationship arrows
+  - Message type (request/response/error)
+  - Capability label
+  - Success/failure dot (green/red)
+  - Duration badge
+- **Auto-refresh:** 30-second polling for live agent activity
+
+#### Agent Execution Log (Inhealth-Capstone)
+- **Filterable** by status (completed, running, failed, pending_hitl) and tier (1-5)
+- **Expandable** execution details per run
+- **Status badges** with icons and color coding
+- **Links** to Langfuse trace for deep-dive
+
+#### Grafana Agent Operations Dashboard
+- 5 pre-built dashboards: `agent_operations.json`, `llm_costs.json`, `system_health.json`, `clinical_overview.json`, `patient_population.json`
+- Agent execution latency histograms
+- Error rate by agent type
+- LLM cost tracking with currency formatting
+- Patient safety metrics
+
+### 16.5.9 Source Mapping
+
+| Capability | Primary Source | File |
+|---|---|---|
+| ObservabilityManager + decorators | Health_Assistant | `agents/src/observability/tracer.py` (400 lines) |
+| HealthcareCallbackHandler | Health_Assistant | `agents/src/observability/callbacks.py` |
+| Observability Dashboard UI | Health_Assistant | `frontend/src/components/observability/ObservabilityDashboard.tsx` |
+| Observability Traces API | Health_Assistant | `backend/healthcare_api/apps/agents/urls.py` (lines 217-280) |
+| Blockchain Audit Logger | Inhealth-Capstone | `agents/security/audit_logger.py` (28 HIPAA event types) |
+| ML Ensemble Explainability | Inhealth-Capstone | `agents/tier3_risk/ml_ensemble_agent.py` (231 lines) |
+| Feature Importance (Recommendations) | Inhealth-Capstone | `backend/apps/fhir/tasks.py` + `scripts/seed_recommendations.py` |
+| OpenTelemetry (Django) | Inhealth-Capstone | `backend/config/telemetry.py` |
+| OpenTelemetry (FastAPI) | Inhealth-Capstone | `agents/telemetry.py` |
+| Prometheus Agent Alerts | Inhealth-Capstone | `monitoring/prometheus/rules/agent_alerts.yml` |
+| Grafana Dashboards (5) | Inhealth-Capstone | `monitoring/grafana/dashboards/*.json` |
+| Agent Execution Log UI | Inhealth-Capstone | `frontend/src/components/agents/AgentExecutionLog.tsx` |
+| Recommendation model w/ rationale | HealthCare-Agentic | `backend/recommendations/models.py` |
+| Fairness / Calibration / What-If | AI-Healthcare-Embodiment | `backend/analytics/services.py` (254 lines) |
+| HITL Decision Model | Inhealth-Capstone | `agents/orchestrator/hitl.py` |
+| Guardrails Violation Logging | Inhealth-Capstone | `agents/security/guardrails.py` |
+| PHI Detection Logging | Health_Assistant | `agents/src/phi_filter/detector.py` |
+| AgentInteraction audit model | Health_Assistant | `backend/healthcare_api/apps/audit/models.py` |
+
+---
+
 ## 17. Multi-Tenant Architecture
 
 ### Tenant Isolation Model
