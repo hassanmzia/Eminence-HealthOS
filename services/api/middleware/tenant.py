@@ -10,7 +10,7 @@ import logging
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
-from platform.config.settings import get_settings
+from healthos_platform.config.settings import get_settings
 
 logger = logging.getLogger("healthos.middleware.tenant")
 

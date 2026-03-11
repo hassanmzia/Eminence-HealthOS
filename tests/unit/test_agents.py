@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from platform.agents.types import (
+from healthos_platform.agents.types import (
     AgentInput,
     AgentStatus,
     AgentTier,
@@ -20,7 +20,7 @@ from platform.agents.types import (
     VitalReading,
     VitalType,
 )
-from platform.orchestrator.registry import AgentRegistry
+from healthos_platform.orchestrator.registry import AgentRegistry
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

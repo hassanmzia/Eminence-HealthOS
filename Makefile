@@ -7,7 +7,7 @@ dev: ## Start dev environment
 	docker compose up -d postgres redis kafka qdrant neo4j
 	@echo "Waiting for services..."
 	@sleep 5
-	uvicorn platform.api.main:app --host 0.0.0.0 --port 8000 --reload
+	uvicorn healthos_platform.api.main:app --host 0.0.0.0 --port 8000 --reload
 
 up: ## Start all services
 	docker compose up -d

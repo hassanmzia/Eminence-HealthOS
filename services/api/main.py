@@ -12,8 +12,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 
-from platform.config.settings import get_settings
-from platform.config.database import init_db, close_db
+from healthos_platform.config.settings import get_settings
+from healthos_platform.config.database import init_db, close_db
 from services.api.middleware.tenant import TenantMiddleware
 from services.api.middleware.tracing import TracingMiddleware
 from services.api.routes import (

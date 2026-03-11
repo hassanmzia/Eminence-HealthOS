@@ -8,10 +8,10 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from platform.config.settings import get_settings
+from healthos_platform.config.settings import get_settings
 
 # Import Base and all models so Alembic sees them
-from platform.config.database import Base
+from healthos_platform.config.database import Base
 from shared.models import (  # noqa: F401
     tenant, patient, provider, encounter, observation,
     condition, medication, agent, alert, audit, consent, care_plan,

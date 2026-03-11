@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from platform.config.database import get_db
+from healthos_platform.config.database import get_db
 from services.api.middleware.auth import CurrentUser, require_auth
 from services.api.middleware.tenant import get_tenant_id
 from shared.models.observation import Observation
@@ -102,7 +102,7 @@ async def ingest_fhir_bundle(
     if bundle.get("resourceType") != "Bundle":
         raise HTTPException(status_code=400, detail="Expected a FHIR Bundle resource")
 
-    from platform.data.ingestion.pipeline import IngestionPipeline
+    from healthos_platform.data.ingestion.pipeline import IngestionPipeline
     pipeline = IngestionPipeline()
     result = await pipeline.ingest_fhir_bundle(bundle, tenant_id)
     return result

@@ -9,8 +9,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from platform.agents.base import BaseAgent
-from platform.agents.types import (
+from healthos_platform.agents.base import BaseAgent
+from healthos_platform.agents.types import (
     AgentInput,
     AgentOutput,
     AgentTier,

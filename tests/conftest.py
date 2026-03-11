@@ -8,8 +8,8 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from platform.config.database import Base, get_db
-from platform.config.settings import Settings
+from healthos_platform.config.database import Base, get_db
+from healthos_platform.config.settings import Settings
 
 
 @pytest.fixture(scope="session")

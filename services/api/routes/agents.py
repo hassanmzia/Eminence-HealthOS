@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from platform.config.database import get_db
+from healthos_platform.config.database import get_db
 from services.api.middleware.auth import CurrentUser, require_auth
 from services.api.middleware.tenant import get_tenant_id
 from services.api.schemas.agent import (

@@ -6,7 +6,7 @@ quality metrics, and population health trends.
 """
 
 import logging
-from platform.agents.base import (
+from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
     AgentOutput,

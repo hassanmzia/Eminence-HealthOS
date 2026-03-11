@@ -33,8 +33,8 @@ class HealthOSWorker:
 
     async def start(self) -> None:
         """Initialize consumer and orchestrator, then start consuming."""
-        from platform.config.settings import get_settings
-        from platform.orchestrator.engine import OrchestratorEngine
+        from healthos_platform.config.settings import get_settings
+        from healthos_platform.orchestrator.engine import OrchestratorEngine
 
         settings = get_settings()
         self._orchestrator = OrchestratorEngine()
@@ -93,7 +93,7 @@ class HealthOSWorker:
 
     async def _handle_message(self, topic: str, payload: dict) -> None:
         """Route a Kafka message to the appropriate orchestrator pipeline."""
-        from platform.orchestrator.engine import OrchestratorContext
+        from healthos_platform.orchestrator.engine import OrchestratorContext
 
         logger.info("Received message on topic=%s", topic)
 

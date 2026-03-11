@@ -7,8 +7,8 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from platform.database import Base
-from platform.models import *  # noqa: F401,F403 — import all models for autogenerate
+from healthos_platform.database import Base
+from healthos_platform.models import *  # noqa: F401,F403 — import all models for autogenerate
 
 config = context.config
 if config.config_file_name is not None:

@@ -6,7 +6,7 @@ and notification delivery. Adapts language to patient health literacy.
 """
 
 import logging
-from platform.agents.base import (
+from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
     AgentOutput,

@@ -8,7 +8,7 @@ and notification delivery based on severity and provider preferences.
 import logging
 from datetime import datetime, timezone
 
-from platform.agents.base import (
+from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
     AgentOutput,
@@ -118,7 +118,7 @@ class AlertManagerAgent(HealthOSAgent):
         """Persist alerts to the database."""
         created = 0
         try:
-            from platform.config.database import get_db_context
+            from healthos_platform.config.database import get_db_context
             from shared.models.alert import ClinicalAlert
 
             async with get_db_context() as db:

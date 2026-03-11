@@ -6,7 +6,7 @@ and tracks ROI for RPM programs and interventions.
 """
 
 import logging
-from platform.agents.base import (
+from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
     AgentOutput,

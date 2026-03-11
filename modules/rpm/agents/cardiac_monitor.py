@@ -6,7 +6,7 @@ variability, arrhythmia detection, and cardiovascular risk factors.
 """
 
 import logging
-from platform.agents.base import (
+from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
     AgentOutput,

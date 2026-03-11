@@ -9,10 +9,10 @@ import asyncio
 import uuid
 from datetime import datetime, timezone
 
-from platform.config import get_settings
-from platform.database import get_db_context, get_engine
-from platform.models import Base, Organization, Patient, User
-from platform.security.auth import hash_password
+from healthos_platform.config import get_settings
+from healthos_platform.database import get_db_context, get_engine
+from healthos_platform.models import Base, Organization, Patient, User
+from healthos_platform.security.auth import hash_password
 
 
 async def seed() -> None:

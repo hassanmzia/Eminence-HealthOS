@@ -12,7 +12,7 @@ from modules.rpm.agents.vitals_normalization import VitalsNormalizationAgent
 
 def register_rpm_agents() -> None:
     """Register all RPM agents with the global registry."""
-    from platform.orchestrator.registry import registry
+    from healthos_platform.orchestrator.registry import registry
 
     registry.register(DeviceIngestionAgent())
     registry.register(VitalsNormalizationAgent())

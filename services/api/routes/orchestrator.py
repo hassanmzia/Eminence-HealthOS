@@ -20,7 +20,7 @@ _engine = None
 def get_engine():
     global _engine
     if _engine is None:
-        from platform.orchestrator.engine import OrchestratorEngine
+        from healthos_platform.orchestrator.engine import OrchestratorEngine
         from modules.rpm.registry import register_rpm_agents
 
         _engine = OrchestratorEngine()
@@ -47,8 +47,8 @@ async def run_pipeline(
     user: CurrentUser = Depends(require_auth),
 ):
     """Execute the full agent pipeline for a patient."""
-    from platform.orchestrator.engine import OrchestratorContext
-    from platform.agents.base import AgentTier
+    from healthos_platform.orchestrator.engine import OrchestratorContext
+    from healthos_platform.agents.base import AgentTier
 
     engine = get_engine()
 
@@ -93,7 +93,7 @@ async def execute_single_agent(
     user: CurrentUser = Depends(require_auth),
 ):
     """Execute a single agent by name."""
-    from platform.agents.base import AgentInput
+    from healthos_platform.agents.base import AgentInput
 
     engine = get_engine()
 
