@@ -97,6 +97,15 @@ def create_app() -> FastAPI:
     app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["Dashboard"])
     app.include_router(websocket.router, tags=["WebSocket"])
 
+    # ── Module Routes ─────────────────────────────────────────
+    from modules.telehealth.routes import router as telehealth_router
+    from modules.operations.routes import router as operations_router
+    from modules.analytics.routes import router as analytics_router
+
+    app.include_router(telehealth_router, prefix="/api/v1/telehealth", tags=["Telehealth"])
+    app.include_router(operations_router, prefix="/api/v1/operations", tags=["Operations"])
+    app.include_router(analytics_router, prefix="/api/v1/analytics", tags=["Analytics"])
+
     return app
 
 
