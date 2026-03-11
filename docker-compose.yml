@@ -98,7 +98,7 @@ services:
     image: neo4j:5.25-community
     ports:
       - "7575:7474"
-      - "7687:7687"
+      - "7678:7687"
     environment:
       NEO4J_AUTH: neo4j/healthos
       NEO4J_PLUGINS: '["apoc"]'
