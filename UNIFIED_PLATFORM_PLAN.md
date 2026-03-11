@@ -77,7 +77,7 @@ HealthOS uses a **30-agent multi-agent architecture** organized across 5 operati
 | Repository | Key Contributions to HealthOS |
 |---|---|
 | **HealthCare-Agentic-Platform** | Django backend, clinical agents, MCP servers, FHIR APIs, IoT simulator, React clinician dashboard |
-| **Health_Assistant** | A2A protocol, PHI filter/masker, HITL agent, MCP server (TypeScript), classifier/executor agents, observability |
+| **Health_Assistant** | A2A protocol, PHI filter/masker, HITL agent, MCP server (TypeScript), classifier/executor agents, observability, audit/agent/observability dashboards, FHIR statistics API, workflow visualization, risk scoring UI |
 | **Inhealth-Capstone-Project** | 25-agent architecture patterns, FHIR PostgreSQL schema, Neo4j knowledge graph, Helm charts, tier-based agent system |
 | **InhealthUSA** | Patient portal patterns, EHR schema, IoT vitals submission, billing system, treatment plans |
 | **AI-Healthcare-Embodiment** | AI health assistant patterns, Streamlit UI, clinical decision support flows |
@@ -1970,10 +1970,10 @@ tenant_config:
 | Security/HIPAA (15) | 15 | 12 | 12 | 10 | 14 |
 | Telehealth (10) | 8 | 6 | 2 | 0 | 4 |
 | RPM / Vitals (10) | 10 | 8 | 4 | 0 | 9 |
-| Analytics (10) | 10 | 7 | 8 | 3 | 3 |
+| Analytics (10) | 10 | 7 | 8 | 7 | 3 |
 | Multi-Tenant (5) | 5 | 0 | 0 | 0 | 2 |
 | Deployment (10) | 10 | 9 | 9 | 7 | 6 |
-| **TOTAL (130)** | **128** | **100** | **72** | **52** | **74** |
+| **TOTAL (130)** | **128** | **100** | **72** | **56** | **74** |
 
 > **InhealthUSA Score Rationale (Rocky9 Django):**
 > - **Agent Architecture (3):** AI treatment plan generator (Ollama/Llama 3.2) with structured prompt engineering — not a multi-agent system but has working AI integration
@@ -1982,6 +1982,14 @@ tenant_config:
 > - **Security/HIPAA (14):** 7 enterprise auth methods (Local+MFA/TOTP, OIDC/Azure AD/Okta/Cognito, SAML 2.0, CAC/PKI, Multi-provider router), 4 custom password validators, account lockout, session security middleware, email verification, backup codes — most complete auth system across all repos
 > - **RPM/Vitals (9):** Working IoT REST API (single + batch + glucose), file-based IoT data processor, two-stage vital alert system (immediate provider + patient EMS consent + auto-escalation), DeviceAlertRule with configurable thresholds, multi-channel notifications (Email/SMS/WhatsApp/Dashboard), 7 vital sign types with color-coded severity status
 > - **Multi-Tenant (2):** Hospital/Department organizational hierarchy (not full SaaS multi-tenant but supports multi-facility)
+
+> **Health_Assistant Score Rationale:**
+> - **Agent Architecture (12):** A2A protocol with registry, PHI filter/masker agent, toxicity filter agent, HITL agent, SQL agent, classifier agent — clean agent architecture but not multi-tier supervisor
+> - **Database Schema (10):** Django apps for patients, conditions, encounters, allergies, agents, audit, FHIR — comprehensive FHIR-mapped schema
+> - **Frontend (10):** 6 dashboard pages (main dashboard, observability, agent monitoring, FHIR browser, HITL, chat), workflow visualization with Mermaid, progress bar visualizations
+> - **Security/HIPAA (10):** PHI detection and 4-level masking, toxicity filtering, HITL approval workflow, audit logging
+> - **Analytics (7):** Audit metrics dashboard (query type/status distributions), agent monitoring dashboard (health/success rate/response time), observability dashboard (LangSmith/Langfuse + decision rationale + confidence scores), FHIR statistics API (demographics, top conditions/medications, encounter types, 30-day activity), workflow visualization (3 Mermaid diagram types), HITL risk score visualization (color-coded thresholds)
+> - **Deployment (7):** Docker Compose setup, environment-based configuration
 
 ### What ONLY HealthOS Will Have (Not in Any Repo)
 
@@ -1999,11 +2007,11 @@ tenant_config:
 
 | Repo | Contribution to HealthOS | Percentage |
 |------|------------------------|-----------|
-| **Inhealth-Capstone** | Primary foundation: 25-agent patterns, FHIR schema, Neo4j, multi-tenant, Helm, analytics | ~55% |
+| **Inhealth-Capstone** | Primary foundation: 25-agent patterns, FHIR schema, Neo4j, multi-tenant, Helm, analytics | ~50% |
 | **HealthCare-Agentic** | Specialty agents (oncology, radiology, coding), physician review, clinical document pipeline | ~15% |
 | **InhealthUSA** | Production EHR schema (30+ models), enterprise auth (7 methods, MFA/TOTP, CAC), IoT REST API, two-stage vital alerts (Email/SMS/WhatsApp), billing/payments, 5-role RBAC, AI treatment plans, notification preferences | ~15% |
 | **AI-Embodiment** | Safety governance, fairness analysis, what-if simulator, policy engine, phenotyping | ~10% |
-| **Health_Assistant** | NL2SQL, PHI masking (4 levels), toxicity filter, A2A protocol, HITL approval, FHIR browser | ~5% |
+| **Health_Assistant** | NL2SQL, PHI masking (4 levels), toxicity filter, A2A protocol, HITL approval, FHIR browser, audit metrics dashboard, agent monitoring dashboard, observability dashboard (LangSmith/Langfuse), FHIR statistics API (demographics/clinical analytics), workflow visualization (Mermaid), HITL risk scoring UI | ~10% |
 
 ---
 
@@ -2939,9 +2947,9 @@ After deep analysis of all 5 healthcare repositories, here is the complete featu
 | **Clinician Dashboard** | `frontend/clinician-dashboard/` (20+ components) | Adapt — AlertsDashboard, VitalsCharts, LabsDashboard, MedicationsDashboard, AnalyticsDashboard, PatientImport, DeviceAssignment, SimulatorControl | P1 — FRONTEND |
 | **API Layer** | `backend/` (patients, users, vitals, clinical apps) | Adapt — REST API with serializers, views, permissions | P1 |
 
-### 3. Health_Assistant (60% Reusable — A2A & PHI & HITL)
+### 3. Health_Assistant (70% Reusable — A2A & PHI & HITL & ANALYTICS)
 
-**Status**: Clean agent architecture with A2A protocol, PHI filtering, and FHIR browser.
+**Status**: Clean agent architecture with A2A protocol, PHI filtering, FHIR browser, and comprehensive analytics dashboards (audit metrics, agent monitoring, observability with LangSmith/Langfuse, FHIR statistics, workflow visualization).
 
 | Feature | Files | Reusability | Import Priority |
 |---------|-------|-------------|-----------------|
@@ -2957,6 +2965,15 @@ After deep analysis of all 5 healthcare repositories, here is the complete featu
 | **Observability Callbacks** | `agents/src/observability/callbacks.py` | Direct import — LangChain callback handlers for tracing | P1 |
 | **FHIR Browser UI** | `frontend/src/components/fhir/` (5 components) | Direct import — FHIRPatientList, FHIRResourceList, FHIRResourcePages, FHIRPatientDetail, FHIRBrowserPage | P1 — NEW for HealthOS |
 | **HITL Approval UI** | `frontend/src/components/hitl/` (2 components) | Direct import — HITLPage, HITLApprovalPanel | P1 |
+| **Audit Metrics Dashboard** | `frontend/src/components/dashboard/DashboardPage.tsx` | Direct import — query metrics (total/auto-executed/approved/blocked), query type distribution (READ/WRITE/UNSAFE), approval status breakdown with progress bars | P1 — NEW for HealthOS |
+| **Agent Monitoring Dashboard** | `frontend/src/components/agents/AgentMonitoringPage.tsx` | Direct import — real-time agent health status, success rate %, avg response time (ms), active agents count, agent-to-agent interaction table with duration/status tracking | P1 — NEW for HealthOS |
+| **Observability Dashboard** | `frontend/src/components/observability/ObservabilityDashboard.tsx` | Direct import — LangSmith/Langfuse integration status, decision rationale with confidence scores, agent conversation timelines, decision flow visualization | P1 — NEW for HealthOS |
+| **FHIR Statistics API** | `backend/healthcare_api/apps/fhir/views.py` (lines 308-388) | Direct import — patient demographics (gender/age groups), top 10 conditions/medications, encounter types, observation categories, 30-day activity metrics | P1 — NEW for HealthOS |
+| **Workflow Visualization** | `frontend/src/components/agents/WorkflowDiagram.tsx` | Direct import — 3 Mermaid diagram types (LangGraph flow, agent sequence, decision tree), fullscreen mode, live workflow fetching | P1 — NEW for HealthOS |
+| **HITL Risk Score UI** | `frontend/src/components/hitl/HITLPage.tsx` | Direct import — 0-100% risk score visualization with color-coded thresholds (red ≥70%, yellow 40-69%, green <40%), approval history table | P1 — NEW for HealthOS |
+| **Audit Metrics API** | `backend/healthcare_api/apps/audit/` | Direct import — `/audit/metrics/` endpoint with query type/status aggregation | P1 — NEW for HealthOS |
+| **Agent Stats API** | `backend/healthcare_api/apps/agents/` | Direct import — `/agents/stats/` endpoint with total interactions, success rate, avg duration, per-agent breakdown | P1 — NEW for HealthOS |
+| **Observability Traces API** | `backend/healthcare_api/apps/agents/` (observability) | Direct import — `/observability/traces/` with session tracking, agent decisions, rationale, confidence scores, duration | P1 — NEW for HealthOS |
 | **Chat Interface** | `frontend/src/components/chat/` | Adapt — ChatPage, ChatMessage for patient/provider chat | P2 |
 | **WebSocket Hooks** | `frontend/src/hooks/useWebSocket.ts` | Direct import — real-time WebSocket communication | P1 |
 | **Django Apps** | `backend/healthcare_api/apps/` (patients, conditions, encounters, allergies, agents, audit, fhir) | Adapt — comprehensive Django app structure with FHIR serializers | P1 |
@@ -3050,6 +3067,12 @@ These are features found in your repos that are NOT yet in the HealthOS plan:
 | 28 | **DRF IoT API v1** (versioned REST API with class-based views: device auth, POST vitals, bulk vitals, glucose, device status/info — separate from function-based API) | InhealthUSA | High — API maturity |
 | 29 | **AuthenticationConfig Model** (admin-managed auth method configuration: Local/LDAP/OAuth2/OIDC/Azure AD/CAC/SAML/SSO with per-method fields, priority, enable/disable) | InhealthUSA | High — enterprise deployment |
 | 30 | **Patient Vitals Charting** (vitals chart view for patients and providers with historical trending) | InhealthUSA | Medium — patient engagement |
+| 31 | **Audit Metrics Dashboard** (query type/status distributions with progress bar visualizations, auto-executed/approved/blocked counts) | Health_Assistant | High — operational visibility |
+| 32 | **Agent Monitoring Dashboard** (real-time agent health status, success rate %, avg response time ms, active agents count, agent-to-agent interaction table with duration/status) | Health_Assistant | High — agent operations |
+| 33 | **Observability Dashboard** (LangSmith/Langfuse integration status, decision rationale with confidence scores, agent conversation timelines, decision flow visualization) | Health_Assistant | High — AI explainability |
+| 34 | **FHIR Statistics API** (patient demographics analytics: gender distribution, age group breakdown; top 10 conditions/medications by prevalence; encounter types; observation categories; recent 30-day activity) | Health_Assistant | High — population insights |
+| 35 | **Workflow Visualization** (3 Mermaid diagram types: LangGraph query processing flow, agent sequence diagrams, decision tree routing logic — with fullscreen mode) | Health_Assistant | Medium — developer/admin tool |
+| 36 | **HITL Risk Score Visualization** (0-100% risk score with color-coded thresholds: red ≥70%, yellow 40-69%, green <40%; risk assessment text display; approval history table) | Health_Assistant | High — clinical safety UX |
 
 ### Import Execution Order
 
@@ -3067,17 +3090,20 @@ Phase 2 (Specialty + Safety + IoT — Week 3-4):
 ├── InhealthUSA → Two-stage vital alerts, IoT REST API (v1 DRF + function views), IoT data processor
 └── InhealthUSA → Multi-channel notifications (Email/SMS/WhatsApp/Dashboard), notification preferences, DeviceAlertRule
 
-Phase 3 (Clinical Workflow + AI — Week 5-6):
+Phase 3 (Clinical Workflow + AI + Observability — Week 5-6):
 ├── HealthCare-Agentic → ClinicalAssessment → PhysicianReview → EHROrder pipeline
 ├── HealthCare-Agentic → Clinical document generation (HTML/PDF/FHIR/CCD)
 ├── AI-Healthcare-Embodiment → What-if analysis, phenotyping agents, policy management
 ├── InhealthUSA → AI treatment plan pipeline (Ollama → doctor review → patient publish → acknowledge)
-└── Health_Assistant → FHIR browser, chat interface, observability
+├── Health_Assistant → FHIR browser, chat interface, observability traces API
+├── Health_Assistant → Audit metrics API, agent stats API, FHIR statistics API
+└── Health_Assistant → Observability dashboard (LangSmith/Langfuse), agent monitoring dashboard
 
-Phase 4 (Frontend + Polish — Week 7-8):
+Phase 4 (Frontend + Analytics + Polish — Week 7-8):
 ├── HealthCare-Agentic → Clinician dashboard components
 ├── AI-Healthcare-Embodiment → Fairness, governance, audit, workflow dashboards
-├── Health_Assistant → HITL approval UI, WebSocket hooks
+├── Health_Assistant → HITL approval UI with risk score visualization, WebSocket hooks
+├── Health_Assistant → Audit metrics dashboard, workflow visualization (Mermaid diagrams)
 ├── InhealthUSA → 5 role-based dashboards, patient portal (vitals charts, questionnaires)
 └── InhealthUSA → IoT file management UI, API key management UI, device management UI
 ```
@@ -3095,7 +3121,7 @@ Phase 4 (Frontend + Polish — Week 7-8):
 | Billing/Revenue | None | Full cycle | +Billing, BillingItem, Payment, InsuranceInformation (from InhealthUSA) |
 | IoT/RPM | Basic | Production | +IoT REST API v1 (DRF class-based), file processor, DeviceAlertRule, device API key management (from InhealthUSA) |
 | RBAC/Roles | Basic | 5-role system | +Patient, Doctor, Nurse, OfficeAdmin, SystemAdmin with decorator-based permissions (from InhealthUSA) |
-| Analytics | Basic | Advanced | +Fairness subgroup analysis, calibration, what-if simulation |
+| Analytics | Basic | Advanced | +Fairness subgroup analysis, calibration, what-if simulation, audit metrics dashboard, agent monitoring dashboard (health/success rate/response time), observability dashboard (LangSmith/Langfuse + decision rationale + confidence scores), FHIR statistics API (demographics/clinical analytics), workflow visualization (Mermaid), HITL risk score UI |
 | Compliance | 18 frameworks | 18 + governance engine | +Configurable rules, compliance reports |
 | Messaging | None | Full | +Threaded internal messaging with inbox/sent/compose (from InhealthUSA) |
 | Frontend Pages | ~15 | ~50 (+35) | +InhealthUSA (5 role dashboards, patient portal, vitals charts, questionnaires, billing/payment views, IoT mgmt, API key mgmt) + Fairness, Governance, Audit, What-If, Policies, FHIR Browser, etc. |
@@ -3111,13 +3137,14 @@ Phase 4 (Frontend + Polish — Week 7-8):
 │  5 Notification Channels │ 7 Enterprise Auth Methods │ 5-Role RBAC    │
 │  Full Billing/Payments │ IoT REST API │ Fairness Analytics             │
 │  What-If Simulation │ Governance Engine │ FDA SaMD Ready               │
+│  Agent Monitoring │ Observability (LangSmith/Langfuse) │ Workflow Viz  │
 │                                                                        │
 │  Source Code:                                                           │
-│  ├── InHealth-Capstone   (55%) → Core orchestrator + 25 agents         │
+│  ├── InHealth-Capstone   (50%) → Core orchestrator + 25 agents         │
 │  ├── HealthCare-Agentic  (15%) → Specialty agents + clinical models    │
 │  ├── InhealthUSA         (15%) → EHR schema + IoT + auth + billing     │
 │  ├── AI-Embodiment       (10%) → Governance + fairness + what-if       │
-│  └── Health_Assistant     (5%) → A2A + PHI + HITL + FHIR browser      │
+│  └── Health_Assistant    (10%) → A2A + PHI + HITL + FHIR + Analytics  │
 │                                                                        │
 │  New for HealthOS (not in any repo):                                    │
 │  ├── 50+ Specialized Imaging AI Models (MONAI, MedSAM, etc.)          │
