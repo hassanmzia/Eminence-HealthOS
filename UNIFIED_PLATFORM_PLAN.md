@@ -867,6 +867,274 @@ DICOM Image Received
 └─────────┘  └──────────────────┘
 ```
 
+### Disease-Specific AI Imaging Models — Expert Per Modality
+
+HealthOS does NOT use one generic model. It uses **specialized, best-in-class AI models per imaging modality and disease type**, following the same principle as having specialist doctors — each model is an expert at its specific task.
+
+#### Model Architecture: Ensemble of Specialists
+
+```
+                    ┌─────────────────────────────────┐
+                    │  HEALTHOS IMAGE ANALYSIS AGENT    │
+                    │  (Orchestrator — routes to        │
+                    │   specialist model per modality)   │
+                    └──────────────┬──────────────────┘
+                                   │
+         ┌────────────┬────────────┼───────────┬────────────┐
+         ▼            ▼            ▼           ▼            ▼
+   ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ ┌─────────┐
+   │ Chest    │ │ Neuro    │ │ Cardiac  │ │Mammo-  │ │ Retinal │
+   │ Imaging  │ │ Imaging  │ │ Imaging  │ │graphy  │ │ Imaging │
+   │ Models   │ │ Models   │ │ Models   │ │Models  │ │ Models  │
+   └──────────┘ └──────────┘ └──────────┘ └────────┘ └─────────┘
+         │            │            │           │            │
+   ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ ┌─────────┐
+   │MSK/Ortho │ │Abdominal │ │Pathology │ │Dermato-│ │ ECG/    │
+   │ Models   │ │ Models   │ │ Models   │ │ logy   │ │ Cardiac │
+   └──────────┘ └──────────┘ └──────────┘ └────────┘ └─────────┘
+```
+
+#### Chest X-Ray & Chest CT Models
+
+| Disease/Finding | Model | Architecture | Training Data | Performance | FDA Status |
+|----------------|-------|-------------|---------------|-------------|-----------|
+| **14 Chest X-Ray Pathologies** (pneumonia, cardiomegaly, effusion, pneumothorax, atelectasis, consolidation, edema, emphysema, fibrosis, hernia, mass, nodule, pleural thickening, infiltration) | CheXNet / DenseNet-121 + custom ensemble | DenseNet-121 pretrained, fine-tuned | CheXpert (224K images), MIMIC-CXR (377K), NIH ChestX-ray14 (112K) | AUC 0.92–0.97 per pathology | Reference models for FDA-cleared products |
+| **Lung Nodule Detection (CT)** | MONAI Lung Nodule + 3D ResNet | 3D CNN with attention | LUNA16, LIDC-IDRI (1,018 CTs) | Sensitivity >94% at 1 FP/scan | Multiple FDA-cleared derivatives |
+| **Lung Cancer Screening (LDCT)** | MONAI + custom ensemble | 3D DenseNet + Attention U-Net | NLST trial data, institutional | AUC 0.94 for malignancy | Median Technologies eyonis™ (FDA pending) |
+| **Pneumothorax Detection** | Custom U-Net + ResNet-50 | Segmentation + Classification | SIIM-ACR dataset (12K images) | AUC 0.96 | Aidoc FDA-cleared |
+| **COVID/Pneumonia** | COVID-Net / MONAI COVID | Modified ResNet architecture | COVIDx (30K+ images) | Sensitivity >95% | Emergency Use Authorization models |
+| **Pulmonary Embolism (CTPA)** | PENet / MONAI PE | 3D CNN + temporal attention | RSNA PE dataset (7,000 CTs) | AUC 0.85–0.92 | Aidoc PE Triage FDA-cleared |
+| **Tuberculosis Screening** | qXR (Qure.ai architecture) | Deep ensemble CNN | 4.2M chest X-rays | Sensitivity >95%, Specificity >80% | WHO prequalified, CE marked |
+
+#### Neuroimaging Models (Brain CT & MRI)
+
+| Disease/Finding | Model | Architecture | Performance |
+|----------------|-------|-------------|-------------|
+| **Intracranial Hemorrhage** | MONAI + DeepBleed | 3D ResNet + attention | AUC 0.97, Sensitivity >95% |
+| **Ischemic Stroke (LVO)** | Viz.ai architecture pattern | 3D CNN + vessel tracking | Time to treatment reduced 30+ min |
+| **Brain Tumor Segmentation** | MONAI BraTS ensemble | U-Net + Transformer (SegResNet) | Dice score 0.88–0.91 |
+| **Brain Metastases** | Custom 3D DenseNet | 3D DenseNet-121 | Sensitivity 0.96 per lesion |
+| **Alzheimer's (MRI)** | MedSAM + custom classifier | Vision Transformer + MLP | AUC 0.93 for MCI vs healthy |
+| **Multiple Sclerosis Lesions** | MONAI MS-Seg | U-Net with attention gates | Dice 0.85 for new lesions |
+
+#### Cardiac Imaging & ECG Models
+
+| Disease/Finding | Model | Architecture | Performance |
+|----------------|-------|-------------|-------------|
+| **12-Lead ECG Arrhythmia (13 types)** | Custom 1D-CNN + BiLSTM | Deep-learned time series | Accuracy matching cardiologists (iRhythm validated) |
+| **Atrial Fibrillation** | Tempus ECG-AF architecture | 1D ResNet-34 | AUC 0.91 for future AF risk |
+| **Low Ejection Fraction** | ECG-AI Low EF | 1D CNN on ECG waveform | AUC 0.94 for EF <35% |
+| **STEMI Detection** | Custom CNN + signal processing | 1D CNN + ST analysis | Sensitivity >95% |
+| **Cardiac MRI (LVEF)** | MONAI cardiac | 3D U-Net + temporal | EF prediction ±4% |
+| **Coronary Artery (CT)** | HeartFlow FFR-CT pattern | 3D CNN + computational fluid dynamics | FFR accuracy vs invasive 86% |
+| **Echocardiography** | EchoNet-Dynamic | Video-based R(2+1)D CNN | EF MAE 4.1% |
+| **Heart Murmur (Audio)** | Eko AI stethoscope pattern | 1D CNN on audio + spectrogram | Sensitivity 87% for structural murmurs |
+
+#### Mammography & Breast Imaging Models
+
+| Disease/Finding | Model | Architecture | Performance |
+|----------------|-------|-------------|-------------|
+| **Breast Cancer Detection (2D/3D)** | Custom ensemble (DeepHealth pattern) | Multi-scale CNN + attention | 22.7% detection increase for dense tissue |
+| **5-Year Breast Cancer Risk** | Clairity architecture | Image-only CNN risk model | Superior to density-based models |
+| **Breast Density Classification** | DenseNet-169 custom | DenseNet + BI-RADS mapping | 4-class accuracy >90% |
+| **Suspicious Calcifications** | Custom Faster R-CNN | Object detection + classification | Sensitivity >92% |
+| **Tomosynthesis (3D Mammo)** | GE Pristina Recon DL pattern | Deep learning reconstruction + detection | Preferred by radiologists 99% of cases |
+
+#### Retinal / Ophthalmology Models
+
+| Disease/Finding | Model | Architecture | Performance |
+|----------------|-------|-------------|-------------|
+| **Diabetic Retinopathy** | LumineticsCore (IDx-DR) pattern | Inception V3 + custom | Sensitivity 87.2%, Specificity 90.7% (FDA De Novo) |
+| **Diabetic Macular Edema** | EyeArt pattern | Multi-scale CNN | Sensitivity >91% |
+| **Glaucoma Screening** | Custom ResNet-50 + GradCAM | ResNet + optic disc segmentation | AUC 0.95 |
+| **Age-Related Macular Degeneration** | Custom VGG-16/ResNet | Transfer learning + OCT analysis | AUC 0.97 |
+| **Retinal Vessel Analysis** | U-Net segmentation | U-Net + MedSAM fine-tune | Dice 0.82 |
+| **Hypertensive Retinopathy** | Custom CNN classifier | ResNet-50 grading | 4-grade classification accuracy >85% |
+
+#### Musculoskeletal / Orthopedic Models
+
+| Disease/Finding | Model | Architecture | Performance |
+|----------------|-------|-------------|-------------|
+| **Fracture Detection (X-ray)** | MONAI + custom DenseNet | DenseNet-169 + multi-region | AUC 0.94 across bone types |
+| **Hip Fracture** | Custom ResNet-152 | Deep CNN + landmark detection | Sensitivity >95% |
+| **Wrist Fracture** | MONAI fine-tuned | EfficientNet-B4 | AUC 0.97 |
+| **Spine Compression Fracture** | 3D ResNet on CT | 3D CNN + vertebral segmentation | Sensitivity >90% |
+| **Osteoporosis (BMD)** | CT-based BMD estimator | 3D CNN regression | r=0.92 correlation with DXA |
+| **Knee Osteoarthritis** | Custom ResNet + KL grading | CNN + ordinal regression | KL grade accuracy >75% |
+
+#### Abdominal Imaging Models
+
+| Disease/Finding | Model | Architecture | Performance |
+|----------------|-------|-------------|-------------|
+| **Abdominal Organ Segmentation** | MONAI TotalSegmentator | nnU-Net architecture | 117 anatomical structures, Dice >0.90 |
+| **Liver Lesion Detection** | MONAI Liver + custom | 3D U-Net + classification head | Sensitivity >88% |
+| **Kidney Stone Detection** | Custom 3D CNN | 3D ResNet on non-contrast CT | AUC 0.95 |
+| **Appendicitis (CT)** | Custom CNN classifier | ResNet-50 + clinical features | AUC 0.92 |
+| **Colon Polyp (Colonoscopy)** | Custom YOLO + U-Net | Real-time object detection | Sensitivity >95% (GI Genius FDA-cleared) |
+
+#### Dermatology Models
+
+| Disease/Finding | Model | Architecture | Performance |
+|----------------|-------|-------------|-------------|
+| **Skin Cancer (Melanoma)** | ISIC ensemble | EfficientNet-B6 + metadata | AUC 0.95 for melanoma vs benign |
+| **Skin Lesion Classification (7 types)** | HAM10000 trained ensemble | DenseNet-201 + attention | Top-3 accuracy >92% |
+| **Psoriasis Severity (PASI)** | Custom CNN regression | ResNet + severity scoring | PASI estimation correlation r=0.89 |
+| **Wound Assessment** | Custom segmentation + classification | U-Net + classifier | Area estimation ±8% |
+
+#### Digital Pathology Models
+
+| Disease/Finding | Model | Architecture | Performance |
+|----------------|-------|-------------|-------------|
+| **Whole Slide Image Analysis** | MONAI Pathology + custom | Vision Transformer (ViT) | Multi-class tissue classification |
+| **Breast Cancer Histopathology** | MONAI + Camelyon ensemble | Multiple Instance Learning (MIL) | AUC 0.97 for metastasis detection |
+| **Prostate Cancer Grading** | Custom Gleason grading CNN | EfficientNet + attention MIL | Gleason agreement κ=0.85 |
+| **Cervical Cytology** | Custom screening model | ResNet + cell detection | Sensitivity >90% for HSIL |
+| **Blood Cell Classification** | Custom CNN | DenseNet-121 | 5-class accuracy >95% |
+
+#### Foundation Models (Multi-Purpose — HealthOS Core)
+
+| Model | Capabilities | Use in HealthOS |
+|-------|-------------|----------------|
+| **MONAI (NVIDIA)** | 15+ pretrained models for CT, MRI, pathology, endoscopy | Primary framework for all imaging AI training and deployment |
+| **BiomedCLIP** | Image-text matching, zero-shot classification across medical modalities | Clinical image search, automated report suggestions, visual QA |
+| **MedSAM / MedSAM-2** | Universal medical image segmentation (CT, MRI, US, pathology) | Interactive segmentation tool for radiologists, 3D volume analysis |
+| **MedGemma / MedSigLIP (Google)** | Multi-modal medical reasoning (X-ray, pathology, dermatology, fundus) | Cross-modality analysis, second opinion agent, complex cases |
+| **VILA-M3 (NVIDIA)** | Multimodal radiology co-pilot combining vision + language | Conversational radiology assistant, report generation |
+| **CheXagent** | Chest X-ray foundation model (interpret, describe, generate) | Automated chest X-ray preliminary reads |
+
+#### HealthOS Model Deployment Architecture
+
+```python
+class ImagingModelOrchestrator:
+    """Routes each image to the correct specialist model(s)"""
+
+    model_registry = {
+        # Chest X-Ray specialist models
+        "CR_chest": [
+            CheXNetEnsemble(),          # 14 pathology detection
+            PneumothoraxDetector(),      # High-priority finding
+            TBScreeningModel(),          # Tuberculosis screening
+            CardiomegalyDetector(),      # Heart size assessment
+        ],
+        # Chest CT specialist models
+        "CT_chest": [
+            LungNoduleDetector(),        # MONAI 3D nodule detection
+            PEDetector(),                # Pulmonary embolism
+            CoronaryScoringModel(),      # Calcium scoring
+        ],
+        # Brain CT/MRI
+        "CT_brain": [
+            HemorrhageDetector(),        # Intracranial hemorrhage
+            StrokeLVODetector(),         # Large vessel occlusion
+        ],
+        "MR_brain": [
+            BrainTumorSegmentor(),       # MONAI BraTS
+            MSLesionDetector(),          # Multiple sclerosis
+            AlzheimerClassifier(),       # Neurodegeneration
+        ],
+        # Cardiac
+        "ECG": [
+            ArrhythmiaClassifier13(),    # 13 rhythm types
+            AFibRiskPredictor(),         # Future AF risk
+            LowEFDetector(),             # Ejection fraction screening
+            STEMIDetector(),             # STEMI screening
+        ],
+        "US_echo": [
+            EchoNetEFEstimator(),        # LVEF from echo video
+        ],
+        # Mammography
+        "MG_breast": [
+            BreastCancerDetector(),      # Mass/calcification detection
+            DensityClassifier(),         # BI-RADS density
+            FiveYearRiskPredictor(),     # Clairity-style risk model
+        ],
+        # Retinal
+        "OP_retina": [
+            DRScreener(),               # Diabetic retinopathy grading
+            GlaucomaScreener(),         # Glaucoma risk
+            AMDClassifier(),            # Macular degeneration
+            HypertensiveRetinopathy(),  # Hypertensive changes
+        ],
+        # Musculoskeletal
+        "CR_msk": [
+            FractureDetector(),          # Multi-bone fracture detection
+            OsteoporosisEstimator(),     # BMD estimation
+        ],
+        # Dermatology
+        "DERM_photo": [
+            SkinLesionClassifier(),      # 7-type classification
+            MelanomaScreener(),          # Melanoma vs benign
+            WoundAssessment(),           # Wound measurement
+        ],
+        # Pathology
+        "PATH_wsi": [
+            WSIAnalyzer(),               # Whole slide analysis (ViT + MIL)
+            ProstatGleasonGrader(),      # Prostate cancer grading
+            BreastMetastasisDetector(),  # Lymph node metastasis
+        ],
+        # Abdominal
+        "CT_abdomen": [
+            OrganSegmentor(),            # TotalSegmentator (117 structures)
+            LiverLesionDetector(),       # Liver mass detection
+            KidneyStoneDetector(),       # Stone identification
+        ],
+        # Colonoscopy
+        "ENDO_colon": [
+            PolypDetectorRealtime(),     # Real-time polyp detection
+        ],
+        # Foundation models (cross-modality)
+        "foundation": [
+            MedSAMSegmentor(),           # Universal segmentation
+            BiomedCLIPMatcher(),         # Image-text matching
+            MedGemmaReasoner(),          # Multi-modal reasoning
+        ],
+    }
+
+    async def analyze(self, image: MedicalImage) -> ImagingAnalysis:
+        # 1. Determine modality and body part from DICOM tags
+        modality_key = self.classify_image(image)
+
+        # 2. Get specialist models for this image type
+        models = self.model_registry.get(modality_key, [])
+
+        # 3. Run all relevant models in parallel
+        results = await asyncio.gather(*[
+            model.predict(image) for model in models
+        ])
+
+        # 4. Ensemble results with confidence weighting
+        combined = self.ensemble_results(results)
+
+        # 5. Apply foundation model for complex/ambiguous cases
+        if combined.max_confidence < 0.85 or combined.has_ambiguity:
+            foundation_result = await self.foundation_analysis(image, combined)
+            combined = self.merge_with_foundation(combined, foundation_result)
+
+        # 6. FDA SaMD compliance: log model versions, inputs, outputs
+        await self.fda_audit_log.record(image.id, models, combined)
+
+        return combined
+```
+
+#### Model Lifecycle Management
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  MODEL LIFECYCLE PIPELINE                     │
+│                                                              │
+│  1. Training Data     → curated, labeled, bias-checked       │
+│  2. Model Training    → MONAI framework, GPU cluster         │
+│  3. Validation        → clinical dataset, multi-site         │
+│  4. Fairness Testing  → demographic subgroup analysis        │
+│  5. FDA PCCP Check    → within predetermined change envelope │
+│  6. Model Registry    → versioned, signed, immutable         │
+│  7. A/B Deployment    → canary rollout with monitoring       │
+│  8. Production        → inference serving via NVIDIA Triton  │
+│  9. Monitoring        → accuracy, drift, bias, latency       │
+│  10. Retraining       → triggered by drift or new data       │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ### Lab Report Ingestion Pipeline
 
 #### Supported Lab Report Formats
