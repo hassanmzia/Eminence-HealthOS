@@ -7,6 +7,7 @@ import { clsx } from "clsx";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
   { href: "/patients", label: "Patients", icon: "users" },
+  { href: "/telehealth", label: "Telehealth", icon: "video" },
   { href: "/alerts", label: "Alerts", icon: "bell" },
   { href: "/agents", label: "Agents", icon: "cpu" },
 ] as const;
@@ -27,6 +28,11 @@ function NavIcon({ icon }: { icon: string }) {
     bell: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      </svg>
+    ),
+    video: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
       </svg>
     ),
     cpu: (

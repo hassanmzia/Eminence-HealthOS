@@ -1,24 +1,22 @@
 """
-Symptom Checker Agent — AI-powered pre-visit symptom assessment.
-
-Guides patients through symptom collection before telehealth visits,
-generating structured chief complaints and preliminary assessments
-for provider review.
+Eminence HealthOS — Symptom Checker Agent
+Layer 2 (Interpretation): AI-powered pre-visit symptom assessment.
+Guides patients through symptom collection, detects red flags, and
+generates structured chief complaints for provider review.
 """
 
-import logging
-from healthos_platform.agents.base import (
-    AgentCapability,
+from __future__ import annotations
+
+from healthos_platform.agents.base import BaseAgent
+from healthos_platform.agents.types import (
     AgentInput,
     AgentOutput,
+    AgentStatus,
     AgentTier,
-    HealthOSAgent,
 )
 
-logger = logging.getLogger("healthos.agent.symptom_checker")
-
 # Symptom → body system mapping
-SYMPTOM_SYSTEMS = {
+SYMPTOM_SYSTEMS: dict[str, str] = {
     "headache": "neurological",
     "chest_pain": "cardiovascular",
     "shortness_of_breath": "respiratory",
@@ -47,42 +45,33 @@ RED_FLAGS = {
 }
 
 
-class SymptomCheckerAgent(HealthOSAgent):
-    """Pre-visit symptom assessment with urgency classification."""
+class SymptomCheckerAgent(BaseAgent):
+    name = "symptom_checker"
+    tier = AgentTier.INTERPRETATION
+    version = "1.0.0"
+    description = "Pre-visit symptom assessment with urgency classification and red-flag detection"
 
-    def __init__(self):
-        super().__init__(
-            name="symptom_checker",
-            tier=AgentTier.DIAGNOSTIC,
-            description="AI-powered symptom assessment for pre-visit triage",
-            version="0.1.0",
-        )
-
-    @property
-    def capabilities(self) -> list[AgentCapability]:
-        return [AgentCapability.TRIAGE, AgentCapability.CLINICAL_SUMMARY]
-
-    async def process(self, agent_input: AgentInput) -> AgentOutput:
-        data = agent_input.data
-        symptoms = data.get("symptoms", [])
+    async def process(self, input_data: AgentInput) -> AgentOutput:
+        data = input_data.context
+        symptoms: list[str] = data.get("symptoms", [])
         duration = data.get("duration", "unknown")
-        severity_rating = data.get("severity_rating", 5)  # 1-10 patient-reported
-        additional_notes = data.get("additional_notes", "")
+        severity_rating = data.get("severity_rating", 5)
 
         if not symptoms:
-            return AgentOutput(
-                agent_name=self.name,
-                agent_tier=self.tier.value,
-                decision="no_symptoms",
-                rationale="No symptoms reported",
+            return self.build_output(
+                trace_id=input_data.trace_id,
+                result={"assessment": "no_symptoms"},
                 confidence=1.0,
+                rationale="No symptoms reported",
             )
 
         # Check for red flags
-        red_flags_found = [s for s in symptoms if s.lower().replace(" ", "_") in RED_FLAGS]
+        red_flags_found = [
+            s for s in symptoms if s.lower().replace(" ", "_") in RED_FLAGS
+        ]
 
         # Classify body systems
-        systems_affected = set()
+        systems_affected: set[str] = set()
         for s in symptoms:
             key = s.lower().replace(" ", "_")
             if key in SYMPTOM_SYSTEMS:
@@ -91,39 +80,36 @@ class SymptomCheckerAgent(HealthOSAgent):
         # Determine urgency
         urgency = self._determine_urgency(red_flags_found, severity_rating, len(symptoms))
 
-        # Generate structured assessment
         assessment = {
             "chief_complaint": symptoms[0] if symptoms else "unspecified",
             "symptoms": symptoms,
             "duration": duration,
             "patient_severity_rating": severity_rating,
-            "systems_affected": list(systems_affected),
+            "systems_affected": sorted(systems_affected),
             "red_flags": red_flags_found,
             "urgency": urgency,
             "recommended_visit_type": self._recommend_visit_type(urgency),
         }
 
+        is_emergency = urgency == "emergency"
+
         return AgentOutput(
+            trace_id=input_data.trace_id,
             agent_name=self.name,
-            agent_tier=self.tier.value,
-            decision=f"assessment_{urgency}",
-            rationale=f"Symptom assessment: {len(symptoms)} symptom(s) across {len(systems_affected)} system(s). "
-                      f"Urgency: {urgency}. Red flags: {len(red_flags_found)}.",
+            status=AgentStatus.WAITING_HITL if is_emergency else AgentStatus.COMPLETED,
             confidence=0.75,
-            data=assessment,
-            feature_contributions=[
-                {"feature": "red_flags", "contribution": 0.4, "value": len(red_flags_found)},
-                {"feature": "severity_rating", "contribution": 0.3, "value": severity_rating},
-                {"feature": "symptom_count", "contribution": 0.2, "value": len(symptoms)},
-                {"feature": "duration", "contribution": 0.1, "value": duration},
-            ],
-            requires_hitl=urgency == "emergency",
-            safety_flags=[f"red_flag_{rf}" for rf in red_flags_found],
-            risk_level=urgency,
-            downstream_agents=["triage_agent"] if urgency in ("emergency", "urgent") else [],
+            result=assessment,
+            rationale=(
+                f"Symptom assessment: {len(symptoms)} symptom(s) across "
+                f"{len(systems_affected)} system(s). Urgency: {urgency}. "
+                f"Red flags: {len(red_flags_found)}."
+            ),
+            requires_hitl=is_emergency,
+            hitl_reason="Emergency red flags detected — immediate provider review required" if is_emergency else None,
         )
 
-    def _determine_urgency(self, red_flags: list, severity: int, symptom_count: int) -> str:
+    @staticmethod
+    def _determine_urgency(red_flags: list, severity: int, symptom_count: int) -> str:
         if red_flags:
             return "emergency"
         if severity >= 8:
@@ -132,7 +118,8 @@ class SymptomCheckerAgent(HealthOSAgent):
             return "same_day"
         return "routine"
 
-    def _recommend_visit_type(self, urgency: str) -> str:
+    @staticmethod
+    def _recommend_visit_type(urgency: str) -> str:
         return {
             "emergency": "emergency_department",
             "urgent": "urgent_telehealth",
