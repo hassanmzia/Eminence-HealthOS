@@ -108,6 +108,17 @@ def create_app() -> FastAPI:
     except ImportError:
         logger.warning("routes.telehealth.not_available")
 
+    # Metrics endpoint (Prometheus scrape target)
+    @app.get("/metrics")
+    async def metrics():
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(
+            "# HELP healthos_up HealthOS API status\n"
+            "# TYPE healthos_up gauge\n"
+            "healthos_up 1\n",
+            media_type="text/plain; version=0.0.4; charset=utf-8",
+        )
+
     # Health check
     @app.get("/health")
     async def health_check():
