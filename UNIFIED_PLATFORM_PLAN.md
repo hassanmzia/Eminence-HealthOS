@@ -24,13 +24,16 @@
 11. [Frontend Architecture](#11-frontend-architecture)
 12. [Project Structure](#12-project-structure)
 13. [Product Modules & Packaging](#13-product-modules--packaging)
-14. [Implementation Phases](#14-implementation-phases)
-15. [Deployment Architecture](#15-deployment-architecture)
-16. [Security & HIPAA Compliance](#16-security--hipaa-compliance)
-17. [Multi-Tenant Architecture](#17-multi-tenant-architecture)
-18. [Testing Strategy](#18-testing-strategy)
-19. [IP Protection & Product Boundaries](#19-ip-protection--product-boundaries)
-20. [5-Year Product Roadmap](#20-5-year-product-roadmap)
+14. [Future Expansion Modules](#14-future-expansion-modules)
+15. [LLM Provider Abstraction Layer](#14a-llm-provider-abstraction-layer)
+16. [Gap Analysis — Existing Repos vs HealthOS](#14b-gap-analysis--existing-repos-vs-healthos)
+17. [Implementation Phases](#15-implementation-phases)
+18. [Deployment Architecture](#16-deployment-architecture)
+19. [Security & HIPAA Compliance](#17-security--hipaa-compliance)
+20. [Multi-Tenant Architecture](#18-multi-tenant-architecture)
+21. [Testing Strategy](#19-testing-strategy)
+22. [IP Protection & Product Boundaries](#20-ip-protection--product-boundaries)
+23. [5-Year Product Roadmap](#21-5-year-product-roadmap)
 
 ---
 
@@ -335,8 +338,10 @@ This hybrid approach (deterministic workflows for compliance-heavy steps + LLM r
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
 | **Agent Framework** | LangGraph + custom orchestrator | Graph-based agent workflows with deterministic routing |
-| **LLM Inference** | Ollama (local) + Claude API (cloud) | Clinical reasoning, note generation, summarization |
-| **Local Models** | Llama 3.2 / Mistral | On-premise inference for PHI-sensitive operations |
+| **LLM Provider Abstraction** | Custom `LLMRouter` | Provider-agnostic interface — swap models per agent without code changes |
+| **LLM: Local** | Ollama (Llama 3.2 / Mistral) | On-premise inference for PHI-sensitive operations (HIPAA-safe) |
+| **LLM: Claude API** | Anthropic Claude (Opus/Sonnet) | Complex clinical reasoning, long-context analysis |
+| **LLM: OpenAI (optional)** | GPT-4o / GPT-4o-mini | Documentation generation, summarization, patient messaging |
 | **ML Models** | scikit-learn, XGBoost, PyTorch | Risk scoring, anomaly detection, time-series forecasting |
 | **Feature Store** | Feast / custom | Patient feature engineering and serving |
 | **RAG Pipeline** | LangChain + Qdrant | Clinical knowledge retrieval and augmented generation |
@@ -1132,7 +1137,151 @@ eminence-healthos/
 
 ---
 
-## 14. Implementation Phases
+## 14. Future Expansion Modules
+
+### HealthOS is designed for unlimited module expansion. These modules can be added without changing the core platform.
+
+### HealthOS Pharmacy Module (Recommended — Phase 2+)
+
+| # | Agent | Responsibility |
+|---|-------|---------------|
+| 31 | **Prescription Agent** | Generates e-prescriptions from care plans and encounter decisions |
+| 32 | **Drug Interaction Agent** | Checks new prescriptions against patient medications, allergies, and conditions |
+| 33 | **Formulary Agent** | Verifies insurance formulary coverage, suggests alternatives if not covered |
+| 34 | **Pharmacy Routing Agent** | Finds nearest/preferred pharmacy, transmits prescription order |
+| 35 | **Refill Automation Agent** | Tracks refill schedules, sends patient reminders, auto-initiates refills |
+| 36 | **Medication Adherence Agent** | Enhances existing Adherence Monitoring Agent with pharmacy dispensing data |
+
+### HealthOS Labs Module (Recommended — Phase 2+)
+
+| # | Agent | Responsibility |
+|---|-------|---------------|
+| 37 | **Lab Order Agent** | Creates and routes lab orders from care plans and encounters |
+| 38 | **Lab Results Agent** | Ingests lab results, flags abnormals, triggers risk re-scoring |
+| 39 | **Lab Trend Agent** | Analyzes lab value trends (A1C, creatinine, lipids) over time |
+| 40 | **Critical Value Alert Agent** | Immediately escalates critical lab values to care team |
+
+### Future Module Candidates
+
+| Module | Description | New Agents | Revenue Potential |
+|--------|------------|-----------|------------------|
+| **HealthOS Imaging** | Radiology order workflows, AI image analysis, PACS integration | 3 agents | $100K–$150K/yr |
+| **HealthOS Compliance** | Automated HIPAA audits, compliance dashboards, policy enforcement | 3 agents | $80K–$120K/yr |
+| **HealthOS Patient Engagement** | Patient app, health literacy content, gamification, SDOH tracking | 4 agents | $50K–$80K/yr |
+| **HealthOS Research** | Clinical trial matching, de-identified exports, research cohort builder | 4 agents | $120K–$180K/yr |
+| **HealthOS Mental Health** | PHQ-9/GAD-7 screening, behavioral health workflows, crisis detection | 3 agents | $80K–$100K/yr |
+
+### How to Add a New Module
+
+```
+1. Create folder:     modules/pharmacy/
+2. Define agents:     modules/pharmacy/agents/ (inherit from BaseAgent)
+3. Register agents:   AgentRegistry.register("pharmacy", [...agents])
+4. Add API routes:    modules/pharmacy/api/routes.py
+5. Add DB migrations: alembic revision --autogenerate -m "add pharmacy tables"
+6. Configure tiers:   Enable/disable per tenant tier in admin console
+```
+
+The Master Orchestrator automatically discovers and routes events to new module agents. **No core platform changes needed.**
+
+---
+
+## 14A. LLM Provider Abstraction Layer
+
+### Multi-Provider Architecture
+
+HealthOS uses an LLM abstraction layer so each agent can be configured to use any provider:
+
+```python
+class LLMRouter:
+    """Provider-agnostic LLM interface — HealthOS core IP"""
+
+    providers = {
+        "local": OllamaProvider,      # Llama 3.2 / Mistral (PHI-safe, on-premise)
+        "claude": ClaudeProvider,      # Anthropic Claude (complex reasoning)
+        "openai": OpenAIProvider,      # GPT-4o (optional, documentation/summarization)
+    }
+
+    async def invoke(self, agent_name: str, prompt: str, context: dict) -> LLMResponse:
+        # 1. Check agent config for preferred provider
+        provider = self.get_provider_for_agent(agent_name)
+
+        # 2. Check PHI sensitivity — force local if PHI present
+        if context.get("contains_phi") and not provider.is_hipaa_compliant:
+            provider = self.providers["local"]
+
+        # 3. Route to provider
+        return await provider.generate(prompt, context)
+```
+
+### Provider Selection Strategy
+
+| Use Case | Recommended Provider | Reason |
+|----------|---------------------|--------|
+| PHI-sensitive analysis | **Local (Ollama)** | Data stays on-premise, HIPAA-safe |
+| Complex clinical reasoning | **Claude (Anthropic)** | Best long-context analysis, safety alignment |
+| Note generation, summaries | **OpenAI GPT-4o** or **Claude** | Fast, high-quality text generation |
+| Patient messaging drafts | **Any provider** | Low sensitivity, configurable per client |
+| Anomaly detection, risk scoring | **No LLM** (deterministic) | Pure ML models, no LLM needed |
+
+### Per-Tenant Configuration
+
+Clients can choose their LLM providers in tenant settings:
+```yaml
+tenant_config:
+  llm_providers:
+    primary: "claude"        # Default for most agents
+    phi_sensitive: "local"   # Always local for PHI operations
+    optional: "openai"       # Enabled/disabled per client preference
+  openai_api_key: "sk-..."   # Client provides their own key (optional)
+  claude_api_key: "sk-ant-..." # Or uses Eminence's pooled key
+```
+
+---
+
+## 14B. Gap Analysis — Existing Repos vs HealthOS
+
+### Repository Capability Scorecard
+
+| Category (Max Score) | Inhealth-Capstone | Healthcare-Agentic | AI-Embodiment | Health_Assistant | InhealthUSA |
+|---------------------|:-:|:-:|:-:|:-:|:-:|
+| Agent Architecture (20) | 20 | 18 | 15 | 12 | 0 |
+| FHIR/HL7 Compliance (20) | 20 | 15 | 0 | 0 | 5 |
+| Database Schema (15) | 15 | 12 | 8 | 10 | 8 |
+| Frontend (15) | 15 | 13 | 14 | 10 | 6 |
+| Security/HIPAA (15) | 15 | 12 | 12 | 10 | 10 |
+| Telehealth (10) | 8 | 6 | 2 | 0 | 4 |
+| RPM / Vitals (10) | 10 | 8 | 4 | 0 | 3 |
+| Analytics (10) | 10 | 7 | 8 | 3 | 2 |
+| Multi-Tenant (5) | 5 | 0 | 0 | 0 | 0 |
+| Deployment (10) | 10 | 9 | 9 | 7 | 4 |
+| **TOTAL (130)** | **128** | **100** | **72** | **52** | **42** |
+
+### What ONLY HealthOS Will Have (Not in Any Repo)
+
+| Capability | Description |
+|-----------|------------|
+| **5-Layer Agent Design** | Sensing → Interpretation → Decisioning → Action → Measurement |
+| **Confidence-Gated Routing** | Policy engine gates all agent outputs by confidence threshold |
+| **LLM Provider Abstraction** | Swap between Local/Claude/OpenAI per agent per tenant |
+| **30-Agent Coordinated System** | 24 domain agents + 6 platform control agents working as one system |
+| **Enterprise SaaS Packaging** | Modular product tiers (RPM, Telehealth, Ops, Intelligence) |
+| **Traceable Agent Ledger** | Full decision chain audit across all agents for compliance |
+| **Pharmacy & Labs Modules** | Medication ordering, lab integration, drug interaction checks |
+
+### Integration Strategy
+
+| Repo | Contribution to HealthOS | Percentage |
+|------|------------------------|-----------|
+| **Inhealth-Capstone** | Primary foundation: 25-agent patterns, FHIR schema, Neo4j, multi-tenant, Helm, analytics | ~80% |
+| **Healthcare-Agentic** | HAPI FHIR server, IoT simulator, physician review workflows | ~15% |
+| **AI-Embodiment** | Safety governance, fairness analysis, what-if simulator, policy engine | ~5% |
+| **Health_Assistant** | NL2SQL patterns, HITL approval flow (reference only) | Reference |
+| **InhealthUSA** | Traditional EHR schema reference, e-prescribing patterns | Reference |
+
+---
+
+## 15. Implementation Phases
 
 ### Phase 1: Platform Foundation + RPM MVP (Weeks 1–16)
 
