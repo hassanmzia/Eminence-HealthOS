@@ -44,6 +44,14 @@ def _register_agents() -> None:
     """Register all platform and module agents."""
     from healthos_platform.orchestrator.registry import registry
 
+    # Register core platform agents (context assembly, policy rules)
+    try:
+        from healthos_platform.agents import register_core_agents
+        register_core_agents()
+        logger.info("agents.core.registered")
+    except ImportError:
+        logger.warning("agents.core.not_available")
+
     # Import RPM agents to trigger registration
     try:
         from modules.rpm.agents import register_rpm_agents
