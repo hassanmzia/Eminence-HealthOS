@@ -15,9 +15,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from healthos_platform.api.middleware.audit import AuditMiddleware
 from healthos_platform.api.routes import agents, alerts, auth, fhir, patients, vitals
 from healthos_platform.config import get_settings
-from healthos_platform.database import close_db
+from healthos_platform.database import close_db, get_db_context, init_db
 
 logger = structlog.get_logger()
+
+
+async def _seed_if_empty() -> None:
+    """Seed default data when the database is freshly created."""
+    from sqlalchemy import select, func
+    from healthos_platform.models import User
+
+    async with get_db_context() as db:
+        result = await db.execute(select(func.count()).select_from(User))
+        count = result.scalar()
+        if count == 0:
+            logger.info("healthos.seeding_database")
+            from scripts.seed_data import seed
+            await seed()
+            logger.info("healthos.seed_complete")
 
 
 @asynccontextmanager
@@ -29,6 +44,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         env=settings.environment,
         debug=settings.debug,
     )
+
+    # Import models so Base.metadata knows about all tables
+    import healthos_platform.models  # noqa: F401
+
+    # Create tables if they don't exist yet
+    await init_db()
+    logger.info("healthos.db_initialized")
+
+    # Seed default data if the users table is empty
+    await _seed_if_empty()
 
     # Register all agents on startup
     _register_agents()
