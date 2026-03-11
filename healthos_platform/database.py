@@ -78,6 +78,13 @@ async def get_db_context() -> AsyncGenerator[AsyncSession, None]:
             raise
 
 
+async def init_db() -> None:
+    """Create all tables if they don't exist."""
+    engine = get_engine()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+
 async def close_db() -> None:
     global _engine, _session_factory
     if _engine is not None:
