@@ -1,0 +1,43 @@
+version: "3.9"
+
+# Development overrides — extends docker-compose.yml
+services:
+  api:
+    build:
+      target: development
+    environment:
+      DEBUG: "true"
+      ENVIRONMENT: development
+    volumes:
+      - .:/app
+
+  # ── Jaeger (Distributed Tracing UI) ─────────────────────────────
+  jaeger:
+    image: jaegertracing/all-in-one:1.62
+    ports:
+      - "16686:16686"   # UI
+      - "4317:4317"     # OTLP gRPC
+      - "4318:4318"     # OTLP HTTP
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+
+  # ── Prometheus ──────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.54.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  # ── Grafana ─────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.3.0
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: healthos
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  grafana_data:
