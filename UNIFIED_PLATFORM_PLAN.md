@@ -1963,17 +1963,25 @@ tenant_config:
 
 | Category (Max Score) | Inhealth-Capstone | Healthcare-Agentic | AI-Embodiment | Health_Assistant | InhealthUSA |
 |---------------------|:-:|:-:|:-:|:-:|:-:|
-| Agent Architecture (20) | 20 | 18 | 15 | 12 | 0 |
+| Agent Architecture (20) | 20 | 18 | 15 | 12 | 3 |
 | FHIR/HL7 Compliance (20) | 20 | 15 | 0 | 0 | 5 |
-| Database Schema (15) | 15 | 12 | 8 | 10 | 8 |
-| Frontend (15) | 15 | 13 | 14 | 10 | 6 |
-| Security/HIPAA (15) | 15 | 12 | 12 | 10 | 10 |
+| Database Schema (15) | 15 | 12 | 8 | 10 | 15 |
+| Frontend (15) | 15 | 13 | 14 | 10 | 13 |
+| Security/HIPAA (15) | 15 | 12 | 12 | 10 | 14 |
 | Telehealth (10) | 8 | 6 | 2 | 0 | 4 |
-| RPM / Vitals (10) | 10 | 8 | 4 | 0 | 3 |
-| Analytics (10) | 10 | 7 | 8 | 3 | 2 |
-| Multi-Tenant (5) | 5 | 0 | 0 | 0 | 0 |
-| Deployment (10) | 10 | 9 | 9 | 7 | 4 |
-| **TOTAL (130)** | **128** | **100** | **72** | **52** | **42** |
+| RPM / Vitals (10) | 10 | 8 | 4 | 0 | 9 |
+| Analytics (10) | 10 | 7 | 8 | 3 | 3 |
+| Multi-Tenant (5) | 5 | 0 | 0 | 0 | 2 |
+| Deployment (10) | 10 | 9 | 9 | 7 | 6 |
+| **TOTAL (130)** | **128** | **100** | **72** | **52** | **74** |
+
+> **InhealthUSA Score Rationale (Rocky9 Django):**
+> - **Agent Architecture (3):** AI treatment plan generator (Ollama/Llama 3.2) with structured prompt engineering — not a multi-agent system but has working AI integration
+> - **Database Schema (15):** 30+ production Django models — Hospital, Department, Patient (SSN/MRN/emergency contacts), Provider (NPI), Nurse, OfficeAdmin, Encounter, VitalSign, Diagnosis (ICD-10/ICD-11), Prescription, Allergy, MedicalHistory, SocialHistory, FamilyHistory, LabTest, Message, Notification, InsuranceInformation, Billing, BillingItem, Payment, Device, NotificationPreferences, VitalSignAlertResponse, AIProposedTreatmentPlan, DoctorTreatmentPlan, APIKey, AuthenticationConfig + IoT models (DeviceAPIKey, DeviceDataReading, DeviceActivityLog, DeviceAlertRule) — most complete traditional EHR schema
+> - **Frontend (13):** 300+ URL routes, 5 role-based dashboards (Patient/Doctor/Nurse/OfficeAdmin/SystemAdmin), patient portal with vitals charts, messaging inbox, questionnaire system, IoT file management UI, API key management UI, device management
+> - **Security/HIPAA (14):** 7 enterprise auth methods (Local+MFA/TOTP, OIDC/Azure AD/Okta/Cognito, SAML 2.0, CAC/PKI, Multi-provider router), 4 custom password validators, account lockout, session security middleware, email verification, backup codes — most complete auth system across all repos
+> - **RPM/Vitals (9):** Working IoT REST API (single + batch + glucose), file-based IoT data processor, two-stage vital alert system (immediate provider + patient EMS consent + auto-escalation), DeviceAlertRule with configurable thresholds, multi-channel notifications (Email/SMS/WhatsApp/Dashboard), 7 vital sign types with color-coded severity status
+> - **Multi-Tenant (2):** Hospital/Department organizational hierarchy (not full SaaS multi-tenant but supports multi-facility)
 
 ### What ONLY HealthOS Will Have (Not in Any Repo)
 
@@ -1991,11 +1999,11 @@ tenant_config:
 
 | Repo | Contribution to HealthOS | Percentage |
 |------|------------------------|-----------|
-| **Inhealth-Capstone** | Primary foundation: 25-agent patterns, FHIR schema, Neo4j, multi-tenant, Helm, analytics | ~80% |
-| **Healthcare-Agentic** | HAPI FHIR server, IoT simulator, physician review workflows | ~15% |
-| **AI-Embodiment** | Safety governance, fairness analysis, what-if simulator, policy engine | ~5% |
-| **Health_Assistant** | NL2SQL patterns, HITL approval flow (reference only) | Reference |
-| **InhealthUSA** | Traditional EHR schema reference, e-prescribing patterns | Reference |
+| **Inhealth-Capstone** | Primary foundation: 25-agent patterns, FHIR schema, Neo4j, multi-tenant, Helm, analytics | ~55% |
+| **HealthCare-Agentic** | Specialty agents (oncology, radiology, coding), physician review, clinical document pipeline | ~15% |
+| **InhealthUSA** | Production EHR schema (30+ models), enterprise auth (7 methods, MFA/TOTP, CAC), IoT REST API, two-stage vital alerts (Email/SMS/WhatsApp), billing/payments, 5-role RBAC, AI treatment plans, notification preferences | ~15% |
+| **AI-Embodiment** | Safety governance, fairness analysis, what-if simulator, policy engine, phenotyping | ~10% |
+| **Health_Assistant** | NL2SQL, PHI masking (4 levels), toxicity filter, A2A protocol, HITL approval, FHIR browser | ~5% |
 
 ---
 
@@ -3031,48 +3039,66 @@ These are features found in your repos that are NOT yet in the HealthOS plan:
 | 17 | **EHR Order Model** (medication, lab, imaging, procedure, referral orders with EHR write-back) | HealthCare-Agentic-Platform | Critical — CPOE integration |
 | 18 | **Clinical Document Generation** (assessment summary, progress note, discharge, referral in HTML/PDF/FHIR/CCD) | HealthCare-Agentic-Platform | High — documentation |
 | 19 | **PhysicianReview + Digital Signature** (attestation, digital signature hash, time tracking) | HealthCare-Agentic-Platform | Critical — medical-legal |
-| 20 | **Notification Preferences** (per-user per-channel per-severity threshold) | InhealthUSA | High — user experience |
+| 20 | **Notification Preferences** (per-user per-channel per-severity threshold, quiet hours, digest mode) | InhealthUSA | High — user experience |
+| 21 | **Billing & Payments System** (Billing → BillingItem → Payment with invoice tracking, service codes, multiple payment methods, insurance co-pay/deductible) | InhealthUSA | Critical — revenue cycle |
+| 22 | **Internal Messaging** (threaded message inbox/sent/compose between all roles with read tracking) | InhealthUSA | High — provider communication |
+| 23 | **5-Role RBAC** (Patient/Doctor/Nurse/OfficeAdmin/SystemAdmin with decorator-based access control, role-specific dashboards, per-resource permissions) | InhealthUSA | Critical — access control |
+| 24 | **Patient Questionnaire System** (medical history, family history, social history, allergies intake forms) | InhealthUSA | High — patient onboarding |
+| 25 | **AI Treatment Plan Pipeline** (Ollama/Llama AI proposes → Doctor reviews/modifies → publishes to patient → patient acknowledges → feedback loop) | InhealthUSA | Critical — clinical AI workflow |
+| 26 | **Insurance Information Model** (primary/secondary coverage, copay, deductible, policyholder relationship, effective/termination dates) | InhealthUSA | High — billing prerequisite |
+| 27 | **IoT Device Alert Rules** (configurable per-device per-metric threshold rules with alert levels: info/warning/critical, notify patient/provider options) | InhealthUSA | High — RPM flexibility |
+| 28 | **DRF IoT API v1** (versioned REST API with class-based views: device auth, POST vitals, bulk vitals, glucose, device status/info — separate from function-based API) | InhealthUSA | High — API maturity |
+| 29 | **AuthenticationConfig Model** (admin-managed auth method configuration: Local/LDAP/OAuth2/OIDC/Azure AD/CAC/SAML/SSO with per-method fields, priority, enable/disable) | InhealthUSA | High — enterprise deployment |
+| 30 | **Patient Vitals Charting** (vitals chart view for patients and providers with historical trending) | InhealthUSA | Medium — patient engagement |
 
 ### Import Execution Order
 
 ```
-Phase 1 (Core — Week 1-2):
+Phase 1 (Core + EHR Foundation — Week 1-2):
 ├── InHealth-Capstone → LangGraph orchestrator, 25 agents, tools, HITL, memory, MCP server
-├── HealthCare-Agentic → Django models (clinical schema), diagnostician, coding agent
-└── InhealthUSA → Enterprise auth (MFA, session security, password validators)
+├── InhealthUSA → Production EHR schema (30+ models), 5-role RBAC, enterprise auth (MFA/TOTP, CAC, OIDC, SAML), password validators, session security
+├── HealthCare-Agentic → Clinical models (ClinicalAssessment, PhysicianReview, EHROrder), diagnostician, coding agent
+└── InhealthUSA → Billing/BillingItem/Payment/Insurance models, internal messaging
 
-Phase 2 (Specialty + Safety — Week 3-4):
+Phase 2 (Specialty + Safety + IoT — Week 3-4):
 ├── HealthCare-Agentic → Oncology, radiology, cardiology, pathology, GI agents
 ├── AI-Healthcare-Embodiment → Governance rules engine, safety agent, fairness analytics
 ├── Health_Assistant → Toxicity filter, A2A protocol, PHI filter
-└── InhealthUSA → Two-stage vital alerts, IoT processor, WhatsApp notifications
+├── InhealthUSA → Two-stage vital alerts, IoT REST API (v1 DRF + function views), IoT data processor
+└── InhealthUSA → Multi-channel notifications (Email/SMS/WhatsApp/Dashboard), notification preferences, DeviceAlertRule
 
-Phase 3 (Clinical Workflow — Week 5-6):
+Phase 3 (Clinical Workflow + AI — Week 5-6):
 ├── HealthCare-Agentic → ClinicalAssessment → PhysicianReview → EHROrder pipeline
 ├── HealthCare-Agentic → Clinical document generation (HTML/PDF/FHIR/CCD)
 ├── AI-Healthcare-Embodiment → What-if analysis, phenotyping agents, policy management
+├── InhealthUSA → AI treatment plan pipeline (Ollama → doctor review → patient publish → acknowledge)
 └── Health_Assistant → FHIR browser, chat interface, observability
 
 Phase 4 (Frontend + Polish — Week 7-8):
 ├── HealthCare-Agentic → Clinician dashboard components
 ├── AI-Healthcare-Embodiment → Fairness, governance, audit, workflow dashboards
 ├── Health_Assistant → HITL approval UI, WebSocket hooks
-└── InhealthUSA → Notification preferences UI, IoT management UI
+├── InhealthUSA → 5 role-based dashboards, patient portal (vitals charts, questionnaires)
+└── InhealthUSA → IoT file management UI, API key management UI, device management UI
 ```
 
 ### Total Features After Import
 
 | Category | Before Import | After Import | Source |
 |----------|--------------|-------------|--------|
-| AI Agents | 79 | 94 (+15) | +Diagnostician, Oncology, Coding, Radiology, Cardiology, Pathology, GI, Phenotyping V1/V2, Safety, Notes/Imaging, Retrieval, Toxicity, Classifier, SQL, LLM |
-| Clinical Models | ~20 | ~45 (+25) | +Encounter, ClinicalNote, Diagnosis, CarePlan, ClinicalAssessment, PhysicianReview, AssessmentAuditLog, ClinicalDocument, EHROrder, GovernanceRule, ComplianceReport, etc. |
+| AI Agents | 79 | 95 (+16) | +Diagnostician, Oncology, Coding, Radiology, Cardiology, Pathology, GI, Phenotyping V1/V2, Safety, Notes/Imaging, Retrieval, Toxicity, Classifier, SQL, LLM, AI Treatment Plan Generator |
+| Clinical Models | ~20 | ~55 (+35) | +InhealthUSA EHR (30+ models: Patient, Provider, Nurse, OfficeAdmin, Encounter, VitalSign, Diagnosis, Prescription, Allergy, MedicalHistory, SocialHistory, FamilyHistory, LabTest, Billing, BillingItem, Payment, Insurance, Device, Notification, NotificationPrefs, VitalSignAlertResponse, AIProposedTreatmentPlan, DoctorTreatmentPlan, APIKey, AuthConfig, DeviceAPIKey, DeviceDataReading, DeviceActivityLog, DeviceAlertRule) + HealthCare-Agentic (ClinicalAssessment, PhysicianReview, EHROrder, ClinicalDocument) + AI-Embodiment (GovernanceRule, ComplianceReport) |
 | Tools | ~10 | 24 (+14) | +Drug interactions, NL2SQL, PubMed, ClinicalTrials.gov, geospatial, Whisper, risk scoring, etc. |
 | Imaging Models | 50+ | 50+ (enhanced) | +Radiology pattern databases (X-ray, CT) with ICD-10 mapping |
-| Notification Channels | 3 | 5 (+2) | +WhatsApp, In-App Dashboard |
-| Auth Features | Basic | Enterprise | +MFA/TOTP, CAC, session security, account lockout |
+| Notification Channels | 3 | 5 (+2) | +WhatsApp (InhealthUSA Twilio), In-App Dashboard (InhealthUSA Notification model) |
+| Auth Features | Basic | Enterprise (7 methods) | +MFA/TOTP with QR+backup codes, CAC/PKI, OIDC (Azure AD/Okta/Cognito), SAML 2.0, session security middleware, 4 password validators, account lockout, AuthenticationConfig admin model |
+| Billing/Revenue | None | Full cycle | +Billing, BillingItem, Payment, InsuranceInformation (from InhealthUSA) |
+| IoT/RPM | Basic | Production | +IoT REST API v1 (DRF class-based), file processor, DeviceAlertRule, device API key management (from InhealthUSA) |
+| RBAC/Roles | Basic | 5-role system | +Patient, Doctor, Nurse, OfficeAdmin, SystemAdmin with decorator-based permissions (from InhealthUSA) |
 | Analytics | Basic | Advanced | +Fairness subgroup analysis, calibration, what-if simulation |
 | Compliance | 18 frameworks | 18 + governance engine | +Configurable rules, compliance reports |
-| Frontend Pages | ~15 | ~35 (+20) | +Fairness, Governance, Audit, What-If, Policies, FHIR Browser, etc. |
+| Messaging | None | Full | +Threaded internal messaging with inbox/sent/compose (from InhealthUSA) |
+| Frontend Pages | ~15 | ~50 (+35) | +InhealthUSA (5 role dashboards, patient portal, vitals charts, questionnaires, billing/payment views, IoT mgmt, API key mgmt) + Fairness, Governance, Audit, What-If, Policies, FHIR Browser, etc. |
 
 ### Architecture After Import
 
@@ -3081,16 +3107,17 @@ Phase 4 (Frontend + Polish — Week 7-8):
 │                     EMINENCE HEALTHOS v2.0                              │
 │                (Post Cross-Repository Import)                           │
 │                                                                        │
-│  94 AI Agents │ 45 DB Models │ 24 Tools │ 50+ Imaging Models          │
-│  5 Notification Channels │ Enterprise Auth │ Fairness Analytics        │
+│  95 AI Agents │ 55+ DB Models │ 24 Tools │ 50+ Imaging Models         │
+│  5 Notification Channels │ 7 Enterprise Auth Methods │ 5-Role RBAC    │
+│  Full Billing/Payments │ IoT REST API │ Fairness Analytics             │
 │  What-If Simulation │ Governance Engine │ FDA SaMD Ready               │
 │                                                                        │
 │  Source Code:                                                           │
-│  ├── InHealth-Capstone   (80%) → Core orchestrator + 25 agents         │
-│  ├── HealthCare-Agentic  (70%) → Specialty agents + clinical models    │
-│  ├── AI-Embodiment       (65%) → Governance + fairness + what-if       │
-│  ├── Health_Assistant    (60%) → A2A + PHI + HITL + FHIR browser      │
-│  └── InhealthUSA         (50%) → IoT + alerts + enterprise auth        │
+│  ├── InHealth-Capstone   (55%) → Core orchestrator + 25 agents         │
+│  ├── HealthCare-Agentic  (15%) → Specialty agents + clinical models    │
+│  ├── InhealthUSA         (15%) → EHR schema + IoT + auth + billing     │
+│  ├── AI-Embodiment       (10%) → Governance + fairness + what-if       │
+│  └── Health_Assistant     (5%) → A2A + PHI + HITL + FHIR browser      │
 │                                                                        │
 │  New for HealthOS (not in any repo):                                    │
 │  ├── 50+ Specialized Imaging AI Models (MONAI, MedSAM, etc.)          │
