@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     database_max_overflow: int = 10
 
     # ── Redis ────────────────────────────────────────────────────────────────
-    redis_url: str = "redis://localhost:6379/0"
+    redis_url: str = "redis://localhost:6279/0"
     redis_cache_ttl: int = 300
 
     # ── Kafka ────────────────────────────────────────────────────────────────

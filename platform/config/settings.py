@@ -30,8 +30,8 @@ class Settings(BaseSettings):
     db_pool_timeout: int = 30
 
     # ── Redis ────────────────────────────────────────────────────────
-    redis_url: str = "redis://localhost:6379/0"
-    redis_cache_url: str = "redis://localhost:6379/1"
+    redis_url: str = "redis://localhost:6279/0"
+    redis_cache_url: str = "redis://localhost:6279/1"
     redis_cache_ttl: int = 3600  # 1 hour default
 
     # ── Kafka ────────────────────────────────────────────────────────
