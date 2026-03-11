@@ -38,7 +38,7 @@ jobs:
       redis:
         image: redis:7-alpine
         ports:
-          - 6379:6379
+          - 6279:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -57,7 +57,7 @@ jobs:
       - name: Run tests
         env:
           DATABASE_URL: postgresql+asyncpg://healthos:healthos@localhost:5432/healthos_test
-          REDIS_URL: redis://localhost:6379/0
+          REDIS_URL: redis://localhost:6279/0
           APP_ENV: test
         run: pytest tests/ -v --tb=short --cov=platform --cov=modules
 
