@@ -1,66 +1,45 @@
-.PHONY: setup dev down test lint migrate seed build clean
+.PHONY: help dev up down migrate seed test lint format clean
 
-# Development
-setup:
-	cp -n .env.example .env || true
-	docker compose -f docker-compose.yml -f docker-compose.dev.yml build
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-dev:
-	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
-	@echo "API:      http://localhost:8000"
-	@echo "Docs:     http://localhost:8000/docs"
-	@echo "Frontend: http://localhost:3000"
+dev: ## Start dev environment
+	docker compose up -d postgres redis kafka qdrant neo4j
+	@echo "Waiting for services..."
+	@sleep 5
+	uvicorn platform.api.main:app --host 0.0.0.0 --port 8000 --reload
 
-down:
-	docker compose -f docker-compose.yml -f docker-compose.dev.yml down
+up: ## Start all services
+	docker compose up -d
 
-logs:
-	docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f api
+down: ## Stop all services
+	docker compose down
 
-# Database
-migrate:
-	docker compose exec api alembic upgrade head
+migrate: ## Run database migrations
+	alembic upgrade head
 
-migrate-create:
-	docker compose exec api alembic revision --autogenerate -m "$(msg)"
+migrate-create: ## Create a new migration (usage: make migrate-create msg="description")
+	alembic revision --autogenerate -m "$(msg)"
 
-seed:
-	docker compose exec api python -m scripts.seed_data
+seed: ## Seed database with sample data
+	python -m scripts.seed_data
 
-# Testing
-test:
-	docker compose exec api pytest tests/ -v --tb=short
+simulate: ## Run device simulator
+	python -m scripts.simulate_devices
 
-test-unit:
-	docker compose exec api pytest tests/unit/ -v
+test: ## Run tests
+	pytest tests/ -v --tb=short
 
-test-integration:
-	docker compose exec api pytest tests/integration/ -v
+test-cov: ## Run tests with coverage
+	pytest tests/ -v --cov=platform --cov=modules --cov-report=html --cov-report=term
 
-test-cov:
-	docker compose exec api pytest tests/ --cov=platform --cov=services --cov=modules --cov-report=term-missing
+lint: ## Run linter
+	ruff check .
 
-# Code quality
-lint:
-	docker compose exec api ruff check .
-	docker compose exec api ruff format --check .
+format: ## Format code
+	ruff format .
 
-format:
-	docker compose exec api ruff check --fix .
-	docker compose exec api ruff format .
-
-typecheck:
-	docker compose exec api mypy platform/ services/ modules/
-
-# Build
-build:
-	docker compose -f docker-compose.yml build
-
-build-prod:
-	docker build -f infrastructure/docker/Dockerfile -t healthos-api:latest .
-
-# Clean
-clean:
-	docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
-	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+clean: ## Clean generated files
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; true
+	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null; true
+	rm -rf htmlcov .coverage

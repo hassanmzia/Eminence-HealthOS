@@ -1,68 +1,53 @@
-[build-system]
-requires = ["setuptools>=68.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "eminence-healthos"
 version = "0.1.0"
-description = "Unified Healthcare AI Platform"
-requires-python = ">=3.11"
+description = "The AI Operating System for Digital Healthcare Platforms"
+requires-python = ">=3.12"
+license = {text = "Proprietary - Eminence Tech Solutions"}
+authors = [{name = "Eminence Tech Solutions"}]
+
 dependencies = [
-    # Web framework
+    # Core API
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
-    "python-multipart>=0.0.12",
     "pydantic>=2.10.0",
     "pydantic-settings>=2.6.0",
-
     # Database
     "sqlalchemy[asyncio]>=2.0.36",
     "asyncpg>=0.30.0",
     "alembic>=1.14.0",
-    "psycopg2-binary>=2.9.10",
-
-    # Redis
-    "redis[hiredis]>=5.2.0",
-
-    # Kafka
-    "aiokafka>=0.12.0",
-
-    # AI/ML
-    "langchain>=0.3.0",
+    "redis>=5.2.0",
+    # Agent framework
+    "langgraph>=0.2.0",
     "langchain-core>=0.3.0",
     "langchain-anthropic>=0.3.0",
-    "langchain-openai>=0.3.0",
     "langchain-community>=0.3.0",
-    "langgraph>=0.2.0",
-    "langsmith>=0.2.0",
-    "langfuse>=2.0.0",
-
-    # Vector store
-    "qdrant-client>=1.12.0",
-
-    # Graph database
-    "neo4j>=5.26.0",
-
-    # HTTP client
-    "httpx>=0.28.0",
-
-    # Auth
+    # ML / AI
+    "anthropic>=0.40.0",
+    "sentence-transformers>=3.3.0",
+    "scikit-learn>=1.6.0",
+    "xgboost>=2.1.0",
+    "numpy>=2.0.0",
+    "pandas>=2.2.0",
+    # Healthcare
+    "fhir.resources>=7.1.0",
+    # Messaging & Events
+    "aiokafka>=0.12.0",
+    # Security
     "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
-
+    "cryptography>=44.0.0",
     # Observability
     "opentelemetry-api>=1.28.0",
     "opentelemetry-sdk>=1.28.0",
-    "opentelemetry-exporter-otlp>=1.28.0",
-    "opentelemetry-instrumentation-fastapi>=0.49b0",
-    "opentelemetry-instrumentation-httpx>=0.49b0",
     "prometheus-client>=0.21.0",
-
+    "structlog>=24.4.0",
     # Utilities
+    "httpx>=0.28.0",
+    "python-multipart>=0.0.18",
+    "python-dotenv>=1.0.1",
     "tenacity>=9.0.0",
     "orjson>=3.10.0",
-    "python-dotenv>=1.0.1",
-    "cryptography>=44.0.0",
 ]
 
 [project.optional-dependencies]
@@ -76,13 +61,17 @@ dev = [
     "pre-commit>=4.0.0",
 ]
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP", "B", "A", "SIM"]
-ignore = ["E501"]
+select = ["E", "F", "I", "N", "W", "UP", "S", "B", "A", "C4", "SIM"]
+ignore = ["S101", "S104"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -90,7 +79,7 @@ testpaths = ["tests"]
 addopts = "-v --tb=short"
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
+strict = true
 warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = false
+disallow_untyped_defs = true

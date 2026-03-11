@@ -1,200 +1,177 @@
 """
-Base agent class for all HealthOS AI agents.
-
-Every agent in the 30-agent architecture inherits from HealthOSAgent.
-Provides lifecycle hooks, observability, decision recording, and
-standardized input/output contracts.
+Eminence HealthOS — Base Agent Framework
+All HealthOS agents inherit from BaseAgent, ensuring consistent lifecycle,
+audit logging, error handling, and observability.
 """
 
-import logging
+from __future__ import annotations
+
 import time
 import uuid
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
-from typing import Any, Optional
+from typing import Any
+
+import structlog
+
+from platform.agents.types import (
+    AgentInput,
+    AgentOutput,
+    AgentStatus,
+    AgentTier,
+    PipelineState,
+)
+
+logger = structlog.get_logger()
 
 
-class AgentTier(str, Enum):
-    MONITORING = "monitoring"       # Tier 1 — continuous data monitoring
-    DIAGNOSTIC = "diagnostic"       # Tier 2 — analysis and diagnosis
-    RISK = "risk"                   # Tier 3 — risk stratification
-    INTERVENTION = "intervention"   # Tier 4 — care recommendations
-    ACTION = "action"               # Tier 5 — execution and notification
-
-
-class AgentCapability(str, Enum):
-    VITAL_MONITORING = "vital_monitoring"
-    LAB_ANALYSIS = "lab_analysis"
-    RISK_SCORING = "risk_scoring"
-    DRUG_INTERACTION = "drug_interaction"
-    CARE_PLAN_GENERATION = "care_plan_generation"
-    ALERT_GENERATION = "alert_generation"
-    PATIENT_COMMUNICATION = "patient_communication"
-    DEVICE_INTEGRATION = "device_integration"
-    CLINICAL_SUMMARY = "clinical_summary"
-    TRIAGE = "triage"
-
-
-@dataclass
-class AgentInput:
-    """Standardized input to an agent."""
-    patient_id: Optional[str] = None
-    tenant_id: str = "default"
-    trace_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    data: dict = field(default_factory=dict)
-    context: dict = field(default_factory=dict)
-    source_agent: Optional[str] = None
-    priority: str = "normal"  # low, normal, high, critical
-
-
-@dataclass
-class AgentOutput:
-    """Standardized output from an agent."""
-    agent_name: str
-    agent_tier: str
-    decision: str
-    rationale: str = ""
-    confidence: float = 0.0
-    data: dict = field(default_factory=dict)
-    feature_contributions: list = field(default_factory=list)
-    alternatives: list = field(default_factory=list)
-    evidence_references: list = field(default_factory=list)
-    requires_hitl: bool = False
-    safety_flags: list = field(default_factory=list)
-    risk_level: Optional[str] = None
-    downstream_agents: list = field(default_factory=list)
-    duration_ms: int = 0
-    model_used: Optional[str] = None
-    input_tokens: int = 0
-    output_tokens: int = 0
-
-
-class HealthOSAgent(ABC):
+class BaseAgent(ABC):
     """
     Abstract base class for all HealthOS agents.
 
-    Subclasses must implement:
-        - process(input: AgentInput) -> AgentOutput
-        - capabilities (property)
+    Every agent must:
+    1. Declare its name, tier, and version
+    2. Implement the `process()` method
+    3. Optionally override `validate_input()` and `on_error()`
+
+    The `run()` method wraps `process()` with timing, logging, and audit.
     """
 
-    def __init__(
-        self,
-        name: str,
-        tier: AgentTier,
-        description: str = "",
-        version: str = "0.1.0",
-    ):
-        self.name = name
-        self.tier = tier
-        self.description = description
-        self.version = version
-        self.logger = logging.getLogger(f"healthos.agent.{name}")
-        self._is_initialized = False
+    name: str = "base_agent"
+    tier: AgentTier = AgentTier.SENSING
+    version: str = "1.0.0"
+    description: str = ""
+    requires_hitl: bool = False  # If True, always pause for human review
 
-    @property
-    @abstractmethod
-    def capabilities(self) -> list[AgentCapability]:
-        """List of capabilities this agent provides."""
-        ...
+    # Clinical safety thresholds
+    min_confidence: float = 0.0  # Below this, flag for review
+    max_retries: int = 2
 
-    @abstractmethod
-    async def process(self, agent_input: AgentInput) -> AgentOutput:
-        """Core processing logic — implemented by each agent."""
-        ...
+    def __init__(self) -> None:
+        self._log = logger.bind(agent=self.name, tier=self.tier.value, version=self.version)
 
-    async def initialize(self) -> None:
-        """Optional startup hook — load models, warm caches, etc."""
-        self._is_initialized = True
+    # ── Public API ───────────────────────────────────────────────────────────
 
-    async def shutdown(self) -> None:
-        """Optional cleanup hook."""
-        self._is_initialized = False
-
-    async def execute(self, agent_input: AgentInput) -> AgentOutput:
+    async def run(self, input_data: AgentInput) -> AgentOutput:
         """
-        Full execution pipeline with observability.
-
-        Wraps process() with timing, logging, and decision recording.
+        Execute the agent with full lifecycle management.
+        Wraps process() with timing, error handling, and audit.
         """
-        if not self._is_initialized:
-            await self.initialize()
-
         start = time.monotonic()
-        self.logger.info(
-            "Executing agent=%s tier=%s trace=%s patient=%s",
-            self.name,
-            self.tier.value,
-            agent_input.trace_id[:12],
-            agent_input.patient_id or "N/A",
-        )
+        trace_id = input_data.trace_id
+
+        self._log.info("agent.start", trace_id=str(trace_id), trigger=input_data.trigger)
 
         try:
-            output = await self.process(agent_input)
-            output.agent_name = self.name
-            output.agent_tier = self.tier.value
-            output.duration_ms = int((time.monotonic() - start) * 1000)
+            # Validate input
+            self.validate_input(input_data)
 
-            self.logger.info(
-                "Agent %s completed in %dms confidence=%.2f hitl=%s",
-                self.name,
-                output.duration_ms,
-                output.confidence,
-                output.requires_hitl,
+            # Execute the agent's core logic
+            output = await self.process(input_data)
+
+            # Check if HITL review is needed
+            if self.requires_hitl or output.confidence < self.min_confidence:
+                output.requires_hitl = True
+                output.hitl_reason = output.hitl_reason or (
+                    f"Confidence {output.confidence:.2f} below threshold {self.min_confidence}"
+                )
+                output.status = AgentStatus.WAITING_HITL
+
+            duration_ms = int((time.monotonic() - start) * 1000)
+            output.duration_ms = duration_ms
+
+            self._log.info(
+                "agent.complete",
+                trace_id=str(trace_id),
+                status=output.status.value,
+                confidence=output.confidence,
+                duration_ms=duration_ms,
+                requires_hitl=output.requires_hitl,
             )
-
-            # Record decision for audit trail
-            await self._record_decision(agent_input, output)
 
             return output
 
-        except Exception as e:
+        except Exception as exc:
             duration_ms = int((time.monotonic() - start) * 1000)
-            self.logger.error(
-                "Agent %s failed after %dms: %s",
-                self.name,
-                duration_ms,
-                str(e),
+            self._log.error(
+                "agent.error",
+                trace_id=str(trace_id),
+                error=str(exc),
+                duration_ms=duration_ms,
             )
-            raise
+            return self.on_error(input_data, exc, duration_ms)
 
-    async def _record_decision(
-        self, agent_input: AgentInput, output: AgentOutput,
-    ) -> None:
-        """Persist the decision to the database for audit and explainability."""
-        try:
-            from platform.config.database import get_db_context
-            from shared.models.agent import AgentDecision
+    async def run_in_pipeline(self, state: PipelineState) -> PipelineState:
+        """
+        Execute this agent as part of a LangGraph pipeline.
+        Converts pipeline state to AgentInput, runs, and merges output back.
+        """
+        agent_input = AgentInput(
+            trace_id=state.trace_id,
+            org_id=state.org_id,
+            patient_id=state.patient_id,
+            trigger=state.trigger_event,
+            context={
+                "patient_context": state.patient_context,
+                "normalized_vitals": [v.model_dump() for v in state.normalized_vitals],
+                "anomalies": [a.model_dump() for a in state.anomalies],
+                "risk_assessments": [r.model_dump() for r in state.risk_assessments],
+            },
+        )
 
-            async with get_db_context() as db:
-                decision = AgentDecision(
-                    tenant_id=agent_input.tenant_id,
-                    trace_id=agent_input.trace_id,
-                    agent_name=output.agent_name,
-                    agent_tier=output.agent_tier,
-                    patient_id=agent_input.patient_id,
-                    decision_type="recommendation",
-                    decision=output.decision,
-                    rationale=output.rationale,
-                    confidence=output.confidence,
-                    feature_contributions=output.feature_contributions,
-                    alternatives=output.alternatives,
-                    evidence_references=output.evidence_references,
-                    requires_hitl=output.requires_hitl,
-                    safety_flags=output.safety_flags,
-                    risk_level=output.risk_level,
-                    input_summary=agent_input.data,
-                    output_summary=output.data,
-                    duration_ms=output.duration_ms,
-                    model_used=output.model_used,
-                    input_tokens=output.input_tokens,
-                    output_tokens=output.output_tokens,
-                )
-                db.add(decision)
-        except Exception as e:
-            self.logger.warning("Failed to record decision: %s", e)
+        output = await self.run(agent_input)
 
-    def __repr__(self):
-        return f"<Agent {self.name} [{self.tier.value}] v{self.version}>"
+        # Merge output into pipeline state
+        state.executed_agents.append(self.name)
+        state.agent_outputs[self.name] = output
+
+        if output.requires_hitl:
+            state.requires_hitl = True
+            state.hitl_reason = output.hitl_reason
+
+        return state
+
+    # ── Abstract / Override Points ───────────────────────────────────────────
+
+    @abstractmethod
+    async def process(self, input_data: AgentInput) -> AgentOutput:
+        """Core agent logic. Must be implemented by subclasses."""
+        ...
+
+    def validate_input(self, input_data: AgentInput) -> None:
+        """Validate input data. Override to add agent-specific checks."""
+        pass
+
+    def on_error(self, input_data: AgentInput, error: Exception, duration_ms: int) -> AgentOutput:
+        """Handle errors. Override for agent-specific error recovery."""
+        return AgentOutput(
+            trace_id=input_data.trace_id,
+            agent_name=self.name,
+            status=AgentStatus.FAILED,
+            confidence=0.0,
+            result={},
+            rationale=f"Agent failed: {error}",
+            errors=[str(error)],
+            duration_ms=duration_ms,
+            requires_hitl=True,
+            hitl_reason=f"Agent {self.name} failed and requires manual review",
+        )
+
+    # ── Utility Methods ──────────────────────────────────────────────────────
+
+    def build_output(
+        self,
+        trace_id: uuid.UUID,
+        result: dict[str, Any],
+        confidence: float,
+        rationale: str,
+        status: AgentStatus = AgentStatus.COMPLETED,
+    ) -> AgentOutput:
+        """Helper to build a standard AgentOutput."""
+        return AgentOutput(
+            trace_id=trace_id,
+            agent_name=self.name,
+            status=status,
+            confidence=confidence,
+            result=result,
+            rationale=rationale,
+        )

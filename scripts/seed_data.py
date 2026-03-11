@@ -1,183 +1,183 @@
 """
-Seed script for development data.
-
-Populates the database with sample patients, providers, observations,
-and conditions for testing the platform.
+Eminence HealthOS — Database Seed Script
+Populates the database with sample organizations, users, and patients.
 """
 
+from __future__ import annotations
+
 import asyncio
-import logging
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timezone
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("healthos.seed")
-
-
-SAMPLE_PATIENTS = [
-    {
-        "mrn": "MRN-001",
-        "first_name": "Sarah",
-        "last_name": "Johnson",
-        "date_of_birth": date(1965, 3, 15),
-        "sex": "female",
-        "email": "sarah.johnson@example.com",
-        "phone": "555-0101",
-        "blood_type": "A+",
-        "risk_score": 7.5,
-        "risk_level": "HIGH",
-    },
-    {
-        "mrn": "MRN-002",
-        "first_name": "Michael",
-        "last_name": "Chen",
-        "date_of_birth": date(1978, 8, 22),
-        "sex": "male",
-        "email": "michael.chen@example.com",
-        "phone": "555-0102",
-        "blood_type": "O+",
-        "risk_score": 3.2,
-        "risk_level": "LOW",
-    },
-    {
-        "mrn": "MRN-003",
-        "first_name": "Maria",
-        "last_name": "Garcia",
-        "date_of_birth": date(1955, 11, 8),
-        "sex": "female",
-        "email": "maria.garcia@example.com",
-        "phone": "555-0103",
-        "blood_type": "B+",
-        "risk_score": 8.9,
-        "risk_level": "CRITICAL",
-    },
-    {
-        "mrn": "MRN-004",
-        "first_name": "James",
-        "last_name": "Williams",
-        "date_of_birth": date(1990, 1, 30),
-        "sex": "male",
-        "email": "james.williams@example.com",
-        "phone": "555-0104",
-        "blood_type": "AB+",
-        "risk_score": 2.1,
-        "risk_level": "LOW",
-    },
-    {
-        "mrn": "MRN-005",
-        "first_name": "Emily",
-        "last_name": "Brown",
-        "date_of_birth": date(1942, 6, 18),
-        "sex": "female",
-        "email": "emily.brown@example.com",
-        "phone": "555-0105",
-        "blood_type": "O-",
-        "risk_score": 6.8,
-        "risk_level": "HIGH",
-    },
-]
-
-SAMPLE_PROVIDERS = [
-    {
-        "npi": "1234567890",
-        "first_name": "Dr. Robert",
-        "last_name": "Smith",
-        "email": "robert.smith@healthos.example",
-        "role": "physician",
-        "specialty": "Internal Medicine",
-        "department": "Primary Care",
-    },
-    {
-        "npi": "1234567891",
-        "first_name": "Dr. Lisa",
-        "last_name": "Park",
-        "email": "lisa.park@healthos.example",
-        "role": "physician",
-        "specialty": "Cardiology",
-        "department": "Cardiology",
-    },
-    {
-        "first_name": "Nancy",
-        "last_name": "Rivera",
-        "email": "nancy.rivera@healthos.example",
-        "role": "nurse",
-        "specialty": "Critical Care",
-        "department": "ICU",
-    },
-    {
-        "first_name": "Tom",
-        "last_name": "Anderson",
-        "email": "tom.anderson@healthos.example",
-        "role": "care_coordinator",
-        "department": "RPM",
-    },
-]
-
-SAMPLE_VITALS = [
-    ("8480-6", "Systolic Blood Pressure", 138, "mmHg"),
-    ("8462-4", "Diastolic Blood Pressure", 88, "mmHg"),
-    ("8867-4", "Heart Rate", 78, "bpm"),
-    ("9279-1", "Respiratory Rate", 16, "/min"),
-    ("8310-5", "Body Temperature", 37.0, "°C"),
-    ("2708-6", "Oxygen Saturation", 97, "%"),
-]
+from platform.config import get_settings
+from platform.database import get_db_context, get_engine
+from platform.models import Base, Organization, Patient, User
+from platform.security.auth import hash_password
 
 
-async def seed():
-    from platform.config.database import get_db_context
-    from shared.models.patient import Patient
-    from shared.models.provider import Provider
-    from shared.models.observation import Observation
-
-    tenant_id = "default"
+async def seed() -> None:
+    """Seed the database with sample data."""
+    # Create all tables
+    engine = get_engine()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
     async with get_db_context() as db:
-        # Seed providers
-        provider_ids = []
-        for p_data in SAMPLE_PROVIDERS:
-            provider = Provider(tenant_id=tenant_id, **p_data)
-            db.add(provider)
-            await db.flush()
-            provider_ids.append(str(provider.id))
-            logger.info("Created provider: %s %s", p_data["first_name"], p_data["last_name"])
+        # ── Organization ─────────────────────────────────────────────────
+        org = Organization(
+            name="Eminence Health Demo",
+            slug="eminence-demo",
+            tier="enterprise",
+            hipaa_baa_signed=True,
+            settings={
+                "features": ["rpm", "telehealth", "analytics"],
+                "max_patients": 10000,
+                "ai_enabled": True,
+            },
+        )
+        db.add(org)
+        await db.flush()
 
-        # Seed patients
-        patient_ids = []
-        for i, pt_data in enumerate(SAMPLE_PATIENTS):
-            pt_data["primary_provider_id"] = provider_ids[i % len(provider_ids)]
-            patient = Patient(tenant_id=tenant_id, **pt_data)
-            db.add(patient)
-            await db.flush()
-            patient_ids.append(str(patient.id))
-            logger.info("Created patient: %s %s (MRN: %s)", pt_data["first_name"], pt_data["last_name"], pt_data["mrn"])
+        # ── Users ────────────────────────────────────────────────────────
+        users = [
+            User(
+                org_id=org.id,
+                email="admin@eminence.health",
+                hashed_password=hash_password("admin123"),
+                role="admin",
+                full_name="System Administrator",
+            ),
+            User(
+                org_id=org.id,
+                email="dr.smith@eminence.health",
+                hashed_password=hash_password("doctor123"),
+                role="clinician",
+                full_name="Dr. Sarah Smith",
+                profile={"specialty": "cardiology", "npi": "1234567890"},
+            ),
+            User(
+                org_id=org.id,
+                email="nurse.jones@eminence.health",
+                hashed_password=hash_password("nurse123"),
+                role="nurse",
+                full_name="Nurse Mike Jones",
+            ),
+            User(
+                org_id=org.id,
+                email="cm.wilson@eminence.health",
+                hashed_password=hash_password("caremanager123"),
+                role="care_manager",
+                full_name="Carol Wilson, RN",
+            ),
+        ]
+        for u in users:
+            db.add(u)
+        await db.flush()
 
-        # Seed observations (last 7 days of vitals for each patient)
-        now = datetime.now(timezone.utc)
-        for pid in patient_ids:
-            for day_offset in range(7):
-                for loinc, display, base_val, unit in SAMPLE_VITALS:
-                    # Add some variance
-                    import random
-                    variance = random.uniform(-5, 5) if isinstance(base_val, int) else random.uniform(-0.5, 0.5)
-                    value = round(base_val + variance, 1)
-                    obs = Observation(
-                        tenant_id=tenant_id,
-                        patient_id=pid,
-                        category="vital-signs",
-                        loinc_code=loinc,
-                        display=display,
-                        value_quantity=value,
-                        value_unit=unit,
-                        effective_datetime=now - timedelta(days=day_offset, hours=random.randint(0, 12)),
-                        status="final",
-                        data_source="device",
-                    )
-                    db.add(obs)
+        # ── Patients ─────────────────────────────────────────────────────
+        patients = [
+            Patient(
+                org_id=org.id,
+                mrn="MRN001",
+                demographics={
+                    "name": "John Williams",
+                    "dob": "1955-03-15",
+                    "gender": "male",
+                    "contact": {"phone": "555-0101", "email": "john.w@email.com"},
+                },
+                conditions=[
+                    {"code": "I10", "display": "Essential hypertension", "onset": "2018-06-01"},
+                    {"code": "E11", "display": "Type 2 diabetes", "onset": "2020-01-15"},
+                ],
+                medications=[
+                    {"name": "Lisinopril", "dose": "20mg", "frequency": "daily"},
+                    {"name": "Metformin", "dose": "1000mg", "frequency": "twice daily"},
+                ],
+                risk_level="high",
+                care_team=[{"user_id": str(users[1].id), "role": "primary_physician"}],
+            ),
+            Patient(
+                org_id=org.id,
+                mrn="MRN002",
+                demographics={
+                    "name": "Maria Garcia",
+                    "dob": "1968-09-22",
+                    "gender": "female",
+                    "contact": {"phone": "555-0102", "email": "maria.g@email.com"},
+                },
+                conditions=[
+                    {"code": "I50.9", "display": "Heart failure, unspecified", "onset": "2022-03-10"},
+                ],
+                medications=[
+                    {"name": "Carvedilol", "dose": "25mg", "frequency": "twice daily"},
+                    {"name": "Furosemide", "dose": "40mg", "frequency": "daily"},
+                ],
+                risk_level="critical",
+                care_team=[{"user_id": str(users[1].id), "role": "primary_physician"}],
+            ),
+            Patient(
+                org_id=org.id,
+                mrn="MRN003",
+                demographics={
+                    "name": "Robert Chen",
+                    "dob": "1975-12-08",
+                    "gender": "male",
+                    "contact": {"phone": "555-0103", "email": "robert.c@email.com"},
+                },
+                conditions=[
+                    {"code": "J44.1", "display": "COPD with acute exacerbation", "onset": "2019-11-20"},
+                ],
+                medications=[
+                    {"name": "Tiotropium", "dose": "18mcg", "frequency": "daily"},
+                    {"name": "Albuterol", "dose": "2 puffs", "frequency": "as needed"},
+                ],
+                risk_level="moderate",
+                care_team=[{"user_id": str(users[1].id), "role": "primary_physician"}],
+            ),
+            Patient(
+                org_id=org.id,
+                mrn="MRN004",
+                demographics={
+                    "name": "Lisa Thompson",
+                    "dob": "1990-05-30",
+                    "gender": "female",
+                    "contact": {"phone": "555-0104", "email": "lisa.t@email.com"},
+                },
+                conditions=[],
+                medications=[],
+                risk_level="low",
+                care_team=[],
+            ),
+            Patient(
+                org_id=org.id,
+                mrn="MRN005",
+                demographics={
+                    "name": "James Brown",
+                    "dob": "1948-01-12",
+                    "gender": "male",
+                    "contact": {"phone": "555-0105", "email": "james.b@email.com"},
+                },
+                conditions=[
+                    {"code": "I10", "display": "Essential hypertension", "onset": "2010-03-01"},
+                    {"code": "E11", "display": "Type 2 diabetes", "onset": "2015-08-20"},
+                    {"code": "N18.3", "display": "CKD stage 3", "onset": "2021-06-15"},
+                ],
+                medications=[
+                    {"name": "Amlodipine", "dose": "10mg", "frequency": "daily"},
+                    {"name": "Insulin Glargine", "dose": "30 units", "frequency": "bedtime"},
+                    {"name": "Losartan", "dose": "50mg", "frequency": "daily"},
+                ],
+                risk_level="high",
+                care_team=[{"user_id": str(users[1].id), "role": "primary_physician"}],
+            ),
+        ]
+        for p in patients:
+            db.add(p)
 
-            logger.info("Created 7 days of vitals for patient %s", pid)
-
-    logger.info("Seed complete: %d providers, %d patients, %d observation days",
-                len(SAMPLE_PROVIDERS), len(SAMPLE_PATIENTS), 7)
+    print("Database seeded successfully!")
+    print(f"  Organization: {org.name} ({org.slug})")
+    print(f"  Users: {len(users)}")
+    print(f"  Patients: {len(patients)}")
 
 
 if __name__ == "__main__":
