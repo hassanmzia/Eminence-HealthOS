@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # ─── Core API ──────────────────────────────────────────────────────────────
   api:
@@ -59,7 +57,7 @@ services:
 
   # ─── Kafka (KRaft mode — no Zookeeper) ────────────────────────────────────
   kafka:
-    image: bitnami/kafka:3.7
+    image: bitnami/kafka:3.7.0
     ports:
       - "9092:9092"
     environment:
