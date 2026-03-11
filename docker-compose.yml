@@ -70,10 +70,7 @@ services:
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_LOG_DIRS: /opt/kafka/data/kraft-combined-logs
       CLUSTER_ID: "healthos-kafka-cluster-001"
-    volumes:
-      - kafkadata:/opt/kafka/data
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
       interval: 10s
@@ -136,7 +133,7 @@ services:
 volumes:
   pgdata:
   redisdata:
-  kafkadata:
+
   qdrantdata:
   neo4jdata:
   prometheusdata:
