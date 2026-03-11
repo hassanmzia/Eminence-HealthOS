@@ -2874,3 +2874,230 @@ Eminence HealthOS is not a telehealth app or RPM tool. It is a **multi-agent hea
 8. **Edge computing** — works offline in rural healthcare settings
 
 The platform is built once and licensed many times — each client builds their digital health business on top of HealthOS while Eminence retains full IP ownership.
+
+---
+
+## Cross-Repository Feature Import Map
+
+### Source Repository Inventory & Reusability Analysis
+
+After deep analysis of all 5 healthcare repositories, here is the complete feature matrix showing what each repo contributes and what gets imported into HealthOS:
+
+### 1. InHealth-Capstone-Project (80% Reusable — PRIMARY SOURCE)
+
+**Status**: Most complete implementation. 25 agents across 5 tiers with production-ready LangGraph orchestration.
+
+| Feature | Files | Reusability | Import Priority |
+|---------|-------|-------------|-----------------|
+| **LangGraph 5-Tier Supervisor** | `agents/orchestrator/supervisor.py` (481 lines) | Direct import — production-ready StateGraph with conditional routing, parallel tier execution | P0 — Core architecture |
+| **Conditional Router** | `agents/orchestrator/router.py` (224 lines) | Direct import — emergency bypass, severity routing, HITL gates, loop control | P0 — Core routing |
+| **PatientMonitoringState** | `agents/orchestrator/state.py` (147 lines) | Direct import — TypedDict state with monitoring, diagnostic, risk, intervention, action tiers | P0 — State schema |
+| **MCPAgent Base Class** | `agents/base/agent.py` (598 lines) | Direct import — MCP context injection, A2A messaging, PHI redaction, Langfuse tracing, LangChain executor | P0 — Agent foundation |
+| **AgentMemory Manager** | `agents/base/memory.py` (264 lines) | Direct import — Redis-backed per-patient per-agent rolling window memory with LLM summarization | P0 — Memory system |
+| **14 LangChain Tools** | `agents/base/tools.py` (736 lines) | Direct import — FHIR query, Neo4j graph, Qdrant vector search, drug interactions, risk scoring, NL2SQL, PubMed, ClinicalTrials.gov, geospatial hospital finder, Whisper transcription, PHI detection/redaction | P0 — Tool registry |
+| **HITL System** | `agents/orchestrator/hitl.py` (287 lines) | Direct import — Redis-backed approval queue, physician notification, decision recording, timeout auto-reject | P0 — HITL workflow |
+| **Tier 1: 4 Monitoring Agents** | `agents/tier1_monitoring/` | Direct import — glucose, cardiac, activity, temperature agents | P0 |
+| **Tier 2: 4 Diagnostic Agents** | `agents/tier2_diagnostic/` | Direct import — ECG, kidney, imaging, lab agents | P0 |
+| **Tier 3: 5 Risk Agents** | `agents/tier3_risk/` | Direct import — comorbidity, prediction, family history, SDoH, ML ensemble | P0 |
+| **Tier 4: 4 Intervention Agents** | `agents/tier4_intervention/` | Direct import — coaching, prescription, contraindication, triage | P0 |
+| **Tier 5: 5 Action Agents** | `agents/tier5_action/` | Direct import — physician notify, patient notify, scheduling, EHR integration, billing | P0 |
+| **Security Layer** | `agents/security/` | Direct import — PHI detector, guardrails, audit logger | P0 |
+| **Research Pipeline** | `agents/research_system/` | Direct import — literature agent, trial matching, QA, guidelines, synthesis | P1 |
+| **MCP Server** | `mcp-server/` (TypeScript) | Direct import — Express.js MCP server with context, tools, health routes | P0 |
+| **Prometheus Monitoring** | `monitoring/` | Direct import — clinical alerts rules, agent alerts, infra alerts, Grafana dashboards (5 dashboards: LLM costs, agent ops, clinical overview, patient population, system health) | P1 |
+| **Frontend Components** | `frontend/` | Adapt — AgentStatusGrid, AgentExecutionLog, PatientTimeline, clinical types | P2 |
+| **Multi-LLM Factory** | `supervisor.py:_build_llm()` | Direct import — Ollama → OpenAI → Anthropic fallback chain with Langfuse callbacks | P0 |
+| **Telemetry** | `agents/telemetry.py` | Direct import — OpenTelemetry integration for agent tracing | P1 |
+
+### 2. HealthCare-Agentic-Platform (70% Reusable — SPECIALTY AGENTS)
+
+**Status**: Full Django + React clinician dashboard with specialty agents and clinical workflow.
+
+| Feature | Files | Reusability | Import Priority |
+|---------|-------|-------------|-----------------|
+| **Diagnostician Agent** | `orchestrator/agents/diagnostician_agent.py` (692 lines) | Direct import — LLM-powered differential diagnosis with ICD-10, vitals analysis, ECG interpretation, rule-based + LLM hybrid, guideline validation | P0 — NEW for HealthOS |
+| **Radiology Agent** | `orchestrator/agents/radiology_agent.py` (497 lines) | Direct import — X-ray/CT pattern matching (XRAY_PATTERNS, CT_PATTERNS), body part extraction, imaging recommendations | P0 — NEW for HealthOS |
+| **Oncology Agent** | `orchestrator/agents/oncology_agent.py` (618 lines) | Direct import — cancer staging (TNM), 7 tumor markers (PSA, CEA, CA-125, CA19-9, AFP, beta-hCG, LDH), screening guidelines, suspicious findings review | P0 — NEW for HealthOS |
+| **Cardiology Agent** | `orchestrator/agents/cardiology_agent.py` | Direct import — cardiac-specific analysis | P0 — NEW |
+| **Pathology Agent** | `orchestrator/agents/pathology_agent.py` | Direct import — pathology findings analysis | P0 — NEW |
+| **Gastroenterology Agent** | `orchestrator/agents/gastroenterology_agent.py` | Direct import — GI-specific analysis | P1 — NEW |
+| **Clinical Coding Agent** | `orchestrator/agents/coding_agent.py` (473 lines) | Direct import — ICD-10 + CPT code suggestion, specificity checking, HCC risk adjustment, LLM-enhanced coding | P0 — NEW for HealthOS |
+| **Safety Agent** | `orchestrator/agents/safety_agent.py` | Direct import — clinical safety validation | P0 |
+| **Treatment Agent** | `orchestrator/agents/treatment_agent.py` | Direct import — treatment planning | P0 |
+| **Clinical LLM Wrapper** | `orchestrator/llm/clinical_llm.py` | Adapt — unified LLM interface with clinical task routing | P1 |
+| **FHIR Mappers** | `orchestrator/fhir/mappers.py` | Direct import — FHIR resource mapping utilities | P1 |
+| **Django Clinical Models** | `backend/clinical/models.py` (713 lines) | Direct import — Encounter, ClinicalNote (SOAP), Diagnosis, CarePlan, Vitals, ClinicalAssessment, PhysicianReview, AssessmentAuditLog, ClinicalDocument, EHROrder | P0 — DATABASE SCHEMA |
+| **Django Patient Models** | `backend/patients/models.py` (137 lines) | Direct import — comprehensive Patient model with demographics, insurance, medical info, PatientDocument | P0 — DATABASE SCHEMA |
+| **Clinician Dashboard** | `frontend/clinician-dashboard/` (20+ components) | Adapt — AlertsDashboard, VitalsCharts, LabsDashboard, MedicationsDashboard, AnalyticsDashboard, PatientImport, DeviceAssignment, SimulatorControl | P1 — FRONTEND |
+| **API Layer** | `backend/` (patients, users, vitals, clinical apps) | Adapt — REST API with serializers, views, permissions | P1 |
+
+### 3. Health_Assistant (60% Reusable — A2A & PHI & HITL)
+
+**Status**: Clean agent architecture with A2A protocol, PHI filtering, and FHIR browser.
+
+| Feature | Files | Reusability | Import Priority |
+|---------|-------|-------------|-----------------|
+| **A2A Protocol** | `agents/src/a2a/protocol.py` | Direct import — agent-to-agent communication protocol | P0 |
+| **A2A Registry** | `agents/src/a2a/registry.py` | Direct import — agent discovery and registration | P0 |
+| **PHI Detector** | `agents/src/phi_filter/detector.py` | Direct import — PHI entity detection | P0 |
+| **PHI Masker** | `agents/src/phi_filter/masker.py` | Direct import — PHI redaction/masking | P0 |
+| **Toxicity Filter** | `agents/src/phi_filter/toxicity.py` | Direct import — prevents toxic/harmful clinical outputs | P0 — NEW for HealthOS |
+| **HITL Agent** | `agents/src/hitl_agent/agent.py` | Adapt — human-in-the-loop approval workflow | P1 |
+| **SQL Agent** | `agents/src/sql_agent/agent.py` | Adapt — natural language to SQL for clinical queries | P1 |
+| **Classifier Agent** | `agents/src/classifier_agent/agent.py` | Adapt — clinical intent classification | P1 |
+| **Observability Tracer** | `agents/src/observability/tracer.py` | Direct import — distributed tracing for agent calls | P1 |
+| **Observability Callbacks** | `agents/src/observability/callbacks.py` | Direct import — LangChain callback handlers for tracing | P1 |
+| **FHIR Browser UI** | `frontend/src/components/fhir/` (5 components) | Direct import — FHIRPatientList, FHIRResourceList, FHIRResourcePages, FHIRPatientDetail, FHIRBrowserPage | P1 — NEW for HealthOS |
+| **HITL Approval UI** | `frontend/src/components/hitl/` (2 components) | Direct import — HITLPage, HITLApprovalPanel | P1 |
+| **Chat Interface** | `frontend/src/components/chat/` | Adapt — ChatPage, ChatMessage for patient/provider chat | P2 |
+| **WebSocket Hooks** | `frontend/src/hooks/useWebSocket.ts` | Direct import — real-time WebSocket communication | P1 |
+| **Django Apps** | `backend/healthcare_api/apps/` (patients, conditions, encounters, allergies, agents, audit, fhir) | Adapt — comprehensive Django app structure with FHIR serializers | P1 |
+
+### 4. InhealthUSA (50% Reusable — PRODUCTION EHR & IoT)
+
+**Status**: Production Django EHR with IoT device integration, multi-channel alerts, and enterprise auth.
+
+| Feature | Files | Reusability | Import Priority |
+|---------|-------|-------------|-----------------|
+| **Two-Stage Vital Alert System** | `healthcare/vital_alerts.py` (930 lines) | Direct import — immediate provider notification + patient consent for EMS escalation, auto-timeout escalation, multi-channel (email/SMS/WhatsApp) | P0 — NEW for HealthOS |
+| **IoT Data Processor** | `healthcare/iot_data_processor.py` (345 lines) | Direct import — JSON file ingestion from IoT devices, validation, VitalSign creation, alert triggering, file archival | P0 — NEW for HealthOS |
+| **IoT API Views** | `healthcare/iot_api_views.py` | Direct import — REST API for IoT device data submission | P0 |
+| **IoT Device Models** | `healthcare/models_iot.py` | Direct import — Device, DeviceReading, DeviceAPIKey models | P0 |
+| **Enterprise Auth** | MFA (TOTP), CAC middleware, session security, email verification | Direct import — production-ready enterprise auth with MFA, smart card, and SSO support | P0 — NEW for HealthOS |
+| **Multi-Channel Notifications** | Email + SMS (Twilio) + WhatsApp + In-App Dashboard | Direct import — most complete notification system across all repos | P0 — NEW |
+| **Notification Preferences** | Per-user channel preferences with severity thresholds | Direct import — granular notification control | P1 |
+| **Hospital/Department/Provider Models** | `healthcare/models.py` | Direct import — multi-hospital organizational structure | P1 |
+| **EHR Schema** | Full patient, encounter, vital signs, billing, prescription, family history models | Adapt — production Django models with 17 migrations | P1 |
+| **AI Treatment Plans** | Migration 0015 | Adapt — AI-generated treatment plan models | P1 |
+| **Device API Key Management** | `healthcare/device_api_key_views.py` | Direct import — API key CRUD for IoT devices | P1 |
+| **IoT File Management** | `healthcare/iot_file_management_views.py` | Direct import — device file upload/management | P1 |
+| **Password Validators** | `healthcare/password_validators.py` | Direct import — HIPAA-compliant password rules | P0 |
+| **Session Security Middleware** | `healthcare/middleware/session_security.py` | Direct import — session timeout, concurrent session control | P0 |
+
+### 5. AI-Healthcare-Embodiment (65% Reusable — GOVERNANCE & FAIRNESS & WHAT-IF)
+
+**Status**: Django + React platform with phenotyping, governance, fairness analysis, and what-if simulation.
+
+| Feature | Files | Reusability | Import Priority |
+|---------|-------|-------------|-----------------|
+| **Phenotyping Agent V1/V2** | `backend/agents/phenotyping.py` (223 lines) | Direct import — weighted scoring models with feature contributions, look-alike condition penalties, vitamin D/mono history bonuses | P1 — NEW for HealthOS |
+| **Governance Rules Engine** | `backend/governance/models.py` (60 lines) | Direct import — configurable governance rules (PHI check, evidence quality, demographic guard, contradiction detection, rate limiting) | P0 — NEW for HealthOS |
+| **Compliance Reports** | `backend/governance/models.py` | Direct import — fairness analysis, safety audit, performance review reports | P0 — NEW |
+| **Fairness Analytics** | `backend/analytics/services.py` (254 lines) | Direct import — subgroup analysis by demographics, confusion matrix, calibration data, risk distribution, autonomy level distribution | P0 — NEW for HealthOS |
+| **What-If Analysis** | `backend/analytics/services.py:what_if_analysis()` | Direct import — re-evaluate patients under different policy thresholds, precision/recall trade-off simulation | P0 — NEW for HealthOS |
+| **Agent Workflow Engine** | `backend/agents/workflow.py` | Direct import — configurable multi-agent workflow execution | P1 |
+| **Agent Coordinator** | `backend/agents/coordinator.py` | Adapt — agent coordination and result aggregation | P1 |
+| **Safety Agent** | `backend/agents/safety.py` | Direct import — pre/post LLM safety checks | P0 |
+| **Notes & Imaging Agent** | `backend/agents/notes_imaging.py` | Direct import — clinical notes + imaging analysis agent | P1 |
+| **Retrieval Agent** | `backend/agents/retrieval.py` | Direct import — RAG-based clinical knowledge retrieval | P1 |
+| **LLM Agent** | `backend/agents/llm_agent.py` | Adapt — LLM integration for clinical reasoning | P1 |
+| **MCP Protocol** | `backend/mcp/protocol.py` | Direct import — Model Context Protocol server implementation | P0 |
+| **A2A Protocol** | `backend/a2a/protocol.py` | Direct import — agent-to-agent messaging protocol | P0 |
+| **A2A Gateway** | `backend/core/management/commands/run_a2a_gateway.py` | Direct import — A2A gateway management command | P1 |
+| **Analytics Models** | `backend/analytics/models.py` | Direct import — analytics data models | P1 |
+| **Fairness Dashboard** | `frontend/src/pages/FairnessPage.tsx` | Direct import — fairness visualization UI | P1 — NEW |
+| **What-If Dashboard** | `frontend/src/pages/WhatIfPage.tsx` | Direct import — policy simulation UI | P1 — NEW |
+| **Governance Dashboard** | `frontend/src/pages/GovernancePage.tsx` | Direct import — governance rules management UI | P1 — NEW |
+| **Audit Dashboard** | `frontend/src/pages/AuditPage.tsx` | Direct import — audit trail visualization | P1 |
+| **Workflows Dashboard** | `frontend/src/pages/WorkflowsPage.tsx` | Direct import — agent workflow management UI | P1 |
+| **Policy Management** | `frontend/src/pages/PoliciesPage.tsx` | Direct import — configurable clinical policy thresholds | P1 — NEW |
+| **Seed Data Command** | `backend/core/management/commands/seed_data.py` | Direct import — demo data seeding for development | P2 |
+| **WebSocket Consumers** | `backend/api/consumers.py` | Direct import — real-time WebSocket for live agent updates | P1 |
+
+---
+
+### Features MISSING from HealthOS That These Repos Provide
+
+These are features found in your repos that are NOT yet in the HealthOS plan:
+
+| # | Missing Feature | Source Repo | Impact |
+|---|----------------|-------------|--------|
+| 1 | **Oncology Agent** (cancer staging, 7 tumor markers, screening guidelines) | HealthCare-Agentic-Platform | Critical — cancer is #2 cause of death |
+| 2 | **Diagnostician Agent** (differential diagnosis with ICD-10, LLM + rules hybrid) | HealthCare-Agentic-Platform | Critical — core clinical workflow |
+| 3 | **Clinical Coding Agent** (ICD-10 + CPT auto-coding, HCC risk adjustment) | HealthCare-Agentic-Platform | Critical — revenue cycle |
+| 4 | **Radiology Pattern Matching** (X-ray/CT pattern databases with ICD-10) | HealthCare-Agentic-Platform | High — complements imaging AI models |
+| 5 | **Gastroenterology Agent** | HealthCare-Agentic-Platform | Medium — specialty coverage |
+| 6 | **Two-Stage Vital Alert** (immediate provider notify + patient EMS consent + auto-escalation) | InhealthUSA | Critical — patient safety |
+| 7 | **IoT Device Data Processor** (file-based ingestion, validation, archival) | InhealthUSA | High — IoT integration |
+| 8 | **WhatsApp Notifications** | InhealthUSA | High — global patient reach |
+| 9 | **Enterprise Auth** (CAC, MFA/TOTP, session security, account lockout) | InhealthUSA | Critical — HIPAA compliance |
+| 10 | **Governance Rules Engine** (configurable PHI/evidence/demographic/contradiction checks) | AI-Healthcare-Embodiment | Critical — AI safety |
+| 11 | **Fairness Analytics** (subgroup analysis, calibration, bias detection) | AI-Healthcare-Embodiment | Critical — FDA AI equity requirements |
+| 12 | **What-If Policy Simulation** (re-evaluate under different thresholds) | AI-Healthcare-Embodiment | High — clinical policy tuning |
+| 13 | **Phenotyping Agent** (weighted scoring with feature contributions, V1/V2) | AI-Healthcare-Embodiment | High — disease risk modeling |
+| 14 | **Toxicity Filter** (prevents harmful/toxic clinical AI outputs) | Health_Assistant | Critical — patient safety |
+| 15 | **FHIR Browser UI** (interactive FHIR resource explorer) | Health_Assistant | Medium — developer/admin tool |
+| 16 | **Clinical Assessment Model** (AI assessment → physician review → attestation → EHR order) | HealthCare-Agentic-Platform | Critical — complete clinical workflow |
+| 17 | **EHR Order Model** (medication, lab, imaging, procedure, referral orders with EHR write-back) | HealthCare-Agentic-Platform | Critical — CPOE integration |
+| 18 | **Clinical Document Generation** (assessment summary, progress note, discharge, referral in HTML/PDF/FHIR/CCD) | HealthCare-Agentic-Platform | High — documentation |
+| 19 | **PhysicianReview + Digital Signature** (attestation, digital signature hash, time tracking) | HealthCare-Agentic-Platform | Critical — medical-legal |
+| 20 | **Notification Preferences** (per-user per-channel per-severity threshold) | InhealthUSA | High — user experience |
+
+### Import Execution Order
+
+```
+Phase 1 (Core — Week 1-2):
+├── InHealth-Capstone → LangGraph orchestrator, 25 agents, tools, HITL, memory, MCP server
+├── HealthCare-Agentic → Django models (clinical schema), diagnostician, coding agent
+└── InhealthUSA → Enterprise auth (MFA, session security, password validators)
+
+Phase 2 (Specialty + Safety — Week 3-4):
+├── HealthCare-Agentic → Oncology, radiology, cardiology, pathology, GI agents
+├── AI-Healthcare-Embodiment → Governance rules engine, safety agent, fairness analytics
+├── Health_Assistant → Toxicity filter, A2A protocol, PHI filter
+└── InhealthUSA → Two-stage vital alerts, IoT processor, WhatsApp notifications
+
+Phase 3 (Clinical Workflow — Week 5-6):
+├── HealthCare-Agentic → ClinicalAssessment → PhysicianReview → EHROrder pipeline
+├── HealthCare-Agentic → Clinical document generation (HTML/PDF/FHIR/CCD)
+├── AI-Healthcare-Embodiment → What-if analysis, phenotyping agents, policy management
+└── Health_Assistant → FHIR browser, chat interface, observability
+
+Phase 4 (Frontend + Polish — Week 7-8):
+├── HealthCare-Agentic → Clinician dashboard components
+├── AI-Healthcare-Embodiment → Fairness, governance, audit, workflow dashboards
+├── Health_Assistant → HITL approval UI, WebSocket hooks
+└── InhealthUSA → Notification preferences UI, IoT management UI
+```
+
+### Total Features After Import
+
+| Category | Before Import | After Import | Source |
+|----------|--------------|-------------|--------|
+| AI Agents | 79 | 94 (+15) | +Diagnostician, Oncology, Coding, Radiology, Cardiology, Pathology, GI, Phenotyping V1/V2, Safety, Notes/Imaging, Retrieval, Toxicity, Classifier, SQL, LLM |
+| Clinical Models | ~20 | ~45 (+25) | +Encounter, ClinicalNote, Diagnosis, CarePlan, ClinicalAssessment, PhysicianReview, AssessmentAuditLog, ClinicalDocument, EHROrder, GovernanceRule, ComplianceReport, etc. |
+| Tools | ~10 | 24 (+14) | +Drug interactions, NL2SQL, PubMed, ClinicalTrials.gov, geospatial, Whisper, risk scoring, etc. |
+| Imaging Models | 50+ | 50+ (enhanced) | +Radiology pattern databases (X-ray, CT) with ICD-10 mapping |
+| Notification Channels | 3 | 5 (+2) | +WhatsApp, In-App Dashboard |
+| Auth Features | Basic | Enterprise | +MFA/TOTP, CAC, session security, account lockout |
+| Analytics | Basic | Advanced | +Fairness subgroup analysis, calibration, what-if simulation |
+| Compliance | 18 frameworks | 18 + governance engine | +Configurable rules, compliance reports |
+| Frontend Pages | ~15 | ~35 (+20) | +Fairness, Governance, Audit, What-If, Policies, FHIR Browser, etc. |
+
+### Architecture After Import
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                     EMINENCE HEALTHOS v2.0                              │
+│                (Post Cross-Repository Import)                           │
+│                                                                        │
+│  94 AI Agents │ 45 DB Models │ 24 Tools │ 50+ Imaging Models          │
+│  5 Notification Channels │ Enterprise Auth │ Fairness Analytics        │
+│  What-If Simulation │ Governance Engine │ FDA SaMD Ready               │
+│                                                                        │
+│  Source Code:                                                           │
+│  ├── InHealth-Capstone   (80%) → Core orchestrator + 25 agents         │
+│  ├── HealthCare-Agentic  (70%) → Specialty agents + clinical models    │
+│  ├── AI-Embodiment       (65%) → Governance + fairness + what-if       │
+│  ├── Health_Assistant    (60%) → A2A + PHI + HITL + FHIR browser      │
+│  └── InhealthUSA         (50%) → IoT + alerts + enterprise auth        │
+│                                                                        │
+│  New for HealthOS (not in any repo):                                    │
+│  ├── 50+ Specialized Imaging AI Models (MONAI, MedSAM, etc.)          │
+│  ├── Multi-tenant SaaS architecture                                    │
+│  ├── Edge computing / offline mode                                     │
+│  ├── Blockchain audit trail                                            │
+│  ├── Genomics / pharmacogenomics module                                │
+│  └── White-label licensing engine                                      │
+└────────────────────────────────────────────────────────────────────────┘
+```
