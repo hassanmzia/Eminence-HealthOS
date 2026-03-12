@@ -108,7 +108,63 @@ ROUTING_TABLE: dict[str, list[str]] = {
     "operations.sla.check": [
         "task_orchestration",
     ],
-    # ── Analytics Events ─────────────────────────────────────────────────
+    # ── Billing Events ─────────────────────────────────────────────────────
+    # Encounter billing validation
+    "billing.encounter.validate": [
+        "billing_readiness",
+    ],
+    # Claim preparation
+    "billing.claim.prepare": [
+        "insurance_verification",
+        "billing_readiness",
+    ],
+    # Post-encounter billing workflow
+    "billing.post_encounter": [
+        "billing_readiness",
+        "prior_authorization",
+        "task_orchestration",
+    ],
+    # ── Analytics Events ──────────────────────────────────────────────────
+    # Population health analysis
+    "analytics.population_health": [
+        "population_health",
+    ],
+    # Risk stratification
+    "analytics.risk_stratification": [
+        "population_health",
+        "cohort_segmentation",
+    ],
+    # Quality metrics
+    "analytics.quality_metrics": [
+        "population_health",
+    ],
+    # Outcome tracking
+    "analytics.outcome.track": [
+        "outcome_tracker",
+    ],
+    # Readmission risk prediction
+    "analytics.readmission.predict": [
+        "readmission_risk",
+    ],
+    # Batch readmission risk
+    "analytics.readmission.batch": [
+        "readmission_risk",
+    ],
+    # Cohort creation & analysis
+    "analytics.cohort.create": [
+        "cohort_segmentation",
+    ],
+    # Cost analysis
+    "analytics.cost.analyze": [
+        "cost_analyzer",
+    ],
+    # Discharge triggers readmission risk assessment
+    "analytics.discharge.assess": [
+        "readmission_risk",
+        "outcome_tracker",
+        "cohort_segmentation",
+    ],
+    # ── Executive Intelligence Events ─────────────────────────────────────
     # Cost/risk insight analysis
     "analytics.cost_risk.analyze": [
         "cost_risk_insight",
@@ -132,6 +188,8 @@ ROUTING_TABLE: dict[str, list[str]] = {
     ],
     # Scheduled analytics pipeline (periodic)
     "analytics.pipeline.scheduled": [
+        "population_health",
+        "readmission_risk",
         "cost_risk_insight",
         "executive_insight",
     ],

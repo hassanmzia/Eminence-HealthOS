@@ -369,6 +369,74 @@ class Referral(Base):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# BILLING / CLAIMS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class BillingClaim(Base):
+    __tablename__ = "billing_claims"
+    __table_args__ = (
+        Index("idx_claim_patient", "patient_id", "created_at"),
+        Index("idx_claim_status", "org_id", "status"),
+        Index("idx_claim_payer", "org_id", "payer"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("encounters.id"))
+    claim_id: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    claim_type: Mapped[str] = mapped_column(String(20), default="837P")
+    payer: Mapped[str] = mapped_column(String(100), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="prepared")  # prepared, submitted, accepted, rejected, paid, denied
+    cpt_codes: Mapped[list] = mapped_column(JSONB, default=list)
+    diagnosis_codes: Mapped[list] = mapped_column(JSONB, default=list)
+    service_lines: Mapped[list] = mapped_column(JSONB, default=list)
+    total_charges: Mapped[float] = mapped_column(Float, default=0)
+    allowed_amount: Mapped[float | None] = mapped_column(Float)
+    paid_amount: Mapped[float | None] = mapped_column(Float)
+    patient_responsibility: Mapped[float | None] = mapped_column(Float)
+    provider_npi: Mapped[str | None] = mapped_column(String(20))
+    date_of_service: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    prior_auth_reference: Mapped[str | None] = mapped_column(String(100))
+    payer_response: Mapped[dict | None] = mapped_column(JSONB)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    adjudicated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by_agent: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class OperationalWorkflow(Base):
+    __tablename__ = "operational_workflows"
+    __table_args__ = (
+        Index("idx_workflow_org_status", "org_id", "status"),
+        Index("idx_workflow_patient", "patient_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("patients.id"))
+    workflow_id: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    workflow_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="active")  # created, active, paused, completed, failed, cancelled
+    priority: Mapped[str] = mapped_column(String(20), default="normal")
+    steps: Mapped[list] = mapped_column(JSONB, default=list)
+    context: Mapped[dict] = mapped_column(JSONB, default=dict)
+    total_steps: Mapped[int] = mapped_column(Integer, default=0)
+    completed_steps: Mapped[int] = mapped_column(Integer, default=0)
+    created_by_agent: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # AGENT AUDIT
 # ═══════════════════════════════════════════════════════════════════════════════
 
