@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
         destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4090"}/api/:path*`,
       },
       {
+        source: "/health",
+        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4090"}/health`,
+      },
+      {
         source: "/ws/:path*",
         destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4090"}/ws/:path*`,
       },

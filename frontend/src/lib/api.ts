@@ -1,15 +1,28 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4090";
 const API_PREFIX = "/api/v1";
 
+function getAuthHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  const token = localStorage.getItem("access_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE}${API_PREFIX}${path}`;
+  const url = `${API_PREFIX}${path}`;
   const res = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
+      ...getAuthHeaders(),
       ...options?.headers,
     },
     ...options,
   });
+
+  if (res.status === 401 && typeof window !== "undefined") {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    window.location.href = "/login";
+    throw new Error("Unauthorized");
+  }
 
   if (!res.ok) {
     throw new Error(`API error: ${res.status} ${res.statusText}`);
@@ -18,14 +31,52 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+
+export interface DashboardSummary {
+  active_patients: number;
+  vitals_today: number;
+  open_alerts: number;
+  critical_alerts: number;
+  high_alerts: number;
+  agent_decisions: number;
+}
+
+export async function fetchDashboardSummary() {
+  return request<DashboardSummary>("/dashboard/summary");
+}
+
 // ── Patients ─────────────────────────────────────────────────────────────────
 
-export async function fetchPatients() {
-  return request<{ patients: unknown[] }>("/patients");
+export interface PatientData {
+  id: string;
+  mrn: string | null;
+  demographics: Record<string, unknown>;
+  conditions: Array<Record<string, unknown>>;
+  medications: Array<Record<string, unknown>>;
+  risk_level: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PatientListResponse {
+  patients: PatientData[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export async function fetchPatients(params?: { risk_level?: string; search?: string; page?: number }) {
+  const query = new URLSearchParams();
+  if (params?.risk_level) query.set("risk_level", params.risk_level);
+  if (params?.search) query.set("search", params.search);
+  if (params?.page) query.set("page", String(params.page));
+  const qs = query.toString();
+  return request<PatientListResponse>(`/patients${qs ? `?${qs}` : ""}`);
 }
 
 export async function fetchPatient(id: string) {
-  return request<unknown>(`/patients/${id}`);
+  return request<PatientData>(`/patients/${id}`);
 }
 
 // ── Vitals ───────────────────────────────────────────────────────────────────
@@ -35,6 +86,17 @@ export async function fetchVitals(patientId: string) {
 }
 
 // ── Alerts ───────────────────────────────────────────────────────────────────
+
+export interface AlertData {
+  id: string;
+  patient_id: string;
+  alert_type: string;
+  priority: string;
+  status: string;
+  message: string | null;
+  created_at: string;
+  acknowledged_at: string | null;
+}
 
 export async function fetchAlerts(params?: {
   status?: string;
@@ -46,13 +108,40 @@ export async function fetchAlerts(params?: {
   if (params?.priority) query.set("priority", params.priority);
   if (params?.patient_id) query.set("patient_id", params.patient_id);
   const qs = query.toString();
-  return request<{ alerts: unknown[] }>(`/alerts${qs ? `?${qs}` : ""}`);
+  return request<AlertData[]>(`/alerts${qs ? `?${qs}` : ""}`);
 }
 
 // ── Agents ───────────────────────────────────────────────────────────────────
 
+export interface AgentAuditEntry {
+  id: string;
+  agent_name: string;
+  action: string;
+  patient_id: string | null;
+  confidence_score: number | null;
+  created_at: string;
+}
+
 export async function fetchAgents() {
   return request<{ agents: unknown[] }>("/agents");
+}
+
+export async function fetchRecentAgentActivity() {
+  return request<AgentAuditEntry[]>("/dashboard/agent-activity");
+}
+
+// ── Health ───────────────────────────────────────────────────────────────────
+
+export interface HealthStatus {
+  status: string;
+  version: string;
+  environment: string;
+}
+
+export async function fetchHealth() {
+  const res = await fetch("/health");
+  if (!res.ok) throw new Error("Health check failed");
+  return res.json() as Promise<HealthStatus>;
 }
 
 // ── FHIR ─────────────────────────────────────────────────────────────────────
