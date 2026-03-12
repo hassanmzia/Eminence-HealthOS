@@ -1,38 +1,35 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { fetchRecentAgentActivity, type AgentAuditEntry } from "@/lib/api";
 
-interface AgentEvent {
-  id: string;
-  agent: string;
-  action: string;
-  patient: string;
-  time: string;
-  confidence: number;
+function timeAgo(iso: string): string {
+  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ago`;
 }
 
-const TIER_COLORS: Record<string, string> = {
-  sensing: "bg-blue-100 text-blue-700",
-  interpretation: "bg-purple-100 text-purple-700",
-  decisioning: "bg-orange-100 text-orange-700",
-  action: "bg-green-100 text-green-700",
-  measurement: "bg-gray-100 text-gray-700",
-};
-
-const DEMO_EVENTS: AgentEvent[] = [
-  { id: "1", agent: "anomaly_detection", action: "Detected HR anomaly", patient: "J. Smith", time: "2s ago", confidence: 0.92 },
-  { id: "2", agent: "risk_scoring", action: "Risk score updated", patient: "K. Wilson", time: "5s ago", confidence: 0.87 },
-  { id: "3", agent: "policy_rules", action: "Policy check passed", patient: "M. Johnson", time: "8s ago", confidence: 0.95 },
-  { id: "4", agent: "context_assembly", action: "Context assembled", patient: "R. Williams", time: "12s ago", confidence: 0.90 },
-  { id: "5", agent: "vitals_normalization", action: "Vitals normalized", patient: "S. Brown", time: "15s ago", confidence: 0.98 },
-];
-
 export function AgentActivityFeed() {
-  const [events, setEvents] = useState<AgentEvent[]>([]);
+  const [events, setEvents] = useState<AgentAuditEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Replace with WebSocket real-time feed
-    setEvents(DEMO_EVENTS);
+    fetchRecentAgentActivity()
+      .then(setEvents)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+
+    // Poll every 15 seconds for new activity
+    const interval = setInterval(() => {
+      fetchRecentAgentActivity()
+        .then(setEvents)
+        .catch(() => {});
+    }, 15_000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -45,21 +42,29 @@ export function AgentActivityFeed() {
         </span>
       </div>
       <div className="space-y-3">
-        {events.map((event) => (
-          <div key={event.id} className="flex items-start gap-2">
-            <div className="mt-0.5 h-2 w-2 rounded-full bg-healthos-400" />
-            <div className="flex-1 text-xs">
-              <p className="text-gray-700">
-                <span className="font-medium">{event.agent}</span>{" "}
-                {event.action} for{" "}
-                <span className="font-medium">{event.patient}</span>
-              </p>
-              <p className="text-gray-400">
-                {event.time} &middot; {Math.round(event.confidence * 100)}% confidence
-              </p>
+        {loading ? (
+          <p className="py-4 text-center text-xs text-gray-400">Loading activity...</p>
+        ) : events.length === 0 ? (
+          <p className="py-4 text-center text-xs text-gray-400">No recent agent activity</p>
+        ) : (
+          events.map((event) => (
+            <div key={event.id} className="flex items-start gap-2">
+              <div className="mt-0.5 h-2 w-2 rounded-full bg-healthos-400" />
+              <div className="flex-1 text-xs">
+                <p className="text-gray-700">
+                  <span className="font-medium">{event.agent_name}</span>{" "}
+                  {event.action}
+                </p>
+                <p className="text-gray-400">
+                  {event.created_at ? timeAgo(event.created_at) : ""}
+                  {event.confidence_score != null && (
+                    <> &middot; {Math.round(event.confidence_score * 100)}% confidence</>
+                  )}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

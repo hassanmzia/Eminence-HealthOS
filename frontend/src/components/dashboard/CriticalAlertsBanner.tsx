@@ -1,22 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-interface AlertSummary {
-  critical: number;
-  high: number;
-  pending: number;
-}
+import { fetchDashboardSummary } from "@/lib/api";
 
 export function CriticalAlertsBanner() {
-  const [alerts, setAlerts] = useState<AlertSummary>({ critical: 0, high: 0, pending: 0 });
+  const [critical, setCritical] = useState(0);
+  const [high, setHigh] = useState(0);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    // TODO: Replace with real API call
-    setAlerts({ critical: 2, high: 5, pending: 12 });
+    fetchDashboardSummary()
+      .then((data) => {
+        setCritical(data.critical_alerts);
+        setHigh(data.high_alerts);
+        setTotal(data.open_alerts);
+      })
+      .catch(() => {});
   }, []);
 
-  if (alerts.critical === 0) return null;
+  if (critical === 0) return null;
 
   return (
     <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
@@ -28,10 +30,10 @@ export function CriticalAlertsBanner() {
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium text-red-800">
-            {alerts.critical} critical alert{alerts.critical !== 1 ? "s" : ""} require immediate attention
+            {critical} critical alert{critical !== 1 ? "s" : ""} require immediate attention
           </p>
           <p className="text-xs text-red-600">
-            {alerts.high} high priority &middot; {alerts.pending} total pending
+            {high} high priority &middot; {total} total pending
           </p>
         </div>
         <a href="/alerts?priority=critical" className="text-sm font-medium text-red-700 hover:text-red-900">

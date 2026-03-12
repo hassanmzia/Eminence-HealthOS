@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from healthos_platform.api.middleware.audit import AuditMiddleware
-from healthos_platform.api.routes import agents, alerts, auth, fhir, patients, vitals
+from healthos_platform.api.routes import agents, alerts, auth, dashboard, fhir, patients, vitals
 from healthos_platform.config import get_settings
 from healthos_platform.database import close_db, get_db_context, init_db
 
@@ -170,6 +170,7 @@ def create_app() -> FastAPI:
     # API Routes
     api_prefix = "/api/v1"
     app.include_router(auth.router, prefix=api_prefix)
+    app.include_router(dashboard.router, prefix=api_prefix)
     app.include_router(patients.router, prefix=api_prefix)
     app.include_router(vitals.router, prefix=api_prefix)
     app.include_router(alerts.router, prefix=api_prefix)
