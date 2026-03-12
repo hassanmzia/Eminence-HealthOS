@@ -172,6 +172,48 @@ export async function fetchHealth() {
   return res.json() as Promise<HealthStatus>;
 }
 
+// ── Telehealth ──────────────────────────────────────────────────────────────
+
+export interface TelehealthSession {
+  session_id: string;
+  patient_id: string;
+  visit_type: string;
+  urgency: string;
+  status: string;
+  estimated_wait_minutes?: number;
+  chief_complaint?: string;
+  patient_name?: string;
+  created_at: string;
+}
+
+export async function fetchTelehealthSessions() {
+  return request<{ sessions: TelehealthSession[] }>("/telehealth/sessions");
+}
+
+export async function fetchTelehealthSession(sessionId: string) {
+  return request<TelehealthSession>(`/telehealth/sessions/${sessionId}`);
+}
+
+export async function prepareVisit(sessionId: string) {
+  return request<Record<string, unknown>>(`/telehealth/sessions/${sessionId}/prepare`, {
+    method: "POST",
+  });
+}
+
+export async function generateClinicalNote(sessionId: string, body: Record<string, unknown>) {
+  return request<Record<string, unknown>>(`/telehealth/sessions/${sessionId}/note`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function generateFollowUp(sessionId: string, body: Record<string, unknown>) {
+  return request<Record<string, unknown>>(`/telehealth/sessions/${sessionId}/follow-up`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 // ── FHIR ─────────────────────────────────────────────────────────────────────
 
 export async function fetchFHIRPatient(patientId: string) {
