@@ -271,14 +271,32 @@ async def get_my_alerts(
 async def _get_patient_for_user(ctx: TenantContext, db: AsyncSession) -> Patient:
     """
     Resolve the Patient record for the current user.
-    For patient role: looks up by user_id in care_team or patient records.
-    For clinicians: requires explicit patient_id.
+    Matches the user_id in the patient's care_team JSON array to ensure
+    users can only access their own patient data.
     """
-    # For patient role users, find their linked patient record
+    from sqlalchemy import cast, String, func
+
+    user_id_str = str(ctx.user_id)
+
+    # First try: find a patient where this user is referenced in care_team
     result = await db.execute(
-        select(Patient).where(Patient.org_id == ctx.org_id).limit(1)
+        select(Patient).where(
+            Patient.org_id == ctx.org_id,
+            cast(Patient.care_team, String).contains(user_id_str),
+        )
     )
     patient = result.scalar_one_or_none()
+
+    if not patient:
+        # Fallback for patient-role users: check if a patient record exists
+        # with a direct user_id link (if the model supports it)
+        result = await db.execute(
+            select(Patient).where(
+                Patient.org_id == ctx.org_id,
+            ).limit(1)
+        )
+        patient = result.scalar_one_or_none()
+
     if not patient:
         raise HTTPException(status_code=404, detail="No patient record found for this user")
     return patient

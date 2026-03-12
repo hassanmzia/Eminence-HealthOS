@@ -95,8 +95,27 @@ class Settings(BaseSettings):
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
+    def validate_production(self) -> None:
+        """Raise if unsafe defaults are used in production."""
+        if not self.is_production:
+            return
+        insecure = []
+        if self.secret_key == "change-me-in-production":
+            insecure.append("SECRET_KEY")
+        if self.jwt_secret_key == "change-me-in-production":
+            insecure.append("JWT_SECRET_KEY")
+        if self.phi_encryption_key == "change-me-32-byte-key-for-aes256":
+            insecure.append("PHI_ENCRYPTION_KEY")
+        if insecure:
+            raise ValueError(
+                f"Insecure default secrets detected in production: {', '.join(insecure)}. "
+                "Set these via environment variables before deploying."
+            )
+
 
 @lru_cache
 def get_settings() -> Settings:
     """Cached settings singleton."""
-    return Settings()
+    settings = Settings()
+    settings.validate_production()
+    return settings
