@@ -14,6 +14,8 @@ const NAV_ITEMS = [
   { href: "/rcm", label: "Revenue Cycle", icon: "dollar" },
   { href: "/pharmacy", label: "Pharmacy", icon: "pill" },
   { href: "/labs", label: "Labs", icon: "flask" },
+  { href: "/imaging", label: "Imaging", icon: "scan" },
+  { href: "/patient-engagement", label: "Engagement", icon: "handshake" },
   { href: "/digital-twin", label: "Digital Twin", icon: "twin" },
   { href: "/compliance", label: "Compliance", icon: "shield" },
   { href: "/mental-health", label: "Mental Health", icon: "heart" },
@@ -87,6 +89,17 @@ function NavIcon({ icon }: { icon: string }) {
     flask: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5m0 0l1.47 4.41a2.25 2.25 0 002.133 1.59h6.794a2.25 2.25 0 002.134-1.59L19 14.5m-14 0h14M14.25 3.104v5.714a2.25 2.25 0 00.659 1.591L19 14.5m-4.75-11.396c.251.023.501.05.75.082m-.75-.082a24.301 24.301 0 00-4.5 0m0 0c-.251.023-.501.05-.75.082" />
+      </svg>
+    ),
+    scan: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+      </svg>
+    ),
+    handshake: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
       </svg>
     ),
     cpu: (
