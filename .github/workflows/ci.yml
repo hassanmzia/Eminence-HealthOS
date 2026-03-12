@@ -59,7 +59,7 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://healthos:healthos@localhost:5432/healthos_test
           REDIS_URL: redis://localhost:6279/0
           APP_ENV: test
-        run: pytest tests/ -v --tb=short --cov=platform --cov=modules
+        run: pytest tests/ -v --tb=short --cov=healthos_platform --cov=modules
 
   type-check:
     runs-on: ubuntu-latest
@@ -69,4 +69,4 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
-      - run: mypy platform/ modules/ --ignore-missing-imports
+      - run: mypy healthos_platform/ modules/ --ignore-missing-imports

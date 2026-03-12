@@ -53,7 +53,7 @@ async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
 
 @pytest_asyncio.fixture
 async def client(db_session) -> AsyncGenerator[AsyncClient, None]:
-    from services.api.main import create_app
+    from healthos_platform.api.main import create_app
 
     app = create_app()
 

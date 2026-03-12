@@ -1,5 +1,5 @@
 # ── Base stage ────────────────────────────────────────────────────────
-FROM python:3.11-slim AS base
+FROM python:3.12-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -22,7 +22,7 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "services.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "healthos_platform.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
 # ── Production stage ──────────────────────────────────────────────────
 FROM base AS production
@@ -36,4 +36,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-CMD ["uvicorn", "services.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+CMD ["uvicorn", "healthos_platform.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
