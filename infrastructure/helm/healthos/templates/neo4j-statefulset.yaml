@@ -1,0 +1,83 @@
+{{- if .Values.neo4j.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "healthos.fullname" . }}-neo4j
+  labels:
+    {{- include "healthos.labels" . | nindent 4 }}
+    app.kubernetes.io/component: neo4j
+spec:
+  serviceName: {{ include "healthos.fullname" . }}-neo4j
+  replicas: {{ .Values.neo4j.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "healthos.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: neo4j
+  template:
+    metadata:
+      labels:
+        {{- include "healthos.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: neo4j
+    spec:
+      containers:
+        - name: neo4j
+          image: "{{ .Values.neo4j.image.repository }}:{{ .Values.neo4j.image.tag }}"
+          ports:
+            - name: http
+              containerPort: {{ .Values.neo4j.httpPort }}
+            - name: bolt
+              containerPort: {{ .Values.neo4j.boltPort }}
+          env:
+            - name: NEO4J_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.neo4j.auth.existingSecret }}
+                  key: neo4j-auth
+            - name: NEO4J_PLUGINS
+              value: '["apoc"]'
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.neo4j.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.neo4j.persistence.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "healthos.fullname" . }}-neo4j
+  labels:
+    {{- include "healthos.labels" . | nindent 4 }}
+    app.kubernetes.io/component: neo4j
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.neo4j.httpPort }}
+      targetPort: http
+      name: http
+    - port: {{ .Values.neo4j.boltPort }}
+      targetPort: bolt
+      name: bolt
+  selector:
+    {{- include "healthos.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: neo4j
+{{- end }}
