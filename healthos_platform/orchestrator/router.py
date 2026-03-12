@@ -330,6 +330,73 @@ ROUTING_TABLE: dict[str, list[str]] = {
     "labs.order.suggest": [
         "lab_order",
     ],
+    # ── Imaging & Radiology Events ──────────────────────────────────
+    # DICOM study received
+    "imaging.study.received": [
+        "imaging_ingestion",
+        "image_analysis",
+        "imaging_workflow",
+    ],
+    # AI analysis requested
+    "imaging.analysis.requested": [
+        "image_analysis",
+    ],
+    # AI analysis complete — generate report and check for critical findings
+    "imaging.analysis.complete": [
+        "radiology_report",
+        "critical_finding_alert",
+    ],
+    # Critical imaging finding detected
+    "imaging.critical.detected": [
+        "critical_finding_alert",
+    ],
+    # Study assigned for read
+    "imaging.workflow.assigned": [
+        "imaging_workflow",
+    ],
+    # Full imaging pipeline (study ingestion through report)
+    "imaging.pipeline.full": [
+        "imaging_ingestion",
+        "image_analysis",
+        "radiology_report",
+        "imaging_workflow",
+        "critical_finding_alert",
+    ],
+    # ── Patient Engagement Events ───────────────────────────────────
+    # Patient symptom triage
+    "engagement.triage.submitted": [
+        "conversational_triage",
+    ],
+    # Care journey created
+    "engagement.journey.created": [
+        "care_navigation",
+    ],
+    # SDOH screening completed
+    "engagement.sdoh.completed": [
+        "sdoh_screening",
+        "community_resource",
+    ],
+    # Patient content adaptation
+    "engagement.content.adapt": [
+        "health_literacy",
+        "multilingual_communication",
+    ],
+    # Behavioral nudge trigger
+    "engagement.nudge.trigger": [
+        "motivational_engagement",
+    ],
+    # Full patient onboarding pipeline
+    "engagement.pipeline.onboarding": [
+        "health_literacy",
+        "multilingual_communication",
+        "sdoh_screening",
+        "care_navigation",
+        "motivational_engagement",
+    ],
+    # Community resource matching
+    "engagement.resources.match": [
+        "community_resource",
+    ],
 }
 
 
