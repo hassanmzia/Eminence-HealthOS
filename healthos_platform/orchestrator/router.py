@@ -108,6 +108,33 @@ ROUTING_TABLE: dict[str, list[str]] = {
     "operations.sla.check": [
         "task_orchestration",
     ],
+    # ── Analytics Events ─────────────────────────────────────────────────
+    # Cost/risk insight analysis
+    "analytics.cost_risk.analyze": [
+        "cost_risk_insight",
+    ],
+    # Intervention impact modeling
+    "analytics.cost_risk.intervention": [
+        "cost_risk_insight",
+    ],
+    # Executive summary generation
+    "analytics.executive.summary": [
+        "cost_risk_insight",
+        "executive_insight",
+    ],
+    # KPI scorecard
+    "analytics.executive.scorecard": [
+        "executive_insight",
+    ],
+    # Strategic briefing
+    "analytics.executive.brief": [
+        "executive_insight",
+    ],
+    # Scheduled analytics pipeline (periodic)
+    "analytics.pipeline.scheduled": [
+        "cost_risk_insight",
+        "executive_insight",
+    ],
 }
 
 
