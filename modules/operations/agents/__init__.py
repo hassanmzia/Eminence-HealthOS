@@ -7,6 +7,7 @@ from modules.operations.agents.insurance_verification import InsuranceVerificati
 from modules.operations.agents.prior_authorization import PriorAuthorizationAgent
 from modules.operations.agents.referral_coordination import ReferralCoordinationAgent
 from modules.operations.agents.task_orchestration import TaskOrchestrationAgent
+from modules.operations.agents.workflow_analytics import WorkflowAnalyticsAgent
 
 
 def register_operations_agents() -> None:
@@ -18,3 +19,4 @@ def register_operations_agents() -> None:
     registry.register(PriorAuthorizationAgent())
     registry.register(ReferralCoordinationAgent())
     registry.register(TaskOrchestrationAgent())
+    registry.register(WorkflowAnalyticsAgent())

@@ -433,6 +433,148 @@ async def check_sla_violations(
     return {"violations": workflow_engine.check_sla_violations(tenant_id)}
 
 
+# ── Payer Integration ────────────────────────────────────────────────────────
+
+
+@router.get("/payers")
+async def list_payers(
+    user: CurrentUser = Depends(require_auth),
+):
+    """List registered payer connectors."""
+    from modules.operations.payer_connector import payer_registry
+    return {"payers": payer_registry.list_payers()}
+
+
+@router.post("/payers/{payer_id}/eligibility")
+async def payer_eligibility_check(
+    payer_id: str,
+    body: dict[str, Any],
+    user: CurrentUser = Depends(require_auth),
+):
+    """Check eligibility directly via payer connector."""
+    from modules.operations.payer_connector import payer_registry, EligibilityRequest
+
+    connector = payer_registry.get(payer_id)
+    if not connector:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"Payer '{payer_id}' not found")
+
+    request = EligibilityRequest(**body)
+    response = await connector.check_eligibility(request)
+    return response.model_dump()
+
+
+@router.post("/payers/{payer_id}/submit-claim")
+async def payer_submit_claim(
+    payer_id: str,
+    body: dict[str, Any],
+    user: CurrentUser = Depends(require_auth),
+):
+    """Submit a claim directly via payer connector."""
+    from modules.operations.payer_connector import payer_registry, ClaimSubmission
+
+    connector = payer_registry.get(payer_id)
+    if not connector:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"Payer '{payer_id}' not found")
+
+    claim = ClaimSubmission(**body)
+    response = await connector.submit_claim(claim)
+    return response.model_dump()
+
+
+@router.post("/payers/{payer_id}/claim-status")
+async def payer_claim_status(
+    payer_id: str,
+    body: dict[str, Any],
+    user: CurrentUser = Depends(require_auth),
+):
+    """Check claim status via payer connector."""
+    from modules.operations.payer_connector import payer_registry
+
+    connector = payer_registry.get(payer_id)
+    if not connector:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"Payer '{payer_id}' not found")
+
+    return await connector.check_claim_status(body.get("claim_id", ""))
+
+
+# ── Workflow Analytics ───────────────────────────────────────────────────────
+
+
+@router.post("/analytics/summary")
+async def operations_summary(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_role("admin")),
+):
+    """Generate operations summary report."""
+    from modules.operations.agents.workflow_analytics import WorkflowAnalyticsAgent
+
+    agent = WorkflowAnalyticsAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        trigger="operations.analytics.summary",
+        context={"action": "summary", **body},
+    ))
+    return output.result
+
+
+@router.post("/analytics/bottlenecks")
+async def analyze_bottlenecks(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_role("admin")),
+):
+    """Identify operational bottlenecks."""
+    from modules.operations.agents.workflow_analytics import WorkflowAnalyticsAgent
+
+    agent = WorkflowAnalyticsAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        trigger="operations.analytics.bottlenecks",
+        context={"action": "bottleneck_analysis", **body},
+    ))
+    return output.result
+
+
+@router.post("/analytics/kpis")
+async def kpi_report(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_role("admin")),
+):
+    """Generate KPI report."""
+    from modules.operations.agents.workflow_analytics import WorkflowAnalyticsAgent
+
+    agent = WorkflowAnalyticsAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        trigger="operations.analytics.kpis",
+        context={"action": "kpi_report", **body},
+    ))
+    return output.result
+
+
+@router.post("/analytics/trends")
+async def analyze_trends(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_role("admin")),
+):
+    """Analyze operational trends."""
+    from modules.operations.agents.workflow_analytics import WorkflowAnalyticsAgent
+
+    agent = WorkflowAnalyticsAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        trigger="operations.analytics.trends",
+        context={"action": "trend_analysis", **body},
+    ))
+    return output.result
+
+
 # ── Legacy Routes (existing) ─────────────────────────────────────────────────
 
 
