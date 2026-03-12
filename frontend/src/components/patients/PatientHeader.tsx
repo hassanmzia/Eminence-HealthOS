@@ -1,30 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-interface PatientDetail {
-  name: string;
-  mrn: string;
-  age: number;
-  gender: string;
-  dob: string;
-  conditions: string[];
-  medications: string[];
-  risk_level: string;
-  care_team: string[];
-}
-
-const DEMO: PatientDetail = {
-  name: "John Smith",
-  mrn: "MRN-10042",
-  age: 68,
-  gender: "Male",
-  dob: "1958-03-15",
-  conditions: ["Congestive Heart Failure", "Type 2 Diabetes", "Hypertension"],
-  medications: ["Metformin 500mg BID", "Lisinopril 20mg QD", "Furosemide 40mg QD"],
-  risk_level: "critical",
-  care_team: ["Dr. A. Patel (Cardiology)", "RN C. Lee"],
-};
+import { fetchPatient, type PatientData } from "@/lib/api";
 
 const RISK_BADGE: Record<string, string> = {
   critical: "badge-critical",
@@ -34,53 +11,75 @@ const RISK_BADGE: Record<string, string> = {
 };
 
 export function PatientHeader({ patientId }: { patientId: string }) {
-  const [patient, setPatient] = useState<PatientDetail | null>(null);
+  const [patient, setPatient] = useState<PatientData | null>(null);
 
   useEffect(() => {
-    // TODO: Replace with fetchPatient(patientId)
-    setPatient(DEMO);
+    fetchPatient(patientId)
+      .then(setPatient)
+      .catch(() => {});
   }, [patientId]);
 
   if (!patient) return <div className="card animate-pulse h-40" />;
+
+  const demo = patient.demographics as Record<string, unknown>;
+  const name = (demo?.name as string) || "Unknown";
+  const dob = (demo?.dob as string) || "";
+  const gender = (demo?.gender as string) || "";
+  const age = dob
+    ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    : null;
+
+  const conditions = patient.conditions.map(
+    (c) => (c.display as string) || (c.code as string) || ""
+  );
+  const medications = patient.medications.map((m) => {
+    const mName = (m.name as string) || "";
+    const dose = (m.dose as string) || "";
+    const freq = (m.frequency as string) || "";
+    return [mName, dose, freq].filter(Boolean).join(" ");
+  });
 
   return (
     <div className="card">
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{name}</h1>
             <span className={RISK_BADGE[patient.risk_level]}>{patient.risk_level} risk</span>
           </div>
           <p className="mt-1 text-sm text-gray-500">
-            {patient.mrn} &middot; {patient.age}y {patient.gender} &middot; DOB {patient.dob}
+            {patient.mrn || "No MRN"}
+            {age != null && <> &middot; {age}y</>}
+            {gender && <> {gender}</>}
+            {dob && <> &middot; DOB {dob}</>}
           </p>
         </div>
         <a href="/patients" className="text-sm text-gray-400 hover:text-gray-600">&larr; Back to patients</a>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <h3 className="text-xs font-medium uppercase text-gray-400">Conditions</h3>
           <ul className="mt-1 space-y-0.5">
-            {patient.conditions.map((c) => (
-              <li key={c} className="text-sm text-gray-700">{c}</li>
-            ))}
+            {conditions.length > 0 ? (
+              conditions.map((c, i) => (
+                <li key={i} className="text-sm text-gray-700">{c}</li>
+              ))
+            ) : (
+              <li className="text-sm text-gray-400">None recorded</li>
+            )}
           </ul>
         </div>
         <div>
           <h3 className="text-xs font-medium uppercase text-gray-400">Medications</h3>
           <ul className="mt-1 space-y-0.5">
-            {patient.medications.map((m) => (
-              <li key={m} className="text-sm text-gray-700">{m}</li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h3 className="text-xs font-medium uppercase text-gray-400">Care Team</h3>
-          <ul className="mt-1 space-y-0.5">
-            {patient.care_team.map((t) => (
-              <li key={t} className="text-sm text-gray-700">{t}</li>
-            ))}
+            {medications.length > 0 ? (
+              medications.map((m, i) => (
+                <li key={i} className="text-sm text-gray-700">{m}</li>
+              ))
+            ) : (
+              <li className="text-sm text-gray-400">None recorded</li>
+            )}
           </ul>
         </div>
       </div>
