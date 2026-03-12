@@ -2,6 +2,8 @@ import { TaskQueue } from "@/components/operations/TaskQueue";
 import { PriorAuthPanel } from "@/components/operations/PriorAuthPanel";
 import { ReferralTracker } from "@/components/operations/ReferralTracker";
 import { SLAComplianceWidget } from "@/components/operations/SLAComplianceWidget";
+import { BillingDashboard } from "@/components/operations/BillingDashboard";
+import { WorkflowProgress } from "@/components/operations/WorkflowProgress";
 
 export default function OperationsPage() {
   return (
@@ -27,6 +29,12 @@ export default function OperationsPage() {
           <SLAComplianceWidget />
         </div>
       </div>
+
+      {/* Workflow progress */}
+      <WorkflowProgress />
+
+      {/* Billing & Claims */}
+      <BillingDashboard />
 
       {/* Prior authorizations */}
       <PriorAuthPanel />
