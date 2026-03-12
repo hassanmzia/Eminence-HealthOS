@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useCallback } from "react";
+import { buildDigitalTwin, fetchTwinState, simulateScenario, predictTrajectory, recommendTreatment } from "@/lib/api";
 
 const SAMPLE_TWINS = [
   {
@@ -63,6 +63,22 @@ export default function DigitalTwinPage() {
   const [selectedTwin, setSelectedTwin] = useState(SAMPLE_TWINS[0]);
   const [activeTab, setActiveTab] = useState<"overview" | "scenarios" | "trajectory">("overview");
 
+  const handleSimulate = useCallback(async (scenarioId: string) => {
+    try {
+      await simulateScenario({ scenario_id: scenarioId, patient_id: selectedTwin.id });
+    } catch {
+      // API unavailable — demo mode
+    }
+  }, [selectedTwin.id]);
+
+  const handleBuildTwin = useCallback(async () => {
+    try {
+      await buildDigitalTwin({ patient_id: "new" });
+    } catch {
+      // API unavailable — demo mode
+    }
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -70,13 +86,13 @@ export default function DigitalTwinPage() {
           <h1 className="text-2xl font-bold text-gray-900">Digital Twin & Simulation</h1>
           <p className="text-sm text-gray-500">Patient digital twins, what-if scenarios, and predictive trajectories</p>
         </div>
-        <button className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">
+        <button onClick={handleBuildTwin} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">
           + Build New Twin
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
           { label: "Active Twins", value: SAMPLE_TWINS.length.toString() },
           { label: "Avg Health Score", value: (SAMPLE_TWINS.reduce((s, t) => s + t.healthScore, 0) / SAMPLE_TWINS.length * 100).toFixed(0) + "%" },
@@ -90,9 +106,9 @@ export default function DigitalTwinPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Twin List */}
-        <div className="col-span-1 space-y-2">
+        <div className="lg:col-span-1 space-y-2">
           <h2 className="text-sm font-semibold text-gray-700">Patient Twins</h2>
           {SAMPLE_TWINS.map((twin) => (
             <button
@@ -124,7 +140,7 @@ export default function DigitalTwinPage() {
         </div>
 
         {/* Twin Detail */}
-        <div className="col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4">
           <div className="card">
             <div className="flex items-center justify-between">
               <div>
@@ -155,7 +171,7 @@ export default function DigitalTwinPage() {
           {activeTab === "overview" && (
             <>
               {/* Vitals Grid */}
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                 {[
                   { label: "Heart Rate", value: `${selectedTwin.vitals.hr} bpm`, normal: selectedTwin.vitals.hr < 100 },
                   { label: "Blood Pressure", value: selectedTwin.vitals.bp, normal: parseInt(selectedTwin.vitals.bp) < 140 },
@@ -204,7 +220,7 @@ export default function DigitalTwinPage() {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <button className="rounded bg-healthos-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-healthos-700">Simulate</button>
+                    <button onClick={() => handleSimulate(sc.id)} className="rounded bg-healthos-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-healthos-700">Simulate</button>
                     <button className="rounded border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50">Details</button>
                   </div>
                 </div>

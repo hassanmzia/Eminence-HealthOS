@@ -30,7 +30,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Top KPI row */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
           { label: "Total Patients", value: "2,847", change: "+12%", up: true },
           { label: "High/Critical Risk", value: "18.4%", change: "-2.1%", up: false },
@@ -48,12 +48,12 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Main content grid */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <RiskDistribution />
         <QualityMetrics />
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <ReadmissionRisk />
         <CostOverview />
       </div>

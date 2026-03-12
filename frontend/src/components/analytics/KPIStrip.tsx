@@ -10,7 +10,7 @@ const KPIS = [
 
 export function KPIStrip() {
   return (
-    <div className="grid grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
       {KPIS.map((kpi) => (
         <div key={kpi.label} className="rounded-xl border border-gray-200 bg-white p-4">
           <p className="text-xs font-medium text-gray-500">{kpi.label}</p>

@@ -45,7 +45,7 @@ export function ExecutiveSummary() {
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
           <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-green-700">
             <span className="h-2 w-2 rounded-full bg-green-500" />

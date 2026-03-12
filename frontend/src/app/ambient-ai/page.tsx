@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { startAmbientSession, endAmbientSession, generateSOAPNote, codeEncounter, submitAttestation, approveAttestation } from "@/lib/api";
 
 const ENCOUNTERS = [
   { id: "ENC-4821", patient: "Sarah Johnson", provider: "Dr. Williams", date: "2026-03-12", duration: "22 min", status: "attested", soapStatus: "signed", codes: 5, em: "99214" },
@@ -63,6 +64,34 @@ const statusBadge = (s: string) => {
 
 export default function AmbientAIPage() {
   const [tab, setTab] = useState<"encounters" | "soap" | "attestation">("encounters");
+  const [recording, setRecording] = useState(false);
+
+  const handleStartRecording = useCallback(async () => {
+    setRecording(true);
+    try {
+      await startAmbientSession({ provider: "current", timestamp: new Date().toISOString() });
+    } catch {
+      // API unavailable — demo mode
+    }
+  }, []);
+
+  const handleStopRecording = useCallback(async () => {
+    try {
+      await endAmbientSession({ provider: "current", timestamp: new Date().toISOString() });
+    } catch {
+      // API unavailable — demo mode
+    } finally {
+      setRecording(false);
+    }
+  }, []);
+
+  const handleApproveAttestation = useCallback(async (attestationId: string) => {
+    try {
+      await approveAttestation({ attestation_id: attestationId });
+    } catch {
+      // API unavailable — demo mode
+    }
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -71,8 +100,8 @@ export default function AmbientAIPage() {
           <h1 className="text-2xl font-bold text-gray-900">Ambient AI Documentation</h1>
           <p className="text-sm text-gray-500">Automatic clinical documentation from patient-provider conversations</p>
         </div>
-        <button className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">
-          Start Recording
+        <button onClick={recording ? handleStopRecording : handleStartRecording} className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${recording ? "bg-red-600 hover:bg-red-700" : "bg-healthos-600 hover:bg-healthos-700"}`}>
+          {recording ? "Stop Recording" : "Start Recording"}
         </button>
       </div>
 
@@ -227,7 +256,7 @@ export default function AmbientAIPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 flex gap-2">
-                      <button className="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700">Approve</button>
+                      <button onClick={() => handleApproveAttestation(a.id)} className="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700">Approve</button>
                       <button className="rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">Review</button>
                     </td>
                   </tr>

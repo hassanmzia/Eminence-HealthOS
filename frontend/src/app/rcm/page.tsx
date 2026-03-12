@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { captureCharges, optimizeClaim, fetchCleanClaimRate, analyzeDenial, appealDenial, verifyRevenueIntegrity } from "@/lib/api";
 
 const KPI_DATA = [
   { label: "Total Billed (MTD)", value: "$485,000", change: "+8.2%" },
@@ -57,6 +58,29 @@ const statusBadge = (s: string) => {
 
 export default function RCMPage() {
   const [tab, setTab] = useState<"pipeline" | "denials" | "ar" | "leakage">("pipeline");
+  const [apiCleanRate, setApiCleanRate] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    fetchCleanClaimRate()
+      .then((data) => setApiCleanRate(data))
+      .catch(() => {/* use demo data */});
+  }, []);
+
+  const handleAppeal = async (denialCode: string) => {
+    try {
+      await appealDenial({ denial_code: denialCode });
+    } catch {
+      // Handle error silently in demo mode
+    }
+  };
+
+  const handleOptimizeClaim = async (claimId: string) => {
+    try {
+      await optimizeClaim({ claim_id: claimId });
+    } catch {
+      // Handle error silently in demo mode
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -116,10 +140,10 @@ export default function RCMPage() {
                   <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(c.status)}`}>{c.status}</span></td>
                   <td className="px-4 py-3">
                     {c.status === "denied" && (
-                      <button className="rounded bg-orange-600 px-3 py-1 text-xs font-medium text-white hover:bg-orange-700">Appeal</button>
+                      <button onClick={() => handleAppeal(c.id)} className="rounded bg-orange-600 px-3 py-1 text-xs font-medium text-white hover:bg-orange-700">Appeal</button>
                     )}
                     {c.status === "submitted" && (
-                      <button className="rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">Track</button>
+                      <button onClick={() => handleOptimizeClaim(c.id)} className="rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">Track</button>
                     )}
                   </td>
                 </tr>

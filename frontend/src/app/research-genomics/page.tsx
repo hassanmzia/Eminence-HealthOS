@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { matchClinicalTrials, checkTrialEligibility, deidentifyDataset, assessGeneticRisk, analyzePharmacogenomics } from "@/lib/api";
 
 const SAMPLE_TRIALS = [
   {
@@ -91,7 +92,7 @@ export default function ResearchGenomicsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {[
           { label: "Active Trials", value: SAMPLE_TRIALS.length.toString() },
           { label: "PGx Genes Tested", value: PGX_GENES.length.toString() },
@@ -160,7 +161,7 @@ export default function ResearchGenomicsPage() {
 
       {/* Genomics Tab */}
       {activeTab === "genomics" && (
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {/* PGx Profile */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-gray-700">Pharmacogenomic Profile</h3>
@@ -219,7 +220,7 @@ export default function ResearchGenomicsPage() {
               + Custom Cohort
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {COHORT_TEMPLATES.map((cohort) => (
               <div key={cohort.key} className="card">
                 <h4 className="text-sm font-semibold text-gray-900">{cohort.name}</h4>
@@ -264,7 +265,7 @@ export default function ResearchGenomicsPage() {
       {/* De-Identification Tab */}
       {activeTab === "deidentify" && (
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="card text-center">
               <p className="text-xs font-medium text-gray-500">Records Processed</p>
               <p className="mt-1 text-2xl font-bold text-gray-900">4,250</p>
@@ -306,7 +307,7 @@ export default function ResearchGenomicsPage() {
           {/* HIPAA Safe Harbor Checklist */}
           <div className="card">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">HIPAA Safe Harbor — 18 Identifier Compliance</h3>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {[
                 "Names", "Geographic data", "Dates", "Phone numbers", "Fax numbers",
                 "Email addresses", "SSN", "MRN", "Health plan IDs",
