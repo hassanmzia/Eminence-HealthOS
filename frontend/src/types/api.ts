@@ -13,10 +13,12 @@ export interface Patient {
   fhir_id?: string;
   mrn?: string;
   demographics: {
-    first_name: string;
-    last_name: string;
-    date_of_birth: string;
+    name: string;
+    dob: string;
     gender: string;
+    first_name?: string;
+    last_name?: string;
+    date_of_birth?: string;
     phone?: string;
     email?: string;
     address?: string;

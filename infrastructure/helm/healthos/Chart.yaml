@@ -1,0 +1,27 @@
+apiVersion: v2
+name: healthos
+description: Eminence HealthOS — AI Operating System for Digital Healthcare Platforms
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - healthcare
+  - ai
+  - rpm
+  - telehealth
+  - hipaa
+maintainers:
+  - name: Eminence Health
+dependencies:
+  - name: postgresql
+    version: "~16.0"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: "~19.0"
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: kafka
+    version: "~30.0"
+    repository: https://charts.bitnami.com/bitnami
+    condition: kafka.enabled

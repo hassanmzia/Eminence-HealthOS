@@ -141,6 +141,8 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: healthos
     volumes:
       - grafanadata:/var/lib/grafana
+      - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning
+      - ./infrastructure/grafana/dashboards:/var/lib/grafana/dashboards
     depends_on:
       - prometheus
     networks:

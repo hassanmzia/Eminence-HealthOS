@@ -5,6 +5,7 @@ The AI Operating System for Digital Healthcare Platforms.
 
 from __future__ import annotations
 
+import importlib
 from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
 
@@ -13,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from healthos_platform.api.middleware.audit import AuditMiddleware
-from healthos_platform.api.routes import agents, alerts, auth, dashboard, fhir, patients, vitals
+from healthos_platform.api.routes import agents, alerts, auth, dashboard, fhir, patient_portal, patients, vitals
 from healthos_platform.config import get_settings
 from healthos_platform.database import close_db, get_db_context, init_db
 
@@ -109,10 +110,57 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Register all agents on startup
     _register_agents()
 
+    # Initialize optional services (non-blocking)
+    try:
+        from healthos_platform.services.cache import get_redis
+        await get_redis()
+        logger.info("healthos.redis_connected")
+    except Exception:
+        logger.warning("healthos.redis_unavailable")
+
+    try:
+        from healthos_platform.services.vector_store import vector_store
+        await vector_store.ensure_collections()
+        logger.info("healthos.qdrant_connected")
+    except Exception:
+        logger.warning("healthos.qdrant_unavailable")
+
+    try:
+        from healthos_platform.services.knowledge_graph import get_driver
+        await get_driver()
+        logger.info("healthos.neo4j_connected")
+    except Exception:
+        logger.warning("healthos.neo4j_unavailable")
+
     yield
 
     # Cleanup
     await close_db()
+
+    try:
+        from healthos_platform.services.kafka import close_producer
+        await close_producer()
+    except Exception:
+        pass
+
+    try:
+        from healthos_platform.services.cache import close_redis
+        await close_redis()
+    except Exception:
+        pass
+
+    try:
+        from healthos_platform.services.vector_store import close_qdrant
+        await close_qdrant()
+    except Exception:
+        pass
+
+    try:
+        from healthos_platform.services.knowledge_graph import close_driver
+        await close_driver()
+    except Exception:
+        pass
+
     logger.info("healthos.shutdown")
 
 
@@ -152,6 +200,96 @@ def _register_agents() -> None:
     except ImportError:
         logger.warning("agents.research_genomics.not_available")
 
+    # Register remaining module agents dynamically
+    _optional_agent_modules = [
+        ("modules.analytics.agents", "register_analytics_agents"),
+        ("modules.ambient_ai.agents", "register_ambient_ai_agents"),
+        ("modules.compliance.agents", "register_compliance_agents"),
+        ("modules.digital_twin.agents", "register_digital_twin_agents"),
+        ("modules.imaging.agents", "register_imaging_agents"),
+        ("modules.labs.agents", "register_labs_agents"),
+        ("modules.mental_health.agents", "register_mental_health_agents"),
+        ("modules.operations.agents", "register_operations_agents"),
+        ("modules.patient_engagement.agents", "register_patient_engagement_agents"),
+        ("modules.pharmacy.agents", "register_pharmacy_agents"),
+        ("modules.rcm.agents", "register_rcm_agents"),
+    ]
+    for module_path, func_name in _optional_agent_modules:
+        try:
+            mod = importlib.import_module(module_path)
+            getattr(mod, func_name)()
+            logger.info(f"agents.{module_path.split('.')[1]}.registered")
+        except (ImportError, AttributeError):
+            logger.warning(f"agents.{module_path.split('.')[1]}.not_available")
+
+
+_metrics_initialized = False
+
+
+def _ensure_prometheus_metrics(registry):  # noqa: ANN001
+    """Register custom HealthOS Prometheus metrics (idempotent)."""
+    global _metrics_initialized  # noqa: PLW0603
+    if _metrics_initialized:
+        return
+    _metrics_initialized = True
+
+    from prometheus_client import Counter, Gauge, Histogram
+
+    # Platform health
+    Gauge("healthos_up", "HealthOS API status").set(1)
+
+    # HTTP metrics
+    Counter(
+        "http_requests_total",
+        "Total HTTP requests",
+        ["method", "endpoint", "status"],
+    )
+    Histogram(
+        "http_request_duration_seconds",
+        "HTTP request duration in seconds",
+        ["method", "endpoint"],
+        buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0],
+    )
+    Gauge("http_connections_active", "Active HTTP connections")
+
+    # Agent pipeline metrics
+    Counter(
+        "healthos_pipeline_executions_total",
+        "Total pipeline executions",
+        ["pipeline_name", "status"],
+    )
+    Histogram(
+        "healthos_pipeline_duration_ms",
+        "Pipeline execution duration in milliseconds",
+        ["pipeline_name"],
+    )
+    Counter(
+        "healthos_agent_executions_total",
+        "Total agent executions",
+        ["agent_name", "tier", "status"],
+    )
+    Histogram(
+        "healthos_agent_duration_ms",
+        "Agent execution duration in milliseconds",
+        ["agent_name"],
+    )
+    Gauge("healthos_agent_confidence", "Agent confidence score", ["agent_name"])
+    Counter("healthos_hitl_reviews_total", "Total HITL reviews", ["reason"])
+
+    # RPM & patient metrics
+    Counter(
+        "healthos_vitals_ingested_total",
+        "Total vitals ingested",
+        ["vital_type"],
+    )
+    Counter(
+        "healthos_anomalies_detected_total",
+        "Total anomalies detected",
+        ["severity"],
+    )
+    Gauge("healthos_alerts_open", "Currently open alerts", ["priority"])
+    Gauge("healthos_active_patients", "Active monitored patients")
+
 
 def create_app() -> FastAPI:
     settings = get_settings()
@@ -184,6 +322,7 @@ def create_app() -> FastAPI:
     app.include_router(alerts.router, prefix=api_prefix)
     app.include_router(agents.router, prefix=api_prefix)
     app.include_router(fhir.router, prefix=api_prefix)
+    app.include_router(patient_portal.router, prefix=api_prefix)
 
     # Module routes
     try:
@@ -200,14 +339,48 @@ def create_app() -> FastAPI:
     except ImportError:
         logger.warning("routes.research_genomics.not_available")
 
+    # Register RPM module routes (different path structure)
+    try:
+        from modules.rpm.api.routes import router as rpm_router
+        app.include_router(rpm_router, prefix=api_prefix)
+        logger.info("routes.rpm.registered")
+    except ImportError:
+        logger.warning("routes.rpm.not_available")
+
+    # Register remaining module routes dynamically
+    _optional_route_modules = [
+        "modules.analytics.routes",
+        "modules.ambient_ai.routes",
+        "modules.compliance.routes",
+        "modules.digital_twin.routes",
+        "modules.imaging.routes",
+        "modules.labs.routes",
+        "modules.mental_health.routes",
+        "modules.operations.routes",
+        "modules.patient_engagement.routes",
+        "modules.pharmacy.routes",
+        "modules.rcm.routes",
+    ]
+    for route_module in _optional_route_modules:
+        try:
+            mod = importlib.import_module(route_module)
+            app.include_router(mod.router, prefix=api_prefix)
+            logger.info(f"routes.{route_module.split('.')[1]}.registered")
+        except (ImportError, AttributeError):
+            logger.warning(f"routes.{route_module.split('.')[1]}.not_available")
+
     # Metrics endpoint (Prometheus scrape target)
     @app.get("/metrics")
     async def metrics():
         from fastapi.responses import PlainTextResponse
+        from prometheus_client import generate_latest, REGISTRY
+
+        # Ensure our custom metrics are registered (idempotent)
+        _ensure_prometheus_metrics(REGISTRY)
+
+        output = generate_latest(REGISTRY)
         return PlainTextResponse(
-            "# HELP healthos_up HealthOS API status\n"
-            "# TYPE healthos_up gauge\n"
-            "healthos_up 1\n",
+            output.decode("utf-8"),
             media_type="text/plain; version=0.0.4; charset=utf-8",
         )
 

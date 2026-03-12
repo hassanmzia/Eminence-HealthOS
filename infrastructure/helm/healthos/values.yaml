@@ -1,0 +1,227 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Eminence HealthOS — Helm Values
+# ═══════════════════════════════════════════════════════════════════════════════
+
+global:
+  environment: production
+
+# ── API Service ───────────────────────────────────────────────────────────────
+api:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/eminence-health/healthos-api
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  port: 8000
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilization: 70
+    targetMemoryUtilization: 80
+  env:
+    ENVIRONMENT: production
+    DEBUG: "false"
+    LOG_LEVEL: info
+    DB_POOL_SIZE: "20"
+    DB_MAX_OVERFLOW: "10"
+  # Secrets referenced from existing K8s secrets
+  secretRef: healthos-secrets
+  healthCheck:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    failureThreshold: 3
+  service:
+    type: ClusterIP
+    port: 80
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: 50m
+    hosts:
+      - host: api.healthos.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: healthos-api-tls
+        hosts:
+          - api.healthos.example.com
+
+# ── Dashboard (Next.js) ──────────────────────────────────────────────────────
+dashboard:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/eminence-health/healthos-dashboard
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  port: 3000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    NEXT_PUBLIC_API_URL: http://healthos-api:80
+  service:
+    type: ClusterIP
+    port: 80
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    hosts:
+      - host: healthos.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: healthos-dashboard-tls
+        hosts:
+          - healthos.example.com
+
+# ── PostgreSQL (Bitnami subchart) ─────────────────────────────────────────────
+postgresql:
+  enabled: true
+  auth:
+    database: healthos
+    username: healthos
+    existingSecret: healthos-db-secret
+  primary:
+    persistence:
+      size: 50Gi
+      storageClass: ""
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 2Gi
+    extendedConfiguration: |
+      shared_preload_libraries = 'vector'
+      max_connections = 200
+  metrics:
+    enabled: true
+
+# ── Redis (Bitnami subchart) ──────────────────────────────────────────────────
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    existingSecret: healthos-redis-secret
+  master:
+    persistence:
+      size: 10Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  metrics:
+    enabled: true
+
+# ── Kafka (Bitnami subchart) ──────────────────────────────────────────────────
+kafka:
+  enabled: true
+  kraft:
+    enabled: true
+  persistence:
+    size: 20Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+
+# ── Qdrant Vector Database ───────────────────────────────────────────────────
+qdrant:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: qdrant/qdrant
+    tag: "v1.12.1"
+  port: 6333
+  grpcPort: 6334
+  persistence:
+    size: 20Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+
+# ── Neo4j Knowledge Graph ────────────────────────────────────────────────────
+neo4j:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: neo4j
+    tag: "5.25-community"
+  httpPort: 7474
+  boltPort: 7687
+  persistence:
+    size: 20Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+  auth:
+    existingSecret: healthos-neo4j-secret
+
+# ── Monitoring ────────────────────────────────────────────────────────────────
+monitoring:
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+    adminPassword: ""  # Set via secret in production
+    persistence:
+      size: 5Gi
+
+# ── Service Account ──────────────────────────────────────────────────────────
+serviceAccount:
+  create: true
+  name: healthos
+  annotations: {}
+
+# ── Pod Security ─────────────────────────────────────────────────────────────
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# ── Network Policy ───────────────────────────────────────────────────────────
+networkPolicy:
+  enabled: true
