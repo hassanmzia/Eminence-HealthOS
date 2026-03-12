@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from healthos_platform.api.middleware.audit import AuditMiddleware
-from healthos_platform.api.routes import agents, alerts, auth, dashboard, fhir, patients, vitals
+from healthos_platform.api.routes import agents, alerts, auth, dashboard, fhir, patient_portal, patients, vitals
 from healthos_platform.config import get_settings
 from healthos_platform.database import close_db, get_db_context, init_db
 
@@ -109,10 +109,57 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Register all agents on startup
     _register_agents()
 
+    # Initialize optional services (non-blocking)
+    try:
+        from healthos_platform.services.cache import get_redis
+        await get_redis()
+        logger.info("healthos.redis_connected")
+    except Exception:
+        logger.warning("healthos.redis_unavailable")
+
+    try:
+        from healthos_platform.services.vector_store import vector_store
+        await vector_store.ensure_collections()
+        logger.info("healthos.qdrant_connected")
+    except Exception:
+        logger.warning("healthos.qdrant_unavailable")
+
+    try:
+        from healthos_platform.services.knowledge_graph import get_driver
+        await get_driver()
+        logger.info("healthos.neo4j_connected")
+    except Exception:
+        logger.warning("healthos.neo4j_unavailable")
+
     yield
 
     # Cleanup
     await close_db()
+
+    try:
+        from healthos_platform.services.kafka import close_producer
+        await close_producer()
+    except Exception:
+        pass
+
+    try:
+        from healthos_platform.services.cache import close_redis
+        await close_redis()
+    except Exception:
+        pass
+
+    try:
+        from healthos_platform.services.vector_store import close_qdrant
+        await close_qdrant()
+    except Exception:
+        pass
+
+    try:
+        from healthos_platform.services.knowledge_graph import close_driver
+        await close_driver()
+    except Exception:
+        pass
+
     logger.info("healthos.shutdown")
 
 
@@ -184,6 +231,7 @@ def create_app() -> FastAPI:
     app.include_router(alerts.router, prefix=api_prefix)
     app.include_router(agents.router, prefix=api_prefix)
     app.include_router(fhir.router, prefix=api_prefix)
+    app.include_router(patient_portal.router, prefix=api_prefix)
 
     # Module routes
     try:
