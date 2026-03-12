@@ -397,6 +397,57 @@ ROUTING_TABLE: dict[str, list[str]] = {
     "engagement.resources.match": [
         "community_resource",
     ],
+    # ── Research & Genomics Events ────────────────────────────────
+    # Clinical trial matching
+    "research.trial.match": [
+        "clinical_trial_matching",
+    ],
+    # Trial eligibility check
+    "research.trial.eligibility": [
+        "clinical_trial_matching",
+    ],
+    # Research cohort construction
+    "research.cohort.build": [
+        "research_cohort",
+    ],
+    # Cohort comparison
+    "research.cohort.compare": [
+        "research_cohort",
+    ],
+    # Dataset de-identification
+    "research.deidentify": [
+        "deidentification",
+    ],
+    # De-identification + export pipeline
+    "research.deidentify.export": [
+        "deidentification",
+        "research_cohort",
+    ],
+    # Pharmacogenomic drug-gene check
+    "research.pgx.check": [
+        "pharmacogenomics",
+    ],
+    # PGx-guided dosing
+    "research.pgx.dose": [
+        "pharmacogenomics",
+    ],
+    # Polygenic risk scoring
+    "research.genetic.prs": [
+        "genetic_risk",
+    ],
+    # Integrated clinical-genomic risk
+    "research.genetic.integrated": [
+        "genetic_risk",
+        "pharmacogenomics",
+    ],
+    # Full research genomics pipeline
+    "research.pipeline.full": [
+        "research_cohort",
+        "deidentification",
+        "clinical_trial_matching",
+        "pharmacogenomics",
+        "genetic_risk",
+    ],
 }
 
 

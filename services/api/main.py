@@ -113,6 +113,9 @@ def create_app() -> FastAPI:
     app.include_router(operations_router, prefix="/api/v1/operations", tags=["Operations"])
     app.include_router(analytics_router, prefix="/api/v1/analytics", tags=["Analytics"])
 
+    from modules.research_genomics.routes import router as research_genomics_router
+    app.include_router(research_genomics_router, prefix="/api/v1/research", tags=["Research & Genomics"])
+
     return app
 
 
