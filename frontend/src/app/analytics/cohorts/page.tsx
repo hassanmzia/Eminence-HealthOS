@@ -77,24 +77,25 @@ export default function CohortBuilderPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/analytics"
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Cohort Builder</h1>
-              <p className="text-sm text-gray-500">Create, manage, and analyze patient cohorts</p>
-            </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/analytics"
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Cohort Builder</h1>
+            <p className="text-sm text-gray-500">Create, manage, and analyze patient cohorts</p>
           </div>
         </div>
-        <button className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">
+        <button
+          onClick={() => setTab("templates")}
+          className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700"
+        >
           + New Cohort
         </button>
       </div>
@@ -115,7 +116,7 @@ export default function CohortBuilderPage() {
       </div>
 
       {/* Tabs + Search */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-1 rounded-lg bg-gray-100 p-0.5">
           <button
             onClick={() => setTab("active")}
@@ -148,16 +149,16 @@ export default function CohortBuilderPage() {
         <div className="space-y-3">
           {filteredCohorts.map((c) => (
             <div key={c.id} className="card">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-sm font-semibold text-gray-900">{c.name}</h3>
                     <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${trendColor(c.trend)}`}>
                       {c.trend}
                     </span>
                     <span className="text-xs text-gray-400">{c.id}</span>
                   </div>
-                  <div className="mt-2 flex gap-6 text-xs text-gray-500">
+                  <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-500">
                     <span><span className="font-medium text-gray-700">{c.patients}</span> patients</span>
                     <span>Avg risk: <span className="font-medium text-gray-700">{(c.avgRisk * 100).toFixed(0)}%</span></span>
                     <span>Created: {c.created}</span>
@@ -165,7 +166,7 @@ export default function CohortBuilderPage() {
                   </div>
                   {/* Outcome bar */}
                   <div className="mt-3">
-                    <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+                    <div className="mb-1 flex flex-wrap items-center justify-between gap-1 text-xs text-gray-500">
                       <span>Patient outcomes</span>
                       <span>{c.outcomes.improved} improved / {c.outcomes.stable} stable / {c.outcomes.declined} declined</span>
                     </div>
@@ -176,7 +177,7 @@ export default function CohortBuilderPage() {
                     </div>
                   </div>
                 </div>
-                <div className="ml-4 flex gap-2">
+                <div className="flex gap-2">
                   <button className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50">
                     Analyze
                   </button>
