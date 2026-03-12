@@ -144,6 +144,14 @@ def _register_agents() -> None:
     except ImportError:
         logger.warning("agents.telehealth.not_available")
 
+    # Register research & genomics agents
+    try:
+        from modules.research_genomics.agents import register_research_genomics_agents
+        register_research_genomics_agents()
+        logger.info("agents.research_genomics.registered")
+    except ImportError:
+        logger.warning("agents.research_genomics.not_available")
+
 
 def create_app() -> FastAPI:
     settings = get_settings()
@@ -184,6 +192,13 @@ def create_app() -> FastAPI:
         logger.info("routes.telehealth.registered")
     except ImportError:
         logger.warning("routes.telehealth.not_available")
+
+    try:
+        from modules.research_genomics.routes import router as research_genomics_router
+        app.include_router(research_genomics_router, prefix=api_prefix)
+        logger.info("routes.research_genomics.registered")
+    except ImportError:
+        logger.warning("routes.research_genomics.not_available")
 
     # Metrics endpoint (Prometheus scrape target)
     @app.get("/metrics")
