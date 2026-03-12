@@ -78,6 +78,36 @@ ROUTING_TABLE: dict[str, list[str]] = {
     "telehealth.symptom_check": [
         "symptom_checker",
     ],
+    # ── Operations Events ──────────────────────────────────────────────────
+    # Prior authorization evaluation
+    "operations.prior_auth.evaluate": [
+        "context_assembly",
+        "insurance_verification",
+        "prior_authorization",
+    ],
+    # Prior auth submission
+    "operations.prior_auth.submit": [
+        "prior_authorization",
+        "task_orchestration",
+    ],
+    # Insurance verification
+    "operations.insurance.verify": [
+        "insurance_verification",
+    ],
+    # Referral creation
+    "operations.referral.create": [
+        "insurance_verification",
+        "referral_coordination",
+        "task_orchestration",
+    ],
+    # Task / workflow management
+    "operations.workflow.create": [
+        "task_orchestration",
+    ],
+    # SLA monitoring
+    "operations.sla.check": [
+        "task_orchestration",
+    ],
 }
 
 

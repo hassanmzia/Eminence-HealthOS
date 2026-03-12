@@ -272,6 +272,103 @@ class WorkflowTask(Base):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# PRIOR AUTHORIZATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class PriorAuthorization(Base):
+    __tablename__ = "prior_authorizations"
+    __table_args__ = (
+        Index("idx_prior_auth_patient", "patient_id", "created_at"),
+        Index("idx_prior_auth_status", "org_id", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    auth_reference: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    payer: Mapped[str] = mapped_column(String(100), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="pending")  # pending, submitted, approved, denied, appealed
+    cpt_codes: Mapped[list] = mapped_column(JSONB, default=list)
+    diagnosis_codes: Mapped[list] = mapped_column(JSONB, default=list)
+    clinical_summary: Mapped[str | None] = mapped_column(Text)
+    estimated_cost: Mapped[float | None] = mapped_column(Float)
+    payer_response: Mapped[dict | None] = mapped_column(JSONB)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by_agent: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# INSURANCE VERIFICATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class InsuranceVerification(Base):
+    __tablename__ = "insurance_verifications"
+    __table_args__ = (
+        Index("idx_ins_verif_patient", "patient_id", "verified_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    payer: Mapped[str] = mapped_column(String(100), nullable=False)
+    member_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    group_number: Mapped[str | None] = mapped_column(String(100))
+    plan_name: Mapped[str | None] = mapped_column(String(255))
+    plan_type: Mapped[str | None] = mapped_column(String(50))
+    eligible: Mapped[bool] = mapped_column(Boolean, default=False)
+    coverage_status: Mapped[str] = mapped_column(String(30), default="unknown")
+    effective_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    termination_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    benefits: Mapped[dict] = mapped_column(JSONB, default=dict)
+    verified_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_by_agent: Mapped[str | None] = mapped_column(String(100))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# REFERRALS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class Referral(Base):
+    __tablename__ = "referrals"
+    __table_args__ = (
+        Index("idx_referral_patient", "patient_id", "created_at"),
+        Index("idx_referral_status", "org_id", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    referral_id: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    specialty: Mapped[str] = mapped_column(String(100), nullable=False)
+    urgency: Mapped[str] = mapped_column(String(30), default="routine")
+    reason: Mapped[str | None] = mapped_column(Text)
+    diagnosis_codes: Mapped[list] = mapped_column(JSONB, default=list)
+    referring_provider_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    specialist_provider_id: Mapped[str | None] = mapped_column(String(100))
+    status: Mapped[str] = mapped_column(String(30), default="created")  # created, sent, scheduled, completed, closed
+    clinical_notes: Mapped[str | None] = mapped_column(Text)
+    specialist_notes: Mapped[str | None] = mapped_column(Text)
+    outcome: Mapped[str | None] = mapped_column(String(50))
+    target_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    scheduled_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by_agent: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # AGENT AUDIT
 # ═══════════════════════════════════════════════════════════════════════════════
 
