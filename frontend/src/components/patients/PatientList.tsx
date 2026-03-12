@@ -1,19 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-
-interface PatientRow {
-  id: string;
-  name: string;
-  mrn: string;
-  age: number;
-  gender: string;
-  conditions: string[];
-  risk_level: string;
-  last_vital: string;
-  alert_count: number;
-}
+import { fetchPatients, type PatientData } from "@/lib/api";
 
 const RISK_BADGE: Record<string, string> = {
   critical: "badge-critical",
@@ -22,22 +11,55 @@ const RISK_BADGE: Record<string, string> = {
   low: "badge-low",
 };
 
-const DEMO_PATIENTS: PatientRow[] = [
-  { id: "1", name: "John Smith", mrn: "MRN-10042", age: 68, gender: "M", conditions: ["CHF", "Type 2 Diabetes"], risk_level: "critical", last_vital: "5 min ago", alert_count: 3 },
-  { id: "2", name: "Mary Johnson", mrn: "MRN-10078", age: 55, gender: "F", conditions: ["Hypertension"], risk_level: "high", last_vital: "12 min ago", alert_count: 1 },
-  { id: "3", name: "Robert Williams", mrn: "MRN-10103", age: 72, gender: "M", conditions: ["COPD", "CKD Stage 3"], risk_level: "high", last_vital: "8 min ago", alert_count: 2 },
-  { id: "4", name: "Sarah Brown", mrn: "MRN-10156", age: 45, gender: "F", conditions: ["Type 1 Diabetes"], risk_level: "moderate", last_vital: "15 min ago", alert_count: 0 },
-  { id: "5", name: "Linda Davis", mrn: "MRN-10201", age: 38, gender: "F", conditions: [], risk_level: "low", last_vital: "3 min ago", alert_count: 0 },
-  { id: "6", name: "Karen Wilson", mrn: "MRN-10089", age: 70, gender: "F", conditions: ["CHF", "CKD Stage 4"], risk_level: "critical", last_vital: "2 min ago", alert_count: 4 },
-];
+function patientName(p: PatientData): string {
+  const d = p.demographics as Record<string, unknown>;
+  return (d?.name as string) || "Unknown";
+}
 
-export function PatientList() {
-  const [patients, setPatients] = useState<PatientRow[]>([]);
+function patientAge(p: PatientData): string {
+  const d = p.demographics as Record<string, unknown>;
+  const dob = d?.dob as string;
+  if (!dob) return "";
+  const years = Math.floor(
+    (Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000)
+  );
+  return `${years}y`;
+}
+
+function patientGender(p: PatientData): string {
+  const d = p.demographics as Record<string, unknown>;
+  const g = (d?.gender as string) || "";
+  return g.charAt(0).toUpperCase();
+}
+
+function conditionLabels(p: PatientData): string[] {
+  return p.conditions.map((c) => (c.display as string) || (c.code as string) || "");
+}
+
+export function PatientList({ search }: { search?: string }) {
+  const [patients, setPatients] = useState<PatientData[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    fetchPatients({ page, search: search || undefined })
+      .then((res) => {
+        setPatients(res.patients);
+        setTotal(res.total);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [page, search]);
 
   useEffect(() => {
-    // TODO: Replace with fetchPatients() API call
-    setPatients(DEMO_PATIENTS);
-  }, []);
+    setPage(1);
+  }, [search]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   return (
     <div className="card overflow-hidden p-0">
@@ -48,48 +70,83 @@ export function PatientList() {
             <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">MRN</th>
             <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Conditions</th>
             <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Risk</th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Last Vital</th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Alerts</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200 bg-white">
-          {patients.map((patient) => (
-            <tr key={patient.id} className="transition-colors hover:bg-gray-50">
-              <td className="px-6 py-4">
-                <Link href={`/patients/${patient.id}`} className="text-sm font-medium text-healthos-600 hover:text-healthos-800">
-                  {patient.name}
-                </Link>
-                <p className="text-xs text-gray-400">{patient.age}y {patient.gender}</p>
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-600">{patient.mrn}</td>
-              <td className="px-6 py-4">
-                <div className="flex flex-wrap gap-1">
-                  {patient.conditions.length > 0
-                    ? patient.conditions.map((c) => (
-                        <span key={c} className="inline-flex rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
-                          {c}
-                        </span>
-                      ))
-                    : <span className="text-xs text-gray-400">None</span>}
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <span className={RISK_BADGE[patient.risk_level]}>{patient.risk_level}</span>
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-500">{patient.last_vital}</td>
-              <td className="px-6 py-4">
-                {patient.alert_count > 0 ? (
-                  <span className="inline-flex items-center justify-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                    {patient.alert_count}
-                  </span>
-                ) : (
-                  <span className="text-xs text-gray-400">0</span>
-                )}
+          {loading ? (
+            <tr>
+              <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-400">
+                Loading patients...
               </td>
             </tr>
-          ))}
+          ) : patients.length === 0 ? (
+            <tr>
+              <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-400">
+                No patients found
+              </td>
+            </tr>
+          ) : (
+            patients.map((patient) => {
+              const conditions = conditionLabels(patient);
+              return (
+                <tr key={patient.id} className="transition-colors hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <Link
+                      href={`/patients/${patient.id}`}
+                      className="text-sm font-medium text-healthos-600 hover:text-healthos-800"
+                    >
+                      {patientName(patient)}
+                    </Link>
+                    <p className="text-xs text-gray-400">
+                      {patientAge(patient)} {patientGender(patient)}
+                    </p>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{patient.mrn || "—"}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-wrap gap-1">
+                      {conditions.length > 0
+                        ? conditions.map((c, i) => (
+                            <span key={i} className="inline-flex rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                              {c}
+                            </span>
+                          ))
+                        : <span className="text-xs text-gray-400">None</span>}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={RISK_BADGE[patient.risk_level]}>{patient.risk_level}</span>
+                  </td>
+                </tr>
+              );
+            })
+          )}
         </tbody>
       </table>
+
+      {/* Pagination */}
+      {total > 20 && (
+        <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-3">
+          <span className="text-sm text-gray-500">
+            Showing {(page - 1) * 20 + 1}–{Math.min(page * 20, total)} of {total}
+          </span>
+          <div className="flex gap-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="rounded border px-3 py-1 text-sm disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <button
+              disabled={page * 20 >= total}
+              onClick={() => setPage((p) => p + 1)}
+              className="rounded border px-3 py-1 text-sm disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

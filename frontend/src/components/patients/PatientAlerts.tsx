@@ -1,15 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-interface AlertRow {
-  id: string;
-  type: string;
-  priority: string;
-  status: string;
-  message: string;
-  created_at: string;
-}
+import { fetchAlerts, type AlertData } from "@/lib/api";
 
 const PRIORITY_BADGE: Record<string, string> = {
   critical: "badge-critical",
@@ -24,42 +16,53 @@ const STATUS_BADGE: Record<string, string> = {
   resolved: "bg-green-50 text-green-700",
 };
 
-const DEMO_ALERTS: AlertRow[] = [
-  { id: "1", type: "physician_review", priority: "critical", status: "pending", message: "Heart rate sustained above 110 bpm for 30 minutes", created_at: "5 min ago" },
-  { id: "2", type: "nurse_review", priority: "high", status: "pending", message: "SpO2 dropped below 92% threshold", created_at: "12 min ago" },
-  { id: "3", type: "patient_notification", priority: "moderate", status: "acknowledged", message: "Glucose reading 185 mg/dL above target", created_at: "45 min ago" },
-];
+function timeAgo(iso: string): string {
+  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
 
 export function PatientAlerts({ patientId }: { patientId: string }) {
-  const [alerts, setAlerts] = useState<AlertRow[]>([]);
+  const [alerts, setAlerts] = useState<AlertData[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Replace with fetchAlerts({ patient_id: patientId })
-    setAlerts(DEMO_ALERTS);
+    fetchAlerts({ patient_id: patientId })
+      .then(setAlerts)
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [patientId]);
 
   return (
     <div className="card">
       <h2 className="mb-4 text-lg font-semibold text-gray-900">Active Alerts</h2>
       <div className="space-y-3">
-        {alerts.map((alert) => (
-          <div key={alert.id} className="flex items-start gap-3 rounded-lg border border-gray-100 p-3">
-            <div className="mt-0.5">
-              <span className={PRIORITY_BADGE[alert.priority]}>{alert.priority}</span>
-            </div>
-            <div className="flex-1">
-              <p className="text-sm text-gray-800">{alert.message}</p>
-              <p className="mt-0.5 text-xs text-gray-400">
-                {alert.type.replace(/_/g, " ")} &middot; {alert.created_at}
-              </p>
-            </div>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[alert.status]}`}>
-              {alert.status}
-            </span>
-          </div>
-        ))}
-        {alerts.length === 0 && (
+        {loading ? (
+          <p className="text-center text-sm text-gray-400">Loading alerts...</p>
+        ) : alerts.length === 0 ? (
           <p className="text-center text-sm text-gray-400">No active alerts</p>
+        ) : (
+          alerts.map((alert) => (
+            <div key={alert.id} className="flex items-start gap-3 rounded-lg border border-gray-100 p-3">
+              <div className="mt-0.5">
+                <span className={PRIORITY_BADGE[alert.priority]}>{alert.priority}</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-gray-800">{alert.message || "No message"}</p>
+                <p className="mt-0.5 text-xs text-gray-400">
+                  {alert.alert_type.replace(/_/g, " ")}
+                  {alert.created_at && <> &middot; {timeAgo(alert.created_at)}</>}
+                </p>
+              </div>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[alert.status] || ""}`}>
+                {alert.status}
+              </span>
+            </div>
+          ))
         )}
       </div>
     </div>
