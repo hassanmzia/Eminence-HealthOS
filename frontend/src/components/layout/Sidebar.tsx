@@ -12,6 +12,8 @@ const NAV_ITEMS = [
   { href: "/analytics", label: "Analytics", icon: "chart" },
   { href: "/ambient-ai", label: "Ambient AI", icon: "mic" },
   { href: "/rcm", label: "Revenue Cycle", icon: "dollar" },
+  { href: "/pharmacy", label: "Pharmacy", icon: "pill" },
+  { href: "/labs", label: "Labs", icon: "flask" },
   { href: "/digital-twin", label: "Digital Twin", icon: "twin" },
   { href: "/compliance", label: "Compliance", icon: "shield" },
   { href: "/mental-health", label: "Mental Health", icon: "heart" },
@@ -75,6 +77,16 @@ function NavIcon({ icon }: { icon: string }) {
     heart: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+      </svg>
+    ),
+    pill: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-1.47 4.41a2.25 2.25 0 01-2.133 1.59H8.603a2.25 2.25 0 01-2.134-1.59L5 14.5m14 0H5" />
+      </svg>
+    ),
+    flask: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5m0 0l1.47 4.41a2.25 2.25 0 002.133 1.59h6.794a2.25 2.25 0 002.134-1.59L19 14.5m-14 0h14M14.25 3.104v5.714a2.25 2.25 0 00.659 1.591L19 14.5m-4.75-11.396c.251.023.501.05.75.082m-.75-.082a24.301 24.301 0 00-4.5 0m0 0c-.251.023-.501.05-.75.082" />
       </svg>
     ),
     cpu: (

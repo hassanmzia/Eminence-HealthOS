@@ -259,6 +259,77 @@ ROUTING_TABLE: dict[str, list[str]] = {
         "denial_management",
         "payment_posting",
     ],
+    # ── Pharmacy Events ─────────────────────────────────────────────────
+    # New prescription created
+    "pharmacy.prescription.create": [
+        "drug_interaction",
+        "formulary",
+        "prescription",
+    ],
+    # Prescription transmitted to pharmacy
+    "pharmacy.prescription.transmit": [
+        "prescription",
+        "pharmacy_routing",
+    ],
+    # Drug interaction check
+    "pharmacy.interaction.check": [
+        "drug_interaction",
+    ],
+    # Formulary coverage check
+    "pharmacy.formulary.check": [
+        "formulary",
+    ],
+    # Refill requested
+    "pharmacy.refill.requested": [
+        "refill_automation",
+        "drug_interaction",
+    ],
+    # Refill automation (scheduled)
+    "pharmacy.refill.scheduled": [
+        "refill_automation",
+        "medication_adherence",
+    ],
+    # Adherence monitoring
+    "pharmacy.adherence.monitor": [
+        "medication_adherence",
+    ],
+    # Full pharmacy pipeline (new Rx)
+    "pharmacy.pipeline.new_rx": [
+        "drug_interaction",
+        "formulary",
+        "prescription",
+        "pharmacy_routing",
+        "medication_adherence",
+    ],
+    # ── Labs Events ─────────────────────────────────────────────────────
+    # New lab order
+    "labs.order.create": [
+        "lab_order",
+    ],
+    # Lab results received
+    "labs.results.received": [
+        "lab_results",
+        "critical_value_alert",
+        "lab_trend",
+    ],
+    # Critical value detected
+    "labs.critical.detected": [
+        "critical_value_alert",
+    ],
+    # Lab trend analysis
+    "labs.trend.analyze": [
+        "lab_trend",
+    ],
+    # Full lab pipeline (results ingestion)
+    "labs.pipeline.ingest": [
+        "lab_results",
+        "critical_value_alert",
+        "lab_trend",
+    ],
+    # Lab panel suggestion
+    "labs.order.suggest": [
+        "lab_order",
+    ],
 }
 
 
