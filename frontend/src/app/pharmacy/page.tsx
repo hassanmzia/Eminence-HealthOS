@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchPrescriptionHistory, checkDrugInteractions, checkFormulary, trackMedicationAdherence, processRefill } from "@/lib/api";
 
 const TABS = ["Prescriptions", "Interactions", "Formulary", "Refills", "Adherence"] as const;
 
@@ -60,6 +61,20 @@ function severityColor(sev: string) {
 
 export default function PharmacyPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]>(TABS[0]);
+  const [apiPrescriptions, setApiPrescriptions] = useState<typeof PRESCRIPTIONS | null>(null);
+  const [apiAdherence, setApiAdherence] = useState<typeof ADHERENCE_DATA | null>(null);
+
+  useEffect(() => {
+    fetchPrescriptionHistory("demo")
+      .then((data) => { if (Array.isArray(data)) setApiPrescriptions(data as typeof PRESCRIPTIONS); })
+      .catch(() => {/* use demo data */});
+    trackMedicationAdherence({ patient_id: "demo" })
+      .then((data) => { if (Array.isArray(data)) setApiAdherence(data as typeof ADHERENCE_DATA); })
+      .catch(() => {/* use demo data */});
+  }, []);
+
+  const prescriptions = apiPrescriptions ?? PRESCRIPTIONS;
+  const adherenceData = apiAdherence ?? ADHERENCE_DATA;
 
   return (
     <div className="space-y-6">
@@ -159,7 +174,7 @@ export default function PharmacyPage() {
         <div className="space-y-4">
           <div className="rounded-lg border border-gray-200 bg-white p-6">
             <h3 className="text-sm font-semibold text-gray-900">Formulary Tier Summary</h3>
-            <div className="mt-4 grid grid-cols-5 gap-4">
+            <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
               {[
                 { tier: "Tier 1", label: "Generic", copay: "$5", count: 842 },
                 { tier: "Tier 2", label: "Preferred Brand", copay: "$25", count: 456 },

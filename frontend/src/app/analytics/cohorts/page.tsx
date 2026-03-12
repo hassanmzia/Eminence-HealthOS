@@ -100,7 +100,7 @@ export default function CohortBuilderPage() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
           { label: "Active Cohorts", value: ACTIVE_COHORTS.length.toString() },
           { label: "Total Patients", value: ACTIVE_COHORTS.reduce((s, c) => s + c.patients, 0).toLocaleString() },
@@ -195,7 +195,7 @@ export default function CohortBuilderPage() {
 
       {/* Templates */}
       {tab === "templates" && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {filteredTemplates.map((t) => (
             <div key={t.key} className="card">
               <div className="flex items-start justify-between">

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { triageSymptoms, navigateCare, screenSDOH, findCommunityResources, submitMotivationalEngagement } from "@/lib/api";
 
 const TABS = ["Triage", "Care Navigation", "SDOH Screening", "Engagement"] as const;
 

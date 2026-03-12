@@ -7,6 +7,7 @@ import { clsx } from "clsx";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
   { href: "/patients", label: "Patients", icon: "users" },
+  { href: "/rpm", label: "RPM", icon: "activity" },
   { href: "/telehealth", label: "Telehealth", icon: "video" },
   { href: "/operations", label: "Operations", icon: "clipboard" },
   { href: "/analytics", label: "Analytics", icon: "chart" },
@@ -108,6 +109,11 @@ function NavIcon({ icon }: { icon: string }) {
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5m14-11.396v5.714a2.25 2.25 0 00.659 1.591L19 14.5M5 14.5l4.5 4.5m0 0l4.5-4.5M9.5 19V3m5 16V3" />
       </svg>
     ),
+    activity: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2" />
+      </svg>
+    ),
     cpu: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
@@ -117,11 +123,11 @@ function NavIcon({ icon }: { icon: string }) {
   return <>{icons[icon] ?? null}</>;
 }
 
-export function Sidebar() {
+export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex w-64 flex-col border-r border-gray-200 bg-white">
+    <aside className="flex h-full w-64 flex-col border-r border-gray-200 bg-white">
       {/* Logo */}
       <div className="flex h-16 items-center gap-2 border-b border-gray-200 px-6">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-healthos-600 text-sm font-bold text-white">
@@ -131,13 +137,14 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname?.startsWith(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
+              onClick={onNavigate}
               className={clsx(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive

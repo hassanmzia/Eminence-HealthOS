@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { fetchImagingStudies, fetchImagingWorklist, analyzeImage, evaluateCriticalFinding } from "@/lib/api";
 
 const TABS = ["Studies", "AI Analysis", "Worklist", "Critical Findings"] as const;
 
@@ -48,6 +49,17 @@ function severityColor(s: string) {
 
 export default function ImagingPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]>(TABS[0]);
+  const [apiStudies, setApiStudies] = useState<typeof STUDIES | null>(null);
+  const [apiWorklist, setApiWorklist] = useState<typeof WORKLIST | null>(null);
+
+  useEffect(() => {
+    fetchImagingWorklist()
+      .then((data) => setApiWorklist(data as typeof WORKLIST))
+      .catch(() => {/* use demo data */});
+  }, []);
+
+  const studies = apiStudies ?? STUDIES;
+  const worklist = apiWorklist ?? WORKLIST;
 
   return (
     <div className="space-y-6">
@@ -109,7 +121,7 @@ export default function ImagingPage() {
         <div className="space-y-4">
           <div className="rounded-lg border border-gray-200 bg-white p-4">
             <h3 className="text-sm font-semibold text-gray-900">AI Model Performance</h3>
-            <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
+            <div className="mt-3 grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
               {[
                 { model: "CheXNet-v2", modality: "Chest X-ray", auc: "0.94" },
                 { model: "DeepBleed-v1", modality: "CT Head", auc: "0.96" },

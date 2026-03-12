@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { submitPHQ9Screening, submitGAD7Screening, detectCrisis, createSafetyPlan, submitTherapeuticEngagement } from "@/lib/api";
 
 const SCREENING_QUEUE = [
   { id: "MH-001", patient: "Emily Davis", age: 34, type: "PHQ-9 + GAD-7", due: "Today", lastScreen: "2026-02-10", priority: "high" },
@@ -83,6 +84,23 @@ const priorityColor = (p: string) =>
 export default function MentalHealthPage() {
   const [tab, setTab] = useState<"screening" | "cases" | "engagement">("screening");
 
+  const handleStartScreen = useCallback(async (patientId: string, type: string) => {
+    try {
+      if (type.includes("PHQ-9")) await submitPHQ9Screening({ patient_id: patientId });
+      if (type.includes("GAD-7")) await submitGAD7Screening({ patient_id: patientId });
+    } catch {
+      // API unavailable — demo mode
+    }
+  }, []);
+
+  const handleSafetyPlan = useCallback(async (patientId: string) => {
+    try {
+      await createSafetyPlan({ patient_id: patientId });
+    } catch {
+      // API unavailable — demo mode
+    }
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -101,7 +119,7 @@ export default function MentalHealthPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {ENGAGEMENT_STATS.map((s) => (
           <div key={s.label} className="card text-center">
             <p className="text-xs font-medium text-gray-500">{s.label}</p>
@@ -165,7 +183,7 @@ export default function MentalHealthPage() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button className="rounded bg-healthos-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-healthos-700">
+                <button onClick={() => handleStartScreen(s.id, s.type)} className="rounded bg-healthos-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-healthos-700">
                   Start Screen
                 </button>
               </div>
@@ -210,7 +228,7 @@ export default function MentalHealthPage() {
                 </div>
                 <div className="flex flex-col gap-2">
                   <button className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50">Treatment Plan</button>
-                  <button className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50">Safety Plan</button>
+                  <button onClick={() => handleSafetyPlan(c.id)} className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50">Safety Plan</button>
                 </div>
               </div>
             </div>
@@ -219,7 +237,7 @@ export default function MentalHealthPage() {
       )}
 
       {tab === "engagement" && (
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {/* Today's Exercises */}
           <div>
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Today&apos;s Therapeutic Exercises</h3>

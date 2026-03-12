@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createLabOrder, interpretLabResults, analyzeLabTrends, evaluateCriticalLabValue } from "@/lib/api";
 
 const TABS = ["Results", "Orders", "Trends", "Critical Alerts"] as const;
 
@@ -64,6 +65,17 @@ function urgencyColor(u: string) {
 
 export default function LabsPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]>(TABS[0]);
+  const [apiResults, setApiResults] = useState<typeof LAB_RESULTS | null>(null);
+
+  useEffect(() => {
+    interpretLabResults({ patient_id: "demo" })
+      .then((data) => {
+        if (Array.isArray(data)) setApiResults(data as typeof LAB_RESULTS);
+      })
+      .catch(() => {/* use demo data */});
+  }, []);
+
+  const labResults = apiResults ?? LAB_RESULTS;
 
   return (
     <div className="space-y-6">

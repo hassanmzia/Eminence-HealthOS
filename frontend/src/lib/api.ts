@@ -219,3 +219,377 @@ export async function generateFollowUp(sessionId: string, body: Record<string, u
 export async function fetchFHIRPatient(patientId: string) {
   return request<unknown>(`/fhir/r4/Patient/${patientId}`);
 }
+
+// ── RPM (Remote Patient Monitoring) ──────────────────────────────────────────
+
+export interface RPMDashboard {
+  active_patients: number;
+  critical_alerts: number;
+  devices_online: number;
+  avg_adherence: number;
+  patient_id?: string;
+  latest_vitals?: Record<string, unknown>;
+  risk_score?: Record<string, unknown>;
+  active_alerts?: unknown[];
+  adherence?: Record<string, unknown>;
+  trends?: unknown[];
+}
+
+export async function fetchRPMDashboard(patientId?: string) {
+  const path = patientId ? `/rpm/dashboard/${patientId}` : "/rpm/dashboard/summary";
+  return request<RPMDashboard>(path);
+}
+
+export async function ingestRPMData(patientId: string, vitals: Record<string, unknown>[]) {
+  return request<Record<string, unknown>>(`/rpm/ingest?patient_id=${patientId}`, {
+    method: "POST",
+    body: JSON.stringify(vitals),
+  });
+}
+
+// ── Imaging & Radiology ──────────────────────────────────────────────────────
+
+export interface ImagingStudy {
+  study_id: string;
+  patient_id: string;
+  modality: string;
+  body_part: string;
+  description: string;
+  status: string;
+  date: string;
+  radiologist?: string;
+}
+
+export interface AIAnalysis {
+  study_id: string;
+  model: string;
+  finding: string;
+  confidence: number;
+  severity: string;
+  action: string;
+}
+
+export async function fetchImagingStudies(patientId: string) {
+  return request<ImagingStudy[]>(`/imaging/studies/${patientId}`);
+}
+
+export async function analyzeImage(body: Record<string, unknown>) {
+  return request<AIAnalysis>("/imaging/analysis/analyze", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchImagingWorklist() {
+  return request<Record<string, unknown>>("/imaging/workflow/worklist");
+}
+
+export async function evaluateCriticalFinding(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/imaging/critical/evaluate", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── Labs & Pathology ─────────────────────────────────────────────────────────
+
+export interface LabResult {
+  test: string;
+  value: number;
+  unit: string;
+  reference_range: string;
+  flag: string;
+  date: string;
+}
+
+export interface LabOrder {
+  id: string;
+  patient_id: string;
+  panels: string[];
+  priority: string;
+  status: string;
+  ordered_date: string;
+  provider: string;
+}
+
+export async function createLabOrder(body: Record<string, unknown>) {
+  return request<LabOrder>("/labs/orders/create", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchLabOrderStatus(orderId: string) {
+  return request<LabOrder>(`/labs/orders/${orderId}/status`);
+}
+
+export async function receiveLabResults(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/labs/results/receive", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function interpretLabResults(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/labs/results/interpret", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function analyzeLabTrends(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/labs/trends/analyze", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function evaluateCriticalLabValue(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/labs/critical/evaluate", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── Pharmacy ─────────────────────────────────────────────────────────────────
+
+export async function createPrescription(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/pharmacy/prescriptions/create", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchPrescriptionHistory(patientId: string) {
+  return request<Record<string, unknown>[]>(`/pharmacy/prescriptions/history/${patientId}`);
+}
+
+export async function checkDrugInteractions(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/pharmacy/interactions/check", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function checkFormulary(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/pharmacy/formulary/check", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function trackMedicationAdherence(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/pharmacy/adherence/track", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function processRefill(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/pharmacy/refills/automate", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── RCM (Revenue Cycle Management) ───────────────────────────────────────────
+
+export async function captureCharges(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/rcm/charges/capture", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function optimizeClaim(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/rcm/claims/optimize", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchCleanClaimRate() {
+  return request<Record<string, unknown>>("/rcm/claims/clean-rate");
+}
+
+export async function analyzeDenial(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/rcm/denials/analyze", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function appealDenial(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/rcm/denials/appeal", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function verifyRevenueIntegrity(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/rcm/integrity/verify", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── Mental Health & Behavioral ───────────────────────────────────────────────
+
+export async function submitPHQ9Screening(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/mental-health/screening/phq9", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function submitGAD7Screening(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/mental-health/screening/gad7", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function detectCrisis(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/mental-health/crisis/detect", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function submitTherapeuticEngagement(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/mental-health/engagement/therapeutic", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function createSafetyPlan(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/mental-health/safety/plan", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── Compliance & Governance ──────────────────────────────────────────────────
+
+export async function runHIPAAScan(body?: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/compliance/hipaa/scan", { method: "POST", body: JSON.stringify(body ?? {}) });
+}
+
+export async function fetchHIPAAStatus() {
+  return request<Record<string, unknown>>("/compliance/hipaa/status");
+}
+
+export async function fetchAIGovernanceModels() {
+  return request<Record<string, unknown>>("/compliance/ai-governance/models");
+}
+
+export async function auditAIModel(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/compliance/ai-governance/audit", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function captureConsent(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/compliance/consent/capture", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function revokeConsent(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/compliance/consent/revoke", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchConsentAuditTrail() {
+  return request<Record<string, unknown>>("/compliance/consent/audit-trail");
+}
+
+export async function fetchComplianceFrameworks() {
+  return request<Record<string, unknown>>("/compliance/frameworks");
+}
+
+export async function generateComplianceReport(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/compliance/reports/generate", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function runGapAnalysis(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/compliance/reports/gap-analysis", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── Patient Engagement & SDOH ────────────────────────────────────────────────
+
+export async function triageSymptoms(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/patient-engagement/triage/conversational", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function navigateCare(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/patient-engagement/navigation/care", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function screenSDOH(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/patient-engagement/sdoh/screen", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function findCommunityResources(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/patient-engagement/resources/community", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function submitMotivationalEngagement(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/patient-engagement/engagement/motivational", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── Ambient AI Documentation ─────────────────────────────────────────────────
+
+export async function startAmbientSession(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/ambient-ai/session/start", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function endAmbientSession(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/ambient-ai/session/end", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function generateSOAPNote(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/ambient-ai/soap/generate", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function validateSOAPNote(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/ambient-ai/soap/validate", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function codeEncounter(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/ambient-ai/coding/encounter", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function submitAttestation(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/ambient-ai/attestation/submit", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function approveAttestation(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/ambient-ai/attestation/approve", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── Digital Twin & Simulation ────────────────────────────────────────────────
+
+export async function buildDigitalTwin(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/digital-twin/twin/build", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchTwinState(patientId: string) {
+  return request<Record<string, unknown>>(`/digital-twin/twin/state?patient_id=${patientId}`);
+}
+
+export async function simulateScenario(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/digital-twin/scenario/simulate", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function predictTrajectory(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/digital-twin/trajectory/predict", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function recommendTreatment(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/digital-twin/optimization/recommend", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── Research & Genomics ──────────────────────────────────────────────────────
+
+export async function matchClinicalTrials(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/research-genomics/trials/match", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function checkTrialEligibility(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/research-genomics/trials/eligibility", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function deidentifyDataset(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/research-genomics/deidentify/dataset", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function assessGeneticRisk(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/research-genomics/genetic-risk/assess", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function analyzePharmacogenomics(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/research-genomics/pgx/analyze", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── Analytics ────────────────────────────────────────────────────────────────
+
+export async function analyzePopulationHealth(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/analytics/population-health", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function riskStratification(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/analytics/population-health/risk-stratification", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchQualityMetrics(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/analytics/population-health/quality-metrics", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function trackOutcomes(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/analytics/outcomes", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function analyzeCosts(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/analytics/costs", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function createCohort(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/analytics/cohorts", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchCohortTemplates() {
+  return request<Record<string, unknown>>("/analytics/cohorts/templates");
+}
+
+export async function predictReadmissionRisk(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/analytics/readmission-risk", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── Operations ───────────────────────────────────────────────────────────────
+
+export async function evaluatePriorAuth(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/operations/prior-auth/evaluate", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function verifyInsurance(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/operations/insurance/verify", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function createReferral(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/operations/referrals/create", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function scheduleAppointment(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/operations/scheduling", { method: "POST", body: JSON.stringify(body) });
+}

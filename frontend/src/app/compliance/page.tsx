@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { runHIPAAScan, fetchHIPAAStatus, fetchAIGovernanceModels, auditAIModel, fetchComplianceFrameworks, generateComplianceReport, runGapAnalysis, fetchConsentAuditTrail } from "@/lib/api";
 
 const FRAMEWORKS = [
   { key: "hipaa", name: "HIPAA", score: 94, controls: 78, passing: 73, failing: 3, pending: 2, lastAudit: "2026-02-15", nextReview: "2026-08-15", status: "Certified" },
@@ -38,6 +39,56 @@ const scoreColor = (s: number) => s >= 90 ? "text-green-600" : s >= 80 ? "text-y
 
 export default function CompliancePage() {
   const [tab, setTab] = useState<"frameworks" | "governance" | "consent">("frameworks");
+  const [apiFrameworks, setApiFrameworks] = useState<typeof FRAMEWORKS | null>(null);
+  const [apiModels, setApiModels] = useState<typeof AI_MODELS | null>(null);
+  const [scanning, setScanning] = useState(false);
+
+  useEffect(() => {
+    fetchComplianceFrameworks()
+      .then((data) => { if (Array.isArray(data)) setApiFrameworks(data as typeof FRAMEWORKS); })
+      .catch(() => {/* use demo data */});
+    fetchAIGovernanceModels()
+      .then((data) => { if (Array.isArray(data)) setApiModels(data as typeof AI_MODELS); })
+      .catch(() => {/* use demo data */});
+  }, []);
+
+  const handleRunScan = useCallback(async () => {
+    setScanning(true);
+    try {
+      await runHIPAAScan();
+    } catch {
+      // API unavailable — demo mode
+    } finally {
+      setScanning(false);
+    }
+  }, []);
+
+  const handleAudit = useCallback(async (modelName: string) => {
+    try {
+      await auditAIModel({ model_name: modelName });
+    } catch {
+      // API unavailable — demo mode
+    }
+  }, []);
+
+  const handleGapAnalysis = useCallback(async (framework: string) => {
+    try {
+      await runGapAnalysis({ framework });
+    } catch {
+      // API unavailable — demo mode
+    }
+  }, []);
+
+  const handleExportReport = useCallback(async () => {
+    try {
+      await generateComplianceReport({ format: "pdf" });
+    } catch {
+      // API unavailable — demo mode
+    }
+  }, []);
+
+  const frameworks = apiFrameworks ?? FRAMEWORKS;
+  const aiModels = apiModels ?? AI_MODELS;
 
   return (
     <div className="space-y-6">
@@ -47,18 +98,18 @@ export default function CompliancePage() {
           <p className="text-sm text-gray-500">HIPAA monitoring, AI governance, consent management, and regulatory reporting</p>
         </div>
         <div className="flex gap-2">
-          <button className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          <button onClick={handleExportReport} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
             Export Report
           </button>
-          <button className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">
-            Run Full Scan
+          <button onClick={handleRunScan} disabled={scanning} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50">
+            {scanning ? "Scanning..." : "Run Full Scan"}
           </button>
         </div>
       </div>
 
       {/* Top-level scores */}
-      <div className="grid grid-cols-4 gap-4">
-        {FRAMEWORKS.map((f) => (
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {frameworks.map((f) => (
           <div key={f.key} className="card">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-gray-500">{f.name}</p>
@@ -93,11 +144,11 @@ export default function CompliancePage() {
       </div>
 
       {tab === "frameworks" && (
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {/* Framework Details */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-gray-700">Framework Details</h3>
-            {FRAMEWORKS.map((f) => (
+            {frameworks.map((f) => (
               <div key={f.key} className="card">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-gray-900">{f.name}</h4>
@@ -110,7 +161,7 @@ export default function CompliancePage() {
                 </div>
                 <div className="mt-2 flex gap-2">
                   <button className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50">View Controls</button>
-                  <button className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50">Gap Analysis</button>
+                  <button onClick={() => handleGapAnalysis(f.key)} className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50">Gap Analysis</button>
                 </div>
               </div>
             ))}
@@ -153,7 +204,7 @@ export default function CompliancePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
-                {AI_MODELS.map((m) => (
+                {aiModels.map((m) => (
                   <tr key={m.name}>
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{m.name}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{m.type}</td>
@@ -172,7 +223,7 @@ export default function CompliancePage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500">{m.lastRetrained}</td>
                     <td className="px-4 py-3">
-                      <button className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50">Audit</button>
+                      <button onClick={() => handleAudit(m.name)} className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50">Audit</button>
                     </td>
                   </tr>
                 ))}
@@ -183,7 +234,7 @@ export default function CompliancePage() {
       )}
 
       {tab === "consent" && (
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Consent by Purpose</h3>
             <div className="space-y-3">
