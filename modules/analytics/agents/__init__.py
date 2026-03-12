@@ -1,4 +1,4 @@
-"""Analytics agents — population health, outcomes, cost analysis, cohorts, and readmission risk."""
+"""Analytics agents — population health, outcomes, cost analysis, cohorts, readmission risk, and executive intelligence."""
 
 
 def register_analytics_agents() -> None:
@@ -7,6 +7,8 @@ def register_analytics_agents() -> None:
 
     from .cohort_segmentation import CohortSegmentationAgent
     from .cost_analyzer import CostAnalyzerAgent
+    from .cost_risk_insight import CostRiskInsightAgent
+    from .executive_insight import ExecutiveInsightAgent
     from .outcome_tracker import OutcomeTrackerAgent
     from .population_health import PopulationHealthAgent
     from .readmission_risk import ReadmissionRiskAgent
@@ -16,3 +18,5 @@ def register_analytics_agents() -> None:
     registry.register(CostAnalyzerAgent())
     registry.register(CohortSegmentationAgent())
     registry.register(ReadmissionRiskAgent())
+    registry.register(CostRiskInsightAgent())
+    registry.register(ExecutiveInsightAgent())

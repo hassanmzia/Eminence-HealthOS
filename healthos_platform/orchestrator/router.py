@@ -164,6 +164,35 @@ ROUTING_TABLE: dict[str, list[str]] = {
         "outcome_tracker",
         "cohort_segmentation",
     ],
+    # ── Executive Intelligence Events ─────────────────────────────────────
+    # Cost/risk insight analysis
+    "analytics.cost_risk.analyze": [
+        "cost_risk_insight",
+    ],
+    # Intervention impact modeling
+    "analytics.cost_risk.intervention": [
+        "cost_risk_insight",
+    ],
+    # Executive summary generation
+    "analytics.executive.summary": [
+        "cost_risk_insight",
+        "executive_insight",
+    ],
+    # KPI scorecard
+    "analytics.executive.scorecard": [
+        "executive_insight",
+    ],
+    # Strategic briefing
+    "analytics.executive.brief": [
+        "executive_insight",
+    ],
+    # Scheduled analytics pipeline (periodic)
+    "analytics.pipeline.scheduled": [
+        "population_health",
+        "readmission_risk",
+        "cost_risk_insight",
+        "executive_insight",
+    ],
 }
 
 

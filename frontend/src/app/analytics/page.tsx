@@ -15,6 +15,12 @@ export default function AnalyticsPage() {
         </div>
         <div className="flex gap-2">
           <Link
+            href="/analytics/executive"
+            className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700"
+          >
+            Executive Dashboard
+          </Link>
+          <Link
             href="/analytics/cohorts"
             className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
