@@ -124,6 +124,46 @@ ROUTING_TABLE: dict[str, list[str]] = {
         "prior_authorization",
         "task_orchestration",
     ],
+    # ── Analytics Events ──────────────────────────────────────────────────
+    # Population health analysis
+    "analytics.population_health": [
+        "population_health",
+    ],
+    # Risk stratification
+    "analytics.risk_stratification": [
+        "population_health",
+        "cohort_segmentation",
+    ],
+    # Quality metrics
+    "analytics.quality_metrics": [
+        "population_health",
+    ],
+    # Outcome tracking
+    "analytics.outcome.track": [
+        "outcome_tracker",
+    ],
+    # Readmission risk prediction
+    "analytics.readmission.predict": [
+        "readmission_risk",
+    ],
+    # Batch readmission risk
+    "analytics.readmission.batch": [
+        "readmission_risk",
+    ],
+    # Cohort creation & analysis
+    "analytics.cohort.create": [
+        "cohort_segmentation",
+    ],
+    # Cost analysis
+    "analytics.cost.analyze": [
+        "cost_analyzer",
+    ],
+    # Discharge triggers readmission risk assessment
+    "analytics.discharge.assess": [
+        "readmission_risk",
+        "outcome_tracker",
+        "cohort_segmentation",
+    ],
 }
 
 

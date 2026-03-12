@@ -1,81 +1,73 @@
 """
-Cost Analyzer Agent — healthcare cost analysis and optimization.
-
-Analyzes care delivery costs, identifies cost reduction opportunities,
-and tracks ROI for RPM programs and interventions.
+Eminence HealthOS — Cost Analyzer Agent
+Layer 5 (Measurement): Analyzes care delivery costs, identifies cost reduction
+opportunities, tracks ROI for RPM programs, and generates savings forecasts.
 """
 
-import logging
-from healthos_platform.agents.base import (
-    AgentCapability,
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any
+
+from healthos_platform.agents.base import BaseAgent
+from healthos_platform.agents.types import (
     AgentInput,
     AgentOutput,
+    AgentStatus,
     AgentTier,
-    HealthOSAgent,
 )
 
-logger = logging.getLogger("healthos.agent.cost_analyzer")
 
-
-class CostAnalyzerAgent(HealthOSAgent):
+class CostAnalyzerAgent(BaseAgent):
     """Analyzes healthcare costs and identifies optimization opportunities."""
 
-    def __init__(self):
-        super().__init__(
-            name="cost_analyzer",
-            tier=AgentTier.DIAGNOSTIC,
-            description="Healthcare cost analysis, ROI tracking, and optimization",
-            version="0.1.0",
-        )
+    name = "cost_analyzer"
+    tier = AgentTier.MEASUREMENT
+    version = "1.0.0"
+    description = "Healthcare cost analysis, ROI tracking, and optimization"
+    min_confidence = 0.75
 
-    @property
-    def capabilities(self) -> list[AgentCapability]:
-        return [AgentCapability.CLINICAL_SUMMARY]
+    async def process(self, input_data: AgentInput) -> AgentOutput:
+        ctx = input_data.context
+        action = ctx.get("action", "summary")
 
-    async def process(self, agent_input: AgentInput) -> AgentOutput:
-        data = agent_input.data
-        analysis_type = data.get("analysis_type", "summary")
-
-        if analysis_type == "rpm_roi":
-            result = self._rpm_roi_analysis(data)
-        elif analysis_type == "cost_per_patient":
-            result = self._cost_per_patient(data)
-        elif analysis_type == "savings_forecast":
-            result = self._savings_forecast(data)
+        if action == "rpm_roi":
+            return self._rpm_roi_analysis(input_data)
+        elif action == "cost_per_patient":
+            return self._cost_per_patient(input_data)
+        elif action == "savings_forecast":
+            return self._savings_forecast(input_data)
+        elif action == "summary":
+            return self._cost_summary(input_data)
         else:
-            result = self._cost_summary(data)
+            return self.build_output(
+                trace_id=input_data.trace_id,
+                result={"error": f"Unknown action: {action}"},
+                confidence=0.0,
+                rationale=f"Unknown cost analysis action: {action}",
+                status=AgentStatus.FAILED,
+            )
 
-        return AgentOutput(
-            agent_name=self.name,
-            agent_tier=self.tier.value,
-            decision=f"cost_analysis_{analysis_type}",
-            rationale=f"Cost analysis ({analysis_type}) completed",
-            confidence=0.75,
-            data=result,
-            feature_contributions=[
-                {"feature": "patient_volume", "contribution": 0.3, "value": data.get("patient_count", 0)},
-                {"feature": "cost_data", "contribution": 0.4, "value": "analyzed"},
-                {"feature": "historical_trend", "contribution": 0.3, "value": "evaluated"},
-            ],
-        )
+    def _rpm_roi_analysis(self, input_data: AgentInput) -> AgentOutput:
+        """Analyze ROI for Remote Patient Monitoring programs."""
+        ctx = input_data.context
 
-    def _rpm_roi_analysis(self, data: dict) -> dict:
-        patients = data.get("patient_count", 100)
-        monthly_cost = data.get("monthly_rpm_cost", 150)  # per patient
-        avg_er_visits_avoided = data.get("er_visits_avoided_per_patient", 0.3)
-        avg_er_cost = data.get("avg_er_cost", 2500)
-        readmission_reduction = data.get("readmission_reduction_percent", 15)
-        avg_readmission_cost = data.get("avg_readmission_cost", 15000)
+        patients = ctx.get("patient_count", 100)
+        monthly_cost = ctx.get("monthly_rpm_cost", 150)
+        avg_er_visits_avoided = ctx.get("er_visits_avoided_per_patient", 0.3)
+        avg_er_cost = ctx.get("avg_er_cost", 2500)
+        readmission_reduction = ctx.get("readmission_reduction_percent", 15)
+        avg_readmission_cost = ctx.get("avg_readmission_cost", 15000)
 
         total_rpm_cost = patients * monthly_cost * 12
         er_savings = patients * avg_er_visits_avoided * avg_er_cost * 12
-        readmission_savings = (patients * 0.15 * avg_readmission_cost *
-                               readmission_reduction / 100)
+        readmission_savings = (
+            patients * 0.15 * avg_readmission_cost * readmission_reduction / 100
+        )
         total_savings = er_savings + readmission_savings
         roi = ((total_savings - total_rpm_cost) / total_rpm_cost * 100) if total_rpm_cost > 0 else 0
 
-        return {
-            "analysis_type": "rpm_roi",
+        result = {
             "annual_rpm_cost": total_rpm_cost,
             "er_visit_savings": round(er_savings),
             "readmission_savings": round(readmission_savings),
@@ -83,38 +75,108 @@ class CostAnalyzerAgent(HealthOSAgent):
             "net_benefit": round(total_savings - total_rpm_cost),
             "roi_percent": round(roi, 1),
             "payback_months": round(total_rpm_cost / max(total_savings / 12, 1), 1),
+            "patients_analyzed": patients,
+            "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }
 
-    def _cost_per_patient(self, data: dict) -> dict:
-        return {
-            "analysis_type": "cost_per_patient",
-            "avg_monthly_cost": data.get("avg_monthly_cost", 0),
-            "cost_by_risk_level": {
-                "LOW": data.get("cost_low_risk", 50),
-                "MEDIUM": data.get("cost_medium_risk", 150),
-                "HIGH": data.get("cost_high_risk", 400),
-                "CRITICAL": data.get("cost_critical_risk", 1200),
-            },
+        return self.build_output(
+            trace_id=input_data.trace_id,
+            result=result,
+            confidence=0.80,
+            rationale=f"RPM ROI: {roi:.1f}% return, ${result['net_benefit']:,} net benefit",
+        )
+
+    def _cost_per_patient(self, input_data: AgentInput) -> AgentOutput:
+        """Analyze cost per patient by risk level."""
+        ctx = input_data.context
+
+        cost_by_risk = {
+            "low": ctx.get("cost_low_risk", 50),
+            "moderate": ctx.get("cost_moderate_risk", 150),
+            "high": ctx.get("cost_high_risk", 400),
+            "critical": ctx.get("cost_critical_risk", 1200),
         }
 
-    def _savings_forecast(self, data: dict) -> dict:
-        base_savings = data.get("current_annual_savings", 100000)
-        growth_rate = data.get("patient_growth_rate", 0.10)
+        patients_by_risk = ctx.get("patients_by_risk", {
+            "low": 500, "moderate": 300, "high": 150, "critical": 50,
+        })
+
+        total_cost = sum(
+            cost_by_risk.get(level, 0) * patients_by_risk.get(level, 0)
+            for level in cost_by_risk
+        )
+        total_patients = sum(patients_by_risk.values())
+        weighted_avg = total_cost / max(total_patients, 1)
+
+        result = {
+            "avg_monthly_cost": round(weighted_avg, 2),
+            "cost_by_risk_level": cost_by_risk,
+            "patients_by_risk_level": patients_by_risk,
+            "total_monthly_cost": total_cost,
+            "total_patients": total_patients,
+            "cost_concentration": round(
+                (cost_by_risk["high"] * patients_by_risk.get("high", 0) +
+                 cost_by_risk["critical"] * patients_by_risk.get("critical", 0)) /
+                max(total_cost, 1), 3
+            ),
+            "analyzed_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        return self.build_output(
+            trace_id=input_data.trace_id,
+            result=result,
+            confidence=0.78,
+            rationale=f"Cost per patient: ${weighted_avg:.2f}/month avg, {total_patients} patients",
+        )
+
+    def _savings_forecast(self, input_data: AgentInput) -> AgentOutput:
+        """Project savings over multiple years."""
+        ctx = input_data.context
+
+        base_savings = ctx.get("current_annual_savings", 100000)
+        growth_rate = ctx.get("patient_growth_rate", 0.10)
 
         forecast = []
         for year in range(1, 4):
             projected = base_savings * (1 + growth_rate) ** year
-            forecast.append({"year": year, "projected_savings": round(projected)})
+            forecast.append({
+                "year": year,
+                "projected_savings": round(projected),
+                "cumulative_savings": round(sum(
+                    base_savings * (1 + growth_rate) ** y for y in range(1, year + 1)
+                )),
+            })
 
-        return {
-            "analysis_type": "savings_forecast",
+        result = {
+            "base_annual_savings": base_savings,
+            "growth_rate": growth_rate,
             "forecast": forecast,
+            "three_year_total": forecast[-1]["cumulative_savings"] if forecast else 0,
+            "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }
 
-    def _cost_summary(self, data: dict) -> dict:
-        return {
-            "analysis_type": "summary",
-            "total_patients": data.get("patient_count", 0),
-            "monthly_operating_cost": data.get("monthly_cost", 0),
-            "cost_efficiency_score": data.get("efficiency_score", 0),
+        return self.build_output(
+            trace_id=input_data.trace_id,
+            result=result,
+            confidence=0.72,
+            rationale=f"Savings forecast: ${result['three_year_total']:,} over 3 years at {growth_rate:.0%} growth",
+        )
+
+    def _cost_summary(self, input_data: AgentInput) -> AgentOutput:
+        """Generate cost summary overview."""
+        ctx = input_data.context
+
+        result = {
+            "total_patients": ctx.get("patient_count", 0),
+            "monthly_operating_cost": ctx.get("monthly_cost", 0),
+            "cost_efficiency_score": ctx.get("efficiency_score", 0),
+            "cost_trend": ctx.get("cost_trend", "stable"),
+            "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }
+
+        return self.build_output(
+            trace_id=input_data.trace_id,
+            result=result,
+            confidence=0.75,
+            rationale=f"Cost summary: {result['total_patients']} patients, efficiency {result['cost_efficiency_score']}",
+        )

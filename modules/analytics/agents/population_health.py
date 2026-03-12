@@ -1,123 +1,193 @@
 """
-Population Health Agent — population-level analytics and insights.
-
-Analyzes patient cohorts for risk stratification, outcome tracking,
-quality metrics, and population health trends.
+Eminence HealthOS — Population Health Agent
+Layer 5 (Measurement): Analyzes patient cohorts for risk stratification,
+quality metrics tracking, and population health trends.
 """
 
-import logging
-from healthos_platform.agents.base import (
-    AgentCapability,
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any
+
+from healthos_platform.agents.base import BaseAgent
+from healthos_platform.agents.types import (
     AgentInput,
     AgentOutput,
+    AgentStatus,
     AgentTier,
-    HealthOSAgent,
 )
 
-logger = logging.getLogger("healthos.agent.population_health")
 
-
-class PopulationHealthAgent(HealthOSAgent):
+class PopulationHealthAgent(BaseAgent):
     """Generates population health analytics and insights."""
 
-    def __init__(self):
-        super().__init__(
-            name="population_health",
-            tier=AgentTier.DIAGNOSTIC,
-            description="Population-level analytics, risk stratification, and quality metrics",
-            version="0.1.0",
-        )
+    name = "population_health"
+    tier = AgentTier.MEASUREMENT
+    version = "1.0.0"
+    description = "Population-level analytics, risk stratification, and quality metrics"
+    min_confidence = 0.75
 
-    @property
-    def capabilities(self) -> list[AgentCapability]:
-        return [AgentCapability.RISK_SCORING, AgentCapability.CLINICAL_SUMMARY]
+    async def process(self, input_data: AgentInput) -> AgentOutput:
+        ctx = input_data.context
+        action = ctx.get("action", "overview")
 
-    async def process(self, agent_input: AgentInput) -> AgentOutput:
-        data = agent_input.data
-        analysis_type = data.get("analysis_type", "overview")
-
-        if analysis_type == "risk_stratification":
-            result = self._risk_stratification(data)
-        elif analysis_type == "quality_metrics":
-            result = self._quality_metrics(data)
-        elif analysis_type == "cohort_analysis":
-            result = self._cohort_analysis(data)
+        if action == "risk_stratification":
+            return self._risk_stratification(input_data)
+        elif action == "quality_metrics":
+            return self._quality_metrics(input_data)
+        elif action == "cohort_analysis":
+            return self._cohort_analysis(input_data)
+        elif action == "overview":
+            return self._overview(input_data)
         else:
-            result = self._overview(data)
+            return self.build_output(
+                trace_id=input_data.trace_id,
+                result={"error": f"Unknown action: {action}"},
+                confidence=0.0,
+                rationale=f"Unknown population health action: {action}",
+                status=AgentStatus.FAILED,
+            )
 
-        return AgentOutput(
-            agent_name=self.name,
-            agent_tier=self.tier.value,
-            decision=f"analysis_{analysis_type}",
-            rationale=f"Population health analysis ({analysis_type}) completed",
-            confidence=0.80,
-            data=result,
-            feature_contributions=[
-                {"feature": "population_size", "contribution": 0.3, "value": data.get("total_patients", 0)},
-                {"feature": "analysis_type", "contribution": 0.3, "value": analysis_type},
-                {"feature": "data_completeness", "contribution": 0.4, "value": "evaluated"},
-            ],
+    def _overview(self, input_data: AgentInput) -> AgentOutput:
+        """Generate population health overview."""
+        ctx = input_data.context
+        patients = ctx.get("patients", [])
+        total = len(patients) or ctx.get("total_patients", 0)
+
+        avg_risk = self._safe_avg([p.get("risk_score", 0) for p in patients])
+        high_risk = self._pct(
+            [p for p in patients if p.get("risk_level", "").lower() in ("high", "critical")],
+            total,
+        )
+        with_alerts = self._pct(
+            [p for p in patients if p.get("active_alerts", 0) > 0],
+            total,
         )
 
-    def _overview(self, data: dict) -> dict:
-        patients = data.get("patients", [])
-        total = len(patients) or data.get("total_patients", 0)
-
-        return {
-            "analysis_type": "overview",
+        result = {
             "total_patients": total,
             "metrics": {
-                "avg_risk_score": self._safe_avg([p.get("risk_score", 0) for p in patients]),
-                "high_risk_percent": self._pct([p for p in patients if p.get("risk_level") in ("HIGH", "CRITICAL")], total),
-                "with_active_alerts": self._pct([p for p in patients if p.get("active_alerts", 0) > 0], total),
+                "avg_risk_score": avg_risk,
+                "high_risk_percent": high_risk,
+                "with_active_alerts": with_alerts,
             },
+            "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }
 
-    def _risk_stratification(self, data: dict) -> dict:
-        patients = data.get("patients", [])
-        tiers = {"LOW": [], "MEDIUM": [], "HIGH": [], "CRITICAL": []}
+        return self.build_output(
+            trace_id=input_data.trace_id,
+            result=result,
+            confidence=0.82 if patients else 0.65,
+            rationale=f"Population overview: {total} patients, avg risk {avg_risk}",
+        )
 
+    def _risk_stratification(self, input_data: AgentInput) -> AgentOutput:
+        """Stratify patient population by risk level."""
+        ctx = input_data.context
+        patients = ctx.get("patients", [])
+
+        tiers: dict[str, list] = {"low": [], "moderate": [], "high": [], "critical": []}
         for p in patients:
-            level = p.get("risk_level", "LOW")
+            level = p.get("risk_level", "low").lower()
             tiers.setdefault(level, []).append(p)
 
-        return {
-            "analysis_type": "risk_stratification",
-            "tiers": {k: len(v) for k, v in tiers.items()},
-            "recommendations": [
-                {"tier": "CRITICAL", "action": "Daily monitoring, weekly provider review"},
-                {"tier": "HIGH", "action": "Twice-weekly monitoring, bi-weekly review"},
-                {"tier": "MEDIUM", "action": "Weekly monitoring, monthly review"},
-                {"tier": "LOW", "action": "Monthly check-in, quarterly review"},
+        distribution = {k: len(v) for k, v in tiers.items()}
+
+        recommendations = [
+            {"tier": "critical", "action": "Daily monitoring, weekly provider review", "priority": 1},
+            {"tier": "high", "action": "Twice-weekly monitoring, bi-weekly review", "priority": 2},
+            {"tier": "moderate", "action": "Weekly monitoring, monthly review", "priority": 3},
+            {"tier": "low", "action": "Monthly check-in, quarterly review", "priority": 4},
+        ]
+
+        result = {
+            "total_patients": len(patients),
+            "distribution": distribution,
+            "recommendations": recommendations,
+            "high_risk_patients": [
+                {"patient_id": p.get("patient_id", ""), "risk_score": p.get("risk_score", 0)}
+                for p in (tiers.get("critical", []) + tiers.get("high", []))[:20]
             ],
+            "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }
 
-    def _quality_metrics(self, data: dict) -> dict:
-        return {
-            "analysis_type": "quality_metrics",
-            "hedis_measures": {
-                "bp_control": data.get("bp_control_rate", 0),
-                "diabetes_hba1c": data.get("hba1c_control_rate", 0),
-                "preventive_screenings": data.get("screening_rate", 0),
-                "medication_adherence": data.get("adherence_rate", 0),
-            },
-            "operational": {
-                "avg_response_time_min": data.get("avg_response_time", 0),
-                "readmission_rate": data.get("readmission_rate", 0),
-                "patient_satisfaction": data.get("satisfaction_score", 0),
-            },
+        return self.build_output(
+            trace_id=input_data.trace_id,
+            result=result,
+            confidence=0.85 if patients else 0.60,
+            rationale=(
+                f"Risk stratification: {len(patients)} patients — "
+                f"{distribution.get('critical', 0)} critical, {distribution.get('high', 0)} high"
+            ),
+        )
+
+    def _quality_metrics(self, input_data: AgentInput) -> AgentOutput:
+        """Generate HEDIS-style quality metrics."""
+        ctx = input_data.context
+
+        hedis = {
+            "bp_control": ctx.get("bp_control_rate", 0),
+            "diabetes_hba1c": ctx.get("hba1c_control_rate", 0),
+            "preventive_screenings": ctx.get("screening_rate", 0),
+            "medication_adherence": ctx.get("adherence_rate", 0),
         }
 
-    def _cohort_analysis(self, data: dict) -> dict:
-        return {
-            "analysis_type": "cohort_analysis",
-            "cohort_criteria": data.get("criteria", {}),
-            "matched_patients": data.get("matched_count", 0),
+        operational = {
+            "avg_response_time_min": ctx.get("avg_response_time", 0),
+            "readmission_rate": ctx.get("readmission_rate", 0),
+            "patient_satisfaction": ctx.get("satisfaction_score", 0),
         }
 
-    def _safe_avg(self, values: list) -> float:
+        # Score each measure against targets
+        targets = {"bp_control": 0.70, "diabetes_hba1c": 0.65, "preventive_screenings": 0.80, "medication_adherence": 0.80}
+        gaps = []
+        for measure, target in targets.items():
+            actual = hedis.get(measure, 0)
+            if actual < target:
+                gaps.append({"measure": measure, "actual": actual, "target": target, "gap": round(target - actual, 3)})
+
+        result = {
+            "hedis_measures": hedis,
+            "operational_metrics": operational,
+            "quality_gaps": sorted(gaps, key=lambda g: g["gap"], reverse=True),
+            "overall_quality_score": round(sum(hedis.values()) / max(len(hedis), 1), 3),
+            "analyzed_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        return self.build_output(
+            trace_id=input_data.trace_id,
+            result=result,
+            confidence=0.80,
+            rationale=f"Quality metrics: {len(gaps)} gaps identified, overall score {result['overall_quality_score']:.2f}",
+        )
+
+    def _cohort_analysis(self, input_data: AgentInput) -> AgentOutput:
+        """Basic cohort analysis on population data."""
+        ctx = input_data.context
+        criteria = ctx.get("criteria", {})
+        matched_count = ctx.get("matched_count", 0)
+        total = ctx.get("total_patients", 0)
+
+        result = {
+            "cohort_criteria": criteria,
+            "matched_patients": matched_count,
+            "total_patients": total,
+            "match_rate": round(matched_count / max(total, 1), 3),
+            "analyzed_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        return self.build_output(
+            trace_id=input_data.trace_id,
+            result=result,
+            confidence=0.78,
+            rationale=f"Cohort analysis: {matched_count}/{total} matched",
+        )
+
+    @staticmethod
+    def _safe_avg(values: list) -> float:
         valid = [v for v in values if v is not None]
         return round(sum(valid) / len(valid), 2) if valid else 0
 
-    def _pct(self, subset: list, total: int) -> float:
+    @staticmethod
+    def _pct(subset: list, total: int) -> float:
         return round(len(subset) / max(total, 1) * 100, 1)
