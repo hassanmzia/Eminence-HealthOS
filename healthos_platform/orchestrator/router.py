@@ -108,6 +108,22 @@ ROUTING_TABLE: dict[str, list[str]] = {
     "operations.sla.check": [
         "task_orchestration",
     ],
+    # ── Billing Events ─────────────────────────────────────────────────────
+    # Encounter billing validation
+    "billing.encounter.validate": [
+        "billing_readiness",
+    ],
+    # Claim preparation
+    "billing.claim.prepare": [
+        "insurance_verification",
+        "billing_readiness",
+    ],
+    # Post-encounter billing workflow
+    "billing.post_encounter": [
+        "billing_readiness",
+        "prior_authorization",
+        "task_orchestration",
+    ],
 }
 
 

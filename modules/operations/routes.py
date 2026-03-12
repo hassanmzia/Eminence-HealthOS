@@ -272,6 +272,167 @@ async def get_task_queue(
     return output.result
 
 
+# ── Billing ───────────────────────────────────────────────────────────────────
+
+
+@router.post("/billing/validate")
+async def validate_billing(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Validate encounter for billing readiness."""
+    from modules.operations.agents.billing_readiness import BillingReadinessAgent
+
+    agent = BillingReadinessAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        trigger="billing.encounter.validate",
+        context={"action": "validate", **body},
+    ))
+    return output.result
+
+
+@router.post("/billing/check-coding")
+async def check_coding(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Check CPT/ICD-10 coding accuracy."""
+    from modules.operations.agents.billing_readiness import BillingReadinessAgent
+
+    agent = BillingReadinessAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        trigger="billing.coding.check",
+        context={"action": "check_coding", **body},
+    ))
+    return output.result
+
+
+@router.post("/billing/prepare-claim")
+async def prepare_claim(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Prepare a claim for submission."""
+    from modules.operations.agents.billing_readiness import BillingReadinessAgent
+
+    agent = BillingReadinessAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        trigger="billing.claim.prepare",
+        context={"action": "prepare_claim", **body},
+    ))
+    return output.result
+
+
+@router.post("/billing/audit")
+async def run_billing_audit(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_role("admin")),
+):
+    """Run billing audit across recent encounters."""
+    from modules.operations.agents.billing_readiness import BillingReadinessAgent
+
+    agent = BillingReadinessAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        trigger="billing.audit",
+        context={"action": "audit", **body},
+    ))
+    return output.result
+
+
+# ── Workflow Engine ──────────────────────────────────────────────────────────
+
+
+@router.post("/workflows/create")
+async def create_workflow(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Create a new multi-step workflow from a template."""
+    from modules.operations.workflow_engine import workflow_engine
+
+    workflow = workflow_engine.create_workflow(
+        workflow_type=body.get("workflow_type", ""),
+        org_id=tenant_id,
+        patient_id=body.get("patient_id"),
+        priority=body.get("priority", "normal"),
+        context=body.get("context", {}),
+        custom_steps=body.get("steps"),
+    )
+    return workflow_engine.get_workflow_summary(workflow.workflow_id)
+
+
+@router.get("/workflows/templates")
+async def list_workflow_templates(
+    user: CurrentUser = Depends(require_auth),
+):
+    """List available workflow templates."""
+    from modules.operations.workflow_engine import workflow_engine
+    return {"templates": workflow_engine.available_templates}
+
+
+@router.get("/workflows/{workflow_id}")
+async def get_workflow(
+    workflow_id: str,
+    user: CurrentUser = Depends(require_auth),
+):
+    """Get workflow status and progress."""
+    from modules.operations.workflow_engine import workflow_engine
+
+    summary = workflow_engine.get_workflow_summary(workflow_id)
+    if not summary:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    return summary
+
+
+@router.get("/workflows")
+async def list_workflows(
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """List all workflows for the organization."""
+    from modules.operations.workflow_engine import workflow_engine
+    return {"workflows": workflow_engine.list_workflows(tenant_id)}
+
+
+@router.post("/workflows/{workflow_id}/steps/{step_id}/complete")
+async def complete_workflow_step(
+    workflow_id: str,
+    step_id: str,
+    body: dict[str, Any],
+    user: CurrentUser = Depends(require_auth),
+):
+    """Mark a workflow step as completed."""
+    from modules.operations.workflow_engine import workflow_engine
+
+    step = workflow_engine.complete_step(workflow_id, step_id, body.get("output", {}))
+    if not step:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Step not found or not in progress")
+    return workflow_engine.get_workflow_summary(workflow_id)
+
+
+@router.post("/workflows/sla-violations")
+async def check_sla_violations(
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_role("admin")),
+):
+    """Check for SLA violations across active workflows."""
+    from modules.operations.workflow_engine import workflow_engine
+    return {"violations": workflow_engine.check_sla_violations(tenant_id)}
+
+
 # ── Legacy Routes (existing) ─────────────────────────────────────────────────
 
 
