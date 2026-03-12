@@ -18,7 +18,7 @@ from healthos_platform.api.schemas import (
     PatientResponse,
 )
 from healthos_platform.database import get_db
-from healthos_platform.models import Patient
+from healthos_platform.models import Patient, RiskScore
 from healthos_platform.security.rbac import Permission
 
 router = APIRouter(prefix="/patients", tags=["Patients"])
@@ -80,6 +80,48 @@ async def get_patient(
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     return patient
+
+
+@router.get("/{patient_id}/risk-score")
+async def get_patient_risk_score(
+    patient_id: uuid.UUID,
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get the latest risk score for a patient."""
+    ctx.require_permission(Permission.PATIENT_READ)
+
+    result = await db.execute(
+        select(RiskScore)
+        .where(RiskScore.patient_id == patient_id, RiskScore.org_id == ctx.org_id)
+        .order_by(RiskScore.created_at.desc())
+        .limit(1)
+    )
+    risk = result.scalar_one_or_none()
+
+    if not risk:
+        # Fall back to patient's risk_level field
+        pat_result = await db.execute(
+            select(Patient).where(Patient.id == patient_id, Patient.org_id == ctx.org_id)
+        )
+        patient = pat_result.scalar_one_or_none()
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient not found")
+
+        level_scores = {"critical": 0.85, "high": 0.65, "moderate": 0.40, "low": 0.15}
+        return {
+            "score": level_scores.get(patient.risk_level, 0.15),
+            "risk_level": patient.risk_level,
+            "factors": [],
+            "recommendations": [],
+        }
+
+    return {
+        "score": risk.score,
+        "risk_level": risk.risk_level,
+        "factors": risk.factors or [],
+        "recommendations": [],
+    }
 
 
 @router.post("", response_model=PatientResponse, status_code=201)

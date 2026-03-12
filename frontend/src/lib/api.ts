@@ -81,8 +81,36 @@ export async function fetchPatient(id: string) {
 
 // ── Vitals ───────────────────────────────────────────────────────────────────
 
-export async function fetchVitals(patientId: string) {
-  return request<{ vitals: unknown[] }>(`/vitals?patient_id=${patientId}`);
+export interface VitalData {
+  id: string;
+  patient_id: string;
+  vital_type: string;
+  value: Record<string, unknown>;
+  unit: string;
+  recorded_at: string;
+  source: string | null;
+  quality_score: number | null;
+  created_at: string;
+}
+
+export async function fetchVitals(patientId: string, vitalType?: string) {
+  const query = new URLSearchParams();
+  if (vitalType) query.set("vital_type", vitalType);
+  const qs = query.toString();
+  return request<VitalData[]>(`/vitals/${patientId}${qs ? `?${qs}` : ""}`);
+}
+
+// ── Risk Score ───────────────────────────────────────────────────────────────
+
+export interface RiskScoreData {
+  score: number;
+  risk_level: string;
+  factors: Array<Record<string, unknown>>;
+  recommendations: string[];
+}
+
+export async function fetchRiskScore(patientId: string) {
+  return request<RiskScoreData>(`/patients/${patientId}/risk-score`);
 }
 
 // ── Alerts ───────────────────────────────────────────────────────────────────
