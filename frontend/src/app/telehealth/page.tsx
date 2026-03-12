@@ -1,8 +1,14 @@
+"use client";
+
+import { useState } from "react";
 import { EncounterConsole } from "@/components/telehealth/EncounterConsole";
 import { SessionQueue } from "@/components/telehealth/SessionQueue";
 import { VisitPreparation } from "@/components/telehealth/VisitPreparation";
+import type { TelehealthSession } from "@/lib/api";
 
 export default function TelehealthPage() {
+  const [selectedSession, setSelectedSession] = useState<TelehealthSession | null>(null);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -15,11 +21,14 @@ export default function TelehealthPage() {
       {/* Session queue and active encounter */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6">
-          <SessionQueue />
-          <VisitPreparation />
+          <SessionQueue
+            selectedSessionId={selectedSession?.session_id}
+            onSelectSession={setSelectedSession}
+          />
+          <VisitPreparation sessionId={selectedSession?.session_id} />
         </div>
         <div className="lg:col-span-2">
-          <EncounterConsole />
+          <EncounterConsole sessionId={selectedSession?.session_id} />
         </div>
       </div>
     </div>

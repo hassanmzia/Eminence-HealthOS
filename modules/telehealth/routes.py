@@ -172,6 +172,18 @@ async def schedule_appointment(body: dict[str, Any]):
     return output.result
 
 
+@router.get("/sessions")
+async def list_sessions():
+    """List recent telehealth sessions (queue view)."""
+    from modules.telehealth.services.session_service import TelehealthSessionService
+
+    service = TelehealthSessionService()
+    # Return all in-memory sessions; in production this would filter by org/provider
+    sessions = list(service._sessions.values())
+    sessions.sort(key=lambda s: s.get("created_at", ""), reverse=True)
+    return {"sessions": sessions}
+
+
 @router.get("/sessions/{session_id}")
 async def get_session(session_id: str):
     """Get session status."""
