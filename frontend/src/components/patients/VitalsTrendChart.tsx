@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchVitals, type VitalData } from "@/lib/api";
 
 type VitalKey = "heart_rate" | "blood_pressure" | "spo2" | "glucose" | "temperature";
 
@@ -12,16 +13,16 @@ const VITAL_TABS: { key: VitalKey; label: string; unit: string; color: string }[
   { key: "temperature", label: "Temp", unit: "F", color: "#8b5cf6" },
 ];
 
-// Demo sparkline data points
-const DEMO_DATA: Record<VitalKey, number[]> = {
-  heart_rate: [72, 75, 78, 82, 88, 92, 85, 80, 76, 74, 78, 95, 88, 82, 79],
-  blood_pressure: [130, 128, 135, 140, 145, 142, 138, 132, 130, 134, 148, 155, 142, 138, 135],
-  spo2: [98, 97, 96, 95, 94, 93, 95, 96, 97, 96, 92, 91, 94, 96, 97],
-  glucose: [120, 135, 128, 142, 155, 148, 138, 125, 132, 145, 168, 155, 142, 135, 128],
-  temperature: [98.4, 98.6, 98.8, 99.0, 99.2, 98.9, 98.6, 98.5, 98.7, 99.1, 99.8, 100.2, 99.5, 99.0, 98.7],
-};
+function extractValue(vital: VitalData): number | null {
+  const v = vital.value;
+  if (v.value != null) return Number(v.value);
+  if (v.systolic != null) return Number(v.systolic);
+  return null;
+}
 
 function MiniSparkline({ data, color }: { data: number[]; color: string }) {
+  if (data.length < 2) return null;
+
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;
@@ -36,30 +37,51 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="w-full" preserveAspectRatio="none">
       <polyline fill="none" stroke={color} strokeWidth="2.5" points={points} />
-      {/* Last point indicator */}
-      {data.length > 0 && (
-        <circle
-          cx={(data.length - 1) * stepX}
-          cy={height - ((data[data.length - 1] - min) / range) * (height - 20) - 10}
-          r="4"
-          fill={color}
-        />
-      )}
+      <circle
+        cx={(data.length - 1) * stepX}
+        cy={height - ((data[data.length - 1] - min) / range) * (height - 20) - 10}
+        r="4"
+        fill={color}
+      />
     </svg>
   );
 }
 
 export function VitalsTrendChart({ patientId }: { patientId: string }) {
   const [activeTab, setActiveTab] = useState<VitalKey>("heart_rate");
+  const [vitals, setVitals] = useState<Record<string, number[]>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchVitals(patientId)
+      .then((data) => {
+        // Group values by vital_type, chronologically
+        const grouped: Record<string, number[]> = {};
+        // Data comes newest-first from API, reverse for chronological order
+        const sorted = [...data].reverse();
+        for (const v of sorted) {
+          const val = extractValue(v);
+          if (val != null) {
+            if (!grouped[v.vital_type]) grouped[v.vital_type] = [];
+            grouped[v.vital_type].push(val);
+          }
+        }
+        setVitals(grouped);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [patientId]);
+
   const tab = VITAL_TABS.find((t) => t.key === activeTab)!;
-  const data = DEMO_DATA[activeTab];
-  const currentValue = data[data.length - 1];
+  const data = vitals[activeTab] || [];
+  const currentValue = data.length > 0 ? data[data.length - 1] : null;
 
   return (
     <div className="card">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Vitals Trend</h2>
-        <span className="text-sm text-gray-400">Last 24 hours</span>
+        <span className="text-sm text-gray-400">Recent readings</span>
       </div>
 
       {/* Vital type tabs */}
@@ -79,18 +101,30 @@ export function VitalsTrendChart({ patientId }: { patientId: string }) {
         ))}
       </div>
 
-      {/* Current value */}
-      <div className="mb-2 flex items-baseline gap-2">
-        <span className="text-3xl font-bold" style={{ color: tab.color }}>
-          {currentValue}
-        </span>
-        <span className="text-sm text-gray-400">{tab.unit}</span>
-      </div>
+      {loading ? (
+        <div className="flex h-40 items-center justify-center text-sm text-gray-400">
+          Loading vitals...
+        </div>
+      ) : data.length === 0 ? (
+        <div className="flex h-40 items-center justify-center text-sm text-gray-400">
+          No {tab.label.toLowerCase()} readings
+        </div>
+      ) : (
+        <>
+          {/* Current value */}
+          <div className="mb-2 flex items-baseline gap-2">
+            <span className="text-3xl font-bold" style={{ color: tab.color }}>
+              {currentValue}
+            </span>
+            <span className="text-sm text-gray-400">{tab.unit}</span>
+          </div>
 
-      {/* Chart */}
-      <div className="h-32">
-        <MiniSparkline data={data} color={tab.color} />
-      </div>
+          {/* Chart */}
+          <div className="h-32">
+            <MiniSparkline data={data} color={tab.color} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

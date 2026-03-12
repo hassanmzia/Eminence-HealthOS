@@ -1,29 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-interface RiskData {
-  score: number;
-  risk_level: string;
-  factors: { name: string; contribution: number }[];
-  recommendations: string[];
-}
-
-const DEMO_RISK: RiskData = {
-  score: 0.82,
-  risk_level: "critical",
-  factors: [
-    { name: "Critical anomalies", contribution: 0.35 },
-    { name: "Elevated heart rate", contribution: 0.20 },
-    { name: "Multiple vitals affected", contribution: 0.15 },
-    { name: "Comorbidities (CHF, DM)", contribution: 0.12 },
-  ],
-  recommendations: [
-    "Immediate clinical review recommended",
-    "Consider initiating telehealth encounter",
-    "Notify assigned care team",
-  ],
-};
+import { fetchRiskScore, type RiskScoreData } from "@/lib/api";
 
 const RISK_COLORS: Record<string, string> = {
   critical: "#ef4444",
@@ -33,11 +11,12 @@ const RISK_COLORS: Record<string, string> = {
 };
 
 export function RiskScoreGauge({ patientId }: { patientId: string }) {
-  const [risk, setRisk] = useState<RiskData | null>(null);
+  const [risk, setRisk] = useState<RiskScoreData | null>(null);
 
   useEffect(() => {
-    // TODO: Replace with API call
-    setRisk(DEMO_RISK);
+    fetchRiskScore(patientId)
+      .then(setRisk)
+      .catch(() => {});
   }, [patientId]);
 
   if (!risk) return <div className="card animate-pulse h-64" />;
@@ -85,36 +64,51 @@ export function RiskScoreGauge({ patientId }: { patientId: string }) {
         </svg>
       </div>
 
-      {/* Contributing factors */}
-      <div className="mt-4">
-        <h3 className="text-xs font-medium uppercase text-gray-400">Contributing Factors</h3>
-        <div className="mt-2 space-y-2">
-          {risk.factors.map((f) => (
-            <div key={f.name} className="flex items-center gap-2">
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${f.contribution * 100}%`, backgroundColor: color }}
-                />
-              </div>
-              <span className="w-24 text-xs text-gray-600 truncate">{f.name}</span>
-            </div>
-          ))}
-        </div>
+      {/* Risk level */}
+      <div className="mt-2 text-center">
+        <span className="text-sm font-medium" style={{ color }}>
+          {risk.risk_level.charAt(0).toUpperCase() + risk.risk_level.slice(1)} Risk
+        </span>
       </div>
 
+      {/* Contributing factors */}
+      {risk.factors.length > 0 && (
+        <div className="mt-4">
+          <h3 className="text-xs font-medium uppercase text-gray-400">Contributing Factors</h3>
+          <div className="mt-2 space-y-2">
+            {risk.factors.map((f, i) => {
+              const name = (f.name as string) || (f.factor as string) || `Factor ${i + 1}`;
+              const contribution = Number(f.contribution || f.weight || 0);
+              return (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${Math.min(contribution * 100, 100)}%`, backgroundColor: color }}
+                    />
+                  </div>
+                  <span className="w-24 text-xs text-gray-600 truncate">{name}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Recommendations */}
-      <div className="mt-4">
-        <h3 className="text-xs font-medium uppercase text-gray-400">Recommendations</h3>
-        <ul className="mt-1 space-y-1">
-          {risk.recommendations.map((r) => (
-            <li key={r} className="flex items-start gap-1 text-xs text-gray-600">
-              <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-gray-400" />
-              {r}
-            </li>
-          ))}
-        </ul>
-      </div>
+      {risk.recommendations.length > 0 && (
+        <div className="mt-4">
+          <h3 className="text-xs font-medium uppercase text-gray-400">Recommendations</h3>
+          <ul className="mt-1 space-y-1">
+            {risk.recommendations.map((r, i) => (
+              <li key={i} className="flex items-start gap-1 text-xs text-gray-600">
+                <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-gray-400" />
+                {r}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
