@@ -82,6 +82,13 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Security hardening middleware
+    from healthos_platform.security.headers import SecurityHeadersMiddleware
+    from healthos_platform.security.rate_limiter import RateLimitMiddleware
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(RateLimitMiddleware, enabled=settings.is_production)
+
     app.add_middleware(TenantMiddleware)
     app.add_middleware(TracingMiddleware)
 
