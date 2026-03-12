@@ -193,6 +193,72 @@ ROUTING_TABLE: dict[str, list[str]] = {
         "cost_risk_insight",
         "executive_insight",
     ],
+    # ── Ambient AI Documentation Events ───────────────────────────────────
+    # Start recording session
+    "ambient.session.start": [
+        "ambient_listening",
+    ],
+    # Transcription complete — diarize and generate SOAP
+    "ambient.transcription.complete": [
+        "speaker_diarization",
+        "soap_note_generator",
+    ],
+    # SOAP note generated — auto-code and submit for attestation
+    "ambient.soap.generated": [
+        "auto_coding",
+        "provider_attestation",
+    ],
+    # Full ambient documentation pipeline
+    "ambient.encounter.complete": [
+        "ambient_listening",
+        "speaker_diarization",
+        "soap_note_generator",
+        "auto_coding",
+        "provider_attestation",
+    ],
+    # Provider attestation approved — hand off to RCM
+    "ambient.attestation.approved": [
+        "charge_capture",
+        "claims_optimization",
+    ],
+    # ── Revenue Cycle Management Events ───────────────────────────────────
+    # Charge capture from encounter
+    "rcm.charges.capture": [
+        "charge_capture",
+    ],
+    # Pre-submission claim scrub
+    "rcm.claim.scrub": [
+        "claims_optimization",
+    ],
+    # Full claim submission pipeline
+    "rcm.claim.submit": [
+        "revenue_integrity",
+        "claims_optimization",
+        "charge_capture",
+    ],
+    # Denial received — analyze and appeal
+    "rcm.denial.received": [
+        "denial_management",
+    ],
+    # Payment received — post and reconcile
+    "rcm.payment.received": [
+        "payment_posting",
+    ],
+    # ERA/835 reconciliation
+    "rcm.era.received": [
+        "payment_posting",
+    ],
+    # Revenue integrity scan
+    "rcm.integrity.scan": [
+        "revenue_integrity",
+    ],
+    # End-to-end RCM pipeline (scheduled)
+    "rcm.pipeline.scheduled": [
+        "revenue_integrity",
+        "claims_optimization",
+        "denial_management",
+        "payment_posting",
+    ],
 }
 
 
