@@ -11,6 +11,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -18,6 +20,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger("healthos.agent.provider_attestation")
 
 ATTESTATION_STATUSES = ["pending_review", "in_review", "approved", "rejected", "amended", "expired"]
 
@@ -39,7 +44,7 @@ class ProviderAttestationAgent(BaseAgent):
         action = ctx.get("action", "submit_for_review")
 
         if action == "submit_for_review":
-            return self._submit_for_review(input_data)
+            return await self._submit_for_review(input_data)
         elif action == "get_review_status":
             return self._get_review_status(input_data)
         elif action == "approve":
@@ -57,7 +62,7 @@ class ProviderAttestationAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _submit_for_review(self, input_data: AgentInput) -> AgentOutput:
+    async def _submit_for_review(self, input_data: AgentInput) -> AgentOutput:
         """Submit an AI-generated note and codes for provider review."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -71,6 +76,38 @@ class ProviderAttestationAgent(BaseAgent):
         # Generate document hash for integrity verification
         doc_content = str(soap) + str(coding)
         doc_hash = hashlib.sha256(doc_content.encode()).hexdigest()[:16]
+
+        flagged_items = self._flag_items(soap, coding)
+
+        # --- LLM: generate attestation summary ---
+        attestation_summary: str | None = None
+        try:
+            flags_text = "\n".join(
+                f"- [{f['type']}] {f['item']}: {f['message']}" for f in flagged_items
+            ) or "None"
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Summarize what the provider is being asked to attest to for "
+                    f"encounter {encounter_id}.\n\n"
+                    f"SOAP note sections present: {list(soap.keys()) if soap else 'None'}\n"
+                    f"Coding: ICD-10 codes={len(coding.get('icd10_codes', []))}, "
+                    f"CPT codes={len(coding.get('cpt_codes', []))}\n"
+                    f"AI confidence: {coding.get('coding_confidence', 0.87)}\n\n"
+                    f"Flagged items:\n{flags_text}\n\n"
+                    f"Provide a brief summary of the attestation scope and highlight "
+                    f"any concerns requiring special attention."
+                )}],
+                system=(
+                    "You are an attestation review assistant for Eminence HealthOS. "
+                    "Summarize the scope of provider attestation for AI-generated "
+                    "clinical documentation. Flag concerns clearly and concisely."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            attestation_summary = resp.content
+        except Exception:
+            logger.warning("LLM attestation_summary generation failed; continuing without it")
 
         attestation = {
             "attestation_id": str(uuid.uuid4()),
@@ -89,7 +126,8 @@ class ProviderAttestationAgent(BaseAgent):
                 "em_level": bool(coding.get("em_code")),
             },
             "ai_confidence": coding.get("coding_confidence", 0.87),
-            "flagged_items": self._flag_items(soap, coding),
+            "flagged_items": flagged_items,
+            "attestation_summary": attestation_summary,
         }
 
         return self.build_output(

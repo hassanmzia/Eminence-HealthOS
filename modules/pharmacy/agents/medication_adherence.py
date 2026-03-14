@@ -6,6 +6,8 @@ data, tracks PDC/MPR metrics, and identifies adherence gaps.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger("healthos.agent.medication_adherence")
 
 
 class MedicationAdherenceAgent(BaseAgent):
@@ -36,13 +41,13 @@ class MedicationAdherenceAgent(BaseAgent):
         action = ctx.get("action", "calculate_adherence")
 
         if action == "calculate_adherence":
-            return self._calculate_adherence(input_data)
+            output = self._calculate_adherence(input_data)
         elif action == "identify_gaps":
-            return self._identify_gaps(input_data)
+            output = self._identify_gaps(input_data)
         elif action == "adherence_report":
-            return self._adherence_report(input_data)
+            output = self._adherence_report(input_data)
         elif action == "intervention_triggers":
-            return self._intervention_triggers(input_data)
+            output = self._intervention_triggers(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -51,6 +56,35 @@ class MedicationAdherenceAgent(BaseAgent):
                 rationale=f"Unknown medication adherence action: {action}",
                 status=AgentStatus.FAILED,
             )
+
+        # --- LLM: generate adherence narrative ---
+        try:
+            result_data = output.result if hasattr(output, "result") else {}
+            prompt = (
+                "You are a clinical pharmacist specializing in medication adherence. "
+                "Analyze the following adherence data and provide a concise narrative "
+                "explaining adherence patterns, gap significance, risk factors for "
+                "non-adherence, and targeted intervention recommendations.\n\n"
+                f"Action: {action}\n"
+                f"Adherence data: {json.dumps(result_data, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a medication adherence narrator for a healthcare pharmacy platform. "
+                    "Provide concise, evidence-based narratives that help pharmacists and care teams "
+                    "understand adherence patterns and prioritize interventions. Reference PDC/MPR "
+                    "benchmarks and CMS Star Rating implications where appropriate."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if isinstance(result_data, dict):
+                result_data["adherence_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM adherence_narrative generation failed; continuing without it")
+
+        return output
 
     def _calculate_adherence(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context

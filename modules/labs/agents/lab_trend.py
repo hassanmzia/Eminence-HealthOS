@@ -6,6 +6,8 @@ indicators like A1C, creatinine, lipids, and detects clinical significance.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # Clinical significance thresholds
 TREND_THRESHOLDS: dict[str, dict[str, Any]] = {
@@ -48,7 +53,7 @@ class LabTrendAgent(BaseAgent):
         action = ctx.get("action", "analyze_trends")
 
         if action == "analyze_trends":
-            return self._analyze_trends(input_data)
+            return await self._analyze_trends(input_data)
         elif action == "single_test_trend":
             return self._single_test_trend(input_data)
         elif action == "project_trajectory":
@@ -64,7 +69,7 @@ class LabTrendAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _analyze_trends(self, input_data: AgentInput) -> AgentOutput:
+    async def _analyze_trends(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         lab_history = ctx.get("lab_history", {})
@@ -137,6 +142,43 @@ class LabTrendAgent(BaseAgent):
             if is_concerning:
                 concerning.append(trend_entry)
 
+        # --- LLM-generated trend narrative ---
+        trend_narrative = (
+            f"{len(concerning)} concerning trend(s) detected out of {len(trends)} tests analyzed."
+            if concerning
+            else f"{len(trends)} tests analyzed; all trends within acceptable limits."
+        )
+        try:
+            trend_payload = {
+                "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
+                "trends": trends,
+                "concerning_details": concerning,
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Analyze the following lab value trends over time and provide a clinical "
+                    f"narrative explaining the significance of the trends, especially any "
+                    f"concerning patterns.\n\n"
+                    f"Trend data:\n{json.dumps(trend_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a clinical laboratory medicine AI specializing in longitudinal "
+                    "trend analysis. Explain lab value trends in clinical context, highlighting "
+                    "the significance of worsening or improving trends. Correlate related "
+                    "markers (e.g., creatinine and eGFR for renal function) and suggest "
+                    "clinical implications and recommended monitoring frequency."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                trend_narrative = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for trend narrative; using fallback narrative",
+                exc_info=True,
+            )
+
         result = {
             "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
             "analyzed_at": now.isoformat(),
@@ -144,6 +186,7 @@ class LabTrendAgent(BaseAgent):
             "total_tests_analyzed": len(trends),
             "concerning_trends": len(concerning),
             "concerning_details": concerning,
+            "trend_narrative": trend_narrative,
         }
 
         return self.build_output(

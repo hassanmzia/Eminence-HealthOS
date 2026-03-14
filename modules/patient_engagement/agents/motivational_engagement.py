@@ -6,6 +6,7 @@ lifestyle changes, and gamification to improve patient outcomes.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 NUDGE_TYPES: dict[str, dict[str, Any]] = {
     "medication_reminder": {"channel": "push_notification", "frequency": "daily", "category": "adherence"},
@@ -56,7 +60,7 @@ class MotivationalEngagementAgent(BaseAgent):
         action = ctx.get("action", "send_nudge")
 
         if action == "send_nudge":
-            return self._send_nudge(input_data)
+            return await self._send_nudge(input_data)
         elif action == "award_badge":
             return self._award_badge(input_data)
         elif action == "engagement_score":
@@ -72,11 +76,13 @@ class MotivationalEngagementAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _send_nudge(self, input_data: AgentInput) -> AgentOutput:
+    async def _send_nudge(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         nudge_type = ctx.get("nudge_type", "medication_reminder")
         nudge_info = NUDGE_TYPES.get(nudge_type, NUDGE_TYPES["medication_reminder"])
+        patient_goals = ctx.get("patient_goals", [])
+        progress_summary = ctx.get("progress_summary", "")
 
         messages = {
             "medication_reminder": "Time to take your morning medications! You are on a 12-day streak.",
@@ -86,6 +92,32 @@ class MotivationalEngagementAgent(BaseAgent):
             "wellness_check_in": "How are you feeling today? Take a moment to check in with your health goals.",
         }
 
+        # --- LLM: generate personalized motivational message ---
+        motivational_message = None
+        try:
+            prompt = (
+                f"Nudge type: {nudge_type} ({nudge_info['category']}).\n"
+                f"Patient goals: {', '.join(patient_goals) if patient_goals else 'general wellness'}.\n"
+                f"Progress: {progress_summary if progress_summary else 'no specific progress data'}.\n\n"
+                "Write a short, personalized motivational message (2-4 sentences) for this patient. "
+                "Use behavioral psychology principles (positive reinforcement, goal proximity, "
+                "self-efficacy). Be warm, encouraging, and specific to their goals and progress."
+            )
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a behavioral health coach specializing in patient motivation. "
+                    "Use evidence-based behavioral psychology principles like positive reinforcement, "
+                    "intrinsic motivation, and self-efficacy theory. Keep messages concise, warm, "
+                    "and actionable. Never use clinical jargon."
+                ),
+                temperature=0.5,
+                max_tokens=256,
+            ))
+            motivational_message = llm_response.content
+        except Exception:
+            logger.warning("LLM call failed in motivational_engagement._send_nudge; using rule-based output only")
+
         result = {
             "nudge_id": str(uuid.uuid4()),
             "sent_at": now.isoformat(),
@@ -94,6 +126,7 @@ class MotivationalEngagementAgent(BaseAgent):
             "channel": nudge_info["channel"],
             "category": nudge_info["category"],
             "message": ctx.get("message", messages.get(nudge_type, "Keep up the great work on your health journey!")),
+            "motivational_message": motivational_message,
             "status": "delivered",
             "personalized": True,
         }

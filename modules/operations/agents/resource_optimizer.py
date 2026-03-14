@@ -13,6 +13,7 @@ from healthos_platform.agents.base import (
     AgentTier,
     HealthOSAgent,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
 
 logger = logging.getLogger("healthos.agent.resource_optimizer")
 
@@ -70,17 +71,63 @@ class ResourceOptimizerAgent(HealthOSAgent):
                 "action": "Increase monitoring capacity or escalate to management",
             })
 
+        # --- LLM: generate optimization narrative ---
+        optimization_narrative = None
+        try:
+            rec_summary = "\n".join(
+                f"- [{r['priority'].upper()}] {r['type']}: {r['description']} → {r['action']}"
+                for r in recommendations
+            ) if recommendations else "No issues detected."
+            provider_summary = "\n".join(
+                f"- {p.get('name', 'unknown')}: {p.get('utilization_percent', 0)}% utilization"
+                for p in providers
+            ) if providers else "No provider data."
+            prompt = (
+                f"Resource utilization analysis for {len(providers)} provider(s):\n\n"
+                f"Provider utilization:\n{provider_summary}\n\n"
+                f"Patient demand — high-risk patients: {high_risk_count}, "
+                f"high-risk capacity: {capacity.get('high_risk_capacity', 'N/A')}\n\n"
+                f"Current recommendations:\n{rec_summary}\n\n"
+                f"Provide a concise narrative with specific, actionable recommendations "
+                f"for improving resource allocation, staffing balance, and capacity planning."
+            )
+            llm_response = await llm_router.complete(
+                LLMRequest(
+                    messages=[{"role": "user", "content": prompt}],
+                    system=(
+                        "You are a healthcare operations analyst. Provide clear, "
+                        "data-driven recommendations for optimizing clinical resource "
+                        "allocation. Focus on staffing efficiency, patient flow, and "
+                        "capacity planning. Be specific about what actions to take and "
+                        "expected impact. Do not include disclaimers."
+                    ),
+                    temperature=0.3,
+                    max_tokens=1024,
+                )
+            )
+            optimization_narrative = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM optimization narrative generation failed; "
+                "returning recommendations without narrative",
+                exc_info=True,
+            )
+
+        result_data = {
+            "recommendations": recommendations,
+            "provider_count": len(providers),
+            "high_priority": len([r for r in recommendations if r["priority"] == "high"]),
+        }
+        if optimization_narrative is not None:
+            result_data["optimization_narrative"] = optimization_narrative
+
         return AgentOutput(
             agent_name=self.name,
             agent_tier=self.tier.value,
             decision="optimization_complete",
             rationale=f"Resource analysis complete: {len(recommendations)} recommendation(s)",
             confidence=0.80,
-            data={
-                "recommendations": recommendations,
-                "provider_count": len(providers),
-                "high_priority": len([r for r in recommendations if r["priority"] == "high"]),
-            },
+            data=result_data,
             feature_contributions=[
                 {"feature": "provider_utilization", "contribution": 0.4, "value": len(providers)},
                 {"feature": "patient_demand", "contribution": 0.35, "value": patient_demand},

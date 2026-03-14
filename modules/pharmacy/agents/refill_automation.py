@@ -6,6 +6,8 @@ and auto-initiates refills for eligible prescriptions.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 
 class RefillAutomationAgent(BaseAgent):
@@ -36,7 +41,7 @@ class RefillAutomationAgent(BaseAgent):
         action = ctx.get("action", "check_refills")
 
         if action == "check_refills":
-            return self._check_refills(input_data)
+            return await self._check_refills(input_data)
         elif action == "initiate_refill":
             return self._initiate_refill(input_data)
         elif action == "send_reminder":
@@ -52,7 +57,7 @@ class RefillAutomationAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _check_refills(self, input_data: AgentInput) -> AgentOutput:
+    async def _check_refills(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         medications = ctx.get("medications", [])
@@ -81,6 +86,42 @@ class RefillAutomationAgent(BaseAgent):
                 status = "due_soon"
                 due_soon.append({**med, "days_until_refill": days_until, "next_fill_date": next_fill.date().isoformat()})
 
+        # --- LLM-generated refill assessment narrative ---
+        refill_assessment = (
+            f"{len(due_soon)} medication(s) due soon, {len(overdue)} overdue."
+            if due_soon or overdue
+            else "All medications are current; no refills needed at this time."
+        )
+        try:
+            assessment_payload = {
+                "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
+                "medications": medications,
+                "due_soon": due_soon,
+                "overdue": overdue,
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Analyze the following medication refill data and provide an assessment "
+                    f"of adherence patterns and refill appropriateness.\n\n"
+                    f"Refill data:\n{json.dumps(assessment_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a clinical pharmacist AI specializing in medication adherence. "
+                    "Analyze refill timing patterns, identify potential adherence gaps, and "
+                    "assess whether each refill is clinically appropriate. Flag any concerns "
+                    "such as overdue refills, early refill requests, or potential non-adherence."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                refill_assessment = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for refill assessment; using fallback narrative",
+                exc_info=True,
+            )
+
         result = {
             "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
             "checked_at": now.isoformat(),
@@ -88,6 +129,7 @@ class RefillAutomationAgent(BaseAgent):
             "due_soon": due_soon,
             "overdue": overdue,
             "action_needed": len(due_soon) + len(overdue),
+            "refill_assessment": refill_assessment,
         }
 
         return self.build_output(

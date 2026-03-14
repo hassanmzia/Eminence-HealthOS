@@ -10,12 +10,17 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
     AgentOutput,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 # Symptom → body system mapping for ROS grouping
 SYMPTOM_SYSTEMS: dict[str, str] = {
@@ -49,14 +54,45 @@ class VisitSummarizerAgent(BaseAgent):
         soap = self._generate_soap(symptoms, vitals, assessment, plan, prior_outputs)
         avs = self._generate_avs(symptoms, plan, medications)
 
+        # ── LLM: generate visit summary narrative ─────────────────────
+        visit_summary_narrative: str | None = None
+        try:
+            prompt = (
+                f"Symptoms: {', '.join(symptoms) or 'none reported'}.\n"
+                f"Vital signs: {vitals or 'not recorded'}.\n"
+                f"Assessment: {assessment or 'pending'}.\n"
+                f"Plan: {'; '.join(plan) or 'pending'}.\n"
+                f"Medications: {', '.join(medications) or 'none'}.\n"
+                f"Prior agent findings: {len(prior_outputs)} output(s).\n\n"
+                "Write a concise clinical narrative summarizing this telehealth encounter. "
+                "Include chief complaint, key findings, clinical impression, and plan of care."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a medical documentation assistant in a telehealth platform. "
+                    "Produce a clear, professional visit summary narrative suitable for "
+                    "the patient's medical record. Use standard clinical documentation style."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            visit_summary_narrative = resp.content
+        except Exception:
+            logger.warning("LLM unavailable for visit summary narrative; continuing without it.")
+
+        result: dict[str, Any] = {
+            "soap_note": soap,
+            "after_visit_summary": avs,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "session_id": session_data.get("session_id"),
+        }
+        if visit_summary_narrative:
+            result["visit_summary_narrative"] = visit_summary_narrative
+
         return self.build_output(
             trace_id=input_data.trace_id,
-            result={
-                "soap_note": soap,
-                "after_visit_summary": avs,
-                "generated_at": datetime.now(timezone.utc).isoformat(),
-                "session_id": session_data.get("session_id"),
-            },
+            result=result,
             confidence=0.80,
             rationale=f"Generated SOAP note and AVS for visit with {len(symptoms)} presenting symptoms",
         )

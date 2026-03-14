@@ -8,6 +8,8 @@ thresholds and clinical guidelines. Generates alerts for abnormal values.
 import logging
 from typing import Optional
 
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
 from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
@@ -65,6 +67,32 @@ class VitalMonitorAgent(HealthOSAgent):
         ref = VITAL_RANGES[loinc_code]
         assessment = self._assess_vital(value, ref)
 
+        # LLM enhancement: generate monitoring narrative summarizing vital status
+        monitoring_narrative = ""
+        try:
+            prompt = (
+                f"Summarize this patient's current vital sign status:\n\n"
+                f"Vital: {ref['name']}\n"
+                f"Value: {value} {unit or ref['unit']}\n"
+                f"Reference range: {ref['low']}-{ref['high']} {ref['unit']}\n"
+                f"Interpretation: {assessment['interpretation']} "
+                f"(severity: {assessment['severity']})\n"
+                f"Assessment: {assessment['rationale']}\n\n"
+                f"Provide a concise clinical summary of the patient's current vital "
+                f"status and any monitoring recommendations in 2-3 sentences."
+            )
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system="You are a clinical monitoring system. Provide concise, "
+                       "evidence-based summaries of vital sign readings. Include "
+                       "clinical context and monitoring recommendations when appropriate.",
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            monitoring_narrative = llm_response.content
+        except Exception as e:
+            logger.warning("LLM call failed for monitoring narrative, using rule-based only: %s", e)
+
         feature_contributions = [
             {"feature": "value", "contribution": 0.6, "value": value},
             {"feature": "reference_range", "contribution": 0.3, "value": f"{ref['low']}-{ref['high']}"},
@@ -85,6 +113,7 @@ class VitalMonitorAgent(HealthOSAgent):
                 "severity": assessment["severity"],
                 "interpretation": assessment["interpretation"],
                 "reference_range": {"low": ref["low"], "high": ref["high"]},
+                "monitoring_narrative": monitoring_narrative,
             },
             feature_contributions=feature_contributions,
             requires_hitl=assessment["severity"] in ("CRITICAL", "EMERGENCY"),

@@ -10,6 +10,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -19,6 +21,9 @@ from healthos_platform.agents.types import (
     AlertType,
     Severity,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 # System → specialist mapping
 SYSTEM_SPECIALISTS: dict[str, str] = {
@@ -93,6 +98,39 @@ class EscalationRoutingAgent(BaseAgent):
 
         is_emergency = severity == "critical"
 
+        # ── LLM: generate escalation rationale narrative ──────────────
+        escalation_rationale: str | None = None
+        try:
+            prompt = (
+                f"Severity: {severity}.\n"
+                f"Systems affected: {', '.join(systems_affected) or 'none specified'}.\n"
+                f"Red flags: {', '.join(red_flags) or 'none'}.\n"
+                f"Risk score: {risk_score}.\n"
+                f"Target role: {escalation['target_role']}.\n"
+                f"Specialist: {escalation.get('specialist', 'none')}.\n"
+                f"Response window: {escalation['response_window_minutes']} minutes.\n"
+                f"Urgency: {urgency}.\n\n"
+                "Explain why this clinical escalation is recommended. Include the key "
+                "clinical factors driving the severity determination and why the chosen "
+                "escalation target is appropriate."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a clinical decision-support system explaining escalation "
+                    "routing decisions to care team members. Be precise, cite the "
+                    "relevant clinical factors, and keep the explanation concise."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            escalation_rationale = resp.content
+        except Exception:
+            logger.warning("LLM unavailable for escalation rationale; continuing without it.")
+
+        if escalation_rationale:
+            escalation["escalation_rationale"] = escalation_rationale
+
         return AgentOutput(
             trace_id=input_data.trace_id,
             agent_name=self.name,
@@ -100,7 +138,7 @@ class EscalationRoutingAgent(BaseAgent):
             confidence=0.90,
             result=escalation,
             rationale=(
-                f"Escalation: {severity} severity → {escalation['target_role']} "
+                f"Escalation: {severity} severity \u2192 {escalation['target_role']} "
                 f"({escalation.get('specialist', 'general')}), "
                 f"response window {escalation['response_window_minutes']}min"
             ),

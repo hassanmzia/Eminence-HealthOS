@@ -8,6 +8,8 @@ and notification delivery based on severity and provider preferences.
 import logging
 from datetime import datetime, timezone
 
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
 from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
@@ -95,6 +97,38 @@ class AlertManagerAgent(HealthOSAgent):
             key=lambda a: self._severity_rank(a["severity"]),
         )["severity"]
 
+        # LLM enhancement: generate recommended actions for the provider
+        recommended_action = ""
+        try:
+            alert_summaries = [
+                {
+                    "severity": a["severity"],
+                    "title": a["title"],
+                    "category": a["category"],
+                    "message": a["message"],
+                }
+                for a in alerts_to_create
+            ]
+            prompt = (
+                f"Based on these clinical alerts, provide a concise recommended action "
+                f"for the provider:\n\n"
+                f"Patient ID: {agent_input.patient_id}\n"
+                f"Alerts: {alert_summaries}\n"
+                f"Maximum severity: {max_severity}\n\n"
+                f"Provide specific, actionable next steps in 2-3 sentences."
+            )
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system="You are a clinical decision support system. Recommend specific, "
+                       "evidence-based actions for providers based on clinical alert severity "
+                       "and patient context. Be concise and prioritize patient safety.",
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            recommended_action = llm_response.content
+        except Exception as e:
+            logger.warning("LLM call failed for recommended action, skipping enhancement: %s", e)
+
         return AgentOutput(
             agent_name=self.name,
             agent_tier=self.tier.value,
@@ -105,6 +139,7 @@ class AlertManagerAgent(HealthOSAgent):
                 "alerts_created": created_count,
                 "alerts": alerts_to_create,
                 "max_severity": max_severity,
+                "recommended_action": recommended_action,
             },
             feature_contributions=[
                 {"feature": "pipeline_alerts", "contribution": 0.6, "value": len(alerts_to_create)},

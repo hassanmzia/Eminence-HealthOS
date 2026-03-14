@@ -19,6 +19,7 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
 
 # Intervention catalog: efficacy scores, monthly cost, side-effect severity, adherence rate
 INTERVENTION_CATALOG: dict[str, dict[str, Any]] = {
@@ -143,7 +144,7 @@ class TreatmentOptimizationAgent(BaseAgent):
         action = input_data.context.get("action", "optimize_plan")
 
         if action == "optimize_plan":
-            return self._optimize_plan(input_data)
+            return await self._optimize_plan(input_data)
         elif action == "rank_interventions":
             return self._rank_interventions(input_data)
         elif action == "dosage_optimization":
@@ -163,7 +164,7 @@ class TreatmentOptimizationAgent(BaseAgent):
 
     # ── optimize_plan ─────────────────────────────────────────────────────────
 
-    def _optimize_plan(self, input_data: AgentInput) -> AgentOutput:
+    async def _optimize_plan(self, input_data: AgentInput) -> AgentOutput:
         """Generate top 3 optimized care plan alternatives with projected outcomes."""
         ctx = input_data.context
         current_medications = ctx.get("medications", [])
@@ -240,16 +241,56 @@ class TreatmentOptimizationAgent(BaseAgent):
                 "intervention_count": len(plan_interventions),
             })
 
+        result = {
+            "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
+            "conditions": conditions,
+            "current_medications": current_medications,
+            "plan_alternatives": plans,
+            "candidate_count": len(candidates),
+            "optimized_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        # --- LLM: generate optimization narrative ---
+        try:
+            prompt = (
+                f"You are a clinical decision support specialist reviewing treatment optimization results.\n\n"
+                f"Patient Conditions: {conditions}\n"
+                f"Current Medications: {current_medications}\n"
+                f"Current Vitals: {current_vitals}\n"
+                f"Patient Preferences: {preferences}\n"
+                f"Candidate Interventions Evaluated: {len(candidates)}\n"
+                f"Plan Alternatives:\n"
+            )
+            for plan in plans:
+                prompt += (
+                    f"  - {plan['strategy']}: {plan['intervention_count']} interventions, "
+                    f"${plan['projected_monthly_cost']}/mo, "
+                    f"QALY gain {plan['projected_annual_qaly_gain']}/yr\n"
+                )
+            prompt += (
+                f"\nProvide a concise clinical narrative explaining the treatment optimization "
+                f"recommendations, comparing the three plan strategies, highlighting trade-offs "
+                f"between efficacy, cost, and side-effect burden, and suggesting which plan "
+                f"may be most appropriate given the patient's profile."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system="You are a clinical decision support AI that generates clear, evidence-based treatment optimization narratives.",
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["optimization_narrative"] = resp.content
+        except Exception:
+            result["optimization_narrative"] = (
+                f"Treatment optimization generated 3 care plan alternatives from "
+                f"{len(candidates)} candidate interventions targeting "
+                f"{', '.join(conditions)}. Strategies include optimal efficacy, "
+                f"balanced, and cost-conscious approaches."
+            )
+
         return self.build_output(
             trace_id=input_data.trace_id,
-            result={
-                "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
-                "conditions": conditions,
-                "current_medications": current_medications,
-                "plan_alternatives": plans,
-                "candidate_count": len(candidates),
-                "optimized_at": datetime.now(timezone.utc).isoformat(),
-            },
+            result=result,
             confidence=0.78,
             rationale=(
                 f"Generated 3 care plan alternatives from {len(candidates)} candidate "

@@ -6,6 +6,8 @@ medications and suggests covered alternatives when needed.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # Formulary tier definitions
 FORMULARY_TIERS: dict[int, dict[str, Any]] = {
@@ -82,7 +87,7 @@ class FormularyAgent(BaseAgent):
         if action == "check_coverage":
             return self._check_coverage(input_data)
         elif action == "suggest_alternatives":
-            return self._suggest_alternatives(input_data)
+            return await self._suggest_alternatives(input_data)
         elif action == "check_step_therapy":
             return self._check_step_therapy(input_data)
         elif action == "estimate_cost":
@@ -141,7 +146,7 @@ class FormularyAgent(BaseAgent):
             rationale=f"Formulary check: {drug} — {'covered' if result['is_covered'] else 'NOT covered'} (Tier {result['formulary_tier'] or 'N/A'})",
         )
 
-    def _suggest_alternatives(self, input_data: AgentInput) -> AgentOutput:
+    async def _suggest_alternatives(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         drug = ctx.get("drug", "").lower()
@@ -164,11 +169,49 @@ class FormularyAgent(BaseAgent):
                 "covered": entry.get("covered", True),
             })
 
+        # --- LLM-generated formulary guidance narrative ---
+        formulary_guidance = (
+            f"No alternatives found for {drug}."
+            if not enriched
+            else f"{len(enriched)} therapeutic alternative(s) available for {drug}."
+        )
+        try:
+            guidance_payload = {
+                "original_drug": drug,
+                "alternatives": enriched,
+                "patient_conditions": ctx.get("conditions", []),
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Explain the therapeutic alternatives for {drug} based on the "
+                    f"following formulary data. Include clinical rationale for each "
+                    f"alternative and a recommendation.\n\n"
+                    f"Formulary data:\n{json.dumps(guidance_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a clinical pharmacist AI specializing in formulary management. "
+                    "Explain therapeutic alternatives in plain clinical language, comparing "
+                    "efficacy, cost tiers, and any step-therapy considerations. Provide a "
+                    "clear recommendation for the best alternative."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                formulary_guidance = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for formulary guidance on %s; using fallback narrative",
+                drug,
+                exc_info=True,
+            )
+
         result = {
             "original_drug": drug,
             "checked_at": now.isoformat(),
             "alternatives": enriched,
             "total_alternatives": len(enriched),
+            "formulary_guidance": formulary_guidance,
         }
 
         return self.build_output(

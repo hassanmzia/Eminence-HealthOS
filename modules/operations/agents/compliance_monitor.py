@@ -16,6 +16,7 @@ from healthos_platform.agents.base import (
     AgentTier,
     HealthOSAgent,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
 
 logger = logging.getLogger("healthos.agent.compliance_monitor")
 
@@ -67,6 +68,36 @@ class ComplianceMonitorAgent(HealthOSAgent):
             decision = "compliant"
             severity = "LOW"
 
+        # --- LLM: generate compliance narrative with risk assessment ---
+        compliance_narrative: str | None = None
+        if findings:
+            try:
+                findings_text = "\n".join(
+                    f"- [{f['severity']}] {f['category']}: {f['description']}"
+                    for f in findings
+                )
+                resp = await llm_router.complete(LLMRequest(
+                    messages=[{"role": "user", "content": (
+                        f"Provide a compliance risk assessment narrative for the "
+                        f"following findings from a {check_type} compliance check.\n\n"
+                        f"Findings:\n{findings_text}\n\n"
+                        f"Summary: {len(critical)} critical, {len(warnings)} warnings\n\n"
+                        f"Include overall risk level, regulatory implications, "
+                        f"and prioritized remediation steps."
+                    )}],
+                    system=(
+                        "You are a healthcare compliance officer for Eminence HealthOS. "
+                        "Provide clear, actionable compliance risk assessments referencing "
+                        "HIPAA, HITRUST, and relevant regulations. Prioritize patient "
+                        "safety and data protection."
+                    ),
+                    temperature=0.3,
+                    max_tokens=1024,
+                ))
+                compliance_narrative = resp.content
+            except Exception:
+                logger.warning("LLM compliance_narrative generation failed; continuing without it")
+
         return AgentOutput(
             agent_name=self.name,
             agent_tier=self.tier.value,
@@ -83,6 +114,7 @@ class ComplianceMonitorAgent(HealthOSAgent):
                     "warnings": len(warnings),
                     "compliant": len(findings) == 0,
                 },
+                "compliance_narrative": compliance_narrative,
             },
             feature_contributions=[
                 {"feature": "phi_access", "contribution": 0.3, "value": "checked"},

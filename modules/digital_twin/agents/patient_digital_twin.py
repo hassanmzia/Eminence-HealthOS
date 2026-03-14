@@ -20,6 +20,7 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
 
 # Population baseline reference values for comparison
 POPULATION_BASELINES: dict[str, dict[str, Any]] = {
@@ -47,7 +48,7 @@ class PatientDigitalTwinAgent(BaseAgent):
         action = input_data.context.get("action", "build_twin")
 
         if action == "build_twin":
-            return self._build_twin(input_data)
+            return await self._build_twin(input_data)
         elif action == "update_twin":
             return self._update_twin(input_data)
         elif action == "get_state":
@@ -67,7 +68,7 @@ class PatientDigitalTwinAgent(BaseAgent):
 
     # ── build_twin ───────────────────────────────────────────────────────────
 
-    def _build_twin(self, input_data: AgentInput) -> AgentOutput:
+    async def _build_twin(self, input_data: AgentInput) -> AgentOutput:
         """Create a digital twin from patient data with physiological parameters."""
         ctx = input_data.context
         patient_id = str(input_data.patient_id or uuid.uuid4())
@@ -110,6 +111,34 @@ class PatientDigitalTwinAgent(BaseAgent):
             "overall_health_score": round(overall_health_score, 4),
             "status": "active",
         }
+
+        # --- LLM: generate health narrative ---
+        try:
+            prompt = (
+                f"You are a clinical informatics specialist interpreting a patient digital twin model.\n\n"
+                f"Patient ID: {patient_id}\n"
+                f"Overall Health Score: {overall_health_score:.2f} (0=poor, 1=excellent)\n"
+                f"Physiological Parameters: {physiological_params}\n"
+                f"Active Conditions: {conditions}\n"
+                f"Risk Factors: {risk_factors}\n"
+                f"Medications: {medications}\n"
+                f"Demographics: {demographics}\n\n"
+                f"Provide a concise clinical narrative explaining this patient's digital twin health model, "
+                f"key risk factors, notable deviations from normal ranges, and areas requiring attention."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system="You are a clinical health informatics AI that generates clear, evidence-based patient health narratives for digital twin models.",
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            twin_state["health_narrative"] = resp.content
+        except Exception:
+            twin_state["health_narrative"] = (
+                f"Digital twin created for patient {patient_id} with overall health score "
+                f"{overall_health_score:.2f}. Active conditions: {', '.join(conditions) if conditions else 'none'}. "
+                f"Risk factors: {', '.join(risk_factors) if risk_factors else 'none'}."
+            )
 
         return self.build_output(
             trace_id=input_data.trace_id,

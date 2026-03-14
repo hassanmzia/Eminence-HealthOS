@@ -9,6 +9,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -16,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 
 # ── Scoring Thresholds ───────────────────────────────────────────────────────
@@ -65,7 +70,7 @@ class MentalHealthScreeningAgent(BaseAgent):
         elif action == "audit_c_screen":
             return self._score_audit_c(input_data)
         elif action == "comprehensive_screen":
-            return self._comprehensive_screen(input_data)
+            return await self._comprehensive_screen(input_data)
         elif action == "screening_history":
             return self._screening_history(input_data)
         else:
@@ -291,7 +296,7 @@ class MentalHealthScreeningAgent(BaseAgent):
 
     # ── Comprehensive Screen ─────────────────────────────────────────────────
 
-    def _comprehensive_screen(self, input_data: AgentInput) -> AgentOutput:
+    async def _comprehensive_screen(self, input_data: AgentInput) -> AgentOutput:
         """Run all three screening instruments and produce a combined assessment."""
         ctx = input_data.context
         phq9_responses = ctx.get("phq9_responses", [])
@@ -388,6 +393,53 @@ class MentalHealthScreeningAgent(BaseAgent):
             results["overall_risk_level"] = "moderate"
         else:
             results["overall_risk_level"] = "low"
+
+        # ── LLM: generate screening interpretation narrative ──────────
+        screening_interpretation: str | None = None
+        try:
+            screen_details = []
+            if "phq9" in results:
+                screen_details.append(
+                    f"PHQ-9 score: {results['phq9']['total_score']}/27, "
+                    f"severity: {results['phq9']['severity']}, "
+                    f"suicidal ideation flag: {results['phq9']['suicidal_ideation_flag']}"
+                )
+            if "gad7" in results:
+                screen_details.append(
+                    f"GAD-7 score: {results['gad7']['total_score']}/21, "
+                    f"severity: {results['gad7']['severity']}"
+                )
+            if "audit_c" in results:
+                screen_details.append(
+                    f"AUDIT-C score: {results['audit_c']['total_score']}/12, "
+                    f"at-risk: {results['audit_c']['at_risk']}"
+                )
+            prompt = (
+                f"Screening results:\n"
+                f"{chr(10).join(screen_details) or 'No screening instruments completed.'}.\n"
+                f"Overall risk level: {results['overall_risk_level']}.\n"
+                f"Priority flags: {len(results['priority_flags'])}.\n\n"
+                "Provide a clinical interpretation of these mental health screening results. "
+                "Explain what the scores mean, identify areas of concern, and recommend "
+                "appropriate next steps including treatment considerations and follow-up timing."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a mental health clinical decision-support system. "
+                    "Provide a clear, professional interpretation of standardized "
+                    "screening instrument results (PHQ-9, GAD-7, AUDIT-C). "
+                    "Your audience is the treating clinician. Be concise and actionable."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            screening_interpretation = resp.content
+        except Exception:
+            logger.warning("LLM unavailable for screening interpretation; continuing without it.")
+
+        if screening_interpretation:
+            results["screening_interpretation"] = screening_interpretation
 
         completed_count = len(results["screens_completed"])
         confidence = 0.90 if completed_count == 3 else (0.80 if completed_count >= 1 else 0.50)

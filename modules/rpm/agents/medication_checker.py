@@ -5,7 +5,9 @@ Checks for drug-drug interactions, contraindications, dosage issues,
 and duplicate therapies. Critical safety gate in the clinical workflow.
 """
 
+import json
 import logging
+
 from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
@@ -13,6 +15,7 @@ from healthos_platform.agents.base import (
     AgentTier,
     HealthOSAgent,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
 
 logger = logging.getLogger("healthos.agent.medication_checker")
 
@@ -122,6 +125,36 @@ class MedicationCheckerAgent(HealthOSAgent):
             rationale = f"No interactions or duplicates found for {new_medication}"
             requires_hitl = False
 
+        # --- LLM: generate medication narrative ---
+        medication_narrative = None
+        try:
+            prompt = (
+                "You are a clinical pharmacist conducting a medication safety review. "
+                "Analyze the following medication check results and provide a concise narrative "
+                "summarizing the findings, clinical significance of any interactions or duplicates, "
+                "and actionable recommendations.\n\n"
+                f"New medication: {new_medication}\n"
+                f"Current medications: {', '.join(current_medications)}\n"
+                f"Decision: {decision}\n"
+                f"Interactions found: {json.dumps(interactions, default=str)}\n"
+                f"Duplicate therapies: {json.dumps(duplicates, default=str)}\n"
+                f"Maximum severity: {max_severity}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a clinical pharmacy narrator for a healthcare AI platform. "
+                    "Provide concise, evidence-based medication safety narratives. Highlight "
+                    "the most critical interactions first, explain the mechanism, and give "
+                    "clear actionable recommendations for the prescribing clinician."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            medication_narrative = resp.content
+        except Exception:
+            logger.warning("LLM medication_narrative generation failed; continuing without it")
+
         return AgentOutput(
             agent_name=self.name,
             agent_tier=self.tier.value,
@@ -133,6 +166,7 @@ class MedicationCheckerAgent(HealthOSAgent):
                 "interactions": interactions,
                 "duplicates": duplicates,
                 "max_severity": max_severity,
+                "medication_narrative": medication_narrative,
             },
             feature_contributions=[
                 {"feature": "drug_interactions", "contribution": 0.5, "value": len(interactions)},

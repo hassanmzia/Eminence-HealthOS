@@ -6,6 +6,8 @@ under-coded services, and revenue leakage opportunities.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # Common under-coding patterns
 UNDER_CODING_PATTERNS: list[dict[str, Any]] = [
@@ -81,7 +86,7 @@ class RevenueIntegrityAgent(BaseAgent):
         action = ctx.get("action", "scan_chart")
 
         if action == "scan_chart":
-            return self._scan_chart(input_data)
+            return await self._scan_chart(input_data)
         elif action == "hcc_gap_analysis":
             return self._hcc_gap_analysis(input_data)
         elif action == "em_level_review":
@@ -97,7 +102,7 @@ class RevenueIntegrityAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _scan_chart(self, input_data: AgentInput) -> AgentOutput:
+    async def _scan_chart(self, input_data: AgentInput) -> AgentOutput:
         """Comprehensive pre-bill chart scan."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -164,6 +169,50 @@ class RevenueIntegrityAgent(BaseAgent):
             ]
             total_revenue_opportunity = 215.0
 
+        # --- LLM-generated integrity analysis with compliance recommendations ---
+        integrity_analysis = None
+        try:
+            scan_payload = {
+                "encounter_id": encounter_id,
+                "billed_icd10": billed_icd10,
+                "billed_cpt": billed_cpt,
+                "billed_em": billed_em,
+                "documented_conditions": documented_conditions,
+                "soap_summary": {
+                    "assessment_diagnoses": soap.get("assessment", {}).get("diagnoses", []) if soap else [],
+                    "plan_items": soap.get("plan", {}).get("items", []) if soap else [],
+                },
+                "findings": findings,
+                "total_revenue_opportunity": total_revenue_opportunity,
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Analyze this chart scan for revenue integrity issues and "
+                    f"provide compliance recommendations.\n\n"
+                    f"Chart scan details:\n{json.dumps(scan_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a revenue integrity and compliance specialist AI. "
+                    "Analyze the pre-bill chart scan results and provide: "
+                    "1) Compliance recommendations to ensure coding accuracy, "
+                    "2) HCC gap closure opportunities with RAF impact, "
+                    "3) E&M level justification based on MDM complexity, "
+                    "4) Risk areas for audit exposure, and "
+                    "5) Specific actionable steps to capture legitimate revenue "
+                    "while maintaining full regulatory compliance."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                integrity_analysis = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for integrity analysis on encounter %s; skipping",
+                encounter_id,
+                exc_info=True,
+            )
+
         result = {
             "scan_id": str(uuid.uuid4()),
             "encounter_id": encounter_id,
@@ -172,6 +221,7 @@ class RevenueIntegrityAgent(BaseAgent):
             "total_findings": len(findings),
             "total_revenue_opportunity": round(total_revenue_opportunity, 2),
             "hcc_gaps_found": sum(1 for f in findings if f.get("hcc_relevant")),
+            "integrity_analysis": integrity_analysis,
         }
 
         return self.build_output(

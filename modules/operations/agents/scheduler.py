@@ -15,6 +15,7 @@ from healthos_platform.agents.base import (
     AgentTier,
     HealthOSAgent,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
 
 logger = logging.getLogger("healthos.agent.scheduler")
 
@@ -39,7 +40,7 @@ class SchedulerAgent(HealthOSAgent):
         action = data.get("action", "suggest_slots")
 
         if action == "suggest_slots":
-            return self._suggest_slots(data)
+            return await self._suggest_slots(data)
         elif action == "book":
             return self._book_appointment(data)
         elif action == "reschedule":
@@ -53,7 +54,7 @@ class SchedulerAgent(HealthOSAgent):
                 confidence=0.5,
             )
 
-    def _suggest_slots(self, data: dict) -> AgentOutput:
+    async def _suggest_slots(self, data: dict) -> AgentOutput:
         urgency = data.get("urgency", "routine")
         visit_type = data.get("visit_type", "follow_up")
         preferred_times = data.get("preferred_times", [])
@@ -61,17 +62,57 @@ class SchedulerAgent(HealthOSAgent):
         # Generate slot suggestions (in production, queries provider availability)
         slots = self._generate_slots(urgency, visit_type)
 
+        # --- LLM: generate scheduling rationale ---
+        scheduling_rationale = None
+        try:
+            pref_desc = ", ".join(preferred_times) if preferred_times else "none stated"
+            slot_desc = "\n".join(
+                f"- {s['datetime']} ({s['duration_minutes']} min, provider: {s['provider']})"
+                for s in slots
+            )
+            prompt = (
+                f"A patient needs a {visit_type} appointment with urgency '{urgency}'.\n"
+                f"Preferred times: {pref_desc}.\n\n"
+                f"Suggested slots:\n{slot_desc}\n\n"
+                f"Explain why these time slots and providers are recommended, "
+                f"considering urgency, visit type, and patient preferences."
+            )
+            llm_response = await llm_router.complete(
+                LLMRequest(
+                    messages=[{"role": "user", "content": prompt}],
+                    system=(
+                        "You are a healthcare scheduling assistant. Provide clear, "
+                        "concise rationale for appointment slot recommendations. "
+                        "Consider clinical urgency, visit type requirements, and "
+                        "patient preferences. Be specific and actionable."
+                    ),
+                    temperature=0.3,
+                    max_tokens=1024,
+                )
+            )
+            scheduling_rationale = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM scheduling rationale generation failed; "
+                "returning slots without narrative rationale",
+                exc_info=True,
+            )
+
+        result_data = {
+            "available_slots": slots,
+            "urgency": urgency,
+            "visit_type": visit_type,
+        }
+        if scheduling_rationale is not None:
+            result_data["scheduling_rationale"] = scheduling_rationale
+
         return AgentOutput(
             agent_name=self.name,
             agent_tier=self.tier.value,
             decision="slots_suggested",
             rationale=f"Generated {len(slots)} slot suggestions for {urgency} {visit_type}",
             confidence=0.85,
-            data={
-                "available_slots": slots,
-                "urgency": urgency,
-                "visit_type": visit_type,
-            },
+            data=result_data,
             feature_contributions=[
                 {"feature": "urgency", "contribution": 0.4, "value": urgency},
                 {"feature": "visit_type", "contribution": 0.3, "value": visit_type},

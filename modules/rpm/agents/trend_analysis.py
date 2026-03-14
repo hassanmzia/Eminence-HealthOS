@@ -6,10 +6,14 @@ changes in patient vital signs.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from healthos_platform.agents.base import BaseAgent
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger("healthos.agent.trend_analysis")
 from healthos_platform.agents.types import (
     AgentInput,
     AgentOutput,
@@ -32,9 +36,32 @@ class TrendAnalysisAgent(BaseAgent):
         vitals = input_data.context.get("normalized_vitals", [])
         trends = self._analyze_trends_raw(vitals)
 
+        # LLM enhancement: generate narrative explaining vital sign trends
+        trend_narrative = ""
+        if trends:
+            try:
+                prompt = (
+                    f"Analyze these vital sign trends and provide a clinical narrative:\n\n"
+                    f"Detected trends: {trends}\n"
+                    f"Total vitals analyzed: {len(vitals)}\n\n"
+                    f"Explain what these trends indicate clinically and any implications "
+                    f"for patient management in 2-3 sentences."
+                )
+                llm_response = await llm_router.complete(LLMRequest(
+                    messages=[{"role": "user", "content": prompt}],
+                    system="You are a clinical decision support system specializing in "
+                           "vital sign trend analysis. Provide concise, evidence-based "
+                           "interpretations of trends and their clinical implications.",
+                    temperature=0.3,
+                    max_tokens=1024,
+                ))
+                trend_narrative = llm_response.content
+            except Exception as e:
+                logger.warning("LLM call failed for trend narrative, using rule-based only: %s", e)
+
         return self.build_output(
             trace_id=input_data.trace_id,
-            result={"trends": trends, "trend_count": len(trends)},
+            result={"trends": trends, "trend_count": len(trends), "trend_narrative": trend_narrative},
             confidence=0.85,
             rationale=f"Identified {len(trends)} trending patterns",
         )

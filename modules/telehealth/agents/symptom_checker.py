@@ -7,6 +7,8 @@ generates structured chief complaints for provider review.
 
 from __future__ import annotations
 
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -14,6 +16,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 # Symptom → body system mapping
 SYMPTOM_SYSTEMS: dict[str, str] = {
@@ -93,6 +98,40 @@ class SymptomCheckerAgent(BaseAgent):
 
         is_emergency = urgency == "emergency"
 
+        # ── LLM: generate symptom assessment with differential ────────
+        symptom_assessment_narrative: str | None = None
+        try:
+            prompt = (
+                f"Symptoms: {', '.join(symptoms)}.\n"
+                f"Duration: {duration}.\n"
+                f"Patient severity rating: {severity_rating}/10.\n"
+                f"Body systems affected: {', '.join(sorted(systems_affected)) or 'unclassified'}.\n"
+                f"Red flags: {', '.join(red_flags_found) or 'none'}.\n"
+                f"Urgency classification: {urgency}.\n\n"
+                "Provide a clinical symptom assessment including:\n"
+                "1. A brief summary of the presenting complaint.\n"
+                "2. Key differential diagnosis considerations (list top 3-5).\n"
+                "3. Recommended next steps for clinical evaluation.\n"
+                "4. Any red-flag warnings the provider should be aware of."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a clinical triage assistant in a telehealth platform. "
+                    "Provide a structured symptom assessment with differential diagnosis "
+                    "considerations. This is decision-support for providers, not a diagnosis. "
+                    "Always recommend appropriate clinical evaluation."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            symptom_assessment_narrative = resp.content
+        except Exception:
+            logger.warning("LLM unavailable for symptom assessment; continuing without it.")
+
+        if symptom_assessment_narrative:
+            assessment["symptom_assessment"] = symptom_assessment_narrative
+
         return AgentOutput(
             trace_id=input_data.trace_id,
             agent_name=self.name,
@@ -105,7 +144,7 @@ class SymptomCheckerAgent(BaseAgent):
                 f"Red flags: {len(red_flags_found)}."
             ),
             requires_hitl=is_emergency,
-            hitl_reason="Emergency red flags detected — immediate provider review required" if is_emergency else None,
+            hitl_reason="Emergency red flags detected \u2014 immediate provider review required" if is_emergency else None,
         )
 
     @staticmethod

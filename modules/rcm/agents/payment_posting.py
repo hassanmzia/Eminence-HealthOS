@@ -6,6 +6,8 @@ flags discrepancies, and tracks accounts receivable.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 
 class PaymentPostingAgent(BaseAgent):
@@ -38,7 +43,7 @@ class PaymentPostingAgent(BaseAgent):
         if action == "post_payment":
             return self._post_payment(input_data)
         elif action == "reconcile_era":
-            return self._reconcile_era(input_data)
+            return await self._reconcile_era(input_data)
         elif action == "underpayment_check":
             return self._underpayment_check(input_data)
         elif action == "ar_aging_report":
@@ -95,7 +100,7 @@ class PaymentPostingAgent(BaseAgent):
             ),
         )
 
-    def _reconcile_era(self, input_data: AgentInput) -> AgentOutput:
+    async def _reconcile_era(self, input_data: AgentInput) -> AgentOutput:
         """Reconcile an Electronic Remittance Advice (ERA/835) against claims."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -137,6 +142,44 @@ class PaymentPostingAgent(BaseAgent):
                 {"claim_id": "CLM-1891", "expected": 425.00, "paid": 340.00, "difference": 85.00, "type": "underpayment"},
             ]
 
+        # --- LLM-generated posting summary with variance analysis ---
+        posting_summary = None
+        try:
+            reconciliation_payload = {
+                "era_id": era_id,
+                "total_line_items": len(line_items) or (matched + unmatched),
+                "matched": matched,
+                "unmatched": unmatched,
+                "total_paid": round(total_paid, 2),
+                "discrepancies": discrepancies,
+                "discrepancy_amount": round(sum(d["difference"] for d in discrepancies), 2),
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Generate a variance analysis narrative for this ERA "
+                    f"reconciliation.\n\n"
+                    f"Reconciliation details:\n{json.dumps(reconciliation_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a payment posting and revenue cycle analyst AI. "
+                    "Generate a concise variance analysis narrative summarizing "
+                    "the ERA reconciliation results. Highlight underpayment "
+                    "patterns, recommend follow-up actions for discrepancies, "
+                    "identify potential payer contract compliance issues, and "
+                    "suggest process improvements to reduce future variances."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                posting_summary = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for posting summary on ERA %s; skipping",
+                era_id,
+                exc_info=True,
+            )
+
         result = {
             "era_id": era_id,
             "reconciled_at": now.isoformat(),
@@ -147,6 +190,7 @@ class PaymentPostingAgent(BaseAgent):
             "discrepancies": discrepancies,
             "discrepancy_amount": round(sum(d["difference"] for d in discrepancies), 2),
             "reconciliation_status": "clean" if not discrepancies else "discrepancies_found",
+            "posting_summary": posting_summary,
         }
 
         return self.build_output(

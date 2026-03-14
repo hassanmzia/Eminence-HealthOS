@@ -6,6 +6,8 @@ suggests corrections, and optimizes for clean claim rate.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # Common claim rejection reasons
 REJECTION_RULES: list[dict[str, Any]] = [
@@ -50,7 +55,7 @@ class ClaimsOptimizationAgent(BaseAgent):
         action = ctx.get("action", "optimize_claim")
 
         if action == "optimize_claim":
-            return self._optimize_claim(input_data)
+            return await self._optimize_claim(input_data)
         elif action == "batch_scrub":
             return self._batch_scrub(input_data)
         elif action == "check_bundling":
@@ -66,7 +71,7 @@ class ClaimsOptimizationAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _optimize_claim(self, input_data: AgentInput) -> AgentOutput:
+    async def _optimize_claim(self, input_data: AgentInput) -> AgentOutput:
         """Scrub a single claim for errors and optimize before submission."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -123,6 +128,44 @@ class ClaimsOptimizationAgent(BaseAgent):
         is_clean = len(errors) == 0
         clean_score = max(0, 100 - (len(errors) * 20) - (len(warnings) * 5))
 
+        # --- LLM-generated optimization recommendations ---
+        optimization_recommendations = None
+        try:
+            claim_payload = {
+                "claim_id": claim_id,
+                "claim_data": claim_data,
+                "errors": errors,
+                "warnings": warnings,
+                "suggestions": suggestions,
+                "is_clean": is_clean,
+                "clean_score": clean_score,
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Analyze this claim for coding accuracy and reimbursement "
+                    f"maximization opportunities.\n\n"
+                    f"Claim details:\n{json.dumps(claim_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a certified medical coder and RCM specialist AI. "
+                    "Analyze the claim for coding accuracy, completeness, and "
+                    "reimbursement optimization. Identify any coding errors, "
+                    "suggest modifier additions, flag bundling issues, and "
+                    "recommend changes to maximize clean claim rate and "
+                    "appropriate reimbursement. Be specific and actionable."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                optimization_recommendations = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for claims optimization on %s; skipping recommendations",
+                claim_id,
+                exc_info=True,
+            )
+
         result = {
             "claim_id": claim_id,
             "scrubbed_at": now.isoformat(),
@@ -131,6 +174,7 @@ class ClaimsOptimizationAgent(BaseAgent):
             "errors": errors,
             "warnings": warnings,
             "suggestions": suggestions,
+            "optimization_recommendations": optimization_recommendations,
             "ready_to_submit": is_clean,
             "estimated_days_to_payment": 14 if is_clean else 45,
         }

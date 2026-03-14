@@ -10,6 +10,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentTier,
     Severity,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 # Condition → recommended monitoring cadence
 CONDITION_CADENCE: dict[str, dict[str, Any]] = {
@@ -58,9 +63,42 @@ class FollowUpPlanAgent(BaseAgent):
             conditions, risk_level, symptoms, plan_items, medications
         )
 
+        # ── LLM: generate personalized follow-up narrative ────────────
+        follow_up_narrative: str | None = None
+        try:
+            prompt = (
+                f"Patient conditions: {', '.join(str(c) for c in conditions) or 'none reported'}.\n"
+                f"Risk level: {risk_level.value}.\n"
+                f"Symptoms: {', '.join(symptoms) or 'none reported'}.\n"
+                f"Medications: {', '.join(medications) or 'none'}.\n"
+                f"Follow-up in {plan['follow_up_days']} days, "
+                f"vitals frequency: {plan['monitoring_cadence']['vitals_frequency']}.\n"
+                f"Action items: {'; '.join(plan['action_items'])}.\n\n"
+                "Write a concise, patient-friendly follow-up instruction narrative "
+                "covering monitoring expectations, medication adherence, warning signs, "
+                "and when to seek immediate care."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a clinical follow-up coordinator in a telehealth platform. "
+                    "Produce clear, empathetic, and actionable follow-up instructions "
+                    "for the patient. Keep the language at a 6th-grade reading level."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            follow_up_narrative = resp.content
+        except Exception:
+            logger.warning("LLM unavailable for follow-up narrative; continuing without it.")
+
+        result = {"follow_up_plan": plan}
+        if follow_up_narrative:
+            result["follow_up_narrative"] = follow_up_narrative
+
         return self.build_output(
             trace_id=input_data.trace_id,
-            result={"follow_up_plan": plan},
+            result=result,
             confidence=0.82,
             rationale=(
                 f"Follow-up plan generated: {plan['follow_up_days']}d follow-up, "

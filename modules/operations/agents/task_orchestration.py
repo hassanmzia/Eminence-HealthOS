@@ -10,6 +10,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger("healthos.agent.task_orchestration")
 
 
 # Task type definitions with default SLAs (hours)
@@ -57,7 +62,7 @@ class TaskOrchestrationAgent(BaseAgent):
         action = ctx.get("action", "create_task")
 
         if action == "create_task":
-            return self._create_task(input_data)
+            return await self._create_task(input_data)
         elif action == "create_workflow":
             return self._create_workflow(input_data)
         elif action == "assign":
@@ -77,7 +82,7 @@ class TaskOrchestrationAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _create_task(self, input_data: AgentInput) -> AgentOutput:
+    async def _create_task(self, input_data: AgentInput) -> AgentOutput:
         """Create a new operational task."""
         ctx = input_data.context
         patient_id = str(input_data.patient_id or "")
@@ -100,6 +105,36 @@ class TaskOrchestrationAgent(BaseAgent):
 
         task_id = f"TASK-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
 
+        # --- LLM: generate task narrative ---
+        task_narrative: str | None = None
+        try:
+            deps_text = ", ".join(dependencies) if dependencies else "None"
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Explain the prioritization and assignment rationale for this "
+                    f"operational task.\n\n"
+                    f"Task: {title}\n"
+                    f"Type: {task_type}\n"
+                    f"Description: {description}\n"
+                    f"Priority: {priority}\n"
+                    f"SLA: {sla_hours} hours\n"
+                    f"Suggested assignee: {suggested_assignee}\n"
+                    f"Dependencies: {deps_text}\n\n"
+                    f"Provide a brief rationale for the priority level, assignment, "
+                    f"and any sequencing considerations."
+                )}],
+                system=(
+                    "You are an operations workflow advisor for Eminence HealthOS. "
+                    "Explain task prioritization and assignment decisions clearly "
+                    "and concisely for the operations team."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            task_narrative = resp.content
+        except Exception:
+            logger.warning("LLM task_narrative generation failed; continuing without it")
+
         result = {
             "task_id": task_id,
             "task_type": task_type,
@@ -114,6 +149,7 @@ class TaskOrchestrationAgent(BaseAgent):
             "dependencies": dependencies,
             "dependencies_met": len(dependencies) == 0,
             "metadata": metadata,
+            "task_narrative": task_narrative,
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
 

@@ -6,6 +6,8 @@ models with polygenic risk scores and personalized risk stratification.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # Polygenic risk score models
 PRS_MODELS: dict[str, dict[str, Any]] = {
@@ -96,7 +101,7 @@ class GeneticRiskAgent(BaseAgent):
         elif action == "integrated_risk":
             return self._integrated_risk(input_data)
         elif action == "risk_report":
-            return self._risk_report(input_data)
+            return await self._risk_report(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -214,30 +219,73 @@ class GeneticRiskAgent(BaseAgent):
             rationale=f"Integrated risk: clinical {clinical_risk:.2%} -> genomic-adjusted {integrated:.2%}",
         )
 
-    def _risk_report(self, input_data: AgentInput) -> AgentOutput:
+    async def _risk_report(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
+
+        prs_summary = [
+            {"condition": "Coronary Artery Disease", "percentile": 82, "risk": "elevated"},
+            {"condition": "Type 2 Diabetes", "percentile": 91, "risk": "high"},
+            {"condition": "Breast Cancer", "percentile": 45, "risk": "average"},
+        ]
+        monogenic_findings = [
+            {"gene": "APOE", "variant": "e4/e3", "condition": "Alzheimer's Disease", "actionability": "moderate"},
+        ]
+        pharmacogenomic_alerts = [
+            {"gene": "CYP2C19", "phenotype": "Intermediate Metabolizer", "drugs_affected": 4},
+        ]
+        recommendations = [
+            "Enhanced cardiovascular screening due to elevated CAD PRS",
+            "Intensive diabetes prevention program (high T2D PRS)",
+            "APOE e4 carrier — discuss Alzheimer's risk and prevention strategies",
+            "CYP2C19 intermediate metabolizer — consider clopidogrel alternatives",
+        ]
+
+        # --- LLM-generated genetic counseling summary ---
+        genetic_counseling_summary = None
+        try:
+            report_payload = {
+                "prs_summary": prs_summary,
+                "monogenic_findings": monogenic_findings,
+                "pharmacogenomic_alerts": pharmacogenomic_alerts,
+                "recommendations": recommendations,
+                "patient_age": ctx.get("age"),
+                "family_history": ctx.get("family_history", []),
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Generate a patient-friendly genetic counseling summary "
+                    f"explaining these genetic risk findings.\n\n"
+                    f"Genetic report:\n{json.dumps(report_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a certified genetic counselor AI. Write a clear, "
+                    "empathetic, patient-friendly summary explaining the genetic "
+                    "risk findings. Avoid jargon and use plain language. Explain "
+                    "what polygenic risk scores mean, what the monogenic findings "
+                    "imply, and how pharmacogenomic results affect medication "
+                    "choices. Include reassurance where appropriate and emphasize "
+                    "actionable next steps. Do not cause undue alarm."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                genetic_counseling_summary = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for genetic counseling summary; skipping",
+                exc_info=True,
+            )
 
         result = {
             "report_at": now.isoformat(),
             "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
-            "prs_summary": [
-                {"condition": "Coronary Artery Disease", "percentile": 82, "risk": "elevated"},
-                {"condition": "Type 2 Diabetes", "percentile": 91, "risk": "high"},
-                {"condition": "Breast Cancer", "percentile": 45, "risk": "average"},
-            ],
-            "monogenic_findings": [
-                {"gene": "APOE", "variant": "e4/e3", "condition": "Alzheimer's Disease", "actionability": "moderate"},
-            ],
-            "pharmacogenomic_alerts": [
-                {"gene": "CYP2C19", "phenotype": "Intermediate Metabolizer", "drugs_affected": 4},
-            ],
-            "recommendations": [
-                "Enhanced cardiovascular screening due to elevated CAD PRS",
-                "Intensive diabetes prevention program (high T2D PRS)",
-                "APOE e4 carrier — discuss Alzheimer's risk and prevention strategies",
-                "CYP2C19 intermediate metabolizer — consider clopidogrel alternatives",
-            ],
+            "prs_summary": prs_summary,
+            "monogenic_findings": monogenic_findings,
+            "pharmacogenomic_alerts": pharmacogenomic_alerts,
+            "recommendations": recommendations,
+            "genetic_counseling_summary": genetic_counseling_summary,
             "genetic_counseling_recommended": True,
         }
 

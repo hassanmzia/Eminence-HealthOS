@@ -17,6 +17,7 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
 
 CRITICAL_FINDINGS: dict[str, dict[str, Any]] = {
     "pneumothorax": {"urgency": "stat", "response_min": 15, "icd10": "J93.9", "acr_code": "CF-001"},
@@ -49,7 +50,7 @@ class CriticalFindingAlertAgent(BaseAgent):
         action = ctx.get("action", "evaluate_findings")
 
         if action == "evaluate_findings":
-            return self._evaluate_findings(input_data)
+            return await self._evaluate_findings(input_data)
         elif action == "escalate_finding":
             return self._escalate_finding(input_data)
         elif action == "acknowledge_finding":
@@ -65,7 +66,7 @@ class CriticalFindingAlertAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _evaluate_findings(self, input_data: AgentInput) -> AgentOutput:
+    async def _evaluate_findings(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         findings = ctx.get("findings", [])
@@ -99,6 +100,43 @@ class CriticalFindingAlertAgent(BaseAgent):
             "requires_escalation": len(critical_alerts) > 0,
             "highest_urgency": critical_alerts[0]["urgency"] if critical_alerts else None,
         }
+
+        # --- LLM: generate alert narrative ---
+        if critical_alerts:
+            try:
+                alerts_text = "\n".join(
+                    f"  - {a['finding']} (urgency: {a['urgency']}, confidence: {a['confidence']:.0%}, "
+                    f"ICD-10: {a['icd10']}): {a['description']}"
+                    for a in critical_alerts
+                )
+                prompt = (
+                    f"You are an emergency radiology specialist generating a critical finding alert.\n\n"
+                    f"Study ID: {ctx.get('study_id', 'unknown')}\n"
+                    f"Critical Findings Detected:\n{alerts_text}\n"
+                    f"Highest Urgency: {critical_alerts[0]['urgency']}\n\n"
+                    f"Generate a concise, urgent clinical narrative explaining each critical finding, "
+                    f"its immediate clinical implications, recommended immediate actions for the care team, "
+                    f"and the required response timeline per ACR guidelines."
+                )
+                resp = await llm_router.complete(LLMRequest(
+                    messages=[{"role": "user", "content": prompt}],
+                    system="You are an emergency radiology AI that generates urgent, actionable critical finding alert narratives per ACR communication guidelines.",
+                    temperature=0.3,
+                    max_tokens=1024,
+                ))
+                result["alert_narrative"] = resp.content
+            except Exception:
+                finding_names = ", ".join(a["finding"] for a in critical_alerts)
+                result["alert_narrative"] = (
+                    f"CRITICAL: {len(critical_alerts)} critical finding(s) detected — {finding_names}. "
+                    f"Highest urgency: {critical_alerts[0]['urgency']}. "
+                    f"Immediate care team notification required within "
+                    f"{critical_alerts[0]['required_response_min']} minutes per ACR guidelines."
+                )
+        else:
+            result["alert_narrative"] = (
+                f"No critical findings detected among {len(findings)} evaluated finding(s)."
+            )
 
         return self.build_output(
             trace_id=input_data.trace_id,

@@ -19,6 +19,7 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
 
 # Clinical thresholds for deterioration events
 DETERIORATION_THRESHOLDS: dict[str, dict[str, Any]] = {
@@ -59,7 +60,7 @@ class PredictiveTrajectoryAgent(BaseAgent):
         action = input_data.context.get("action", "forecast")
 
         if action == "forecast":
-            return self._forecast(input_data)
+            return await self._forecast(input_data)
         elif action == "trend_analysis":
             return self._trend_analysis(input_data)
         elif action == "deterioration_risk":
@@ -79,7 +80,7 @@ class PredictiveTrajectoryAgent(BaseAgent):
 
     # ── forecast ──────────────────────────────────────────────────────────────
 
-    def _forecast(self, input_data: AgentInput) -> AgentOutput:
+    async def _forecast(self, input_data: AgentInput) -> AgentOutput:
         """Project 30/60/90-day values using linear extrapolation with confidence intervals."""
         ctx = input_data.context
         current_vitals = ctx.get("current_vitals", {})
@@ -120,16 +121,45 @@ class PredictiveTrajectoryAgent(BaseAgent):
                 "projected_vitals": projected,
             })
 
+        result = {
+            "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
+            "current_vitals": current_vitals,
+            "projections": projections,
+            "slopes": {k: round(v, 4) for k, v in slopes.items()},
+            "history_points_used": len(history),
+            "forecasted_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        # --- LLM: generate trajectory narrative ---
+        try:
+            prompt = (
+                f"You are a clinical predictive analytics specialist.\n\n"
+                f"Current Vitals: {current_vitals}\n"
+                f"Daily Slopes (rate of change): {slopes}\n"
+                f"30/60/90-Day Projections: {projections}\n"
+                f"Historical Data Points Used: {len(history)}\n\n"
+                f"Provide a concise clinical narrative explaining the predicted health trajectory, "
+                f"which metrics are trending in concerning directions, expected clinical milestones, "
+                f"and recommended interventions to improve the trajectory."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system="You are a clinical predictive analytics AI that generates clear, actionable trajectory narratives with intervention recommendations.",
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["trajectory_narrative"] = resp.content
+        except Exception:
+            declining = [m for m, s in slopes.items() if s > 0.01 or s < -0.01]
+            result["trajectory_narrative"] = (
+                f"Forecast generated for {len(current_vitals)} metrics over 30/60/90 days "
+                f"using {len(history)} historical data points. "
+                f"Metrics with notable trends: {', '.join(declining) if declining else 'none'}."
+            )
+
         return self.build_output(
             trace_id=input_data.trace_id,
-            result={
-                "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
-                "current_vitals": current_vitals,
-                "projections": projections,
-                "slopes": {k: round(v, 4) for k, v in slopes.items()},
-                "history_points_used": len(history),
-                "forecasted_at": datetime.now(timezone.utc).isoformat(),
-            },
+            result=result,
             confidence=0.78 if history else 0.60,
             rationale=(
                 f"Forecasted {len(current_vitals)} metrics over 30/60/90 days "

@@ -6,6 +6,8 @@ bottlenecks, tracks KPIs, and generates insights for process improvement.
 
 from __future__ import annotations
 
+import json
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -16,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger("healthos.agent.workflow_analytics")
 
 
 class WorkflowAnalyticsAgent(BaseAgent):
@@ -32,13 +37,13 @@ class WorkflowAnalyticsAgent(BaseAgent):
         action = ctx.get("action", "summary")
 
         if action == "summary":
-            return self._generate_summary(input_data)
+            output = self._generate_summary(input_data)
         elif action == "bottleneck_analysis":
-            return self._analyze_bottlenecks(input_data)
+            output = self._analyze_bottlenecks(input_data)
         elif action == "kpi_report":
-            return self._generate_kpi_report(input_data)
+            output = self._generate_kpi_report(input_data)
         elif action == "trend_analysis":
-            return self._analyze_trends(input_data)
+            output = self._analyze_trends(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -47,6 +52,35 @@ class WorkflowAnalyticsAgent(BaseAgent):
                 rationale=f"Unknown analytics action: {action}",
                 status=AgentStatus.FAILED,
             )
+
+        # --- LLM: generate workflow insights ---
+        try:
+            result_data = output.result if hasattr(output, "result") else {}
+            prompt = (
+                "You are a healthcare operations analyst. "
+                "Analyze the following workflow analytics data and provide concise, actionable "
+                "insights about operational efficiency, key performance trends, bottlenecks, "
+                "and prioritized recommendations for improvement.\n\n"
+                f"Action: {action}\n"
+                f"Analytics data: {json.dumps(result_data, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a workflow analytics narrator for a healthcare operations platform. "
+                    "Provide clear, data-driven insights that help operations managers quickly "
+                    "understand performance patterns and make informed decisions. Prioritize "
+                    "recommendations by potential impact."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if isinstance(result_data, dict):
+                result_data["workflow_insights"] = resp.content
+        except Exception:
+            logger.warning("LLM workflow_insights generation failed; continuing without it")
+
+        return output
 
     def _generate_summary(self, input_data: AgentInput) -> AgentOutput:
         """Generate operations summary dashboard data."""

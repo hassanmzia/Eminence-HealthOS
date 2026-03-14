@@ -10,6 +10,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+import json
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -17,6 +20,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 
 # Cost driver categories with baseline weights
@@ -74,15 +80,15 @@ class CostRiskInsightAgent(BaseAgent):
         action = ctx.get("action", "cost_drivers")
 
         if action == "cost_drivers":
-            return self._analyze_cost_drivers(input_data)
+            return await self._analyze_cost_drivers(input_data)
         elif action == "risk_cost_correlation":
-            return self._risk_cost_correlation(input_data)
+            return await self._risk_cost_correlation(input_data)
         elif action == "intervention_impact":
-            return self._model_intervention_impact(input_data)
+            return await self._model_intervention_impact(input_data)
         elif action == "cost_trends":
-            return self._analyze_cost_trends(input_data)
+            return await self._analyze_cost_trends(input_data)
         elif action == "opportunity_scan":
-            return self._scan_opportunities(input_data)
+            return await self._scan_opportunities(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -92,7 +98,7 @@ class CostRiskInsightAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _analyze_cost_drivers(self, input_data: AgentInput) -> AgentOutput:
+    async def _analyze_cost_drivers(self, input_data: AgentInput) -> AgentOutput:
         """Identify top cost drivers across the patient population."""
         ctx = input_data.context
         patient_count = ctx.get("patient_count", 1000)
@@ -129,6 +135,29 @@ class CostRiskInsightAgent(BaseAgent):
             "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }
 
+        # ── LLM: generate cost-risk narrative ────────────────────────────────
+        try:
+            prompt = (
+                "You are a healthcare cost analyst. Based on the following cost driver data, "
+                "produce a concise narrative (2-3 paragraphs) explaining the top cost drivers, "
+                "cost-risk correlations, and recommended interventions for cost reduction.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered cost-risk analyst for a healthcare platform. "
+                    "Provide actionable, data-driven analysis of cost drivers and intervention ROI."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["cost_risk_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for cost_drivers; continuing without narrative")
+            result["cost_risk_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -139,7 +168,7 @@ class CostRiskInsightAgent(BaseAgent):
             ),
         )
 
-    def _risk_cost_correlation(self, input_data: AgentInput) -> AgentOutput:
+    async def _risk_cost_correlation(self, input_data: AgentInput) -> AgentOutput:
         """Analyze correlation between risk levels and costs."""
         ctx = input_data.context
 
@@ -191,6 +220,30 @@ class CostRiskInsightAgent(BaseAgent):
             "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }
 
+        # ── LLM: generate cost-risk narrative ────────────────────────────────
+        try:
+            prompt = (
+                "You are a healthcare cost-risk analyst. Based on the following risk-cost "
+                "correlation data, produce a concise narrative (2-3 paragraphs) explaining "
+                "how risk levels correlate with costs and recommending targeted interventions "
+                "for the highest-cost risk tiers.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered cost-risk analyst for a healthcare platform. "
+                    "Provide actionable, data-driven analysis of cost drivers and intervention ROI."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["cost_risk_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for risk_cost_correlation; continuing without narrative")
+            result["cost_risk_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -198,7 +251,7 @@ class CostRiskInsightAgent(BaseAgent):
             rationale=f"Risk-cost correlation: high/critical = {high_critical:.1%} of costs",
         )
 
-    def _model_intervention_impact(self, input_data: AgentInput) -> AgentOutput:
+    async def _model_intervention_impact(self, input_data: AgentInput) -> AgentOutput:
         """Model the financial impact of interventions."""
         ctx = input_data.context
         intervention_key = ctx.get("intervention", "rpm_monitoring")
@@ -256,6 +309,30 @@ class CostRiskInsightAgent(BaseAgent):
             "modeled_at": datetime.now(timezone.utc).isoformat(),
         }
 
+        # ── LLM: generate cost-risk narrative ────────────────────────────────
+        try:
+            prompt = (
+                "You are a healthcare intervention ROI analyst. Based on the following "
+                "intervention impact model, produce a concise narrative (2-3 paragraphs) "
+                "explaining the projected ROI, savings breakdown by category, and whether "
+                "this intervention should be recommended.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered cost-risk analyst for a healthcare platform. "
+                    "Provide actionable, data-driven analysis of cost drivers and intervention ROI."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["cost_risk_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for intervention_impact; continuing without narrative")
+            result["cost_risk_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -263,7 +340,7 @@ class CostRiskInsightAgent(BaseAgent):
             rationale=f"Intervention model '{model['name']}': {roi:.1f}% ROI, ${net_benefit:,.0f} net benefit",
         )
 
-    def _analyze_cost_trends(self, input_data: AgentInput) -> AgentOutput:
+    async def _analyze_cost_trends(self, input_data: AgentInput) -> AgentOutput:
         """Analyze cost trends over time."""
 
         trends = {
@@ -287,6 +364,29 @@ class CostRiskInsightAgent(BaseAgent):
             "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }
 
+        # ── LLM: generate cost-risk narrative ────────────────────────────────
+        try:
+            prompt = (
+                "You are a healthcare cost trend analyst. Based on the following cost trend "
+                "data, produce a concise narrative (2-3 paragraphs) explaining the cost "
+                "trajectory, key contributing factors, and forward-looking projections.\n\n"
+                f"{json.dumps(trends, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered cost-risk analyst for a healthcare platform. "
+                    "Provide actionable, data-driven analysis of cost drivers and intervention ROI."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            trends["cost_risk_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for cost_trends; continuing without narrative")
+            trends["cost_risk_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=trends,
@@ -294,7 +394,7 @@ class CostRiskInsightAgent(BaseAgent):
             rationale=f"Cost trends: {trends['overall_trend']}, {trends['six_month_change_pct']}% over 6 months",
         )
 
-    def _scan_opportunities(self, input_data: AgentInput) -> AgentOutput:
+    async def _scan_opportunities(self, input_data: AgentInput) -> AgentOutput:
         """Scan for cost reduction opportunities."""
 
         opportunities = [
@@ -355,6 +455,30 @@ class CostRiskInsightAgent(BaseAgent):
             "high_impact": [o for o in opportunities if o["estimated_annual_savings"] > 200000],
             "scanned_at": datetime.now(timezone.utc).isoformat(),
         }
+
+        # ── LLM: generate cost-risk narrative ────────────────────────────────
+        try:
+            prompt = (
+                "You are a healthcare cost optimization strategist. Based on the following "
+                "opportunity scan, produce a concise narrative (2-3 paragraphs) prioritizing "
+                "the opportunities by ROI and effort, and recommending an implementation "
+                "roadmap.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered cost-risk analyst for a healthcare platform. "
+                    "Provide actionable, data-driven analysis of cost drivers and intervention ROI."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["cost_risk_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for opportunity_scan; continuing without narrative")
+            result["cost_risk_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
 
         return self.build_output(
             trace_id=input_data.trace_id,

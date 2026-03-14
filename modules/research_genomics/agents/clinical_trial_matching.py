@@ -6,6 +6,8 @@ based on conditions, demographics, labs, and inclusion/exclusion criteria.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # Sample trial registry
 TRIAL_REGISTRY: list[dict[str, Any]] = [
@@ -94,7 +99,7 @@ class ClinicalTrialMatchingAgent(BaseAgent):
         if action == "match_trials":
             return self._match_trials(input_data)
         elif action == "check_eligibility":
-            return self._check_eligibility(input_data)
+            return await self._check_eligibility(input_data)
         elif action == "trial_details":
             return self._trial_details(input_data)
         elif action == "enrollment_status":
@@ -174,7 +179,7 @@ class ClinicalTrialMatchingAgent(BaseAgent):
             rationale=f"Trial matching: {len(matches)} eligible trials from {len(TRIAL_REGISTRY)} screened",
         )
 
-    def _check_eligibility(self, input_data: AgentInput) -> AgentOutput:
+    async def _check_eligibility(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         nct_id = ctx.get("nct_id", "NCT05001234")
@@ -192,6 +197,47 @@ class ClinicalTrialMatchingAgent(BaseAgent):
 
         all_met = all(c["met"] for c in criteria_checks)
 
+        # --- LLM-generated eligibility narrative ---
+        eligibility_narrative = None
+        try:
+            eligibility_payload = {
+                "nct_id": nct_id,
+                "trial_title": trial["title"],
+                "trial_phase": trial["phase"],
+                "inclusion_criteria": trial["inclusion"],
+                "exclusion_criteria": trial["exclusion"],
+                "patient_conditions": conditions,
+                "patient_age": age,
+                "patient_labs": ctx.get("labs", {}),
+                "criteria_checks": criteria_checks,
+                "eligible": all_met,
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Explain why this patient does or does not match the "
+                    f"eligibility criteria for this clinical trial.\n\n"
+                    f"Details:\n{json.dumps(eligibility_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a clinical research coordinator AI. Generate a clear, "
+                    "patient-friendly narrative explaining how the patient's clinical "
+                    "profile aligns with the trial's inclusion and exclusion criteria. "
+                    "For each criterion, explain whether it is met and why. If the "
+                    "patient is not eligible, explain what would need to change. "
+                    "If eligible, highlight the strongest match factors and next steps."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                eligibility_narrative = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for eligibility narrative on trial %s; skipping",
+                nct_id,
+                exc_info=True,
+            )
+
         result = {
             "checked_at": now.isoformat(),
             "nct_id": nct_id,
@@ -200,6 +246,7 @@ class ClinicalTrialMatchingAgent(BaseAgent):
             "criteria_checks": criteria_checks,
             "criteria_met": sum(1 for c in criteria_checks if c["met"]),
             "total_criteria": len(criteria_checks),
+            "eligibility_narrative": eligibility_narrative,
         }
 
         return self.build_output(

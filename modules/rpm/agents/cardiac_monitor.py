@@ -5,7 +5,9 @@ Specialized cardiac monitoring for blood pressure trends, heart rate
 variability, arrhythmia detection, and cardiovascular risk factors.
 """
 
+import json
 import logging
+
 from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
@@ -13,6 +15,7 @@ from healthos_platform.agents.base import (
     AgentTier,
     HealthOSAgent,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
 
 logger = logging.getLogger("healthos.agent.cardiac_monitor")
 
@@ -91,6 +94,35 @@ class CardiacMonitorAgent(HealthOSAgent):
             hr = results["heart_rate"]
             rationale_parts.append(f"HR {heart_rate}: {hr['classification']}")
 
+        # --- LLM: generate cardiac narrative ---
+        cardiac_narrative = None
+        try:
+            prompt = (
+                "You are a cardiology-trained clinical decision support narrator. "
+                "Analyze the following cardiac monitoring data and provide a concise clinical "
+                "narrative explaining blood pressure classification, heart rate assessment, "
+                "trends, and recommended actions.\n\n"
+                f"Blood pressure: {systolic}/{diastolic} mmHg\n"
+                f"Heart rate: {heart_rate} bpm\n"
+                f"Overall severity: {severity}\n"
+                f"Detailed results: {json.dumps(results, default=str)}\n"
+                f"Rationale components: {'; '.join(rationale_parts)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a clinical cardiac monitoring narrator for a healthcare AI platform. "
+                    "Provide concise, evidence-based narratives that help clinicians quickly understand "
+                    "cardiac findings and make informed management decisions. Reference AHA/ACC guidelines "
+                    "where appropriate."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            cardiac_narrative = resp.content
+        except Exception:
+            logger.warning("LLM cardiac_narrative generation failed; continuing without it")
+
         return AgentOutput(
             agent_name=self.name,
             agent_tier=self.tier.value,
@@ -103,6 +135,7 @@ class CardiacMonitorAgent(HealthOSAgent):
                 "systolic": systolic,
                 "diastolic": diastolic,
                 "heart_rate": heart_rate,
+                "cardiac_narrative": cardiac_narrative,
             },
             feature_contributions=[
                 {"feature": "systolic_bp", "contribution": 0.35, "value": systolic},

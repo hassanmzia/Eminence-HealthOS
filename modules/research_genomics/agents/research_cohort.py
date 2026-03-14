@@ -6,6 +6,8 @@ with logical composition and population-level analysis.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger("healthos.agent.research_cohort")
 
 COHORT_TEMPLATES: dict[str, dict[str, Any]] = {
     "diabetes_ckd": {
@@ -75,13 +80,13 @@ class ResearchCohortAgent(BaseAgent):
         action = ctx.get("action", "build_cohort")
 
         if action == "build_cohort":
-            return self._build_cohort(input_data)
+            output = self._build_cohort(input_data)
         elif action == "cohort_characteristics":
-            return self._cohort_characteristics(input_data)
+            output = self._cohort_characteristics(input_data)
         elif action == "compare_cohorts":
-            return self._compare_cohorts(input_data)
+            output = self._compare_cohorts(input_data)
         elif action == "list_templates":
-            return self._list_templates(input_data)
+            output = self._list_templates(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -90,6 +95,36 @@ class ResearchCohortAgent(BaseAgent):
                 rationale=f"Unknown research cohort action: {action}",
                 status=AgentStatus.FAILED,
             )
+
+        # --- LLM: generate cohort narrative ---
+        try:
+            result_data = output.result if hasattr(output, "result") else {}
+            prompt = (
+                "You are a clinical research methodologist. "
+                "Analyze the following research cohort data and provide a concise narrative "
+                "explaining cohort characteristics, eligibility criteria rationale, population "
+                "representativeness, potential biases, and suitability for research objectives.\n\n"
+                f"Action: {action}\n"
+                f"Cohort data: {json.dumps(result_data, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a research cohort narrator for a healthcare genomics platform. "
+                    "Provide concise, methodologically sound narratives that help researchers "
+                    "understand cohort composition, assess generalizability, and identify "
+                    "potential confounders. Reference relevant clinical trial standards (CONSORT, "
+                    "STROBE) where appropriate."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if isinstance(result_data, dict):
+                result_data["cohort_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM cohort_narrative generation failed; continuing without it")
+
+        return output
 
     def _build_cohort(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context

@@ -5,7 +5,9 @@ Specialized agent for continuous glucose monitoring with diabetes-specific
 logic, trend analysis, and time-in-range calculations.
 """
 
+import json
 import logging
+
 from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
@@ -13,6 +15,7 @@ from healthos_platform.agents.base import (
     AgentTier,
     HealthOSAgent,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
 
 logger = logging.getLogger("healthos.agent.glucose_monitor")
 
@@ -65,6 +68,35 @@ class GlucoseMonitorAgent(HealthOSAgent):
         # Time in range calculation
         tir = self._time_in_range(history + [glucose]) if history else None
 
+        # --- LLM: generate glucose narrative ---
+        glucose_narrative = None
+        try:
+            prompt = (
+                "You are an endocrinology-trained clinical decision support narrator. "
+                "Analyze the following glucose monitoring data and provide a concise clinical "
+                "narrative explaining the glucose patterns, trend significance, time-in-range "
+                "performance, and management recommendations.\n\n"
+                f"Current glucose: {glucose} mg/dL ({context_type} reading)\n"
+                f"Assessment: {assessment['decision']} — severity: {assessment['severity']}\n"
+                f"Trend: {json.dumps(trend)}\n"
+                f"Time in range: {json.dumps(tir)}\n"
+                f"Targets: {json.dumps(targets)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a clinical glucose monitoring narrator for a healthcare AI platform. "
+                    "Provide concise, evidence-based narratives that help clinicians quickly understand "
+                    "glucose patterns and make informed management decisions. Reference ADA guidelines "
+                    "where appropriate."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            glucose_narrative = resp.content
+        except Exception:
+            logger.warning("LLM glucose_narrative generation failed; continuing without it")
+
         return AgentOutput(
             agent_name=self.name,
             agent_tier=self.tier.value,
@@ -78,6 +110,7 @@ class GlucoseMonitorAgent(HealthOSAgent):
                 "trend": trend,
                 "time_in_range": tir,
                 "targets": targets,
+                "glucose_narrative": glucose_narrative,
             },
             feature_contributions=[
                 {"feature": "glucose_value", "contribution": 0.5, "value": glucose},

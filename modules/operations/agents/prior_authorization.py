@@ -7,6 +7,7 @@ and tracking authorization status through completion.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -17,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 
 # Common CPT codes requiring prior auth
@@ -54,7 +58,7 @@ class PriorAuthorizationAgent(BaseAgent):
         if action == "evaluate":
             return self._evaluate_auth_requirement(input_data)
         elif action == "submit":
-            return self._submit_authorization(input_data)
+            return await self._submit_authorization(input_data)
         elif action == "check_status":
             return self._check_status(input_data)
         elif action == "appeal":
@@ -132,7 +136,7 @@ class PriorAuthorizationAgent(BaseAgent):
             ),
         )
 
-    def _submit_authorization(self, input_data: AgentInput) -> AgentOutput:
+    async def _submit_authorization(self, input_data: AgentInput) -> AgentOutput:
         """Submit a prior authorization request to payer."""
         ctx = input_data.context
         patient_id = str(input_data.patient_id or "unknown")
@@ -165,6 +169,47 @@ class PriorAuthorizationAgent(BaseAgent):
         # In production, this would call payer API / X12 278 transaction
         auth_reference = f"PA-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{patient_id[:8]}"
 
+        # --- LLM: generate authorization narrative with clinical justification ---
+        authorization_narrative = None
+        try:
+            procedure_description = ctx.get("procedure_description", "not specified")
+            clinical_notes = ctx.get("clinical_notes", "")
+            prompt = (
+                f"Prior authorization request to {payer}.\n"
+                f"CPT codes: {', '.join(cpt_codes)}\n"
+                f"Diagnosis codes: {', '.join(diagnosis_codes)}\n"
+                f"Procedure: {procedure_description}\n"
+                f"Clinical summary: {clinical_summary}\n"
+                f"Additional clinical notes: {clinical_notes or 'none'}\n"
+                f"Supporting documents attached: {len(supporting_docs)}\n\n"
+                f"Write a clinical justification narrative for this prior authorization "
+                f"request. Explain the medical necessity, how the proposed treatment "
+                f"relates to the diagnosis, and why alternative treatments may be "
+                f"insufficient. Use language appropriate for payer medical reviewers."
+            )
+            llm_response = await llm_router.complete(
+                LLMRequest(
+                    messages=[{"role": "user", "content": prompt}],
+                    system=(
+                        "You are a clinical documentation specialist writing prior "
+                        "authorization justifications. Craft compelling, evidence-based "
+                        "narratives that demonstrate medical necessity. Reference "
+                        "diagnosis codes, procedure codes, and clinical evidence. "
+                        "Use clear, professional medical language that satisfies "
+                        "payer utilization review criteria. Be thorough but concise."
+                    ),
+                    temperature=0.3,
+                    max_tokens=1024,
+                )
+            )
+            authorization_narrative = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM authorization narrative generation failed; "
+                "submitting without narrative justification",
+                exc_info=True,
+            )
+
         result = {
             "auth_reference": auth_reference,
             "status": "submitted",
@@ -175,6 +220,8 @@ class PriorAuthorizationAgent(BaseAgent):
             "submitted_at": datetime.now(timezone.utc).isoformat(),
             "expected_response_hours": 48 if payer != "medicare" else 72,
         }
+        if authorization_narrative is not None:
+            result["authorization_narrative"] = authorization_narrative
 
         return self.build_output(
             trace_id=input_data.trace_id,
