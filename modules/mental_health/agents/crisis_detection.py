@@ -10,9 +10,12 @@ risk levels.
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import datetime, timezone
 from typing import Any
+
+import structlog
 
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
@@ -21,6 +24,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+_logger = structlog.get_logger()
 
 
 # ── Crisis Indicators ────────────────────────────────────────────────────────
@@ -154,7 +160,7 @@ class CrisisDetectionAgent(BaseAgent):
         if action == "assess_risk":
             return self._assess_risk(input_data)
         elif action == "screen_text":
-            return self._screen_text(input_data)
+            return await self._screen_text(input_data)
         elif action == "evaluate_indicators":
             return self._evaluate_indicators(input_data)
         elif action == "safety_plan":
@@ -316,8 +322,8 @@ class CrisisDetectionAgent(BaseAgent):
 
     # ── Screen Text ──────────────────────────────────────────────────────────
 
-    def _screen_text(self, input_data: AgentInput) -> AgentOutput:
-        """Scan free-text input for crisis keywords and phrases."""
+    async def _screen_text(self, input_data: AgentInput) -> AgentOutput:
+        """Scan free-text input for crisis keywords and phrases, with LLM deep analysis."""
         ctx = input_data.context
         patient_id = str(input_data.patient_id or "unknown")
         text = ctx.get("text", "")
@@ -336,10 +342,10 @@ class CrisisDetectionAgent(BaseAgent):
         detections: list[dict[str, Any]] = []
         max_severity = 0.0
 
+        # Step 1: Rule-based keyword detection (fast, reliable)
         for category, indicators in CRISIS_INDICATORS.items():
             for indicator in indicators:
                 phrase = indicator["phrase"]
-                # Use word-boundary-aware matching
                 pattern = re.compile(r"\b" + re.escape(phrase) + r"\b", re.IGNORECASE)
                 if pattern.search(text_lower):
                     severity = indicator["severity"]
@@ -351,17 +357,59 @@ class CrisisDetectionAgent(BaseAgent):
                         "context_snippet": self._extract_snippet(text, phrase),
                     })
 
-        # Determine overall risk from text screening
-        if max_severity >= 0.85:
-            risk_level = "imminent"
-        elif max_severity >= 0.6:
-            risk_level = "high"
-        elif max_severity >= 0.3:
-            risk_level = "moderate"
-        elif detections:
-            risk_level = "low"
-        else:
-            risk_level = "none"
+        # Step 2: LLM-powered contextual analysis for nuanced detection
+        llm_analysis = None
+        try:
+            llm_resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Analyze the following patient text for crisis indicators. "
+                    f"Assess for: suicidal ideation, self-harm risk, hopelessness, "
+                    f"plan or means, and substance crisis.\n\n"
+                    f"Patient text: \"{text}\"\n\n"
+                    f"Respond in JSON format:\n"
+                    f'{{"risk_level": "none|low|moderate|high|imminent", '
+                    f'"confidence": 0.0-1.0, '
+                    f'"detected_concerns": ["list of specific concerns"], '
+                    f'"contextual_notes": "brief clinical context note", '
+                    f'"implicit_indicators": ["subtle indicators not caught by keyword matching"]}}'
+                )}],
+                system=(
+                    "You are a clinical crisis detection system. Analyze patient text for "
+                    "crisis indicators including suicidal ideation, self-harm, hopelessness, "
+                    "and substance abuse. Detect BOTH explicit statements and implicit/subtle "
+                    "indicators. Err on the side of caution — flag anything concerning. "
+                    "Respond ONLY with valid JSON."
+                ),
+                temperature=0.1,
+                max_tokens=512,
+            ))
+            try:
+                llm_analysis = json.loads(llm_resp.content)
+            except json.JSONDecodeError:
+                llm_analysis = {"raw_analysis": llm_resp.content}
+        except Exception as exc:
+            _logger.warning("crisis_detection.llm_failed", error=str(exc))
+
+        # Step 3: Merge LLM findings with rule-based detections
+        if llm_analysis and isinstance(llm_analysis, dict):
+            llm_risk = llm_analysis.get("risk_level", "none")
+            # If LLM detected higher risk, upgrade (safety-first approach)
+            risk_rank = {"none": 0, "low": 1, "moderate": 2, "high": 3, "imminent": 4}
+            if risk_rank.get(llm_risk, 0) > risk_rank.get(self._rule_risk_level(max_severity, detections), 0):
+                max_severity = max(max_severity, {"moderate": 0.4, "high": 0.7, "imminent": 0.9}.get(llm_risk, 0))
+
+            # Add implicit indicators as detections
+            for indicator in llm_analysis.get("implicit_indicators", []):
+                if indicator and isinstance(indicator, str):
+                    detections.append({
+                        "category": "llm_contextual",
+                        "phrase": indicator,
+                        "severity": llm_analysis.get("confidence", 0.5),
+                        "context_snippet": f"LLM-detected: {indicator}",
+                    })
+
+        # Determine overall risk
+        risk_level = self._rule_risk_level(max_severity, detections)
 
         needs_hitl = risk_level in ("moderate", "high", "imminent")
         status = AgentStatus.WAITING_HITL if needs_hitl else AgentStatus.COMPLETED
@@ -379,6 +427,8 @@ class CrisisDetectionAgent(BaseAgent):
             "crisis_resources": CRISIS_RESOURCES,
             "screened_at": datetime.now(timezone.utc).isoformat(),
         }
+        if llm_analysis:
+            result["llm_analysis"] = llm_analysis
 
         return self.build_output(
             trace_id=input_data.trace_id,
@@ -391,6 +441,19 @@ class CrisisDetectionAgent(BaseAgent):
             ),
             status=status,
         )
+
+    @staticmethod
+    def _rule_risk_level(max_severity: float, detections: list) -> str:
+        """Determine risk level from rule-based detection results."""
+        if max_severity >= 0.85:
+            return "imminent"
+        elif max_severity >= 0.6:
+            return "high"
+        elif max_severity >= 0.3:
+            return "moderate"
+        elif detections:
+            return "low"
+        return "none"
 
     # ── Evaluate Indicators ──────────────────────────────────────────────────
 

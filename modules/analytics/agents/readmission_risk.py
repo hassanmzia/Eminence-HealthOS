@@ -7,6 +7,7 @@ and discharge characteristics. Generates risk scores and intervention recommenda
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -17,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 
 # Risk factor weights (simplified HOSPITAL/LACE-inspired model)
@@ -87,7 +91,7 @@ class ReadmissionRiskAgent(BaseAgent):
         elif action == "batch_predict":
             return self._batch_predict(input_data)
         elif action == "explain":
-            return self._explain_prediction(input_data)
+            return await self._explain_prediction(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -179,7 +183,7 @@ class ReadmissionRiskAgent(BaseAgent):
             ),
         )
 
-    def _explain_prediction(self, input_data: AgentInput) -> AgentOutput:
+    async def _explain_prediction(self, input_data: AgentInput) -> AgentOutput:
         """Explain a readmission risk prediction with factor breakdown."""
         ctx = input_data.context
         patient_id = str(input_data.patient_id or "unknown")
@@ -211,6 +215,51 @@ class ReadmissionRiskAgent(BaseAgent):
                 "factors_present": sum(1 for f in factors if f["present"]),
             },
         }
+
+        # Generate LLM narrative explanation
+        try:
+            active_factors = [f for f in factors if f["present"]]
+            factor_summary = "\n".join(
+                f"- {f['factor']}: {f['explanation']} (contribution: {f['contribution']:.2f})"
+                for f in sorted(active_factors, key=lambda f: f["contribution"], reverse=True)
+            )
+
+            prompt = (
+                f"Patient {patient_id} has a 30-day readmission risk score of "
+                f"{risk_score:.1%} ({risk_level} risk).\n\n"
+                f"Active risk factors:\n{factor_summary}\n\n"
+                f"Baseline risk is 10%. Total risk increase from factors: "
+                f"{risk_score - 0.10:.1%}.\n\n"
+                f"Provide a concise clinical explanation of why this patient is at "
+                f"{risk_level} risk for readmission, how the factors interact, and "
+                f"what the care team should prioritize."
+            )
+
+            response = await llm_router.complete(
+                LLMRequest(
+                    messages=[{"role": "user", "content": prompt}],
+                    system=(
+                        "You are a clinical decision-support assistant integrated into "
+                        "a hospital care management platform. Explain readmission risk "
+                        "factors in clear, precise clinical language suitable for care "
+                        "team members including physicians, nurses, and case managers. "
+                        "Be concise but thorough. Focus on actionable clinical insights "
+                        "and how risk factors compound each other. Do not include "
+                        "disclaimers or general medical advice."
+                    ),
+                    temperature=0.3,
+                    max_tokens=1024,
+                )
+            )
+
+            explanation["narrative_explanation"] = response.content
+        except Exception:
+            logger.warning(
+                "LLM narrative generation failed for patient %s; "
+                "returning explanation without narrative",
+                patient_id,
+                exc_info=True,
+            )
 
         return self.build_output(
             trace_id=input_data.trace_id,

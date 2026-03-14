@@ -24,6 +24,11 @@ class AgentTier(str, Enum):
     DECISIONING = "decisioning"  # Layer 3: Risk scoring & policy checks
     ACTION = "action"            # Layer 4: Alerts, notifications, orders
     MEASUREMENT = "measurement"  # Layer 5: Outcomes & population health
+    # Backward-compatible aliases used by module agents
+    MONITORING = "sensing"
+    DIAGNOSTIC = "interpretation"
+    RISK = "decisioning"
+    INTERVENTION = "action"
 
 
 class AgentStatus(str, Enum):
@@ -87,13 +92,23 @@ class AgentInput(BaseModel):
     context: dict[str, Any] = Field(default_factory=dict)
     messages: list[AgentMessage] = Field(default_factory=list)
 
+    @property
+    def data(self) -> dict[str, Any]:
+        """Backward-compatible alias: module agents access input.data."""
+        return self.context
+
+    @property
+    def tenant_id(self) -> uuid.UUID:
+        """Backward-compatible alias for org_id."""
+        return self.org_id
+
 
 class AgentOutput(BaseModel):
     """Standard output from every agent invocation."""
 
-    trace_id: uuid.UUID
-    agent_name: str
-    status: AgentStatus
+    trace_id: uuid.UUID = Field(default_factory=uuid.uuid4)
+    agent_name: str = ""
+    status: AgentStatus = AgentStatus.COMPLETED
     confidence: float = Field(ge=0.0, le=1.0, default=0.0)
     result: dict[str, Any] = Field(default_factory=dict)
     rationale: str = ""
@@ -102,6 +117,12 @@ class AgentOutput(BaseModel):
     duration_ms: int = 0
     requires_hitl: bool = False
     hitl_reason: str | None = None
+    # Backward-compatible fields used by module agents
+    agent_tier: str = ""
+    decision: str = ""
+    data: dict[str, Any] = Field(default_factory=dict)
+    feature_contributions: list[dict[str, Any]] = Field(default_factory=list)
+    alternatives: list[dict[str, Any]] = Field(default_factory=list)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

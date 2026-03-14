@@ -6,9 +6,12 @@ from AI image analysis with standardized formatting.
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime, timezone
 from typing import Any
+
+import structlog
 
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
@@ -17,6 +20,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = structlog.get_logger()
 
 REPORT_TEMPLATES: dict[str, dict[str, Any]] = {
     "chest_xray": {
@@ -79,7 +85,7 @@ class RadiologyReportAgent(BaseAgent):
         action = ctx.get("action", "generate_report")
 
         if action == "generate_report":
-            return self._generate_report(input_data)
+            return await self._generate_report(input_data)
         elif action == "addendum":
             return self._addendum(input_data)
         elif action == "structured_data":
@@ -95,7 +101,7 @@ class RadiologyReportAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _generate_report(self, input_data: AgentInput) -> AgentOutput:
+    async def _generate_report(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         study_type = ctx.get("study_type", "chest_xray")
@@ -103,8 +109,25 @@ class RadiologyReportAgent(BaseAgent):
 
         template = REPORT_TEMPLATES.get(study_type, REPORT_TEMPLATES["chest_xray"])
 
-        findings_text = ctx.get("findings_text", "The heart size is mildly enlarged. The lungs are clear without focal consolidation, pleural effusion, or pneumothorax. The mediastinal contours are normal. No acute osseous abnormality.")
-        impression_text = ctx.get("impression_text", "Mild cardiomegaly. No acute cardiopulmonary disease.")
+        # Default hardcoded text used as fallback
+        default_findings = "The heart size is mildly enlarged. The lungs are clear without focal consolidation, pleural effusion, or pneumothorax. The mediastinal contours are normal. No acute osseous abnormality."
+        default_impression = "Mild cardiomegaly. No acute cardiopulmonary disease."
+
+        findings_text = ctx.get("findings_text")
+        impression_text = ctx.get("impression_text")
+
+        # When AI findings are provided and text isn't already supplied, use LLM
+        if findings and not findings_text:
+            llm_findings, llm_impression = await self._generate_with_llm(
+                study_type=study_type,
+                indication=ctx.get("indication", template["indication_default"]),
+                ai_findings=findings,
+            )
+            findings_text = llm_findings or default_findings
+            impression_text = llm_impression or default_impression
+        else:
+            findings_text = findings_text or default_findings
+            impression_text = impression_text or default_impression
 
         report = {
             "report_id": str(uuid.uuid4()),
@@ -141,6 +164,71 @@ class RadiologyReportAgent(BaseAgent):
             confidence=0.85,
             rationale=f"Preliminary {template['exam']} report generated (AI-assisted)",
         )
+
+    async def _generate_with_llm(
+        self,
+        study_type: str,
+        indication: str,
+        ai_findings: list[dict[str, Any]],
+    ) -> tuple[str | None, str | None]:
+        """Use LLM to generate findings and impression text from AI-detected findings.
+
+        Returns a tuple of (findings_text, impression_text). Returns (None, None)
+        if the LLM call fails so the caller can fall back to defaults.
+        """
+        system_prompt = (
+            "You are a radiologist AI assistant. Given AI-detected findings from a "
+            "medical imaging study, generate a structured radiology report with "
+            "Findings and Impression sections. Use standard radiology reporting conventions."
+        )
+
+        user_prompt = (
+            f"Study type: {study_type}\n"
+            f"Clinical indication: {indication}\n"
+            f"AI-detected findings:\n{json.dumps(ai_findings, indent=2)}\n\n"
+            "Generate the Findings and Impression sections for the radiology report. "
+            "Format your response exactly as:\n"
+            "FINDINGS:\n<findings text>\n\n"
+            "IMPRESSION:\n<impression text>"
+        )
+
+        try:
+            request = LLMRequest(
+                messages=[{"role": "user", "content": user_prompt}],
+                system=system_prompt,
+                temperature=0.3,
+                max_tokens=2048,
+            )
+            response = await llm_router.complete(request)
+            return self._parse_llm_response(response.content)
+        except Exception:
+            logger.warning(
+                "radiology_report.llm_generation_failed",
+                study_type=study_type,
+                exc_info=True,
+            )
+            return None, None
+
+    @staticmethod
+    def _parse_llm_response(content: str) -> tuple[str | None, str | None]:
+        """Parse LLM response to extract findings and impression sections."""
+        findings_text: str | None = None
+        impression_text: str | None = None
+
+        content_upper = content.upper()
+        findings_idx = content_upper.find("FINDINGS:")
+        impression_idx = content_upper.find("IMPRESSION:")
+
+        if findings_idx != -1:
+            start = findings_idx + len("FINDINGS:")
+            end = impression_idx if impression_idx != -1 else len(content)
+            findings_text = content[start:end].strip()
+
+        if impression_idx != -1:
+            start = impression_idx + len("IMPRESSION:")
+            impression_text = content[start:].strip()
+
+        return findings_text or None, impression_text or None
 
     def _addendum(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context

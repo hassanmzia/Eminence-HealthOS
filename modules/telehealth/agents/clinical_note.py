@@ -10,12 +10,19 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+import json as json_mod
+
+import structlog
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
     AgentOutput,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = structlog.get_logger()
 
 # Common symptom → ICD-10 suggestion mapping
 SYMPTOM_ICD10: dict[str, dict[str, str]] = {
@@ -57,8 +64,35 @@ class ClinicalNoteAgent(BaseAgent):
         encounter_type: str = ctx.get("encounter_type", "telehealth")
         medications: list[str] = ctx.get("medications", [])
 
-        # Build SOAP note
+        # Build structured SOAP note (rule-based)
         soap = self._build_soap(symptoms, vitals, assessment_text, plan_items, prior_outputs)
+
+        # Enhance with LLM-generated narrative
+        llm_narrative = None
+        try:
+            prompt = (
+                f"Generate a complete clinical SOAP note for a {encounter_type} encounter.\n\n"
+                f"Patient symptoms: {', '.join(symptoms) if symptoms else 'None reported'}\n"
+                f"Vital signs: {json_mod.dumps(vitals) if vitals else 'Not recorded'}\n"
+                f"Current medications: {', '.join(medications) if medications else 'None'}\n"
+                f"Provider assessment: {assessment_text or 'Pending'}\n"
+                f"Plan items: {', '.join(plan_items) if plan_items else 'Pending'}\n"
+                f"AI agent findings: {json_mod.dumps([o.get('rationale', '') for o in prior_outputs if isinstance(o, dict)])}\n\n"
+                f"Generate a professional clinical note with Subjective, Objective, Assessment, and Plan sections."
+            )
+            llm_resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a clinical documentation specialist generating SOAP notes for "
+                    "telehealth encounters. Write concise, medically accurate documentation "
+                    "suitable for the electronic health record. Use standard medical terminology."
+                ),
+                temperature=0.3,
+                max_tokens=2048,
+            ))
+            llm_narrative = llm_resp.content
+        except Exception as exc:
+            logger.warning("clinical_note.llm_failed", error=str(exc))
 
         # Suggest ICD-10 codes
         icd_suggestions = self._suggest_icd10(symptoms)
@@ -74,15 +108,20 @@ class ClinicalNoteAgent(BaseAgent):
             "note_status": "draft",
             "generated_at": datetime.now(timezone.utc).isoformat(),
         }
+        if llm_narrative:
+            note["llm_narrative"] = llm_narrative
+
+        confidence = 0.85 if llm_narrative else 0.75
 
         return self.build_output(
             trace_id=input_data.trace_id,
             result=note,
-            confidence=0.75,
+            confidence=confidence,
             rationale=(
                 f"Clinical note generated: {len(symptoms)} symptoms, "
                 f"{len(icd_suggestions)} ICD-10 suggestions, "
                 f"billing level {billing.get('suggested_level', 'N/A')}"
+                f"{' (LLM-enhanced)' if llm_narrative else ''}"
             ),
         )
 

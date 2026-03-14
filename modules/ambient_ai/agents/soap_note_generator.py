@@ -6,9 +6,12 @@ Objective, Assessment, Plan) from diarized transcripts.
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime, timezone
 from typing import Any
+
+import structlog
 
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
@@ -17,9 +20,40 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = structlog.get_logger()
 
 # SOAP section templates
 SOAP_SECTIONS = ["subjective", "objective", "assessment", "plan"]
+
+# ── System Prompts ───────────────────────────────────────────────────────────
+
+SOAP_SYSTEM_PROMPT = """\
+You are a clinical documentation specialist AI. You generate structured SOAP \
+notes from clinical encounter transcripts. Follow these rules strictly:
+
+1. Use standard medical terminology and accepted abbreviations.
+2. Be concise but thorough — do not fabricate information not present in the transcript.
+3. If information for a section is missing from the transcript, state "Not documented" \
+rather than inventing details.
+4. For the Assessment, list differential diagnoses with ICD-10 codes when inferable.
+5. For the Plan, categorize items (medication, lab_order, imaging, referral, follow_up, education).
+6. Return your response as valid JSON matching the schema provided in the user message.
+"""
+
+ENTITY_EXTRACTION_SYSTEM_PROMPT = """\
+You are a clinical NLP system that extracts structured medical entities from \
+clinical text. Extract the following entity types:
+
+- medications: name, action (prescribed/discontinued/continued/causing_adverse_effect), RxNorm code if known
+- vitals: type, value, unit, status (normal/elevated/low/critical)
+- symptoms: symptom name, duration if mentioned, SNOMED code if known
+- diagnoses: name, ICD-10 code if inferable
+
+Return your response as valid JSON matching the schema provided in the user message. \
+Only extract entities explicitly mentioned in the text — do not infer or fabricate.
+"""
 
 
 class SOAPNoteGeneratorAgent(BaseAgent):
@@ -39,9 +73,9 @@ class SOAPNoteGeneratorAgent(BaseAgent):
         action = ctx.get("action", "generate_soap")
 
         if action == "generate_soap":
-            return self._generate_soap(input_data)
+            return await self._generate_soap(input_data)
         elif action == "extract_entities":
-            return self._extract_entities(input_data)
+            return await self._extract_entities(input_data)
         elif action == "generate_section":
             return self._generate_section(input_data)
         elif action == "validate_note":
@@ -57,32 +91,90 @@ class SOAPNoteGeneratorAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _generate_soap(self, input_data: AgentInput) -> AgentOutput:
+    async def _generate_soap(self, input_data: AgentInput) -> AgentOutput:
         """Generate a complete SOAP note from diarized transcript segments."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         encounter_id = ctx.get("encounter_id", str(uuid.uuid4()))
         segments = ctx.get("segments", [])
 
-        # Extract text by speaker role
-        provider_text = []
-        patient_text = []
+        # Build transcript text organised by speaker role
+        transcript_lines: list[str] = []
         for seg in segments:
-            role = seg.get("role", "unknown")
+            role = seg.get("role", "unknown").capitalize()
             text = seg.get("text", "")
-            if role == "provider":
-                provider_text.append(text)
-            elif role == "patient":
-                patient_text.append(text)
+            transcript_lines.append(f"[{role}]: {text}")
 
-        # Build SOAP note from transcript content
-        subjective = self._build_subjective(patient_text, provider_text)
-        objective = self._build_objective(provider_text)
-        assessment = self._build_assessment(patient_text, provider_text)
-        plan = self._build_plan(provider_text)
+        transcript_text = "\n".join(transcript_lines) if transcript_lines else "(empty transcript)"
 
-        # Extract clinical entities
-        entities = self._extract_clinical_entities(patient_text + provider_text)
+        # ── LLM call: generate full SOAP note ───────────────────────────
+        user_prompt = (
+            "Generate a SOAP note from the following clinical encounter transcript.\n\n"
+            f"TRANSCRIPT:\n{transcript_text}\n\n"
+            "Return a JSON object with exactly this structure:\n"
+            "{\n"
+            '  "subjective": {\n'
+            '    "chief_complaint": "...",\n'
+            '    "history_of_present_illness": "...",\n'
+            '    "review_of_systems": { "<system>": "..." },\n'
+            '    "narrative": "..."\n'
+            "  },\n"
+            '  "objective": {\n'
+            '    "vitals": { "blood_pressure": "...", "heart_rate": "...", '
+            '"respiratory_rate": "...", "temperature": "...", "spo2": "..." },\n'
+            '    "physical_exam": "...",\n'
+            '    "narrative": "..."\n'
+            "  },\n"
+            '  "assessment": {\n'
+            '    "diagnoses": [{"name": "...", "icd10": "...", "status": "new|existing", '
+            '"certainty": "confirmed|probable|possible"}],\n'
+            '    "clinical_reasoning": "...",\n'
+            '    "narrative": "..."\n'
+            "  },\n"
+            '  "plan": {\n'
+            '    "items": [{"description": "...", "category": '
+            '"medication|lab_order|imaging|referral|follow_up|education", "priority": "high|medium|low"}],\n'
+            '    "follow_up_interval": "...",\n'
+            '    "referrals": [],\n'
+            '    "narrative": "..."\n'
+            "  },\n"
+            '  "clinical_entities": {\n'
+            '    "medications": [{"name": "...", "action": "...", "rxnorm": "..."}],\n'
+            '    "vitals": [{"type": "...", "value": "...", "unit": "...", "status": "..."}],\n'
+            '    "symptoms": [{"symptom": "...", "duration": "...", "snomed": "..."}],\n'
+            '    "diagnoses": [{"name": "...", "icd10": "..."}]\n'
+            "  }\n"
+            "}\n\n"
+            "Only include information actually present in the transcript. "
+            "Use \"Not documented\" for missing sections. Return ONLY valid JSON, no markdown fences."
+        )
+
+        try:
+            response = await llm_router.complete(
+                LLMRequest(
+                    messages=[{"role": "user", "content": user_prompt}],
+                    system=SOAP_SYSTEM_PROMPT,
+                    temperature=0.3,
+                    max_tokens=4096,
+                )
+            )
+            soap_data = self._parse_json_response(response.content)
+            generation_model = response.model
+        except Exception as exc:
+            logger.error("soap.llm_call_failed", error=str(exc), encounter_id=encounter_id)
+            soap_data = self._fallback_soap(segments)
+            generation_model = "rule-based-fallback"
+
+        # Normalise structure — guarantee every section has a narrative key
+        for section in SOAP_SECTIONS:
+            if section not in soap_data:
+                soap_data[section] = {"narrative": "Not documented"}
+            elif not isinstance(soap_data[section], dict):
+                soap_data[section] = {"narrative": str(soap_data[section])}
+            elif "narrative" not in soap_data[section]:
+                soap_data[section]["narrative"] = "Not documented"
+
+        entities = soap_data.pop("clinical_entities", {})
 
         note = {
             "note_id": str(uuid.uuid4()),
@@ -92,22 +184,17 @@ class SOAPNoteGeneratorAgent(BaseAgent):
             "status": "draft",
             "requires_attestation": True,
             "soap": {
-                "subjective": subjective,
-                "objective": objective,
-                "assessment": assessment,
-                "plan": plan,
+                "subjective": soap_data["subjective"],
+                "objective": soap_data["objective"],
+                "assessment": soap_data["assessment"],
+                "plan": soap_data["plan"],
             },
             "clinical_entities": entities,
             "source_segments": len(segments),
-            "generation_model": "claude-sonnet-4-6",
+            "generation_model": generation_model,
             "word_count": sum(
-                len(s.split())
-                for s in [
-                    subjective["narrative"],
-                    objective["narrative"],
-                    assessment["narrative"],
-                    plan["narrative"],
-                ]
+                len(soap_data[s].get("narrative", "").split())
+                for s in SOAP_SECTIONS
             ),
         }
 
@@ -121,12 +208,43 @@ class SOAPNoteGeneratorAgent(BaseAgent):
             ),
         )
 
-    def _extract_entities(self, input_data: AgentInput) -> AgentOutput:
+    async def _extract_entities(self, input_data: AgentInput) -> AgentOutput:
         """Extract clinical entities (diagnoses, medications, vitals) from text."""
         ctx = input_data.context
         text_segments = ctx.get("text_segments", [])
+        combined_text = "\n".join(text_segments) if text_segments else "(no text provided)"
 
-        entities = self._extract_clinical_entities(text_segments)
+        user_prompt = (
+            "Extract clinical entities from the following text.\n\n"
+            f"TEXT:\n{combined_text}\n\n"
+            "Return a JSON object with this structure:\n"
+            "{\n"
+            '  "medications": [{"name": "...", "action": "prescribed|discontinued|continued|causing_adverse_effect", "rxnorm": "..."}],\n'
+            '  "vitals": [{"type": "...", "value": "...", "unit": "...", "status": "normal|elevated|low|critical"}],\n'
+            '  "symptoms": [{"symptom": "...", "duration": "...", "snomed": "..."}],\n'
+            '  "diagnoses": [{"name": "...", "icd10": "..."}]\n'
+            "}\n\n"
+            "Only extract entities explicitly stated in the text. Return ONLY valid JSON, no markdown fences."
+        )
+
+        try:
+            response = await llm_router.complete(
+                LLMRequest(
+                    messages=[{"role": "user", "content": user_prompt}],
+                    system=ENTITY_EXTRACTION_SYSTEM_PROMPT,
+                    temperature=0.2,
+                    max_tokens=2048,
+                )
+            )
+            entities = self._parse_json_response(response.content)
+        except Exception as exc:
+            logger.error("entities.llm_call_failed", error=str(exc))
+            entities = self._fallback_entities(text_segments)
+
+        # Ensure expected keys exist
+        for key in ("medications", "vitals", "symptoms", "diagnoses"):
+            if key not in entities or not isinstance(entities[key], list):
+                entities[key] = []
 
         result = {
             "total_entities": sum(len(v) for v in entities.values()),
@@ -253,133 +371,110 @@ class SOAPNoteGeneratorAgent(BaseAgent):
             rationale=f"Note {note_id} amended in sections: {', '.join(amended_sections)}",
         )
 
-    # ── Builders ──────────────────────────────────────────────────────────────
+    # ── Helpers ───────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _parse_json_response(text: str) -> dict[str, Any]:
+        """Parse JSON from an LLM response, stripping markdown fences if present."""
+        cleaned = text.strip()
+        # Strip ```json ... ``` fences
+        if cleaned.startswith("```"):
+            first_newline = cleaned.index("\n") if "\n" in cleaned else 3
+            cleaned = cleaned[first_newline + 1 :]
+            if cleaned.endswith("```"):
+                cleaned = cleaned[: -3]
+            cleaned = cleaned.strip()
+        return json.loads(cleaned)
+
+    # ── Rule-based Fallbacks (used when LLM is unavailable) ──────────────────
+
+    @staticmethod
+    def _fallback_soap(segments: list[dict[str, Any]]) -> dict[str, Any]:
+        """Build a minimal rule-based SOAP note when the LLM call fails."""
+        patient_text = [s.get("text", "") for s in segments if s.get("role") == "patient"]
+        provider_text = [s.get("text", "") for s in segments if s.get("role") == "provider"]
+        all_text = [s.get("text", "") for s in segments]
+
+        chief_complaint = patient_text[0][:120] if patient_text else "Not documented"
+
+        return {
+            "subjective": {
+                "chief_complaint": chief_complaint,
+                "history_of_present_illness": " ".join(patient_text) if patient_text else "Not documented",
+                "review_of_systems": {},
+                "narrative": f"CC: {chief_complaint}\nHPI: {' '.join(patient_text)}" if patient_text else "Not documented",
+            },
+            "objective": {
+                "vitals": {},
+                "physical_exam": " ".join(provider_text) if provider_text else "Not documented",
+                "narrative": " ".join(provider_text) if provider_text else "Not documented",
+            },
+            "assessment": {
+                "diagnoses": [],
+                "clinical_reasoning": "Auto-generated fallback — requires clinician review.",
+                "narrative": "Assessment requires clinician review (LLM unavailable).",
+            },
+            "plan": {
+                "items": [],
+                "follow_up_interval": "Not documented",
+                "referrals": [],
+                "narrative": "Plan requires clinician review (LLM unavailable).",
+            },
+            "clinical_entities": {
+                "medications": [],
+                "vitals": [],
+                "symptoms": [],
+                "diagnoses": [],
+            },
+        }
+
+    @staticmethod
+    def _fallback_entities(text_segments: list[str]) -> dict[str, Any]:
+        """Return an empty entity structure when the LLM call fails."""
+        return {
+            "medications": [],
+            "vitals": [],
+            "symptoms": [],
+            "diagnoses": [],
+        }
+
+    # ── Legacy section builders (used by _generate_section) ──────────────────
 
     @staticmethod
     def _build_subjective(patient_text: list[str], provider_text: list[str]) -> dict[str, Any]:
-        patient_narrative = " ".join(patient_text) if patient_text else ""
-
-        chief_complaint = "Chest tightness"
-        hpi = "Patient reports chest tightness for approximately two weeks, onset coinciding with medication change from lisinopril to amlodipine. Also reports ankle swelling."
-
-        if patient_narrative:
-            # Use first patient statement as chief complaint basis
-            chief_complaint = patient_text[0][:80] if patient_text else chief_complaint
-
+        chief_complaint = patient_text[0][:120] if patient_text else "Not documented"
+        hpi = " ".join(patient_text) if patient_text else "Not documented"
         return {
             "chief_complaint": chief_complaint,
             "history_of_present_illness": hpi,
-            "review_of_systems": {
-                "cardiovascular": "Chest tightness, ankle edema",
-                "respiratory": "No shortness of breath",
-                "general": "No fever, no weight loss",
-            },
+            "review_of_systems": {},
             "narrative": f"CC: {chief_complaint}\nHPI: {hpi}",
         }
 
     @staticmethod
     def _build_objective(provider_text: list[str]) -> dict[str, Any]:
-        vitals = {
-            "blood_pressure": "142/88 mmHg",
-            "heart_rate": "78 bpm",
-            "respiratory_rate": "16/min",
-            "temperature": "98.6°F",
-            "spo2": "98%",
-        }
-
-        exam_findings = "Bilateral pedal edema 1+. Heart sounds regular, no murmurs. Lungs clear to auscultation bilaterally."
-        narrative = f"Vitals: BP {vitals['blood_pressure']}, HR {vitals['heart_rate']}, RR {vitals['respiratory_rate']}, Temp {vitals['temperature']}, SpO2 {vitals['spo2']}\nExam: {exam_findings}"
-
+        exam = " ".join(provider_text) if provider_text else "Not documented"
         return {
-            "vitals": vitals,
-            "physical_exam": exam_findings,
-            "narrative": narrative,
+            "vitals": {},
+            "physical_exam": exam,
+            "narrative": exam,
         }
 
     @staticmethod
     def _build_assessment(patient_text: list[str], provider_text: list[str]) -> dict[str, Any]:
-        diagnoses = [
-            {"name": "Peripheral edema", "icd10": "R60.0", "status": "new", "certainty": "confirmed"},
-            {"name": "Hypertension, uncontrolled", "icd10": "I10", "status": "existing", "certainty": "confirmed"},
-            {"name": "Adverse effect of calcium-channel blocker", "icd10": "T46.1X5A", "status": "new", "certainty": "probable"},
-        ]
-
-        narrative = (
-            "1. Peripheral edema — likely adverse effect of amlodipine, started after medication switch\n"
-            "2. Hypertension — suboptimally controlled on current regimen (142/88)\n"
-            "3. Possible amlodipine adverse effect — chest tightness and edema onset correlates with medication change"
-        )
-
+        combined = " ".join(patient_text + provider_text) if (patient_text or provider_text) else "Not documented"
         return {
-            "diagnoses": diagnoses,
-            "clinical_reasoning": "Temporal correlation between amlodipine initiation and symptom onset suggests medication adverse effect.",
-            "narrative": narrative,
+            "diagnoses": [],
+            "clinical_reasoning": combined,
+            "narrative": combined,
         }
 
     @staticmethod
     def _build_plan(provider_text: list[str]) -> dict[str, Any]:
-        items = [
-            {
-                "description": "Discontinue amlodipine 5mg, switch to losartan 50mg daily",
-                "category": "medication",
-                "priority": "high",
-            },
-            {
-                "description": "Order BMP and renal function panel",
-                "category": "lab_order",
-                "priority": "high",
-            },
-            {
-                "description": "Follow-up in 2 weeks to reassess blood pressure and edema",
-                "category": "follow_up",
-                "priority": "medium",
-            },
-            {
-                "description": "Patient education on signs of worsening edema or chest pain",
-                "category": "education",
-                "priority": "medium",
-            },
-        ]
-
-        narrative = "\n".join(f"- {item['description']}" for item in items)
-
+        combined = " ".join(provider_text) if provider_text else "Not documented"
         return {
-            "items": items,
-            "follow_up_interval": "2 weeks",
+            "items": [],
+            "follow_up_interval": "Not documented",
             "referrals": [],
-            "narrative": narrative,
-        }
-
-    @staticmethod
-    def _extract_clinical_entities(texts: list[str]) -> dict[str, list[dict[str, Any]]]:
-        combined = " ".join(texts).lower()
-
-        medications: list[dict[str, Any]] = []
-        if "lisinopril" in combined:
-            medications.append({"name": "Lisinopril", "action": "discontinued", "rxnorm": "29046"})
-        if "amlodipine" in combined:
-            medications.append({"name": "Amlodipine", "action": "causing_adverse_effect", "rxnorm": "17767"})
-        if "losartan" in combined:
-            medications.append({"name": "Losartan", "action": "prescribed", "rxnorm": "52175"})
-
-        vitals: list[dict[str, Any]] = []
-        if "142" in combined and "88" in combined:
-            vitals.append({"type": "blood_pressure", "value": "142/88", "unit": "mmHg", "status": "elevated"})
-        if "78" in combined:
-            vitals.append({"type": "heart_rate", "value": "78", "unit": "bpm", "status": "normal"})
-
-        symptoms: list[dict[str, Any]] = []
-        if "chest tightness" in combined:
-            symptoms.append({"symptom": "Chest tightness", "duration": "2 weeks", "snomed": "23924001"})
-        if "swelling" in combined or "edema" in combined:
-            symptoms.append({"symptom": "Ankle edema", "location": "bilateral", "snomed": "102572006"})
-
-        return {
-            "medications": medications,
-            "vitals": vitals,
-            "symptoms": symptoms,
-            "diagnoses": [
-                {"name": "Peripheral edema", "icd10": "R60.0"},
-                {"name": "Essential hypertension", "icd10": "I10"},
-            ],
+            "narrative": combined,
         }
