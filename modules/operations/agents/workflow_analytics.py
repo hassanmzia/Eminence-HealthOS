@@ -273,52 +273,132 @@ class WorkflowAnalyticsAgent(BaseAgent):
         )
 
     def _analyze_bottlenecks(self, input_data: AgentInput) -> AgentOutput:
-        """Identify bottlenecks in operational workflows."""
+        """Identify bottlenecks by analysing real step performance data."""
         ctx = input_data.context
+        org_id = ctx.get("org_id")
+        now = datetime.now(timezone.utc)
+        workflows = self._get_workflows(org_id)
 
-        bottlenecks = [
-            {
-                "area": "Prior Authorization",
-                "issue": "Average turnaround 36h exceeds 24h target",
-                "severity": "high",
-                "affected_workflows": 12,
-                "recommendation": "Consider dedicated auth specialist for high-volume payers",
-                "estimated_time_savings_hours": 144,
-            },
-            {
-                "area": "Insurance Verification",
-                "issue": "Manual verification needed for 15% of cases",
-                "severity": "medium",
-                "affected_workflows": 8,
-                "recommendation": "Expand real-time eligibility check coverage to more payers",
-                "estimated_time_savings_hours": 24,
-            },
-            {
-                "area": "Referral Scheduling",
-                "issue": "Specialist response time averaging 5 days",
-                "severity": "medium",
-                "affected_workflows": 6,
-                "recommendation": "Implement automated fax/portal submission for top 5 specialists",
-                "estimated_time_savings_hours": 48,
-            },
-            {
-                "area": "Billing Coding",
-                "issue": "8% of claims returned for coding errors",
-                "severity": "high",
-                "affected_workflows": 10,
-                "recommendation": "Enable real-time coding validation before claim submission",
-                "estimated_time_savings_hours": 80,
-            },
-        ]
+        # --- Collect per-step-name and per-agent metrics ---
+        step_durations: dict[str, list[float]] = defaultdict(list)
+        step_failure_counts: dict[str, int] = defaultdict(int)
+        step_total_counts: dict[str, int] = defaultdict(int)
+        agent_retries: dict[str, int] = defaultdict(int)
+        agent_step_count: dict[str, int] = defaultdict(int)
 
-        total_savings = sum(b["estimated_time_savings_hours"] for b in bottlenecks)
+        for wf in workflows:
+            for step in wf.steps:
+                step_total_counts[step.name] += 1
+                agent_step_count[step.agent_name] += 1
+                agent_retries[step.agent_name] += step.retry_count
+
+                dur = self._step_duration_hours(step)
+                if dur is not None:
+                    step_durations[step.name].append(dur)
+
+                if step.status == StepStatus.FAILED:
+                    step_failure_counts[step.name] += 1
+
+        # --- Steps with longest average duration ---
+        avg_durations = {
+            name: sum(durs) / len(durs)
+            for name, durs in step_durations.items()
+            if durs
+        }
+        slowest_steps = sorted(avg_durations.items(), key=lambda x: -x[1])[:5]
+
+        # --- Steps with highest failure rate ---
+        failure_rates = {
+            name: step_failure_counts.get(name, 0) / total
+            for name, total in step_total_counts.items()
+            if total > 0
+        }
+        worst_failure = sorted(failure_rates.items(), key=lambda x: -x[1])[:5]
+
+        # --- Agents with most retries ---
+        retry_ranking = sorted(agent_retries.items(), key=lambda x: -x[1])[:5]
+
+        # --- Dependency chain delays: steps blocked longest ---
+        blocked_steps: list[dict[str, Any]] = []
+        for wf in workflows:
+            if wf.status != WorkflowStatus.ACTIVE:
+                continue
+            for step in wf.steps:
+                if step.status in (StepStatus.PENDING, StepStatus.BLOCKED):
+                    wait_hours = (now - wf.created_at).total_seconds() / 3600
+                    blocked_steps.append({
+                        "workflow_id": wf.workflow_id,
+                        "step_name": step.name,
+                        "waiting_hours": round(wait_hours, 1),
+                        "depends_on": step.depends_on,
+                    })
+        blocked_steps.sort(key=lambda x: -x["waiting_hours"])
+        top_blocked = blocked_steps[:5]
+
+        # --- Build bottleneck records ---
+        bottlenecks: list[dict[str, Any]] = []
+
+        for name, avg_h in slowest_steps:
+            sla = None
+            for wf in workflows:
+                for s in wf.steps:
+                    if s.name == name:
+                        sla = s.sla_hours
+                        break
+                if sla is not None:
+                    break
+            severity = "high" if (sla and avg_h > sla) else "medium"
+            bottlenecks.append({
+                "area": name,
+                "issue": f"Average duration {avg_h:.1f}h" + (f" exceeds {sla}h SLA" if sla and avg_h > sla else ""),
+                "severity": severity,
+                "metric_type": "slow_step",
+                "avg_duration_hours": round(avg_h, 1),
+                "sla_hours": sla,
+                "occurrences": len(step_durations.get(name, [])),
+            })
+
+        for name, rate in worst_failure:
+            if rate <= 0:
+                continue
+            bottlenecks.append({
+                "area": name,
+                "issue": f"Failure rate {rate:.1%} ({step_failure_counts[name]}/{step_total_counts[name]})",
+                "severity": "high" if rate > 0.2 else "medium",
+                "metric_type": "high_failure_rate",
+                "failure_rate": round(rate, 3),
+                "total_failures": step_failure_counts[name],
+            })
+
+        for agent_name, retries in retry_ranking:
+            if retries <= 0:
+                continue
+            bottlenecks.append({
+                "area": agent_name,
+                "issue": f"{retries} total retries across {agent_step_count[agent_name]} steps",
+                "severity": "high" if retries > 5 else "medium" if retries > 2 else "low",
+                "metric_type": "agent_retries",
+                "total_retries": retries,
+                "total_steps": agent_step_count[agent_name],
+            })
+
+        # Deduplicate by area+metric_type, sort by severity
+        severity_order = {"high": 0, "medium": 1, "low": 2}
+        bottlenecks.sort(key=lambda b: severity_order.get(b["severity"], 3))
+
+        total_savings = sum(
+            b.get("avg_duration_hours", 0) * b.get("occurrences", 0)
+            for b in bottlenecks
+            if b.get("metric_type") == "slow_step" and b.get("severity") == "high"
+        )
 
         result = {
             "bottlenecks": bottlenecks,
             "total_identified": len(bottlenecks),
             "high_severity": sum(1 for b in bottlenecks if b["severity"] == "high"),
-            "estimated_total_time_savings_hours": total_savings,
-            "analyzed_at": datetime.now(timezone.utc).isoformat(),
+            "dependency_delays": top_blocked,
+            "estimated_total_time_savings_hours": round(total_savings, 1),
+            "analyzed_at": now.isoformat(),
         }
 
         return self.build_output(
@@ -327,7 +407,7 @@ class WorkflowAnalyticsAgent(BaseAgent):
             confidence=0.82,
             rationale=(
                 f"Bottleneck analysis: {len(bottlenecks)} identified, "
-                f"{total_savings}h potential time savings"
+                f"{round(total_savings, 1)}h potential time savings"
             ),
         )
 
