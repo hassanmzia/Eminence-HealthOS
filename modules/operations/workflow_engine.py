@@ -385,5 +385,312 @@ class WorkflowEngine:
         ]
 
 
-# Module-level singleton
+# ═══════════════════════════════════════════════════════════════════════════════
+# PERSISTENT WORKFLOW ENGINE (PostgreSQL-backed)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class PersistentWorkflowEngine(WorkflowEngine):
+    """
+    Extends WorkflowEngine with PostgreSQL persistence via SQLAlchemy.
+
+    Uses an in-memory cache for fast reads and writes through to the DB on
+    every state mutation.  Falls back to pure in-memory mode when no
+    *db_session_factory* is provided.
+    """
+
+    def __init__(self, db_session_factory=None) -> None:
+        super().__init__()
+        self._db_session_factory = db_session_factory
+
+    # ── helpers ────────────────────────────────────────────────────────────
+
+    def _get_db(self):
+        """Return a new DB session or *None* when running without a database."""
+        if self._db_session_factory is None:
+            return None
+        return self._db_session_factory()
+
+    @staticmethod
+    def _db_row_to_pydantic(db_wf) -> WorkflowDefinition:
+        """Convert a DB Workflow row (with loaded steps) to Pydantic model."""
+        steps = [
+            WorkflowStep(
+                step_id=s.step_id,
+                name=s.name,
+                agent_name=s.agent_name,
+                action=s.action,
+                input_data=s.input_data or {},
+                status=StepStatus(s.status),
+                depends_on=s.depends_on or [],
+                retry_count=s.retry_count,
+                max_retries=s.max_retries,
+                timeout_minutes=s.timeout_minutes,
+                sla_hours=s.sla_hours,
+                output=s.output,
+                error=s.error,
+                started_at=s.started_at,
+                completed_at=s.completed_at,
+            )
+            for s in db_wf.steps
+        ]
+        return WorkflowDefinition(
+            workflow_id=db_wf.workflow_id,
+            name=db_wf.name,
+            workflow_type=db_wf.workflow_type,
+            org_id=db_wf.org_id,
+            patient_id=db_wf.patient_id,
+            priority=db_wf.priority,
+            status=WorkflowStatus(db_wf.status),
+            steps=steps,
+            context=db_wf.context or {},
+            created_at=db_wf.created_at,
+            updated_at=db_wf.updated_at,
+            completed_at=db_wf.completed_at,
+        )
+
+    def _persist_workflow(self, workflow: WorkflowDefinition) -> None:
+        """Write a full WorkflowDefinition to the database (insert)."""
+        db = self._get_db()
+        if db is None:
+            return
+        try:
+            from shared.models.workflow import Workflow as WfRow, WorkflowStepModel
+
+            db_wf = WfRow(
+                workflow_id=workflow.workflow_id,
+                name=workflow.name,
+                workflow_type=workflow.workflow_type,
+                tenant_id=workflow.org_id,
+                org_id=workflow.org_id,
+                patient_id=workflow.patient_id,
+                priority=workflow.priority,
+                status=workflow.status.value,
+                context=workflow.context,
+                created_at=workflow.created_at,
+                updated_at=workflow.updated_at,
+                completed_at=workflow.completed_at,
+            )
+            for step in workflow.steps:
+                db_wf.steps.append(
+                    WorkflowStepModel(
+                        step_id=step.step_id,
+                        name=step.name,
+                        agent_name=step.agent_name,
+                        action=step.action,
+                        input_data=step.input_data,
+                        status=step.status.value,
+                        depends_on=step.depends_on,
+                        retry_count=step.retry_count,
+                        max_retries=step.max_retries,
+                        timeout_minutes=step.timeout_minutes,
+                        sla_hours=step.sla_hours,
+                        output=step.output,
+                        error=step.error,
+                        started_at=step.started_at,
+                        completed_at=step.completed_at,
+                    )
+                )
+            db.add(db_wf)
+            db.commit()
+        except Exception:
+            db.rollback()
+            logger.exception("workflow.persist_failed", extra={"workflow_id": workflow.workflow_id})
+        finally:
+            db.close()
+
+    def _sync_workflow_to_db(self, workflow: WorkflowDefinition) -> None:
+        """Update an existing workflow and its steps in the database."""
+        db = self._get_db()
+        if db is None:
+            return
+        try:
+            from shared.models.workflow import Workflow as WfRow, WorkflowStepModel
+
+            db_wf = db.query(WfRow).filter(WfRow.workflow_id == workflow.workflow_id).first()
+            if db_wf is None:
+                db.close()
+                self._persist_workflow(workflow)
+                return
+
+            db_wf.status = workflow.status.value
+            db_wf.priority = workflow.priority
+            db_wf.context = workflow.context
+            db_wf.updated_at = workflow.updated_at
+            db_wf.completed_at = workflow.completed_at
+
+            # Build a lookup of existing DB steps
+            db_steps_by_id = {s.step_id: s for s in db_wf.steps}
+            for step in workflow.steps:
+                db_step = db_steps_by_id.get(step.step_id)
+                if db_step is None:
+                    continue
+                db_step.status = step.status.value
+                db_step.retry_count = step.retry_count
+                db_step.output = step.output
+                db_step.error = step.error
+                db_step.started_at = step.started_at
+                db_step.completed_at = step.completed_at
+
+            db.commit()
+        except Exception:
+            db.rollback()
+            logger.exception("workflow.sync_failed", extra={"workflow_id": workflow.workflow_id})
+        finally:
+            db.close()
+
+    def _load_from_db(self, workflow_id: str) -> WorkflowDefinition | None:
+        """Load a single workflow from the DB and cache it."""
+        db = self._get_db()
+        if db is None:
+            return None
+        try:
+            from shared.models.workflow import Workflow as WfRow
+
+            db_wf = db.query(WfRow).filter(WfRow.workflow_id == workflow_id).first()
+            if db_wf is None:
+                return None
+            wf = self._db_row_to_pydantic(db_wf)
+            self._workflows[wf.workflow_id] = wf
+            return wf
+        except Exception:
+            logger.exception("workflow.load_failed", extra={"workflow_id": workflow_id})
+            return None
+        finally:
+            db.close()
+
+    # ── overrides ──────────────────────────────────────────────────────────
+
+    def create_workflow(
+        self,
+        workflow_type: str,
+        org_id: str,
+        patient_id: str | None = None,
+        priority: str = "normal",
+        context: dict[str, Any] | None = None,
+        custom_steps: list[dict[str, Any]] | None = None,
+    ) -> WorkflowDefinition:
+        workflow = super().create_workflow(
+            workflow_type=workflow_type,
+            org_id=org_id,
+            patient_id=patient_id,
+            priority=priority,
+            context=context,
+            custom_steps=custom_steps,
+        )
+        self._persist_workflow(workflow)
+        return workflow
+
+    def get_workflow(self, workflow_id: str) -> WorkflowDefinition | None:
+        cached = self._workflows.get(workflow_id)
+        if cached is not None:
+            return cached
+        return self._load_from_db(workflow_id)
+
+    def get_ready_steps(self, workflow_id: str) -> list[WorkflowStep]:
+        # Ensure workflow is loaded into cache
+        if workflow_id not in self._workflows:
+            self._load_from_db(workflow_id)
+        ready = super().get_ready_steps(workflow_id)
+        if ready:
+            self._sync_workflow_to_db(self._workflows[workflow_id])
+        return ready
+
+    def start_step(self, workflow_id: str, step_id: str) -> WorkflowStep | None:
+        if workflow_id not in self._workflows:
+            self._load_from_db(workflow_id)
+        step = super().start_step(workflow_id, step_id)
+        if step is not None:
+            self._sync_workflow_to_db(self._workflows[workflow_id])
+        return step
+
+    def complete_step(
+        self, workflow_id: str, step_id: str, output: dict[str, Any]
+    ) -> WorkflowStep | None:
+        if workflow_id not in self._workflows:
+            self._load_from_db(workflow_id)
+        step = super().complete_step(workflow_id, step_id, output)
+        if step is not None:
+            self._sync_workflow_to_db(self._workflows[workflow_id])
+        return step
+
+    def fail_step(
+        self, workflow_id: str, step_id: str, error: str
+    ) -> WorkflowStep | None:
+        if workflow_id not in self._workflows:
+            self._load_from_db(workflow_id)
+        step = super().fail_step(workflow_id, step_id, error)
+        if step is not None:
+            self._sync_workflow_to_db(self._workflows[workflow_id])
+        return step
+
+    def list_workflows(
+        self, org_id: str, status: str | None = None
+    ) -> list[dict[str, Any]]:
+        """Query DB for workflows; falls back to in-memory if no DB."""
+        db = self._get_db()
+        if db is None:
+            return super().list_workflows(org_id, status)
+        try:
+            from shared.models.workflow import Workflow as WfRow
+
+            query = db.query(WfRow).filter(WfRow.org_id == org_id)
+            if status:
+                query = query.filter(WfRow.status == status)
+            query = query.order_by(WfRow.created_at.desc())
+
+            results = []
+            for db_wf in query.all():
+                wf = self._db_row_to_pydantic(db_wf)
+                # Refresh cache
+                self._workflows[wf.workflow_id] = wf
+                total = len(wf.steps)
+                completed = sum(
+                    1 for s in wf.steps
+                    if s.status in (StepStatus.COMPLETED, StepStatus.SKIPPED)
+                )
+                results.append({
+                    "workflow_id": wf.workflow_id,
+                    "name": wf.name,
+                    "workflow_type": wf.workflow_type,
+                    "status": wf.status.value,
+                    "priority": wf.priority,
+                    "patient_id": wf.patient_id,
+                    "progress": round(completed / total, 2) if total else 0,
+                    "total_steps": total,
+                    "created_at": wf.created_at.isoformat(),
+                })
+            return results
+        except Exception:
+            logger.exception("workflow.list_failed", extra={"org_id": org_id})
+            return super().list_workflows(org_id, status)
+        finally:
+            db.close()
+
+    def check_sla_violations(self, org_id: str) -> list[dict[str, Any]]:
+        """Load active workflows from DB before checking SLAs."""
+        db = self._get_db()
+        if db is None:
+            return super().check_sla_violations(org_id)
+        try:
+            from shared.models.workflow import Workflow as WfRow
+
+            active_rows = (
+                db.query(WfRow)
+                .filter(WfRow.org_id == org_id, WfRow.status == WorkflowStatus.ACTIVE.value)
+                .all()
+            )
+            for db_wf in active_rows:
+                wf = self._db_row_to_pydantic(db_wf)
+                self._workflows[wf.workflow_id] = wf
+        except Exception:
+            logger.exception("workflow.sla_load_failed", extra={"org_id": org_id})
+        finally:
+            db.close()
+        return super().check_sla_violations(org_id)
+
+
+# Module-level singleton — uses in-memory mode by default.
+# Call ``workflow_engine = PersistentWorkflowEngine(db_session_factory)``
+# in your application bootstrap to enable DB persistence.
 workflow_engine = WorkflowEngine()

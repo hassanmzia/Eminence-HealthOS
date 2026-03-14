@@ -19,6 +19,7 @@ services:
       NEO4J_PASSWORD: healthos
       CORS_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:3052"
       KEYCLOAK_URL: http://keycloak:8080
+      TEMPORAL_ADDRESS: temporal:7233
     depends_on:
       postgres:
         condition: service_healthy
@@ -188,6 +189,74 @@ services:
     networks:
       - healthos
 
+  # ─── Temporal Server ───────────────────────────────────────────────────────
+  temporal:
+    image: temporalio/auto-setup:1.25
+    ports:
+      - "7233:7233"
+    environment:
+      DB: postgres12
+      DB_PORT: "5432"
+      POSTGRES_USER: healthos
+      POSTGRES_PWD: healthos
+      POSTGRES_SEEDS: postgres
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
+    volumes:
+      - ./infrastructure/temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
+      - temporaldata:/tmp/temporal
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "tctl --address temporal:7233 cluster health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - healthos
+
+  # ─── Temporal Web UI ─────────────────────────────────────────────────────
+  temporal-ui:
+    image: temporalio/ui:2.31.2
+    ports:
+      - "8233:8080"
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    depends_on:
+      - temporal
+    networks:
+      - healthos
+
+  # ─── Temporal Worker (HealthOS Workflows) ────────────────────────────────
+  temporal-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python -m healthos_platform.services.temporal_worker
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+asyncpg://healthos:healthos@postgres:5432/healthos
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      QDRANT_URL: http://qdrant:6333
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: healthos
+      KEYCLOAK_URL: http://keycloak:8080
+      TEMPORAL_ADDRESS: temporal:7233
+    volumes:
+      - .:/app
+    depends_on:
+      temporal:
+        condition: service_healthy
+      api:
+        condition: service_started
+    networks:
+      - healthos
+
 volumes:
   pgdata:
   redisdata:
@@ -197,6 +266,7 @@ volumes:
   prometheusdata:
   keycloakdata:
   grafanadata:
+  temporaldata:
 
 networks:
   healthos:

@@ -1,0 +1,30 @@
+# Temporal Server — Dynamic Configuration (development)
+# Reference: https://docs.temporal.io/references/dynamic-configuration
+
+# Limit the number of history events per workflow to prevent runaway workflows.
+limit.maxIDLength:
+  - value: 255
+    constraints: {}
+
+# Frontend settings
+frontend.keepAliveMaxConnectionAge:
+  - value: 5m
+    constraints: {}
+
+# History settings — relaxed for development
+history.maximumSignalCountPerExecution:
+  - value: 10000
+    constraints: {}
+
+# Archival disabled for local development
+system.archivalStatus:
+  - value: "disabled"
+    constraints: {}
+
+# Matching settings
+matching.numTaskqueueReadPartitions:
+  - value: 5
+    constraints: {}
+matching.numTaskqueueWritePartitions:
+  - value: 5
+    constraints: {}

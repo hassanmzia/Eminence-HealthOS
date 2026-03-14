@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from healthos_platform.agents.base import BaseAgent
@@ -19,6 +20,12 @@ from healthos_platform.agents.types import (
     AgentTier,
 )
 from healthos_platform.ml.llm.router import LLMRequest, llm_router
+from modules.operations.workflow_engine import (
+    StepStatus,
+    WorkflowDefinition,
+    WorkflowStatus,
+    workflow_engine,
+)
 
 logger = logging.getLogger("healthos.agent.workflow_analytics")
 
@@ -82,56 +89,175 @@ class WorkflowAnalyticsAgent(BaseAgent):
 
         return output
 
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _get_workflows(org_id: str | None = None) -> list[WorkflowDefinition]:
+        """Return all workflows, optionally filtered by org_id."""
+        wfs = list(workflow_engine._workflows.values())
+        if org_id:
+            wfs = [w for w in wfs if w.org_id == org_id]
+        return wfs
+
+    @staticmethod
+    def _step_duration_hours(step) -> float | None:
+        """Return duration in hours for a completed step, or None."""
+        if step.started_at and step.completed_at:
+            delta = (step.completed_at - step.started_at).total_seconds()
+            return delta / 3600
+        return None
+
+    @staticmethod
+    def _workflow_duration_hours(wf: WorkflowDefinition) -> float | None:
+        """Return total workflow duration in hours if completed."""
+        if wf.completed_at and wf.created_at:
+            delta = (wf.completed_at - wf.created_at).total_seconds()
+            return delta / 3600
+        return None
+
+    # ------------------------------------------------------------------
+    # Actions
+    # ------------------------------------------------------------------
+
     def _generate_summary(self, input_data: AgentInput) -> AgentOutput:
-        """Generate operations summary dashboard data."""
+        """Generate operations summary dashboard data from the workflow engine."""
         ctx = input_data.context
         period = ctx.get("period", "weekly")
+        org_id = ctx.get("org_id")
 
         now = datetime.now(timezone.utc)
+        workflows = self._get_workflows(org_id)
+
+        # --- Workflow-level counts ---
+        status_counts: dict[str, int] = defaultdict(int)
+        completion_hours: list[float] = []
+        for wf in workflows:
+            status_counts[wf.status.value] += 1
+            dur = self._workflow_duration_hours(wf)
+            if dur is not None:
+                completion_hours.append(dur)
+
+        total_wf = len(workflows)
+        completed_wf = status_counts.get("completed", 0)
+        active_wf = status_counts.get("active", 0)
+        failed_wf = status_counts.get("failed", 0)
+        completion_rate = completed_wf / total_wf if total_wf else 0.0
+        avg_completion_h = (
+            sum(completion_hours) / len(completion_hours) if completion_hours else 0.0
+        )
+
+        # --- Step-level counts ---
+        total_steps = 0
+        steps_completed = 0
+        steps_pending = 0
+        steps_failed = 0
+        step_durations: list[float] = []
+        for wf in workflows:
+            for step in wf.steps:
+                total_steps += 1
+                if step.status in (StepStatus.COMPLETED, StepStatus.SKIPPED):
+                    steps_completed += 1
+                    dur = self._step_duration_hours(step)
+                    if dur is not None:
+                        step_durations.append(dur)
+                elif step.status in (StepStatus.PENDING, StepStatus.READY, StepStatus.BLOCKED):
+                    steps_pending += 1
+                elif step.status == StepStatus.FAILED:
+                    steps_failed += 1
+
+        avg_step_h = (
+            sum(step_durations) / len(step_durations) if step_durations else 0.0
+        )
+
+        # --- SLA violations ---
+        sla_violations = (
+            workflow_engine.check_sla_violations(org_id) if org_id else []
+        )
+        if not org_id:
+            # Aggregate across all orgs
+            seen_orgs: set[str] = set()
+            for wf in workflows:
+                seen_orgs.add(wf.org_id)
+            for oid in seen_orgs:
+                sla_violations.extend(workflow_engine.check_sla_violations(oid))
+
+        sla_compliant_steps = total_steps - len(sla_violations) - steps_failed
+        sla_compliance = sla_compliant_steps / total_steps if total_steps else 0.0
+
+        # --- Per-agent-type step breakdowns ---
+        pa_steps = [
+            s for wf in workflows for s in wf.steps
+            if s.agent_name == "prior_authorization"
+        ]
+        pa_submitted = len(pa_steps)
+        pa_approved = sum(1 for s in pa_steps if s.status == StepStatus.COMPLETED)
+        pa_denied = sum(1 for s in pa_steps if s.status == StepStatus.FAILED)
+        pa_pending = pa_submitted - pa_approved - pa_denied
+        pa_approval_rate = pa_approved / pa_submitted if pa_submitted else 0.0
+        pa_durations = [self._step_duration_hours(s) for s in pa_steps if self._step_duration_hours(s) is not None]
+        pa_avg_h = sum(pa_durations) / len(pa_durations) if pa_durations else 0.0
+
+        ref_steps = [
+            s for wf in workflows for s in wf.steps
+            if s.agent_name == "referral_coordination"
+        ]
+        ref_total = len(ref_steps)
+        ref_completed = sum(1 for s in ref_steps if s.status == StepStatus.COMPLETED)
+        ref_pending = ref_total - ref_completed
+        ref_rate = ref_completed / ref_total if ref_total else 0.0
+
+        billing_steps = [
+            s for wf in workflows for s in wf.steps
+            if s.agent_name == "billing_readiness"
+        ]
+        bill_total = len(billing_steps)
+        bill_accepted = sum(1 for s in billing_steps if s.status == StepStatus.COMPLETED)
+        bill_denied = sum(1 for s in billing_steps if s.status == StepStatus.FAILED)
+        bill_pending = bill_total - bill_accepted - bill_denied
+        bill_acceptance_rate = bill_accepted / bill_total if bill_total else 0.0
 
         summary = {
             "period": period,
             "generated_at": now.isoformat(),
             "workflows": {
-                "total_created": 47,
-                "completed": 38,
-                "active": 6,
-                "failed": 3,
-                "completion_rate": 0.807,
-                "avg_completion_hours": 28.5,
+                "total_created": total_wf,
+                "completed": completed_wf,
+                "active": active_wf,
+                "failed": failed_wf,
+                "completion_rate": round(completion_rate, 3),
+                "avg_completion_hours": round(avg_completion_h, 1),
             },
             "tasks": {
-                "total_created": 186,
-                "completed": 162,
-                "pending": 18,
-                "overdue": 6,
-                "sla_compliance": 0.917,
-                "avg_completion_hours": 8.2,
+                "total_created": total_steps,
+                "completed": steps_completed,
+                "pending": steps_pending,
+                "failed": steps_failed,
+                "sla_violations": len(sla_violations),
+                "sla_compliance": round(max(sla_compliance, 0.0), 3),
+                "avg_completion_hours": round(avg_step_h, 1),
             },
             "prior_authorizations": {
-                "submitted": 32,
-                "approved": 24,
-                "denied": 5,
-                "pending": 3,
-                "approval_rate": 0.828,
-                "avg_turnaround_hours": 36,
+                "submitted": pa_submitted,
+                "approved": pa_approved,
+                "denied": pa_denied,
+                "pending": pa_pending,
+                "approval_rate": round(pa_approval_rate, 3),
+                "avg_turnaround_hours": round(pa_avg_h, 1),
             },
             "referrals": {
-                "created": 28,
-                "scheduled": 22,
-                "completed": 18,
-                "pending": 6,
-                "scheduling_rate": 0.786,
+                "created": ref_total,
+                "completed": ref_completed,
+                "pending": ref_pending,
+                "completion_rate": round(ref_rate, 3),
             },
             "billing": {
-                "claims_submitted": 128,
-                "claims_paid": 112,
-                "claims_denied": 8,
-                "claims_pending": 8,
-                "total_billed": 245000,
-                "total_collected": 198000,
-                "collection_rate": 0.808,
-                "avg_days_to_payment": 22,
+                "claims_submitted": bill_total,
+                "claims_accepted": bill_accepted,
+                "claims_denied": bill_denied,
+                "claims_pending": bill_pending,
+                "acceptance_rate": round(bill_acceptance_rate, 3),
             },
         }
 
