@@ -23,6 +23,7 @@ const NAV_ITEMS = [
   { href: "/mental-health", label: "Mental Health", icon: "heart" },
   { href: "/alerts", label: "Alerts", icon: "bell" },
   { href: "/agents", label: "Agents", icon: "cpu" },
+  { href: "/patient-portal", label: "Patient Portal", icon: "portal" },
 ] as const;
 
 // Simple SVG icons to avoid external dependency
@@ -112,6 +113,11 @@ function NavIcon({ icon }: { icon: string }) {
     activity: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2" />
+      </svg>
+    ),
+    portal: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
       </svg>
     ),
     cpu: (
