@@ -7,8 +7,8 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-import sqlalchemy as sa
-from sqlalchemy import inspect, text
+import structlog
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -16,6 +16,8 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase
+
+logger = structlog.get_logger()
 
 from healthos_platform.config import get_settings
 
@@ -80,22 +82,13 @@ async def get_db_context() -> AsyncGenerator[AsyncSession, None]:
             raise
 
 
-def _sync_add_missing_columns(conn: sa.engine.Connection) -> None:
-    """Add any columns defined in models but missing from the database."""
-    inspector = inspect(conn)
-    for table_name, table in Base.metadata.tables.items():
-        if not inspector.has_table(table_name):
-            continue
-        existing = {col["name"] for col in inspector.get_columns(table_name)}
-        for column in table.columns:
-            if column.name not in existing:
-                col_type = column.type.compile(conn.engine.dialect)
-                default_clause = ""
-                if column.server_default is not None:
-                    default_clause = f" DEFAULT {column.server_default.arg}"
-                conn.execute(
-                    text(f'ALTER TABLE "{table_name}" ADD COLUMN "{column.name}" {col_type}{default_clause}')
-                )
+_MISSING_COLUMN_MIGRATIONS = [
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "avatar_url" VARCHAR(500)',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "phone" VARCHAR(50)',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mfa_enabled" BOOLEAN DEFAULT false',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mfa_secret" VARCHAR(255)',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "updated_at" TIMESTAMPTZ DEFAULT now()',
+]
 
 
 async def init_db() -> None:
@@ -103,7 +96,11 @@ async def init_db() -> None:
     engine = get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        await conn.run_sync(_sync_add_missing_columns)
+        for stmt in _MISSING_COLUMN_MIGRATIONS:
+            try:
+                await conn.execute(text(stmt))
+            except Exception as exc:
+                logger.warning("healthos.migration_stmt_skipped", stmt=stmt, error=str(exc))
 
 
 async def close_db() -> None:
