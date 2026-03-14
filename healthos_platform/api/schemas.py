@@ -48,6 +48,44 @@ class UserResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class UserProfileResponse(BaseModel):
+    id: uuid.UUID
+    email: str
+    full_name: str
+    role: str
+    org_id: uuid.UUID
+    avatar_url: str | None = None
+    phone: str | None = None
+    profile: dict[str, Any] = {}
+    mfa_enabled: bool = False
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class UserProfileUpdateRequest(BaseModel):
+    full_name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    profile: dict[str, Any] | None = None
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8)
+
+
+class MFASetupResponse(BaseModel):
+    secret: str
+    provisioning_uri: str
+
+
+class MFAVerifyRequest(BaseModel):
+    code: str = Field(min_length=6, max_length=6)
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # ORGANIZATION
 # ═══════════════════════════════════════════════════════════════════════════════
