@@ -5,6 +5,12 @@
 CREATE DATABASE keycloak;
 GRANT ALL PRIVILEGES ON DATABASE keycloak TO healthos;
 
+-- Create temporal databases for Temporal workflow engine
+CREATE DATABASE temporal;
+GRANT ALL PRIVILEGES ON DATABASE temporal TO healthos;
+CREATE DATABASE temporal_visibility;
+GRANT ALL PRIVILEGES ON DATABASE temporal_visibility TO healthos;
+
 -- Enable extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";

@@ -14,6 +14,11 @@ from shared.models.care_plan import CarePlan
 from shared.models.telehealth_session import TelehealthSession
 from shared.models.clinical_note import ClinicalNote
 from shared.models.follow_up_plan import FollowUpPlan
+from shared.models.prior_auth import PriorAuthRequest
+from shared.models.insurance_verification import InsuranceVerification
+from shared.models.referral import Referral
+from shared.models.billing_claim import BillingClaim
+from shared.models.workflow import Workflow, WorkflowStepModel
 
 __all__ = [
     "TimestampMixin", "TenantMixin", "UUIDMixin",
@@ -22,4 +27,6 @@ __all__ = [
     "AgentDecision", "AgentInteraction",
     "ClinicalAlert", "AuditLog", "ConsentRecord", "CarePlan",
     "TelehealthSession", "ClinicalNote", "FollowUpPlan",
+    "PriorAuthRequest", "InsuranceVerification", "Referral", "BillingClaim",
+    "Workflow", "WorkflowStepModel",
 ]
