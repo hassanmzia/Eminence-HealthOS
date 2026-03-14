@@ -351,6 +351,51 @@ export async function generateFollowUp(sessionId: string, body: Record<string, u
   });
 }
 
+export interface ClinicalNoteSection {
+  section: string;
+  content: string;
+  confidence?: number;
+}
+
+export interface ClinicalNote {
+  note_id: string;
+  session_id: string;
+  status: "draft" | "pending_review" | "signed";
+  sections: ClinicalNoteSection[];
+  generated_at: string;
+  generated_by: string;
+  signed_at?: string;
+  signed_by?: string;
+  amendments?: { section: string; content: string; amended_at: string }[];
+  overall_confidence?: number;
+}
+
+export async function fetchClinicalNotes(sessionId: string) {
+  return request<{ notes: ClinicalNote[] }>(`/telehealth/sessions/${sessionId}/notes`);
+}
+
+export async function signClinicalNote(
+  sessionId: string,
+  noteId: string,
+  amendments?: string,
+) {
+  return request<ClinicalNote>(`/telehealth/sessions/${sessionId}/note/sign`, {
+    method: "POST",
+    body: JSON.stringify({ note_id: noteId, amendments }),
+  });
+}
+
+export async function amendClinicalNote(
+  sessionId: string,
+  noteId: string,
+  amendments: { section: string; content: string }[],
+) {
+  return request<ClinicalNote>(`/telehealth/sessions/${sessionId}/note`, {
+    method: "PUT",
+    body: JSON.stringify({ note_id: noteId, amendments }),
+  });
+}
+
 // ── FHIR ─────────────────────────────────────────────────────────────────────
 
 export async function fetchFHIRPatient(patientId: string) {

@@ -11,6 +11,9 @@ from shared.models.alert import ClinicalAlert
 from shared.models.audit import AuditLog
 from shared.models.consent import ConsentRecord
 from shared.models.care_plan import CarePlan
+from shared.models.telehealth_session import TelehealthSession
+from shared.models.clinical_note import ClinicalNote
+from shared.models.follow_up_plan import FollowUpPlan
 
 __all__ = [
     "TimestampMixin", "TenantMixin", "UUIDMixin",
@@ -18,4 +21,5 @@ __all__ = [
     "Observation", "Condition", "Medication", "MedicationOrder",
     "AgentDecision", "AgentInteraction",
     "ClinicalAlert", "AuditLog", "ConsentRecord", "CarePlan",
+    "TelehealthSession", "ClinicalNote", "FollowUpPlan",
 ]

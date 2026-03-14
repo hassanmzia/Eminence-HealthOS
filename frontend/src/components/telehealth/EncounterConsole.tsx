@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { generateClinicalNote, generateFollowUp } from "@/lib/api";
+import {
+  generateClinicalNote,
+  generateFollowUp,
+  type ClinicalNote,
+  type ClinicalNoteSection,
+} from "@/lib/api";
+import { NoteReview } from "./NoteReview";
 
 type Tab = "encounter" | "notes" | "plan";
-
-interface EncounterNote {
-  section: string;
-  content: string;
-}
 
 interface FollowUpPlan {
   follow_up_days: number;
@@ -23,7 +24,7 @@ interface Props {
 
 export function EncounterConsole({ sessionId }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("encounter");
-  const [notes, setNotes] = useState<EncounterNote[]>([]);
+  const [clinicalNote, setClinicalNote] = useState<ClinicalNote | null>(null);
   const [followUp, setFollowUp] = useState<FollowUpPlan | null>(null);
   const [notesLoading, setNotesLoading] = useState(false);
   const [planLoading, setPlanLoading] = useState(false);
@@ -36,18 +37,63 @@ export function EncounterConsole({ sessionId }: Props) {
     setNotesError(null);
     try {
       const result = await generateClinicalNote(sessionId, {});
-      const sections = (result.sections as EncounterNote[]) || (result.notes as EncounterNote[]) || [];
-      if (sections.length > 0) {
-        setNotes(sections);
+
+      // Build sections from the API response
+      let sections: ClinicalNoteSection[] = [];
+      const rawSections =
+        (result.sections as ClinicalNoteSection[]) ||
+        (result.notes as ClinicalNoteSection[]) ||
+        [];
+
+      if (rawSections.length > 0) {
+        sections = rawSections;
       } else {
         // Fallback: build from top-level SOAP fields
-        const soap: EncounterNote[] = [];
-        if (result.subjective) soap.push({ section: "Subjective", content: result.subjective as string });
-        if (result.objective) soap.push({ section: "Objective", content: result.objective as string });
-        if (result.assessment) soap.push({ section: "Assessment", content: result.assessment as string });
-        if (result.plan) soap.push({ section: "Plan", content: Array.isArray(result.plan) ? (result.plan as string[]).join("\n") : result.plan as string });
-        setNotes(soap.length > 0 ? soap : [{ section: "Note", content: JSON.stringify(result, null, 2) }]);
+        if (result.subjective)
+          sections.push({
+            section: "Subjective",
+            content: result.subjective as string,
+            confidence: (result.confidence as Record<string, number>)?.subjective,
+          });
+        if (result.objective)
+          sections.push({
+            section: "Objective",
+            content: result.objective as string,
+            confidence: (result.confidence as Record<string, number>)?.objective,
+          });
+        if (result.assessment)
+          sections.push({
+            section: "Assessment",
+            content: result.assessment as string,
+            confidence: (result.confidence as Record<string, number>)?.assessment,
+          });
+        if (result.plan)
+          sections.push({
+            section: "Plan",
+            content: Array.isArray(result.plan)
+              ? (result.plan as string[]).join("\n")
+              : (result.plan as string),
+            confidence: (result.confidence as Record<string, number>)?.plan,
+          });
+        if (sections.length === 0) {
+          sections = [
+            { section: "Note", content: JSON.stringify(result, null, 2) },
+          ];
+        }
       }
+
+      const note: ClinicalNote = {
+        note_id: (result.note_id as string) || crypto.randomUUID(),
+        session_id: sessionId,
+        status: "draft",
+        sections,
+        generated_at:
+          (result.generated_at as string) || new Date().toISOString(),
+        generated_by: (result.generated_by as string) || "Clinical Note Agent",
+        overall_confidence: result.overall_confidence as number | undefined,
+      };
+
+      setClinicalNote(note);
     } catch {
       setNotesError("Failed to generate clinical note");
     } finally {
@@ -88,7 +134,11 @@ export function EncounterConsole({ sessionId }: Props) {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            {tab === "notes" ? "Clinical Notes" : tab === "plan" ? "Follow-Up Plan" : "Encounter"}
+            {tab === "notes"
+              ? "Clinical Notes"
+              : tab === "plan"
+                ? "Follow-Up Plan"
+                : "Encounter"}
           </button>
         ))}
       </div>
@@ -99,12 +149,24 @@ export function EncounterConsole({ sessionId }: Props) {
           {/* Video placeholder */}
           <div className="flex h-64 items-center justify-center rounded-lg bg-gray-900 text-gray-400">
             <div className="text-center">
-              <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+              <svg
+                className="mx-auto h-12 w-12"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"
+                />
               </svg>
               <p className="mt-2 text-sm">Video encounter area</p>
               <p className="text-xs text-gray-500">
-                {sessionId ? "Click \"Start Visit\" to begin" : "Select a session from the queue"}
+                {sessionId
+                  ? 'Click "Start Visit" to begin'
+                  : "Select a session from the queue"}
               </p>
             </div>
           </div>
@@ -147,19 +209,21 @@ export function EncounterConsole({ sessionId }: Props) {
       {activeTab === "notes" && (
         <div className="space-y-4">
           {!sessionId ? (
-            <p className="py-8 text-center text-sm text-gray-400">Select a session to generate notes</p>
-          ) : notes.length === 0 && !notesLoading ? (
-            <div className="py-8 text-center">
-              <p className="mb-3 text-sm text-gray-400">No clinical notes generated yet</p>
-              <button
-                onClick={handleGenerateNote}
-                className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700"
-              >
-                Generate SOAP Note
-              </button>
-            </div>
+            <p className="py-8 text-center text-sm text-gray-400">
+              Select a session to generate notes
+            </p>
+          ) : clinicalNote && !notesLoading ? (
+            /* ── Show the HITL NoteReview component ── */
+            <NoteReview
+              sessionId={sessionId}
+              note={clinicalNote}
+              onNoteUpdated={(updated) => setClinicalNote(updated)}
+              onRegenerate={handleGenerateNote}
+            />
           ) : notesLoading ? (
-            <div className="py-8 text-center text-sm text-gray-400">Generating clinical note...</div>
+            <div className="py-8 text-center text-sm text-gray-400">
+              Generating clinical note...
+            </div>
           ) : notesError ? (
             <div className="py-8 text-center">
               <p className="mb-3 text-sm text-red-400">{notesError}</p>
@@ -171,31 +235,17 @@ export function EncounterConsole({ sessionId }: Props) {
               </button>
             </div>
           ) : (
-            <>
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-gray-700">SOAP Note (AI-Generated Draft)</h3>
-                <span className="rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700">
-                  Draft — Requires provider review
-                </span>
-              </div>
-              {notes.map((note) => (
-                <div key={note.section}>
-                  <h4 className="text-xs font-medium uppercase text-gray-400">{note.section}</h4>
-                  <p className="mt-1 whitespace-pre-line text-sm text-gray-700">{note.content}</p>
-                </div>
-              ))}
-              <div className="flex gap-2">
-                <button className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">
-                  Sign & Finalize
-                </button>
-                <button
-                  onClick={handleGenerateNote}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
-                >
-                  Regenerate
-                </button>
-              </div>
-            </>
+            <div className="py-8 text-center">
+              <p className="mb-3 text-sm text-gray-400">
+                No clinical notes generated yet
+              </p>
+              <button
+                onClick={handleGenerateNote}
+                className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700"
+              >
+                Generate SOAP Note
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -204,10 +254,14 @@ export function EncounterConsole({ sessionId }: Props) {
       {activeTab === "plan" && (
         <div className="space-y-4">
           {!sessionId ? (
-            <p className="py-8 text-center text-sm text-gray-400">Select a session to generate a follow-up plan</p>
+            <p className="py-8 text-center text-sm text-gray-400">
+              Select a session to generate a follow-up plan
+            </p>
           ) : !followUp && !planLoading ? (
             <div className="py-8 text-center">
-              <p className="mb-3 text-sm text-gray-400">No follow-up plan generated yet</p>
+              <p className="mb-3 text-sm text-gray-400">
+                No follow-up plan generated yet
+              </p>
               <button
                 onClick={handleGenerateFollowUp}
                 className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700"
@@ -216,7 +270,9 @@ export function EncounterConsole({ sessionId }: Props) {
               </button>
             </div>
           ) : planLoading ? (
-            <div className="py-8 text-center text-sm text-gray-400">Generating follow-up plan...</div>
+            <div className="py-8 text-center text-sm text-gray-400">
+              Generating follow-up plan...
+            </div>
           ) : planError ? (
             <div className="py-8 text-center">
               <p className="mb-3 text-sm text-red-400">{planError}</p>
@@ -230,24 +286,40 @@ export function EncounterConsole({ sessionId }: Props) {
           ) : followUp ? (
             <>
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-gray-700">Follow-Up Care Plan</h3>
-                <span className="text-xs text-gray-400">Follow-up in {followUp.follow_up_days} days</span>
+                <h3 className="text-sm font-medium text-gray-700">
+                  Follow-Up Care Plan
+                </h3>
+                <span className="text-xs text-gray-400">
+                  Follow-up in {followUp.follow_up_days} days
+                </span>
               </div>
 
               {followUp.monitoring && (
                 <div>
-                  <h4 className="text-xs font-medium uppercase text-gray-400">Monitoring</h4>
-                  <p className="mt-1 text-sm text-gray-700">{followUp.monitoring}</p>
+                  <h4 className="text-xs font-medium uppercase text-gray-400">
+                    Monitoring
+                  </h4>
+                  <p className="mt-1 text-sm text-gray-700">
+                    {followUp.monitoring}
+                  </p>
                 </div>
               )}
 
               {followUp.action_items.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-medium uppercase text-gray-400">Action Items</h4>
+                  <h4 className="text-xs font-medium uppercase text-gray-400">
+                    Action Items
+                  </h4>
                   <ul className="mt-1 space-y-1">
                     {followUp.action_items.map((item) => (
-                      <li key={item} className="flex items-center gap-2 text-sm text-gray-700">
-                        <input type="checkbox" className="h-3.5 w-3.5 rounded border-gray-300" />
+                      <li
+                        key={item}
+                        className="flex items-center gap-2 text-sm text-gray-700"
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-3.5 w-3.5 rounded border-gray-300"
+                        />
                         {item}
                       </li>
                     ))}
@@ -257,10 +329,14 @@ export function EncounterConsole({ sessionId }: Props) {
 
               {followUp.patient_education.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-medium uppercase text-gray-400">Patient Education</h4>
+                  <h4 className="text-xs font-medium uppercase text-gray-400">
+                    Patient Education
+                  </h4>
                   <ul className="mt-1 space-y-0.5">
                     {followUp.patient_education.map((item) => (
-                      <li key={item} className="text-sm text-gray-600">&bull; {item}</li>
+                      <li key={item} className="text-sm text-gray-600">
+                        &bull; {item}
+                      </li>
                     ))}
                   </ul>
                 </div>

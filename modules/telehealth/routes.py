@@ -5,10 +5,13 @@ Endpoints for telehealth sessions, symptom checks, visit prep, and scheduling.
 
 from __future__ import annotations
 
+import logging
 import uuid
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from modules.telehealth.schemas.session import (
     SessionCreate,
@@ -19,8 +22,36 @@ from modules.telehealth.schemas.session import (
 from healthos_platform.agents.types import AgentInput
 from healthos_platform.api.middleware.tenant import TenantContext, get_current_user
 from healthos_platform.security.rbac import Permission
+from modules.telehealth.events import TelehealthEventPublisher
+
+logger = logging.getLogger("healthos.telehealth.routes")
 
 router = APIRouter(prefix="/telehealth", tags=["telehealth"])
+
+
+# ── HITL Clinical Note schemas ────────────────────────────────────────────────
+
+class NoteAmendment(BaseModel):
+    section: str
+    content: str
+
+
+class AmendNoteRequest(BaseModel):
+    note_id: str
+    amendments: list[NoteAmendment]
+
+
+class SignNoteRequest(BaseModel):
+    note_id: str
+    amendments: str | None = None
+
+
+# In-memory note store (in production, use a database)
+_notes_store: dict[str, list[dict[str, Any]]] = {}
+
+# Shared publisher — the producer is injected at app startup; until then
+# the publisher gracefully logs events instead of sending them to Kafka.
+_event_publisher = TelehealthEventPublisher()
 
 
 @router.post("/sessions", response_model=SessionResponse)
@@ -48,7 +79,21 @@ async def create_telehealth_session(
     )
 
     output = await agent.run(agent_input)
-    return SessionResponse(**output.result)
+    result = output.result
+
+    # Emit session.created event
+    await _event_publisher.session_created(
+        session_id=result.get("session_id", ""),
+        patient_id=str(body.patient_id),
+        tenant_id=ctx.org_id or "default",
+        data={
+            "visit_type": body.visit_type,
+            "urgency": body.urgency,
+            "chief_complaint": body.chief_complaint,
+        },
+    )
+
+    return SessionResponse(**result)
 
 
 @router.post("/symptom-check", response_model=SymptomCheckResponse)
@@ -124,7 +169,36 @@ async def generate_clinical_note(
     )
 
     output = await agent.run(agent_input)
-    return output.result
+    result = output.result
+
+    # Store the note for HITL review workflow
+    note_id = result.get("note_id") or str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    stored_note = {
+        "note_id": note_id,
+        "session_id": session_id,
+        "status": "draft",
+        "sections": result.get("sections", []),
+        "generated_at": result.get("generated_at", now),
+        "generated_by": result.get("generated_by", "Clinical Note Agent"),
+        "overall_confidence": result.get("overall_confidence"),
+        "amendments": [],
+        **{k: v for k, v in result.items() if k not in (
+            "note_id", "session_id", "status", "sections",
+            "generated_at", "generated_by", "overall_confidence", "amendments",
+        )},
+    }
+    _notes_store.setdefault(session_id, []).append(stored_note)
+
+    # Emit note.generated event
+    await _event_publisher.note_generated(
+        session_id=session_id,
+        patient_id=str(body.get("patient_id", "")),
+        tenant_id=ctx.org_id or "default",
+        data={"encounter_type": "telehealth"},
+    )
+
+    return result
 
 
 @router.post("/sessions/{session_id}/follow-up")
@@ -153,6 +227,17 @@ async def generate_follow_up(
     )
 
     output = await agent.run(agent_input)
+
+    # Emit follow_up.created event
+    await _event_publisher.follow_up_created(
+        session_id=session_id,
+        patient_id=str(body.get("patient_id", "")),
+        tenant_id=ctx.org_id or "default",
+        data={
+            "conditions": body.get("conditions", []),
+        },
+    )
+
     return output.result
 
 
@@ -237,3 +322,133 @@ async def get_session(
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     return session
+
+
+# ── HITL Clinical Note Endpoints ──────────────────────────────────────────────
+
+
+@router.get("/sessions/{session_id}/notes")
+async def list_clinical_notes(
+    session_id: str,
+    ctx: TenantContext = Depends(get_current_user),
+):
+    """List all clinical notes for a telehealth session."""
+    ctx.require_permission(Permission.ENCOUNTERS_READ)
+
+    notes = _notes_store.get(session_id, [])
+    return {"notes": notes}
+
+
+@router.put("/sessions/{session_id}/note")
+async def amend_clinical_note(
+    session_id: str,
+    body: AmendNoteRequest,
+    ctx: TenantContext = Depends(get_current_user),
+):
+    """Update / amend a clinical note. Applies provider edits to specific sections."""
+    ctx.require_permission(Permission.ENCOUNTERS_WRITE)
+
+    notes = _notes_store.get(session_id, [])
+    note = next((n for n in notes if n["note_id"] == body.note_id), None)
+
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    if note.get("status") == "signed":
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot amend a signed note",
+        )
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Apply each amendment to the matching section
+    for amendment in body.amendments:
+        for section in note.get("sections", []):
+            if section["section"] == amendment.section:
+                section["content"] = amendment.content
+                break
+
+        # Record the amendment in history
+        note.setdefault("amendments", []).append(
+            {
+                "section": amendment.section,
+                "content": amendment.content,
+                "amended_at": now,
+                "amended_by": ctx.user_id or "unknown",
+            }
+        )
+
+    note["status"] = "pending_review"
+    note["updated_at"] = now
+
+    logger.info(
+        "Clinical note %s amended for session %s by %s",
+        body.note_id,
+        session_id,
+        ctx.user_id,
+    )
+
+    return note
+
+
+@router.post("/sessions/{session_id}/note/sign")
+async def sign_clinical_note(
+    session_id: str,
+    body: SignNoteRequest,
+    ctx: TenantContext = Depends(get_current_user),
+):
+    """Sign and finalize a clinical note.
+
+    Sets status to 'signed' and records signed_at / signed_by.
+    """
+    ctx.require_permission(Permission.ENCOUNTERS_WRITE)
+
+    notes = _notes_store.get(session_id, [])
+    note = next((n for n in notes if n["note_id"] == body.note_id), None)
+
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    if note.get("status") == "signed":
+        raise HTTPException(
+            status_code=400,
+            detail="Note is already signed",
+        )
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    note["status"] = "signed"
+    note["signed_at"] = now
+    note["signed_by"] = ctx.user_id or "unknown"
+
+    if body.amendments:
+        note.setdefault("amendments", []).append(
+            {
+                "section": "_attestation",
+                "content": body.amendments,
+                "amended_at": now,
+                "amended_by": ctx.user_id or "unknown",
+            }
+        )
+
+    logger.info(
+        "Clinical note %s signed for session %s by %s",
+        body.note_id,
+        session_id,
+        ctx.user_id,
+    )
+
+    # Emit note.signed event
+    await _event_publisher.note_signed(
+        session_id=session_id,
+        patient_id="",
+        tenant_id=ctx.org_id or "default",
+        data={
+            "note_id": body.note_id,
+            "signed_by": ctx.user_id,
+            "signed_at": now,
+        },
+    )
+
+    return note
