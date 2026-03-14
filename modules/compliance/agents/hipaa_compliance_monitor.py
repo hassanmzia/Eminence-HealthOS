@@ -591,7 +591,7 @@ class HIPAAComplianceMonitorAgent(BaseAgent):
 
     # ── Breach Detection ─────────────────────────────────────────────────────
 
-    def _breach_detection(self, input_data: AgentInput) -> AgentOutput:
+    async def _breach_detection(self, input_data: AgentInput) -> AgentOutput:
         """Evaluate potential breach indicators and classify severity."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -681,6 +681,30 @@ class HIPAAComplianceMonitorAgent(BaseAgent):
         }
 
         confidence = 0.90 if indicators else 0.50
+
+        # ── LLM: generate compliance narrative ───────────────────────────────
+        try:
+            prompt = (
+                "You are a HIPAA breach response expert. Based on the following breach "
+                "detection assessment, produce a concise narrative (2-3 paragraphs) evaluating "
+                "the overall breach risk, explaining reporting obligations under the HIPAA "
+                "Breach Notification Rule, and recommending immediate response actions.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered HIPAA compliance analyst for a healthcare platform. "
+                    "Provide expert risk assessment and remediation priorities per 45 CFR 164."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["compliance_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for breach_detection; continuing without narrative")
+            result["compliance_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
 
         return self.build_output(
             trace_id=input_data.trace_id,
