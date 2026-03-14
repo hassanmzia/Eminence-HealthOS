@@ -13,7 +13,7 @@ from services.api.middleware.auth import CurrentUser, require_auth, require_role
 from services.api.middleware.tenant import get_tenant_id
 
 logger = logging.getLogger("healthos.routes.mental_health")
-router = APIRouter()
+router = APIRouter(prefix="/mental-health", tags=["mental-health"])
 
 DEFAULT_ORG = uuid.UUID("00000000-0000-0000-0000-000000000001")
 

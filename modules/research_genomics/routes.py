@@ -11,7 +11,7 @@ from healthos_platform.agents.types import AgentInput
 from services.api.middleware.auth import CurrentUser, require_auth, require_role
 from services.api.middleware.tenant import get_tenant_id
 
-router = APIRouter()
+router = APIRouter(prefix="/research-genomics", tags=["research-genomics"])
 
 DEFAULT_ORG = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
