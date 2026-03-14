@@ -1,6 +1,5 @@
 """
 E2E test fixtures -- shared helpers for RPM pipeline end-to-end tests.
-Reuses integration conftest and adds workflow-level fixtures.
 """
 
 from __future__ import annotations
@@ -11,9 +10,6 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from healthos_platform.agents.types import PipelineState, VitalType
-
-from tests.integration.conftest import *  # noqa: F401, F403
-from tests.integration.conftest import auth_header  # noqa: F401
 
 
 # ── Identifiers ──────────────────────────────────────────────────────────────
@@ -114,19 +110,22 @@ def deteriorating_vitals_raw(now_utc):
     readings = []
     for i in range(6):
         ts = now_utc - timedelta(hours=5 - i)
+        # HR: 70 -> 140  (doubles -- strong increasing trend)
         readings.append(
-            _build_reading("heart_rate", {"value": 75 + i * 10}, "bpm", ts)
+            _build_reading("heart_rate", {"value": 70 + i * 14}, "bpm", ts)
         )
+        # BP: 115/70 -> 190/115 (steep rise)
         readings.append(
             _build_reading(
                 "blood_pressure",
-                {"systolic": 120 + i * 12, "diastolic": 78 + i * 6},
+                {"systolic": 115 + i * 15, "diastolic": 70 + i * 9},
                 "mmHg",
                 ts + timedelta(seconds=30),
             )
         )
+        # SpO2: 99 -> 84 (steep decline)
         readings.append(
-            _build_reading("spo2", {"value": 98 - i * 2}, "%", ts + timedelta(seconds=60))
+            _build_reading("spo2", {"value": 99 - i * 3}, "%", ts + timedelta(seconds=60))
         )
     return readings
 
