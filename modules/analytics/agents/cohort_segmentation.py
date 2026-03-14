@@ -207,6 +207,30 @@ class CohortSegmentationAgent(BaseAgent):
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
+        # ── LLM: generate cohort narrative ───────────────────────────────────
+        try:
+            prompt = (
+                "You are a population health analyst. Based on the following template-based "
+                "cohort data, produce a concise narrative (2-3 paragraphs) explaining the "
+                "cohort characteristics, clinical significance, and recommended targeted "
+                "interventions.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered population health analyst for a healthcare platform. "
+                    "Provide clear, clinically relevant analysis of patient cohorts and segments."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["cohort_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for create_from_template; continuing without narrative")
+            result["cohort_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -214,7 +238,7 @@ class CohortSegmentationAgent(BaseAgent):
             rationale=f"Cohort from template '{template_name}': {len(matched)} patients",
         )
 
-    def _analyze_cohort(self, input_data: AgentInput) -> AgentOutput:
+    async def _analyze_cohort(self, input_data: AgentInput) -> AgentOutput:
         """Analyze an existing cohort's characteristics and trends."""
         ctx = input_data.context
         cohort_id = ctx.get("cohort_id", "")
@@ -252,6 +276,30 @@ class CohortSegmentationAgent(BaseAgent):
             "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }
 
+        # ── LLM: generate cohort narrative ───────────────────────────────────
+        try:
+            prompt = (
+                "You are a population health analyst. Based on the following cohort analysis "
+                "data including demographics, clinical profile, risk profile, and utilization "
+                "patterns, produce a concise narrative (2-3 paragraphs) explaining the cohort "
+                "characteristics, clinical significance, and recommended interventions.\n\n"
+                f"{json.dumps(analysis, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered population health analyst for a healthcare platform. "
+                    "Provide clear, clinically relevant analysis of patient cohorts and segments."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            analysis["cohort_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for analyze_cohort; continuing without narrative")
+            analysis["cohort_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=analysis,
@@ -262,7 +310,7 @@ class CohortSegmentationAgent(BaseAgent):
             ),
         )
 
-    def _compare_cohorts(self, input_data: AgentInput) -> AgentOutput:
+    async def _compare_cohorts(self, input_data: AgentInput) -> AgentOutput:
         """Compare two cohorts on key metrics."""
         ctx = input_data.context
         cohort_a = ctx.get("cohort_a", "")
@@ -286,6 +334,30 @@ class CohortSegmentationAgent(BaseAgent):
             ],
             "compared_at": datetime.now(timezone.utc).isoformat(),
         }
+
+        # ── LLM: generate cohort narrative ───────────────────────────────────
+        try:
+            prompt = (
+                "You are a population health analyst. Based on the following cohort "
+                "comparison data, produce a concise narrative (2-3 paragraphs) explaining "
+                "the key differences between cohorts, clinical implications, and which "
+                "cohort should be prioritized for intervention.\n\n"
+                f"{json.dumps(comparison, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered population health analyst for a healthcare platform. "
+                    "Provide clear, clinically relevant analysis of patient cohorts and segments."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            comparison["cohort_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for compare_cohorts; continuing without narrative")
+            comparison["cohort_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
 
         return self.build_output(
             trace_id=input_data.trace_id,

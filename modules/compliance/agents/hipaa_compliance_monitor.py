@@ -146,15 +146,15 @@ class HIPAAComplianceMonitorAgent(BaseAgent):
         action = ctx.get("action", "full_scan")
 
         if action == "full_scan":
-            return self._full_scan(input_data)
+            return await self._full_scan(input_data)
         elif action == "access_audit":
-            return self._access_audit(input_data)
+            return await self._access_audit(input_data)
         elif action == "phi_exposure_check":
-            return self._phi_exposure_check(input_data)
+            return await self._phi_exposure_check(input_data)
         elif action == "policy_compliance":
-            return self._policy_compliance(input_data)
+            return await self._policy_compliance(input_data)
         elif action == "breach_detection":
-            return self._breach_detection(input_data)
+            return await self._breach_detection(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -166,7 +166,7 @@ class HIPAAComplianceMonitorAgent(BaseAgent):
 
     # ── Full Scan ────────────────────────────────────────────────────────────
 
-    def _full_scan(self, input_data: AgentInput) -> AgentOutput:
+    async def _full_scan(self, input_data: AgentInput) -> AgentOutput:
         """Run all three HIPAA safeguard categories — administrative, physical, technical."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -233,6 +233,30 @@ class HIPAAComplianceMonitorAgent(BaseAgent):
         }
 
         confidence = 0.95 if compliance_rate >= 90 else (0.85 if compliance_rate >= 70 else 0.70)
+
+        # ── LLM: generate compliance narrative ───────────────────────────────
+        try:
+            prompt = (
+                "You are a HIPAA compliance expert. Based on the following full compliance "
+                "scan results, produce a concise narrative (2-3 paragraphs) providing a risk "
+                "assessment, highlighting the most critical findings, and prioritizing "
+                "remediation actions.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered HIPAA compliance analyst for a healthcare platform. "
+                    "Provide expert risk assessment and remediation priorities per 45 CFR 164."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["compliance_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for full_scan; continuing without narrative")
+            result["compliance_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
 
         return self.build_output(
             trace_id=input_data.trace_id,

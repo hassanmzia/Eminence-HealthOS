@@ -17,6 +17,7 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
 
 WORKLIST_PRIORITIES = {
     "stat": {"sla_minutes": 30, "auto_escalate": True},
@@ -43,7 +44,7 @@ class ImagingWorkflowAgent(BaseAgent):
         action = ctx.get("action", "assign_study")
 
         if action == "assign_study":
-            return self._assign_study(input_data)
+            return await self._assign_study(input_data)
         elif action == "update_read_status":
             return self._update_read_status(input_data)
         elif action == "worklist_summary":
@@ -59,13 +60,15 @@ class ImagingWorkflowAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _assign_study(self, input_data: AgentInput) -> AgentOutput:
+    async def _assign_study(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         study_id = ctx.get("study_id", str(uuid.uuid4()))
         priority = ctx.get("priority", "routine")
         modality = ctx.get("modality", "CR")
         has_critical_ai_finding = ctx.get("has_critical_ai_finding", False)
+        clinical_history = ctx.get("clinical_history", "")
+        ordering_diagnosis = ctx.get("ordering_diagnosis", "")
 
         if has_critical_ai_finding:
             priority = "stat"
@@ -85,6 +88,37 @@ class ImagingWorkflowAgent(BaseAgent):
             "ai_pre_read_available": True,
             "status": "assigned",
         }
+
+        # --- LLM: generate workflow recommendation ---
+        try:
+            prompt = (
+                f"You are a radiology workflow optimization specialist.\n\n"
+                f"Study ID: {study_id}\n"
+                f"Modality: {modality}\n"
+                f"Priority: {priority}\n"
+                f"SLA: {sla['sla_minutes']} minutes\n"
+                f"Has Critical AI Finding: {has_critical_ai_finding}\n"
+                f"Assigned Radiologist: {result['assigned_radiologist']}\n"
+                f"Clinical History: {clinical_history or 'Not provided'}\n"
+                f"Ordering Diagnosis: {ordering_diagnosis or 'Not provided'}\n\n"
+                f"Provide a concise workflow recommendation covering study routing rationale, "
+                f"prioritization justification, suggested radiologist subspecialty match, "
+                f"and any special handling instructions based on the clinical context."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system="You are a radiology workflow AI that generates intelligent study routing and prioritization recommendations.",
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["workflow_recommendation"] = resp.content
+        except Exception:
+            result["workflow_recommendation"] = (
+                f"Study {study_id} ({modality}) routed to {priority.upper()} worklist "
+                f"with {sla['sla_minutes']}-minute SLA. "
+                f"Assigned to {result['assigned_radiologist']}. "
+                f"{'AI pre-read flagged critical finding — STAT priority applied.' if has_critical_ai_finding else 'Standard routing applied.'}"
+            )
 
         return self.build_output(
             trace_id=input_data.trace_id,
