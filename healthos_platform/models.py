@@ -59,9 +59,16 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(50), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), default="")
+    avatar_url: Mapped[str | None] = mapped_column(String(500))
+    phone: Mapped[str | None] = mapped_column(String(50))
     profile: Mapped[dict] = mapped_column(JSONB, default=dict)
+    mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    mfa_secret: Mapped[str | None] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
     organization: Mapped[Organization] = relationship(back_populates="users")
 

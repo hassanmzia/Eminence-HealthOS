@@ -31,6 +31,97 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
+// ── User Profile ──────────────────────────────────────────────────────────────
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  org_id: string;
+  avatar_url: string | null;
+  phone: string | null;
+  profile: Record<string, unknown>;
+  mfa_enabled: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export interface MFASetup {
+  secret: string;
+  provisioning_uri: string;
+}
+
+export async function fetchMyProfile() {
+  return request<UserProfile>("/users/me");
+}
+
+export async function updateMyProfile(body: {
+  full_name?: string;
+  email?: string;
+  phone?: string;
+  profile?: Record<string, unknown>;
+}) {
+  return request<UserProfile>("/users/me", {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function uploadAvatar(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const url = `${API_PREFIX}/users/me/avatar`;
+  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+  if (res.status === 401 && typeof window !== "undefined") {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    window.location.href = "/login";
+    throw new Error("Unauthorized");
+  }
+  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
+  return res.json() as Promise<UserProfile>;
+}
+
+export async function deleteAvatar() {
+  return request<UserProfile>("/users/me/avatar", { method: "DELETE" });
+}
+
+export async function changePassword(body: { current_password: string; new_password: string }) {
+  return request<{ message: string }>("/users/me/change-password", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function setupMFA() {
+  return request<MFASetup>("/users/me/mfa/setup", { method: "POST" });
+}
+
+export async function verifyMFA(code: string) {
+  return request<{ message: string }>("/users/me/mfa/verify", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+}
+
+export async function disableMFA(code: string) {
+  return request<{ message: string }>("/users/me/mfa/disable", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+}
+
+export async function deleteMyAccount() {
+  return request<{ message: string }>("/users/me", { method: "DELETE" });
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 
 export interface DashboardSummary {
