@@ -412,46 +412,114 @@ class WorkflowAnalyticsAgent(BaseAgent):
         )
 
     def _generate_kpi_report(self, input_data: AgentInput) -> AgentOutput:
-        """Generate operational KPI report."""
+        """Generate operational KPI report from real workflow data."""
         ctx = input_data.context
         period = ctx.get("period", "monthly")
+        org_id = ctx.get("org_id")
+        now = datetime.now(timezone.utc)
+        workflows = self._get_workflows(org_id)
+
+        # --- Efficiency metrics ---
+        step_durations: list[float] = []
+        wf_durations: list[float] = []
+        total_steps = 0
+        steps_no_retry = 0
+
+        for wf in workflows:
+            dur = self._workflow_duration_hours(wf)
+            if dur is not None:
+                wf_durations.append(dur)
+            for step in wf.steps:
+                total_steps += 1
+                sd = self._step_duration_hours(step)
+                if sd is not None:
+                    step_durations.append(sd)
+                if step.status == StepStatus.COMPLETED and step.retry_count == 0:
+                    steps_no_retry += 1
+
+        completed_steps = sum(
+            1 for wf in workflows for s in wf.steps
+            if s.status in (StepStatus.COMPLETED, StepStatus.SKIPPED)
+        )
+
+        avg_step_h = sum(step_durations) / len(step_durations) if step_durations else 0.0
+        avg_wf_h = sum(wf_durations) / len(wf_durations) if wf_durations else 0.0
+        first_pass_rate = steps_no_retry / completed_steps if completed_steps else 0.0
+
+        # --- Quality metrics ---
+        # SLA compliance
+        sla_violation_count = 0
+        if org_id:
+            sla_violation_count = len(workflow_engine.check_sla_violations(org_id))
+        else:
+            seen_orgs: set[str] = {wf.org_id for wf in workflows}
+            for oid in seen_orgs:
+                sla_violation_count += len(workflow_engine.check_sla_violations(oid))
+        sla_compliance = (total_steps - sla_violation_count) / total_steps if total_steps else 0.0
+
+        # Prior auth approval rate
+        pa_steps = [s for wf in workflows for s in wf.steps if s.agent_name == "prior_authorization"]
+        pa_done = sum(1 for s in pa_steps if s.status in (StepStatus.COMPLETED, StepStatus.FAILED))
+        pa_approved = sum(1 for s in pa_steps if s.status == StepStatus.COMPLETED)
+        pa_approval_rate = pa_approved / pa_done if pa_done else 0.0
+
+        # Insurance verification turnaround
+        iv_steps = [s for wf in workflows for s in wf.steps if s.agent_name == "insurance_verification"]
+        iv_durations = [self._step_duration_hours(s) for s in iv_steps if self._step_duration_hours(s) is not None]
+        iv_avg_h = sum(iv_durations) / len(iv_durations) if iv_durations else 0.0
+
+        # Referral completion rate
+        ref_steps = [s for wf in workflows for s in wf.steps if s.agent_name == "referral_coordination"]
+        ref_total = len(ref_steps)
+        ref_completed = sum(1 for s in ref_steps if s.status == StepStatus.COMPLETED)
+        ref_rate = ref_completed / ref_total if ref_total else 0.0
+
+        # Billing claim acceptance rate
+        bill_steps = [s for wf in workflows for s in wf.steps if s.agent_name == "billing_readiness"]
+        bill_done = sum(1 for s in bill_steps if s.status in (StepStatus.COMPLETED, StepStatus.FAILED))
+        bill_accepted = sum(1 for s in bill_steps if s.status == StepStatus.COMPLETED)
+        bill_denied = sum(1 for s in bill_steps if s.status == StepStatus.FAILED)
+        claim_acceptance = bill_accepted / bill_done if bill_done else 0.0
+        denial_rate = bill_denied / bill_done if bill_done else 0.0
+
+        # --- Avg time-to-completion per workflow type ---
+        type_durations: dict[str, list[float]] = defaultdict(list)
+        for wf in workflows:
+            dur = self._workflow_duration_hours(wf)
+            if dur is not None:
+                type_durations[wf.workflow_type].append(dur)
+        avg_by_type = {
+            wtype: round(sum(ds) / len(ds), 1)
+            for wtype, ds in type_durations.items()
+        }
+
+        # --- Volume metrics ---
+        total_wf = len(workflows)
 
         kpis = {
             "period": period,
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": now.isoformat(),
             "efficiency_metrics": {
-                "avg_task_completion_time_hours": 8.2,
-                "avg_workflow_completion_time_hours": 28.5,
-                "first_pass_resolution_rate": 0.87,
-                "automation_rate": 0.62,
-                "tasks_per_fte_per_day": 12.4,
+                "avg_task_completion_time_hours": round(avg_step_h, 1),
+                "avg_workflow_completion_time_hours": round(avg_wf_h, 1),
+                "first_pass_resolution_rate": round(first_pass_rate, 3),
+                "avg_completion_hours_by_type": avg_by_type,
             },
             "quality_metrics": {
-                "sla_compliance_rate": 0.917,
-                "coding_accuracy_rate": 0.92,
-                "claim_acceptance_rate": 0.94,
-                "prior_auth_approval_rate": 0.828,
-                "referral_completion_rate": 0.786,
-            },
-            "financial_metrics": {
-                "revenue_captured_rate": 0.808,
-                "days_in_ar": 22,
-                "denial_rate": 0.06,
-                "cost_per_claim": 12.50,
-                "revenue_per_encounter": 285,
+                "sla_compliance_rate": round(max(sla_compliance, 0.0), 3),
+                "claim_acceptance_rate": round(claim_acceptance, 3),
+                "denial_rate": round(denial_rate, 3),
+                "prior_auth_approval_rate": round(pa_approval_rate, 3),
+                "referral_completion_rate": round(ref_rate, 3),
+                "insurance_verification_avg_hours": round(iv_avg_h, 1),
             },
             "volume_metrics": {
-                "total_encounters": 142,
-                "total_claims": 128,
-                "total_prior_auths": 32,
-                "total_referrals": 28,
-                "total_workflows": 47,
-            },
-            "trends": {
-                "sla_compliance_trend": "improving",
-                "denial_rate_trend": "stable",
-                "automation_rate_trend": "improving",
-                "revenue_trend": "improving",
+                "total_workflows": total_wf,
+                "total_steps": total_steps,
+                "total_prior_auths": len(pa_steps),
+                "total_referrals": ref_total,
+                "total_billing_claims": len(bill_steps),
+                "total_insurance_verifications": len(iv_steps),
             },
         }
 
@@ -462,8 +530,8 @@ class WorkflowAnalyticsAgent(BaseAgent):
             rationale=(
                 f"KPI report ({period}): "
                 f"SLA {kpis['quality_metrics']['sla_compliance_rate']:.1%}, "
-                f"automation {kpis['efficiency_metrics']['automation_rate']:.1%}, "
-                f"collection {kpis['financial_metrics']['revenue_captured_rate']:.1%}"
+                f"prior-auth approval {kpis['quality_metrics']['prior_auth_approval_rate']:.1%}, "
+                f"claim acceptance {kpis['quality_metrics']['claim_acceptance_rate']:.1%}"
             ),
         )
 
