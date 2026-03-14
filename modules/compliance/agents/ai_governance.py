@@ -160,15 +160,15 @@ class AIGovernanceAgent(BaseAgent):
         action = ctx.get("action", "model_inventory")
 
         if action == "model_inventory":
-            return self._model_inventory(input_data)
+            return await self._model_inventory(input_data)
         elif action == "drift_detection":
-            return self._drift_detection(input_data)
+            return await self._drift_detection(input_data)
         elif action == "bias_audit":
-            return self._bias_audit(input_data)
+            return await self._bias_audit(input_data)
         elif action == "performance_report":
-            return self._performance_report(input_data)
+            return await self._performance_report(input_data)
         elif action == "governance_check":
-            return self._governance_check(input_data)
+            return await self._governance_check(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -180,7 +180,7 @@ class AIGovernanceAgent(BaseAgent):
 
     # ── Model Inventory ──────────────────────────────────────────────────────
 
-    def _model_inventory(self, input_data: AgentInput) -> AgentOutput:
+    async def _model_inventory(self, input_data: AgentInput) -> AgentOutput:
         """Catalog all AI models in use with version, purpose, training date, and performance."""
         now = datetime.now(timezone.utc)
 
@@ -212,6 +212,30 @@ class AIGovernanceAgent(BaseAgent):
             },
         }
 
+        # ── LLM: generate governance narrative ─────────────────────────────────
+        try:
+            prompt = (
+                "You are an AI governance specialist. Based on the following model inventory "
+                "data, produce a concise narrative (2-3 paragraphs) analyzing the overall AI "
+                "model portfolio health, identifying governance risks, and recommending actions "
+                "to strengthen AI oversight.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered governance analyst for a healthcare platform. "
+                    "Provide expert analysis of AI model health, bias risks, and governance recommendations."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["governance_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for model_inventory; continuing without narrative")
+            result["governance_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -221,7 +245,7 @@ class AIGovernanceAgent(BaseAgent):
 
     # ── Drift Detection ──────────────────────────────────────────────────────
 
-    def _drift_detection(self, input_data: AgentInput) -> AgentOutput:
+    async def _drift_detection(self, input_data: AgentInput) -> AgentOutput:
         """Compare current model performance against baseline using PSI."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -293,6 +317,30 @@ class AIGovernanceAgent(BaseAgent):
 
         confidence = 0.90 if current_metrics else 0.70
 
+        # ── LLM: generate governance narrative ─────────────────────────────────
+        try:
+            prompt = (
+                "You are an AI model monitoring specialist. Based on the following drift "
+                "detection results, produce a concise narrative (2-3 paragraphs) explaining "
+                "which models are drifting, the potential impact on clinical decisions, and "
+                "recommended retraining or mitigation actions.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered governance analyst for a healthcare platform. "
+                    "Provide expert analysis of AI model health, bias risks, and governance recommendations."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["governance_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for drift_detection; continuing without narrative")
+            result["governance_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -305,7 +353,7 @@ class AIGovernanceAgent(BaseAgent):
 
     # ── Bias Audit ───────────────────────────────────────────────────────────
 
-    def _bias_audit(self, input_data: AgentInput) -> AgentOutput:
+    async def _bias_audit(self, input_data: AgentInput) -> AgentOutput:
         """Analyze model predictions across demographic groups for disparate impact."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -372,6 +420,30 @@ class AIGovernanceAgent(BaseAgent):
         }
 
         confidence = 0.88 if predictions else 0.55
+
+        # ── LLM: generate governance narrative ─────────────────────────────────
+        try:
+            prompt = (
+                "You are an AI fairness and bias expert. Based on the following bias audit "
+                "results, produce a concise narrative (2-3 paragraphs) explaining any detected "
+                "disparate impact, potential root causes, and recommended mitigation strategies "
+                "to ensure equitable AI outcomes across demographic groups.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered governance analyst for a healthcare platform. "
+                    "Provide expert analysis of AI model health, bias risks, and governance recommendations."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["governance_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for bias_audit; continuing without narrative")
+            result["governance_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
 
         return self.build_output(
             trace_id=input_data.trace_id,
