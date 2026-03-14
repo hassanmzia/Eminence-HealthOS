@@ -536,32 +536,151 @@ class WorkflowAnalyticsAgent(BaseAgent):
         )
 
     def _analyze_trends(self, input_data: AgentInput) -> AgentOutput:
-        """Analyze operational trends over time."""
+        """Analyze operational trends over time from real workflow data."""
         ctx = input_data.context
+        org_id = ctx.get("org_id")
+        lookback_days = ctx.get("lookback_days", 30)
+        now = datetime.now(timezone.utc)
+        cutoff = now - timedelta(days=lookback_days)
+        workflows = self._get_workflows(org_id)
+
+        # --- Bucket workflows by day ---
+        daily_created: dict[str, int] = defaultdict(int)
+        daily_completed: dict[str, int] = defaultdict(int)
+        daily_failed: dict[str, int] = defaultdict(int)
+        daily_step_failures: dict[str, int] = defaultdict(int)
+        daily_steps_total: dict[str, int] = defaultdict(int)
+        daily_sla_ok: dict[str, int] = defaultdict(int)
+        daily_sla_total: dict[str, int] = defaultdict(int)
+
+        for wf in workflows:
+            if wf.created_at < cutoff:
+                continue
+            day_key = wf.created_at.strftime("%Y-%m-%d")
+            daily_created[day_key] += 1
+            if wf.status == WorkflowStatus.COMPLETED and wf.completed_at:
+                comp_day = wf.completed_at.strftime("%Y-%m-%d")
+                daily_completed[comp_day] += 1
+            elif wf.status == WorkflowStatus.FAILED:
+                daily_failed[day_key] += 1
+
+            for step in wf.steps:
+                daily_steps_total[day_key] += 1
+                if step.status == StepStatus.FAILED:
+                    daily_step_failures[day_key] += 1
+                # SLA check for completed/in-progress steps
+                if step.status in (StepStatus.COMPLETED, StepStatus.SKIPPED):
+                    daily_sla_total[day_key] += 1
+                    deadline = wf.created_at + timedelta(hours=step.sla_hours)
+                    finished = step.completed_at or now
+                    if finished <= deadline:
+                        daily_sla_ok[day_key] += 1
+                elif step.status in (StepStatus.READY, StepStatus.IN_PROGRESS):
+                    daily_sla_total[day_key] += 1
+                    deadline = wf.created_at + timedelta(hours=step.sla_hours)
+                    if now <= deadline:
+                        daily_sla_ok[day_key] += 1
+
+        # --- Build daily time series ---
+        all_days = sorted(
+            set(daily_created.keys())
+            | set(daily_completed.keys())
+            | set(daily_failed.keys())
+        )
+
+        daily_series: list[dict[str, Any]] = []
+        for day in all_days:
+            sla_t = daily_sla_total.get(day, 0)
+            sla_ok = daily_sla_ok.get(day, 0)
+            step_t = daily_steps_total.get(day, 0)
+            step_f = daily_step_failures.get(day, 0)
+            daily_series.append({
+                "date": day,
+                "workflows_created": daily_created.get(day, 0),
+                "workflows_completed": daily_completed.get(day, 0),
+                "workflows_failed": daily_failed.get(day, 0),
+                "sla_compliance": round(sla_ok / sla_t, 3) if sla_t else None,
+                "step_failure_rate": round(step_f / step_t, 3) if step_t else None,
+            })
+
+        # --- Aggregate weekly buckets ---
+        weekly_series: list[dict[str, Any]] = []
+        week_buckets: dict[str, dict[str, Any]] = defaultdict(
+            lambda: {"created": 0, "completed": 0, "failed": 0, "sla_ok": 0, "sla_total": 0}
+        )
+        for day in all_days:
+            dt = datetime.strptime(day, "%Y-%m-%d")
+            week_key = dt.strftime("%G-W%V")
+            week_buckets[week_key]["created"] += daily_created.get(day, 0)
+            week_buckets[week_key]["completed"] += daily_completed.get(day, 0)
+            week_buckets[week_key]["failed"] += daily_failed.get(day, 0)
+            week_buckets[week_key]["sla_ok"] += daily_sla_ok.get(day, 0)
+            week_buckets[week_key]["sla_total"] += daily_sla_total.get(day, 0)
+
+        for week_key in sorted(week_buckets.keys()):
+            wb = week_buckets[week_key]
+            weekly_series.append({
+                "week": week_key,
+                "workflows_created": wb["created"],
+                "workflows_completed": wb["completed"],
+                "workflows_failed": wb["failed"],
+                "sla_compliance": round(wb["sla_ok"] / wb["sla_total"], 3) if wb["sla_total"] else None,
+            })
+
+        # --- Compute throughput ---
+        num_days = max((now - cutoff).days, 1)
+        total_completed = sum(daily_completed.values())
+        throughput_per_day = round(total_completed / num_days, 2)
+
+        # --- Auto-generated insights ---
+        insights: list[str] = []
+
+        if len(weekly_series) >= 2:
+            last = weekly_series[-1]
+            prev = weekly_series[-2]
+            if last["sla_compliance"] is not None and prev["sla_compliance"] is not None:
+                delta = last["sla_compliance"] - prev["sla_compliance"]
+                direction = "improved" if delta > 0 else "declined"
+                insights.append(
+                    f"SLA compliance {direction} by {abs(delta):.1%} "
+                    f"({prev['week']} -> {last['week']})"
+                )
+            if last["workflows_completed"] and prev["workflows_completed"]:
+                pct_change = (last["workflows_completed"] - prev["workflows_completed"]) / prev["workflows_completed"]
+                direction = "increased" if pct_change > 0 else "decreased"
+                insights.append(
+                    f"Weekly throughput {direction} {abs(pct_change):.1%} "
+                    f"({prev['workflows_completed']} -> {last['workflows_completed']})"
+                )
+
+        total_wf_in_period = sum(daily_created.values())
+        total_failed = sum(daily_failed.values())
+        if total_wf_in_period:
+            fail_pct = total_failed / total_wf_in_period
+            insights.append(
+                f"Overall failure rate: {fail_pct:.1%} "
+                f"({total_failed}/{total_wf_in_period} workflows)"
+            )
+
+        insights.append(f"Average throughput: {throughput_per_day} workflows completed/day")
 
         trends = {
-            "analyzed_at": datetime.now(timezone.utc).isoformat(),
-            "weekly_data": [
-                {"week": "2026-W08", "sla_compliance": 0.89, "workflows_completed": 32, "claims_paid": 98, "revenue": 178000},
-                {"week": "2026-W09", "sla_compliance": 0.91, "workflows_completed": 35, "claims_paid": 105, "revenue": 189000},
-                {"week": "2026-W10", "sla_compliance": 0.92, "workflows_completed": 38, "claims_paid": 112, "revenue": 198000},
-            ],
-            "insights": [
-                "SLA compliance improved 3.4% over the last 3 weeks",
-                "Workflow completion rate trending upward — 18.7% increase",
-                "Revenue per encounter increased by $15 this period",
-                "Prior auth denial rate stable at 15.6% — target: <10%",
-            ],
-            "recommendations": [
-                "Focus on reducing prior auth denial rate (currently 15.6%)",
-                "Scale automated insurance verification to cover 3 additional payers",
-                "Implement batch claim submission for routine office visits",
-            ],
+            "analyzed_at": now.isoformat(),
+            "lookback_days": lookback_days,
+            "daily_data": daily_series,
+            "weekly_data": weekly_series,
+            "throughput_per_day": throughput_per_day,
+            "total_workflows_in_period": total_wf_in_period,
+            "total_completed_in_period": total_completed,
+            "insights": insights,
         }
 
         return self.build_output(
             trace_id=input_data.trace_id,
             result=trends,
             confidence=0.80,
-            rationale=f"Trend analysis: {len(trends['insights'])} insights, {len(trends['recommendations'])} recommendations",
+            rationale=(
+                f"Trend analysis ({lookback_days}d): {len(insights)} insights, "
+                f"{throughput_per_day} workflows/day throughput"
+            ),
         )
