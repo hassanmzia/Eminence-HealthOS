@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { fetchRPMDashboard, fetchVitals, type RPMDashboard } from "@/lib/api";
+import { fetchRPMDashboard, fetchVitals, createPatient, type RPMDashboard } from "@/lib/api";
 
 const TABS = ["Monitoring", "Devices", "Alerts", "Adherence"] as const;
 
@@ -82,6 +82,12 @@ export default function RPMPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]>(TABS[0]);
   const [dashboard, setDashboard] = useState<RPMDashboard | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showEnroll, setShowEnroll] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const [enrollError, setEnrollError] = useState<string | null>(null);
+  const [enrollForm, setEnrollForm] = useState({
+    firstName: "", lastName: "", dob: "", gender: "male", mrn: "", phone: "", conditions: "", medications: "",
+  });
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -95,6 +101,33 @@ export default function RPMPage() {
   }, []);
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
+
+  const handleEnroll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEnrolling(true);
+    setEnrollError(null);
+    try {
+      await createPatient({
+        mrn: enrollForm.mrn || undefined,
+        demographics: {
+          first_name: enrollForm.firstName,
+          last_name: enrollForm.lastName,
+          date_of_birth: enrollForm.dob,
+          gender: enrollForm.gender,
+          phone: enrollForm.phone || undefined,
+        },
+        conditions: enrollForm.conditions ? enrollForm.conditions.split(",").map((c) => ({ name: c.trim() })) : [],
+        medications: enrollForm.medications ? enrollForm.medications.split(",").map((m) => ({ name: m.trim() })) : [],
+      });
+      setShowEnroll(false);
+      setEnrollForm({ firstName: "", lastName: "", dob: "", gender: "male", mrn: "", phone: "", conditions: "", medications: "" });
+      loadDashboard();
+    } catch (err) {
+      setEnrollError(err instanceof Error ? err.message : "Failed to enroll patient");
+    } finally {
+      setEnrolling(false);
+    }
+  };
 
   const activePatients = dashboard?.active_patients ?? DEMO_PATIENTS.length;
   const criticalAlerts = dashboard?.critical_alerts ?? RPM_ALERTS.filter((a) => a.severity === "critical").length;
@@ -110,7 +143,7 @@ export default function RPMPage() {
         </div>
         <div className="flex gap-2">
           <button className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Export Report</button>
-          <button className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">Enroll Patient</button>
+          <button onClick={() => setShowEnroll(true)} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">Enroll Patient</button>
         </div>
       </div>
 
@@ -262,6 +295,67 @@ export default function RPMPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Enroll Patient Modal */}
+      {showEnroll && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowEnroll(false)}>
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">Enroll New Patient</h2>
+              <button onClick={() => setShowEnroll(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+            {enrollError && <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">{enrollError}</div>}
+            <form onSubmit={handleEnroll} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                  <input required value={enrollForm.firstName} onChange={(e) => setEnrollForm({ ...enrollForm, firstName: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                  <input required value={enrollForm.lastName} onChange={(e) => setEnrollForm({ ...enrollForm, lastName: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
+                  <input required type="date" value={enrollForm.dob} onChange={(e) => setEnrollForm({ ...enrollForm, dob: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gender *</label>
+                  <select required value={enrollForm.gender} onChange={(e) => setEnrollForm({ ...enrollForm, gender: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">MRN</label>
+                  <input value={enrollForm.mrn} onChange={(e) => setEnrollForm({ ...enrollForm, mrn: e.target.value })} placeholder="e.g. MRN-10042" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <input value={enrollForm.phone} onChange={(e) => setEnrollForm({ ...enrollForm, phone: e.target.value })} placeholder="(555) 123-4567" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Conditions</label>
+                <input value={enrollForm.conditions} onChange={(e) => setEnrollForm({ ...enrollForm, conditions: e.target.value })} placeholder="Comma-separated, e.g. Hypertension, Diabetes Type 2" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Medications</label>
+                <input value={enrollForm.medications} onChange={(e) => setEnrollForm({ ...enrollForm, medications: e.target.value })} placeholder="Comma-separated, e.g. Metformin, Lisinopril" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowEnroll(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="submit" disabled={enrolling} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50">{enrolling ? "Enrolling..." : "Enroll Patient"}</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

@@ -170,6 +170,20 @@ export async function fetchPatient(id: string) {
   return request<PatientData>(`/patients/${id}`);
 }
 
+export interface PatientCreatePayload {
+  mrn?: string;
+  demographics: Record<string, unknown>;
+  conditions?: Array<Record<string, unknown>>;
+  medications?: Array<Record<string, unknown>>;
+}
+
+export async function createPatient(data: PatientCreatePayload) {
+  return request<PatientData>("/patients", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
 // ── Vitals ───────────────────────────────────────────────────────────────────
 
 export interface VitalData {
