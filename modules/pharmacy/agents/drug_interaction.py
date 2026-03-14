@@ -6,6 +6,8 @@ allergies, and conditions. FDA Class II (510(k)) safety-critical agent.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # Drug-drug interaction database (simplified)
 INTERACTION_DB: list[dict[str, Any]] = [
@@ -72,7 +77,7 @@ class DrugInteractionAgent(BaseAgent):
         elif action == "check_contraindications":
             return self._check_contraindications(input_data)
         elif action == "full_safety_check":
-            return self._full_safety_check(input_data)
+            return await self._full_safety_check(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -226,7 +231,7 @@ class DrugInteractionAgent(BaseAgent):
             rationale=f"Contraindication check for {new_drug}: {len(warnings)} warning(s)",
         )
 
-    def _full_safety_check(self, input_data: AgentInput) -> AgentOutput:
+    async def _full_safety_check(self, input_data: AgentInput) -> AgentOutput:
         """Run all safety checks (interactions + allergies + contraindications)."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -249,6 +254,45 @@ class DrugInteractionAgent(BaseAgent):
 
         total_issues = len(interactions) + len(allergy_alerts) + len(warnings)
 
+        fallback_recommendation = (
+            "Safe to prescribe" if all_safe
+            else "Review required — safety concerns identified"
+        )
+
+        # --- LLM-generated clinical recommendation narrative ---
+        clinical_recommendation = fallback_recommendation
+        try:
+            findings_payload = {
+                "new_drug": new_drug,
+                "drug_interactions": interactions,
+                "allergy_alerts": allergy_alerts,
+                "contraindication_warnings": warnings,
+                "overall_safe": all_safe,
+            }
+
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Generate a clinical recommendation for prescribing {new_drug}.\n\n"
+                    f"Findings:\n{json.dumps(findings_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a clinical pharmacist AI. Given drug interaction findings, "
+                    "allergy alerts, and contraindication warnings, generate a concise "
+                    "clinical recommendation for the prescribing physician. Be specific "
+                    "about risks and alternative options."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                clinical_recommendation = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for full_safety_check on %s; using fallback recommendation",
+                new_drug,
+                exc_info=True,
+            )
+
         result = {
             "checked_at": now.isoformat(),
             "new_drug": new_drug,
@@ -257,7 +301,8 @@ class DrugInteractionAgent(BaseAgent):
             "drug_interactions": interactions,
             "allergy_alerts": allergy_alerts,
             "contraindication_warnings": warnings,
-            "recommendation": "Safe to prescribe" if all_safe else "Review required — safety concerns identified",
+            "recommendation": fallback_recommendation,
+            "clinical_recommendation": clinical_recommendation,
         }
 
         return self.build_output(

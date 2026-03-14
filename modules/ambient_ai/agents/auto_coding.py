@@ -6,9 +6,12 @@ clinical encounter data and SOAP notes.
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime, timezone
 from typing import Any
+
+import structlog
 
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
@@ -17,6 +20,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = structlog.get_logger()
 
 # E&M level criteria (2021 MDM-based guidelines)
 EM_LEVELS: dict[str, dict[str, Any]] = {
@@ -41,6 +47,21 @@ PROCEDURE_CODES: dict[str, dict[str, str]] = {
     "tsh": {"cpt": "84443", "description": "Thyroid stimulating hormone"},
 }
 
+# System prompts for LLM-assisted coding
+_ICD10_SYSTEM_PROMPT = (
+    "You are a medical coding expert. Extract ICD-10-CM codes from clinical text. "
+    "Return JSON array of objects with fields: code, description, certainty "
+    "(confirmed/probable/possible), status (new/existing)."
+)
+
+_ENCOUNTER_REVIEW_SYSTEM_PROMPT = (
+    "You are a medical coding auditor. Given the clinical encounter data and the codes "
+    "already assigned, identify any additional ICD-10-CM codes that may have been missed. "
+    "Return a JSON array of objects with fields: code, description, certainty "
+    "(confirmed/probable/possible), status (new/existing). "
+    "Only return codes NOT already present. Return an empty array [] if nothing was missed."
+)
+
 
 class AutoCodingAgent(BaseAgent):
     """Suggests ICD-10, CPT, and E&M billing codes from encounter data."""
@@ -59,9 +80,9 @@ class AutoCodingAgent(BaseAgent):
         action = ctx.get("action", "code_encounter")
 
         if action == "code_encounter":
-            return self._code_encounter(input_data)
+            return await self._code_encounter(input_data)
         elif action == "suggest_icd10":
-            return self._suggest_icd10(input_data)
+            return await self._suggest_icd10(input_data)
         elif action == "suggest_cpt":
             return self._suggest_cpt(input_data)
         elif action == "determine_em_level":
@@ -77,7 +98,7 @@ class AutoCodingAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _code_encounter(self, input_data: AgentInput) -> AgentOutput:
+    async def _code_encounter(self, input_data: AgentInput) -> AgentOutput:
         """Full coding pipeline: ICD-10 + CPT + E&M from SOAP note."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -114,23 +135,49 @@ class AutoCodingAgent(BaseAgent):
             "coding_confidence": 0.87,
         }
 
+        # LLM enhancement: review encounter for missed codes
+        llm_suggestions = await self._llm_review_encounter(soap, icd10_codes)
+        if llm_suggestions:
+            existing_codes = {c["code"] for c in icd10_codes}
+            for suggestion in llm_suggestions:
+                if suggestion.get("code") and suggestion["code"] not in existing_codes:
+                    suggestion["is_primary"] = False
+                    suggestion["llm_suggested"] = True
+                    result["icd10_codes"].append(suggestion)
+                    existing_codes.add(suggestion["code"])
+            result["total_codes"] = len(result["icd10_codes"]) + len(cpt_codes) + 1
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
             confidence=0.87,
             rationale=(
-                f"Coded encounter {encounter_id}: {len(icd10_codes)} ICD-10, "
+                f"Coded encounter {encounter_id}: {len(result['icd10_codes'])} ICD-10, "
                 f"{len(cpt_codes)} CPT, E&M {em_code.get('code', 'N/A')} — pending provider review"
             ),
         )
 
-    def _suggest_icd10(self, input_data: AgentInput) -> AgentOutput:
+    async def _suggest_icd10(self, input_data: AgentInput) -> AgentOutput:
         """Suggest ICD-10 codes from diagnoses or free text."""
         ctx = input_data.context
         diagnoses = ctx.get("diagnoses", [])
         free_text = ctx.get("text", "")
 
+        # When free text is provided, prefer LLM-based extraction
         if not diagnoses and free_text:
+            llm_codes = await self._llm_extract_icd10(free_text)
+            if llm_codes:
+                # Mark first code as primary
+                for i, code in enumerate(llm_codes):
+                    code["is_primary"] = i == 0
+                    code["llm_suggested"] = True
+                return self.build_output(
+                    trace_id=input_data.trace_id,
+                    result={"icd10_codes": llm_codes, "source_diagnoses": len(llm_codes), "source": "llm"},
+                    confidence=0.89,
+                    rationale=f"LLM suggested {len(llm_codes)} ICD-10 codes from free text",
+                )
+            # Fallback to rule-based keyword matching when LLM fails
             diagnoses = self._diagnoses_from_text(free_text)
 
         codes = self._extract_icd10(diagnoses)
@@ -217,7 +264,109 @@ class AutoCodingAgent(BaseAgent):
             rationale=f"Validation: {len(issues)} issues found in {result['total_codes_reviewed']} codes",
         )
 
-    # ── Helpers ──────────────────────────────────────────────────────────────
+    # ── LLM helpers ──────────────────────────────────────────────────────────
+
+    async def _llm_extract_icd10(self, free_text: str) -> list[dict[str, Any]] | None:
+        """Use LLM to extract ICD-10 codes from free-form clinical text.
+
+        Returns a list of code dicts on success, or None to signal that the
+        caller should fall back to the rule-based approach.
+        """
+        try:
+            request = LLMRequest(
+                system=_ICD10_SYSTEM_PROMPT,
+                messages=[
+                    {"role": "user", "content": f"Extract ICD-10-CM codes from the following clinical text:\n\n{free_text}"},
+                ],
+                temperature=0.1,
+                max_tokens=2048,
+            )
+            response = await llm_router.complete(request)
+            codes = self._parse_llm_code_response(response.content)
+            if codes is not None:
+                logger.info("auto_coding.llm.icd10_extracted", count=len(codes))
+                return codes
+        except Exception as exc:
+            logger.warning("auto_coding.llm.icd10_failed", error=str(exc))
+        return None
+
+    async def _llm_review_encounter(
+        self,
+        soap: dict[str, Any],
+        existing_codes: list[dict[str, Any]],
+    ) -> list[dict[str, Any]] | None:
+        """Use LLM to review an encounter and suggest missed ICD-10 codes.
+
+        Returns a list of additional code suggestions, or None on failure.
+        """
+        try:
+            existing_summary = ", ".join(
+                f"{c.get('code', '?')} ({c.get('description', '')})"
+                for c in existing_codes
+            )
+            soap_text = json.dumps(soap, default=str)
+
+            request = LLMRequest(
+                system=_ENCOUNTER_REVIEW_SYSTEM_PROMPT,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": (
+                            f"SOAP note:\n{soap_text}\n\n"
+                            f"Codes already assigned:\n{existing_summary}\n\n"
+                            "Are any ICD-10-CM codes missing?"
+                        ),
+                    },
+                ],
+                temperature=0.1,
+                max_tokens=2048,
+            )
+            response = await llm_router.complete(request)
+            codes = self._parse_llm_code_response(response.content)
+            if codes is not None:
+                logger.info("auto_coding.llm.encounter_review", suggestions=len(codes))
+                return codes
+        except Exception as exc:
+            logger.warning("auto_coding.llm.encounter_review_failed", error=str(exc))
+        return None
+
+    @staticmethod
+    def _parse_llm_code_response(content: str) -> list[dict[str, Any]] | None:
+        """Parse LLM response expecting a JSON array of code objects.
+
+        Returns the parsed list on success, or None if parsing fails so the
+        caller can fall back to rule-based logic.
+        """
+        try:
+            # Strip markdown fencing if present
+            text = content.strip()
+            if text.startswith("```"):
+                # Remove opening fence (```json or ```)
+                text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+                # Remove closing fence
+                if text.endswith("```"):
+                    text = text[:-3]
+                text = text.strip()
+
+            parsed = json.loads(text)
+            if not isinstance(parsed, list):
+                return None
+
+            # Validate and normalise each entry
+            valid: list[dict[str, Any]] = []
+            for item in parsed:
+                if isinstance(item, dict) and item.get("code"):
+                    valid.append({
+                        "code": item["code"],
+                        "description": item.get("description", ""),
+                        "certainty": item.get("certainty", "probable"),
+                        "status": item.get("status", "new"),
+                    })
+            return valid if valid else None
+        except (json.JSONDecodeError, ValueError, TypeError):
+            return None
+
+    # ── Rule-based helpers ───────────────────────────────────────────────────
 
     @staticmethod
     def _extract_icd10(diagnoses: list[dict[str, Any]]) -> list[dict[str, Any]]:

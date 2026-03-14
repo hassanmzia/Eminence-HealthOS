@@ -9,6 +9,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+import structlog
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -16,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = structlog.get_logger()
 
 
 class PopulationHealthAgent(BaseAgent):
@@ -34,11 +39,11 @@ class PopulationHealthAgent(BaseAgent):
         if action == "risk_stratification":
             return self._risk_stratification(input_data)
         elif action == "quality_metrics":
-            return self._quality_metrics(input_data)
+            return await self._quality_metrics(input_data)
         elif action == "cohort_analysis":
             return self._cohort_analysis(input_data)
         elif action == "overview":
-            return self._overview(input_data)
+            return await self._overview(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -48,8 +53,8 @@ class PopulationHealthAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _overview(self, input_data: AgentInput) -> AgentOutput:
-        """Generate population health overview."""
+    async def _overview(self, input_data: AgentInput) -> AgentOutput:
+        """Generate population health overview with LLM-powered narrative."""
         ctx = input_data.context
         patients = ctx.get("patients", [])
         total = len(patients) or ctx.get("total_patients", 0)
@@ -73,6 +78,28 @@ class PopulationHealthAgent(BaseAgent):
             },
             "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }
+
+        # LLM-powered executive summary
+        if total > 0:
+            try:
+                import json
+                prompt = (
+                    f"Generate a brief executive summary for a population health dashboard.\n\n"
+                    f"Total patients: {total}\n"
+                    f"Average risk score: {avg_risk}\n"
+                    f"High/critical risk: {high_risk}%\n"
+                    f"With active alerts: {with_alerts}%\n\n"
+                    f"Provide a 2-3 sentence summary highlighting key concerns and trends."
+                )
+                llm_resp = await llm_router.complete(LLMRequest(
+                    messages=[{"role": "user", "content": prompt}],
+                    system="You are a population health analyst generating concise executive summaries for healthcare leadership.",
+                    temperature=0.3,
+                    max_tokens=512,
+                ))
+                result["executive_summary"] = llm_resp.content
+            except Exception as exc:
+                logger.warning("population_health.overview_llm_failed", error=str(exc))
 
         return self.build_output(
             trace_id=input_data.trace_id,
@@ -121,8 +148,8 @@ class PopulationHealthAgent(BaseAgent):
             ),
         )
 
-    def _quality_metrics(self, input_data: AgentInput) -> AgentOutput:
-        """Generate HEDIS-style quality metrics."""
+    async def _quality_metrics(self, input_data: AgentInput) -> AgentOutput:
+        """Generate HEDIS-style quality metrics with LLM-powered insights."""
         ctx = input_data.context
 
         hedis = {
@@ -153,6 +180,31 @@ class PopulationHealthAgent(BaseAgent):
             "overall_quality_score": round(sum(hedis.values()) / max(len(hedis), 1), 3),
             "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }
+
+        # LLM-powered quality improvement recommendations
+        try:
+            import json
+            prompt = (
+                f"Analyze these population health quality metrics and provide actionable improvement recommendations.\n\n"
+                f"HEDIS Measures: {json.dumps(hedis)}\n"
+                f"Operational: {json.dumps(operational)}\n"
+                f"Quality Gaps: {json.dumps(gaps)}\n\n"
+                f"Provide 3-5 specific, evidence-based recommendations to close the quality gaps. "
+                f"Focus on the largest gaps first. Be concise."
+            )
+            llm_resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a population health analytics expert. Provide actionable quality "
+                    "improvement recommendations based on HEDIS measures and operational metrics. "
+                    "Be specific and evidence-based."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["llm_recommendations"] = llm_resp.content
+        except Exception as exc:
+            logger.warning("population_health.llm_failed", error=str(exc))
 
         return self.build_output(
             trace_id=input_data.trace_id,

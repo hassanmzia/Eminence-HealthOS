@@ -9,6 +9,7 @@ from __future__ import annotations
 import time
 import uuid
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Any
 
 import structlog
@@ -22,6 +23,25 @@ from healthos_platform.agents.types import (
 )
 
 logger = structlog.get_logger()
+
+
+# ── Backward-Compatible Enums for Module Agents ──────────────────────────────
+
+class AgentCapability(str, Enum):
+    """Capabilities that agents can declare."""
+    VITAL_MONITORING = "vital_monitoring"
+    ANOMALY_DETECTION = "anomaly_detection"
+    RISK_SCORING = "risk_scoring"
+    ALERT_GENERATION = "alert_generation"
+    CLINICAL_SUMMARY = "clinical_summary"
+    CARE_PLAN_GENERATION = "care_plan_generation"
+    MEDICATION_CHECK = "medication_check"
+    PATIENT_COMMUNICATION = "patient_communication"
+    LAB_ANALYSIS = "lab_analysis"
+    SCHEDULING = "scheduling"
+    COMPLIANCE_CHECK = "compliance_check"
+    RESOURCE_OPTIMIZATION = "resource_optimization"
+    DEVICE_INTEGRATION = "device_integration"
 
 
 class BaseAgent(ABC):
@@ -175,3 +195,52 @@ class BaseAgent(ABC):
             result=result,
             rationale=rationale,
         )
+
+
+class HealthOSAgent(ABC):
+    """
+    Backward-compatible base class for module agents.
+    Provides the older-style __init__(name, tier, ...) constructor pattern.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        tier: AgentTier,
+        description: str = "",
+        version: str = "0.1.0",
+    ) -> None:
+        self.name = name
+        self.tier = tier
+        self.description = description
+        self.version = version
+        self._log = logger.bind(agent=self.name, tier=self.tier.value, version=self.version)
+
+    @property
+    def capabilities(self) -> list[AgentCapability]:
+        return []
+
+    @abstractmethod
+    async def process(self, agent_input: AgentInput) -> AgentOutput:
+        """Core agent logic. Must be implemented by subclasses."""
+        ...
+
+    async def run(self, input_data: AgentInput) -> AgentOutput:
+        """Execute with timing and error handling."""
+        start = time.monotonic()
+        try:
+            output = await self.process(input_data)
+            output.duration_ms = int((time.monotonic() - start) * 1000)
+            return output
+        except Exception as exc:
+            duration_ms = int((time.monotonic() - start) * 1000)
+            self._log.error("agent.error", error=str(exc), duration_ms=duration_ms)
+            return AgentOutput(
+                agent_name=self.name,
+                agent_tier=self.tier.value,
+                status=AgentStatus.FAILED,
+                confidence=0.0,
+                rationale=f"Agent failed: {exc}",
+                errors=[str(exc)],
+                duration_ms=duration_ms,
+            )

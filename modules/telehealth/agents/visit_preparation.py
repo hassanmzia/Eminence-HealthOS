@@ -7,6 +7,8 @@ pending alerts, and prior encounter context into a structured brief.
 
 from __future__ import annotations
 
+import json
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -16,6 +18,15 @@ from healthos_platform.agents.types import (
     AgentOutput,
     AgentTier,
     PipelineState,
+)
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
+
+_NARRATIVE_SYSTEM_PROMPT = (
+    "You are a clinical decision support system preparing a provider for an "
+    "upcoming patient visit. Generate a concise, actionable pre-visit briefing "
+    "from the following patient data."
 )
 
 
@@ -30,9 +41,15 @@ class VisitPreparationAgent(BaseAgent):
         ctx = input_data.context
         summary = self._build_pre_visit_summary(ctx)
 
+        narrative = await self._generate_provider_narrative(summary)
+
+        result: dict[str, Any] = {"pre_visit_summary": summary}
+        if narrative:
+            result["provider_narrative"] = narrative
+
         return self.build_output(
             trace_id=input_data.trace_id,
-            result={"pre_visit_summary": summary},
+            result=result,
             confidence=self._compute_confidence(summary),
             rationale=self._build_rationale(summary),
         )
@@ -41,11 +58,19 @@ class VisitPreparationAgent(BaseAgent):
         ctx = state.patient_context or {}
         summary = self._build_pre_visit_summary(ctx)
 
+        narrative = await self._generate_provider_narrative(summary)
+
+        result: dict[str, Any] = {"pre_visit_summary": summary}
+        if narrative:
+            result["provider_narrative"] = narrative
+
         state.patient_context["pre_visit_summary"] = summary
+        if narrative:
+            state.patient_context["provider_narrative"] = narrative
         state.executed_agents.append(self.name)
         state.agent_outputs[self.name] = self.build_output(
             trace_id=state.trace_id,
-            result={"pre_visit_summary": summary},
+            result=result,
             confidence=self._compute_confidence(summary),
             rationale=self._build_rationale(summary),
         )
@@ -119,6 +144,87 @@ class VisitPreparationAgent(BaseAgent):
                 ),
             },
         }
+
+    async def _generate_provider_narrative(
+        self, summary: dict[str, Any]
+    ) -> str | None:
+        """Use LLM to produce a natural-language pre-visit narrative.
+
+        Returns the narrative string on success or ``None`` if the LLM call
+        fails for any reason (network error, timeout, model error, etc.).
+        The caller should treat a ``None`` return as a graceful degradation
+        and continue with the structured summary alone.
+        """
+        try:
+            patient = summary.get("patient", {})
+            prompt_parts: list[str] = [
+                "Generate a pre-visit briefing for the following patient:\n",
+                f"Patient: {patient.get('name', 'Unknown')}, "
+                f"Age: {patient.get('age', 'N/A')}, "
+                f"Gender: {patient.get('gender', 'N/A')}",
+                f"Encounter reason: {summary.get('encounter_reason', 'N/A')}",
+            ]
+
+            if summary.get("presenting_symptoms"):
+                prompt_parts.append(
+                    f"Presenting symptoms: {', '.join(summary['presenting_symptoms'])}"
+                )
+
+            if summary.get("active_conditions"):
+                prompt_parts.append(
+                    f"Active conditions: {', '.join(summary['active_conditions'])}"
+                )
+
+            if summary.get("current_medications"):
+                prompt_parts.append(
+                    f"Current medications: {', '.join(summary['current_medications'])}"
+                )
+
+            if summary.get("allergies"):
+                allergies_text = ", ".join(
+                    a if isinstance(a, str) else json.dumps(a)
+                    for a in summary["allergies"]
+                )
+                prompt_parts.append(f"Allergies: {allergies_text}")
+
+            if summary.get("latest_vitals"):
+                vitals_lines = []
+                for vtype, vdata in summary["latest_vitals"].items():
+                    vitals_lines.append(
+                        f"  {vtype}: {vdata.get('value')} {vdata.get('unit', '')}"
+                    )
+                prompt_parts.append("Latest vitals:\n" + "\n".join(vitals_lines))
+
+            if summary.get("clinical_flags"):
+                prompt_parts.append(
+                    f"Clinical flags: {'; '.join(summary['clinical_flags'])}"
+                )
+
+            risk = summary.get("risk_summary", {})
+            if risk.get("highest_score", 0) > 0:
+                prompt_parts.append(
+                    f"Risk level: {risk.get('risk_level', 'low')} "
+                    f"(highest score: {risk['highest_score']:.2f})"
+                )
+
+            prompt = "\n".join(prompt_parts)
+
+            response = await llm_router.complete(
+                LLMRequest(
+                    messages=[{"role": "user", "content": prompt}],
+                    system=_NARRATIVE_SYSTEM_PROMPT,
+                    temperature=0.3,
+                    max_tokens=2048,
+                )
+            )
+            narrative = response.content.strip() if response and response.content else None
+            return narrative or None
+        except Exception:
+            logger.warning(
+                "LLM narrative generation failed; falling back to structured summary only.",
+                exc_info=True,
+            )
+            return None
 
     @staticmethod
     def _compute_confidence(summary: dict[str, Any]) -> float:
