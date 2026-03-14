@@ -264,6 +264,108 @@ async def get_my_alerts(
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# My Messages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# In-memory message store (replace with a Message table in production)
+_message_store: dict[str, list[dict]] = {}
+
+
+@router.get("/me/messages")
+async def get_my_messages(
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get the patient's secure messages."""
+    patient = await _get_patient_for_user(ctx, db)
+    patient_key = f"{ctx.org_id}:{patient.id}"
+    messages = _message_store.get(patient_key, [])
+    unread = sum(1 for m in messages if not m.get("is_read"))
+
+    return {
+        "messages": messages,
+        "total": len(messages),
+        "unread": unread,
+    }
+
+
+@router.post("/me/messages")
+async def send_patient_message(
+    body: dict,
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Send a message from the patient to their care team."""
+    patient = await _get_patient_for_user(ctx, db)
+    patient_key = f"{ctx.org_id}:{patient.id}"
+
+    subject = body.get("subject", "").strip()
+    message_body = body.get("body", "").strip()
+    if not subject or not message_body:
+        raise HTTPException(status_code=422, detail="Subject and body are required")
+
+    message = {
+        "id": str(uuid.uuid4()),
+        "sender_type": "patient",
+        "sender_name": patient.demographics.get("name", "Patient"),
+        "subject": subject,
+        "body": message_body,
+        "is_read": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    if patient_key not in _message_store:
+        _message_store[patient_key] = []
+    _message_store[patient_key].insert(0, message)
+
+    return message
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Appointment Request
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@router.post("/me/appointments/request")
+async def request_appointment(
+    body: dict,
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Request a new appointment (patient self-service)."""
+    patient = await _get_patient_for_user(ctx, db)
+
+    appt_type = body.get("type", "office_visit")
+    reason = body.get("reason", "")
+    preferred_date = body.get("preferred_date")
+
+    if not reason:
+        raise HTTPException(status_code=422, detail="Reason is required")
+
+    # Create encounter in 'requested' status
+    encounter = Encounter(
+        id=uuid.uuid4(),
+        patient_id=patient.id,
+        org_id=ctx.org_id,
+        encounter_type=appt_type,
+        status="requested",
+        reason=reason,
+        scheduled_at=(
+            datetime.fromisoformat(preferred_date)
+            if preferred_date
+            else None
+        ),
+    )
+    db.add(encounter)
+    await db.commit()
+
+    return {
+        "message": "Appointment request submitted successfully",
+        "appointment_id": str(encounter.id),
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Helpers
 # ═══════════════════════════════════════════════════════════════════════════════
 
