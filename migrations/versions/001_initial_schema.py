@@ -38,9 +38,14 @@ def upgrade() -> None:
         sa.Column("hashed_password", sa.String(255), nullable=False),
         sa.Column("role", sa.String(50), nullable=False),
         sa.Column("full_name", sa.String(255), server_default=""),
+        sa.Column("avatar_url", sa.String(500)),
+        sa.Column("phone", sa.String(50)),
         sa.Column("profile", JSONB, server_default="{}"),
+        sa.Column("mfa_enabled", sa.Boolean, server_default="false"),
+        sa.Column("mfa_secret", sa.String(255)),
         sa.Column("is_active", sa.Boolean, server_default="true"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
     )
     op.create_index("uq_users_org_email", "users", ["org_id", "email"], unique=True)
 
