@@ -420,6 +420,30 @@ class HIPAAComplianceMonitorAgent(BaseAgent):
 
         confidence = 0.88 if scan_targets else 0.50
 
+        # ── LLM: generate compliance narrative ───────────────────────────────
+        try:
+            prompt = (
+                "You are a HIPAA PHI protection specialist. Based on the following PHI "
+                "exposure scan results, produce a concise narrative (2-3 paragraphs) "
+                "assessing the severity of exposures, explaining regulatory implications, "
+                "and prioritizing remediation steps.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered HIPAA compliance analyst for a healthcare platform. "
+                    "Provide expert risk assessment and remediation priorities per 45 CFR 164."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["compliance_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for phi_exposure_check; continuing without narrative")
+            result["compliance_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -432,7 +456,7 @@ class HIPAAComplianceMonitorAgent(BaseAgent):
 
     # ── Policy Compliance ────────────────────────────────────────────────────
 
-    def _policy_compliance(self, input_data: AgentInput) -> AgentOutput:
+    async def _policy_compliance(self, input_data: AgentInput) -> AgentOutput:
         """Validate organizational policies against HIPAA requirements."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -530,6 +554,30 @@ class HIPAAComplianceMonitorAgent(BaseAgent):
         }
 
         confidence = 0.92 if org_policies else 0.60
+
+        # ── LLM: generate compliance narrative ───────────────────────────────
+        try:
+            prompt = (
+                "You are a HIPAA policy compliance expert. Based on the following policy "
+                "compliance results, produce a concise narrative (2-3 paragraphs) assessing "
+                "organizational policy gaps, regulatory risk, and prioritized remediation "
+                "recommendations.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered HIPAA compliance analyst for a healthcare platform. "
+                    "Provide expert risk assessment and remediation priorities per 45 CFR 164."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["compliance_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for policy_compliance; continuing without narrative")
+            result["compliance_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
 
         return self.build_output(
             trace_id=input_data.trace_id,
