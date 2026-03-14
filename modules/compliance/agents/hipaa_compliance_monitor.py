@@ -270,7 +270,7 @@ class HIPAAComplianceMonitorAgent(BaseAgent):
 
     # ── Access Audit ─────────────────────────────────────────────────────────
 
-    def _access_audit(self, input_data: AgentInput) -> AgentOutput:
+    async def _access_audit(self, input_data: AgentInput) -> AgentOutput:
         """Analyze access logs for anomalous patterns."""
         ctx = input_data.context
         access_logs = ctx.get("access_logs", [])
@@ -326,6 +326,30 @@ class HIPAAComplianceMonitorAgent(BaseAgent):
 
         confidence = 0.90 if total_events > 0 else 0.50
 
+        # ── LLM: generate compliance narrative ───────────────────────────────
+        try:
+            prompt = (
+                "You are a HIPAA access audit specialist. Based on the following access "
+                "audit results, produce a concise narrative (2-3 paragraphs) assessing the "
+                "risk level of detected anomalies, identifying patterns of concern, and "
+                "recommending remediation priorities.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered HIPAA compliance analyst for a healthcare platform. "
+                    "Provide expert risk assessment and remediation priorities per 45 CFR 164."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["compliance_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for access_audit; continuing without narrative")
+            result["compliance_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -338,7 +362,7 @@ class HIPAAComplianceMonitorAgent(BaseAgent):
 
     # ── PHI Exposure Check ───────────────────────────────────────────────────
 
-    def _phi_exposure_check(self, input_data: AgentInput) -> AgentOutput:
+    async def _phi_exposure_check(self, input_data: AgentInput) -> AgentOutput:
         """Scan data for unprotected PHI in logs, error messages, and API responses."""
         ctx = input_data.context
         scan_targets = ctx.get("scan_targets", [])
