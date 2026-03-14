@@ -1,0 +1,117 @@
+{
+  "realm": "healthos",
+  "enabled": true,
+  "displayName": "Eminence HealthOS",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "defaultSignatureAlgorithm": "RS256",
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "System administrator with full access"
+      },
+      {
+        "name": "clinician",
+        "description": "Licensed clinician (physician, specialist)"
+      },
+      {
+        "name": "nurse",
+        "description": "Registered nurse or nursing staff"
+      },
+      {
+        "name": "patient",
+        "description": "Patient with access to own records"
+      },
+      {
+        "name": "system",
+        "description": "System-level service account role"
+      }
+    ]
+  },
+  "defaultDefaultClientScopes": [
+    "openid",
+    "profile",
+    "email"
+  ],
+  "clients": [
+    {
+      "clientId": "healthos-api",
+      "name": "HealthOS API",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "confidentialPort": 0,
+      "secret": "healthos-api-secret",
+      "standardFlowEnabled": true,
+      "serviceAccountsEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "redirectUris": [
+        "http://localhost:4090/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4090"
+      ],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email"
+      ]
+    },
+    {
+      "clientId": "healthos-dashboard",
+      "name": "HealthOS Clinician Dashboard",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "serviceAccountsEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "redirectUris": [
+        "http://localhost:3052/*",
+        "http://localhost:3000/*",
+        "http://localhost:3001/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3052",
+        "http://localhost:3000",
+        "http://localhost:3001"
+      ],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email"
+      ]
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "openid",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true"
+      }
+    },
+    {
+      "name": "profile",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true"
+      }
+    },
+    {
+      "name": "email",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true"
+      }
+    }
+  ]
+}

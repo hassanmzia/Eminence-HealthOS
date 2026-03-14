@@ -1,0 +1,129 @@
+# HealthOS Default Values
+# Override per environment with values-dev.yaml or values-production.yaml
+
+global:
+  namespace: healthos
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# --- API (FastAPI) ---
+api:
+  name: healthos-api
+  replicaCount: 2
+  image:
+    repository: healthos/api
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 8000
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  probes:
+    readiness:
+      path: /health
+      port: 8000
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    liveness:
+      path: /health
+      port: 8000
+      initialDelaySeconds: 15
+      periodSeconds: 20
+      timeoutSeconds: 5
+      failureThreshold: 3
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# --- Dashboard (Next.js) ---
+dashboard:
+  name: healthos-dashboard
+  replicaCount: 2
+  image:
+    repository: healthos/dashboard
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 3000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  probes:
+    readiness:
+      path: /
+      port: 3000
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    liveness:
+      path: /
+      port: 3000
+      initialDelaySeconds: 15
+      periodSeconds: 20
+      timeoutSeconds: 5
+      failureThreshold: 3
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# --- Ingress ---
+ingress:
+  enabled: true
+  className: nginx
+  host: healthos.local
+  tls:
+    enabled: true
+    secretName: healthos-tls
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+
+# --- Horizontal Pod Autoscaler ---
+hpa:
+  api:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  dashboard:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+# --- Configuration ---
+config:
+  logLevel: info
+  corsOrigins: "https://healthos.local"
+  databaseHost: postgres
+  databasePort: "5432"
+  databaseName: healthos
+  redisHost: redis
+  redisPort: "6379"
+  kafkaBootstrapServers: kafka:9092
+  qdrantUrl: http://qdrant:6333
+  neo4jUri: bolt://neo4j:7687
+  keycloakUrl: http://keycloak:8080
+
+# --- Secrets ---
+secrets:
+  databaseUser: healthos
+  databasePassword: changeme-in-production
+  neo4jUser: neo4j
+  neo4jPassword: changeme-in-production
+  keycloakAdminUser: admin
+  keycloakAdminPassword: changeme-in-production
+  anthropicApiKey: ""
+  jwtSecret: changeme-in-production

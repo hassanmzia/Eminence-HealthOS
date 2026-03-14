@@ -1,0 +1,55 @@
+# HealthOS Dev Environment Overrides
+
+global:
+  namespace: healthos-dev
+
+api:
+  replicaCount: 1
+  image:
+    pullPolicy: Always
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+dashboard:
+  replicaCount: 1
+  image:
+    pullPolicy: Always
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+ingress:
+  host: healthos.dev.local
+  tls:
+    enabled: false
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+
+hpa:
+  api:
+    enabled: false
+  dashboard:
+    enabled: false
+
+config:
+  logLevel: debug
+  corsOrigins: "http://healthos.dev.local,http://localhost:3000,http://localhost:3052"
+
+secrets:
+  databaseUser: healthos
+  databasePassword: healthos
+  neo4jUser: neo4j
+  neo4jPassword: healthos
+  keycloakAdminUser: admin
+  keycloakAdminPassword: admin
+  anthropicApiKey: ""
+  jwtSecret: dev-secret-not-for-production

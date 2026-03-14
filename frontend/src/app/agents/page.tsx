@@ -7,7 +7,7 @@ export default function AgentsPage() {
         <h1 className="text-2xl font-bold text-gray-900">Agent Monitor</h1>
         <span className="flex items-center gap-1.5 text-sm text-green-600">
           <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-          All agents operational
+          Live
         </span>
       </div>
       <AgentMonitor />
