@@ -7,6 +7,8 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+import sqlalchemy as sa
+from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -78,11 +80,30 @@ async def get_db_context() -> AsyncGenerator[AsyncSession, None]:
             raise
 
 
+def _sync_add_missing_columns(conn: sa.engine.Connection) -> None:
+    """Add any columns defined in models but missing from the database."""
+    inspector = inspect(conn)
+    for table_name, table in Base.metadata.tables.items():
+        if not inspector.has_table(table_name):
+            continue
+        existing = {col["name"] for col in inspector.get_columns(table_name)}
+        for column in table.columns:
+            if column.name not in existing:
+                col_type = column.type.compile(conn.engine.dialect)
+                default_clause = ""
+                if column.server_default is not None:
+                    default_clause = f" DEFAULT {column.server_default.arg}"
+                conn.execute(
+                    text(f'ALTER TABLE "{table_name}" ADD COLUMN "{column.name}" {col_type}{default_clause}')
+                )
+
+
 async def init_db() -> None:
-    """Create all tables if they don't exist."""
+    """Create all tables if they don't exist, and add missing columns."""
     engine = get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(_sync_add_missing_columns)
 
 
 async def close_db() -> None:
