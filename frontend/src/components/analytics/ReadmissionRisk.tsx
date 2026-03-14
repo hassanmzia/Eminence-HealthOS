@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { predictReadmissionRisk } from "@/lib/api";
 
-const HIGH_RISK_PATIENTS = [
+const MOCK_HIGH_RISK_PATIENTS = [
   { id: "P-1042", name: "John M.", age: 78, score: 0.82, level: "critical", topFactor: "heart_failure", daysPost: 2 },
   { id: "P-2301", name: "Maria S.", age: 72, score: 0.71, level: "critical", topFactor: "prior_admissions_6m", daysPost: 5 },
   { id: "P-0887", name: "Robert K.", age: 68, score: 0.64, level: "high", topFactor: "copd", daysPost: 3 },
@@ -17,18 +18,77 @@ const INTERVENTIONS = {
 
 export function ReadmissionRisk() {
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
+  const [patients, setPatients] = useState(MOCK_HIGH_RISK_PATIENTS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await predictReadmissionRisk({ threshold: 0.5, limit: 10 });
+      const data = res as Record<string, unknown>;
+      const items = data.patients as Array<Record<string, unknown>> | undefined;
+      if (items && items.length > 0) {
+        setPatients(
+          items.map((p) => ({
+            id: p.id as string,
+            name: p.name as string,
+            age: p.age as number,
+            score: p.score as number,
+            level: p.level as string,
+            topFactor: p.top_factor as string,
+            daysPost: p.days_post_discharge as number,
+          }))
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load readmission risk data");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  if (loading) {
+    return (
+      <div className="card">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900">Readmission Risk</h2>
+        <div className="animate-pulse space-y-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-14 rounded-lg bg-gray-100" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="card">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900">Readmission Risk</h2>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+          <p className="text-sm text-red-600">{error}</p>
+          <button onClick={loadData} className="mt-2 rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Readmission Risk</h2>
         <span className="rounded bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
-          {HIGH_RISK_PATIENTS.length} high-risk discharges
+          {patients.length} high-risk discharges
         </span>
       </div>
 
       <div className="space-y-2">
-        {HIGH_RISK_PATIENTS.map((p) => (
+        {patients.map((p) => (
           <div key={p.id}>
             <button
               onClick={() => setSelectedPatient(selectedPatient === p.id ? null : p.id)}
