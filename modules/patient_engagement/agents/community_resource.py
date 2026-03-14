@@ -6,6 +6,8 @@ housing, and social services based on SDOH screening results.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger("healthos.agent.community_resource")
 
 RESOURCE_CATEGORIES: dict[str, list[dict[str, Any]]] = {
     "food_insecurity": [
@@ -64,13 +69,13 @@ class CommunityResourceAgent(BaseAgent):
         action = ctx.get("action", "find_resources")
 
         if action == "find_resources":
-            return self._find_resources(input_data)
+            output = self._find_resources(input_data)
         elif action == "create_referral":
-            return self._create_referral(input_data)
+            output = self._create_referral(input_data)
         elif action == "referral_status":
-            return self._referral_status(input_data)
+            output = self._referral_status(input_data)
         elif action == "resource_directory":
-            return self._resource_directory(input_data)
+            output = self._resource_directory(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -79,6 +84,36 @@ class CommunityResourceAgent(BaseAgent):
                 rationale=f"Unknown community resource action: {action}",
                 status=AgentStatus.FAILED,
             )
+
+        # --- LLM: generate personalized resource recommendation ---
+        try:
+            result_data = output.result if hasattr(output, "result") else {}
+            prompt = (
+                "You are a social determinants of health (SDOH) specialist. "
+                "Analyze the following community resource data and provide a personalized, "
+                "empathetic recommendation that helps the patient or care coordinator understand "
+                "available resources, prioritize next steps, and overcome common barriers to access.\n\n"
+                f"Action: {action}\n"
+                f"Patient needs: {json.dumps(ctx.get('needs', []))}\n"
+                f"Resource data: {json.dumps(result_data, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a community resource navigator for a healthcare platform. "
+                    "Provide warm, practical guidance that helps connect patients to social "
+                    "services. Be sensitive to stigma, use encouraging language, and include "
+                    "concrete next steps like phone numbers and eligibility tips."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if isinstance(result_data, dict):
+                result_data["resource_recommendation"] = resp.content
+        except Exception:
+            logger.warning("LLM resource_recommendation generation failed; continuing without it")
+
+        return output
 
     def _find_resources(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context

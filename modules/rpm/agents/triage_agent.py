@@ -6,6 +6,9 @@ and risk scores. Routes patients to appropriate care levels.
 """
 
 import logging
+
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
 from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
@@ -68,6 +71,31 @@ class TriageAgent(HealthOSAgent):
         # Route to care level
         care_level = self._route_care_level(esi_level)
 
+        # LLM enhancement: generate triage reasoning explaining the urgency assessment
+        triage_reasoning = ""
+        try:
+            prompt = (
+                f"Explain the clinical reasoning behind this triage classification:\n\n"
+                f"ESI Level: {esi_level} ({esi_info['name']})\n"
+                f"Chief complaint: {chief_complaint or 'Not specified'}\n"
+                f"Symptoms: {symptoms or 'None reported'}\n"
+                f"Risk score (NEWS2): {risk_score}\n"
+                f"Maximum alert severity: {max_alert_severity}\n"
+                f"Recommended care level: {care_level['description']}\n\n"
+                f"Provide a concise clinical justification for this urgency level in 2-3 sentences."
+            )
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system="You are a clinical triage decision support system. Explain triage "
+                       "classifications using evidence-based reasoning. Reference ESI criteria "
+                       "and clinical indicators that support the urgency determination.",
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            triage_reasoning = llm_response.content
+        except Exception as e:
+            logger.warning("LLM call failed for triage reasoning, using rule-based only: %s", e)
+
         return AgentOutput(
             agent_name=self.name,
             agent_tier=self.tier.value,
@@ -81,6 +109,7 @@ class TriageAgent(HealthOSAgent):
                 "response_time": esi_info["response"],
                 "care_level": care_level,
                 "chief_complaint": chief_complaint,
+                "triage_reasoning": triage_reasoning,
                 "contributing_factors": {
                     "risk_score": risk_score,
                     "alert_severity": max_alert_severity,

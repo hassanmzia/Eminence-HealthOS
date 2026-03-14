@@ -6,6 +6,7 @@ matching, tracking, and outcome capture for inter-provider care coordination.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -16,6 +17,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 
 # Specialty-to-urgency default turnaround days
@@ -48,7 +52,7 @@ class ReferralCoordinationAgent(BaseAgent):
         action = ctx.get("action", "create")
 
         if action == "create":
-            return self._create_referral(input_data)
+            return await self._create_referral(input_data)
         elif action == "match_specialist":
             return self._match_specialist(input_data)
         elif action == "track":
@@ -64,7 +68,7 @@ class ReferralCoordinationAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _create_referral(self, input_data: AgentInput) -> AgentOutput:
+    async def _create_referral(self, input_data: AgentInput) -> AgentOutput:
         """Create a new referral with clinical context."""
         ctx = input_data.context
         patient_id = str(input_data.patient_id or "unknown")
@@ -98,6 +102,43 @@ class ReferralCoordinationAgent(BaseAgent):
 
         referral_id = f"REF-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{patient_id[:8]}"
 
+        # --- LLM: generate referral summary for receiving specialist ---
+        referral_summary = None
+        try:
+            dx_desc = ", ".join(diagnosis_codes) if diagnosis_codes else "not specified"
+            prompt = (
+                f"Referral to {specialty} specialist.\n"
+                f"Urgency: {urgency}\n"
+                f"Reason for referral: {reason}\n"
+                f"Diagnosis codes: {dx_desc}\n"
+                f"Referring provider: {referring_provider or 'not specified'}\n"
+                f"Clinical notes: {clinical_notes or 'none provided'}\n\n"
+                f"Write a concise clinical summary for the receiving specialist that "
+                f"includes relevant clinical context, reason for referral, pertinent "
+                f"history, and what the referring provider is requesting."
+            )
+            llm_response = await llm_router.complete(
+                LLMRequest(
+                    messages=[{"role": "user", "content": prompt}],
+                    system=(
+                        "You are a clinical referral coordinator. Write professional, "
+                        "concise referral summaries for receiving specialists. Include "
+                        "relevant clinical context, the specific reason for referral, "
+                        "and what evaluation or management is being requested. Use "
+                        "clear medical language appropriate for specialist communication."
+                    ),
+                    temperature=0.3,
+                    max_tokens=1024,
+                )
+            )
+            referral_summary = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM referral summary generation failed; "
+                "returning referral without narrative summary",
+                exc_info=True,
+            )
+
         result = {
             "referral_id": referral_id,
             "patient_id": patient_id,
@@ -114,6 +155,8 @@ class ReferralCoordinationAgent(BaseAgent):
             "created_at": datetime.now(timezone.utc).isoformat(),
             "next_steps": self._get_next_steps(insurance_verified, urgency),
         }
+        if referral_summary is not None:
+            result["referral_summary"] = referral_summary
 
         return self.build_output(
             trace_id=input_data.trace_id,

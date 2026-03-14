@@ -5,6 +5,8 @@ Layer 4 (Action): Creates and routes lab orders from care plans and encounters.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -16,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # Common lab order panels
 LAB_PANELS: dict[str, dict[str, Any]] = {
@@ -55,7 +60,7 @@ class LabOrderAgent(BaseAgent):
         elif action == "order_status":
             return self._order_status(input_data)
         elif action == "suggest_panels":
-            return self._suggest_panels(input_data)
+            return await self._suggest_panels(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -154,7 +159,7 @@ class LabOrderAgent(BaseAgent):
             rationale=f"Order {order_id}: {result['status']}",
         )
 
-    def _suggest_panels(self, input_data: AgentInput) -> AgentOutput:
+    async def _suggest_panels(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         conditions = [c.lower() for c in ctx.get("conditions", [])]
@@ -192,12 +197,50 @@ class LabOrderAgent(BaseAgent):
             if not any(s["panel_key"] == "renal" for s in suggestions):
                 suggestions.append({"panel_key": "renal", "panel_name": "Renal Function Panel", "reason": "Metformin renal monitoring", "priority": "routine"})
 
+        # --- LLM-generated order rationale ---
+        order_rationale = (
+            f"{len(suggestions)} lab panel(s) recommended based on {len(conditions)} condition(s) and {len(medications)} medication(s)."
+            if suggestions
+            else "No specific lab panels recommended based on current conditions and medications."
+        )
+        try:
+            rationale_payload = {
+                "conditions": conditions,
+                "medications": medications,
+                "suggestions": suggestions,
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Provide a clinical justification for the following recommended lab "
+                    f"orders based on the patient's conditions and medications. Explain "
+                    f"why each panel is clinically indicated.\n\n"
+                    f"Order data:\n{json.dumps(rationale_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a clinical decision support AI for laboratory ordering. "
+                    "Provide concise clinical justifications for recommended lab panels. "
+                    "Explain the clinical rationale linking each condition or medication "
+                    "to the suggested labs, including monitoring frequency and what the "
+                    "results will help assess."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                order_rationale = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for order rationale; using fallback narrative",
+                exc_info=True,
+            )
+
         result = {
             "suggested_at": now.isoformat(),
             "conditions_evaluated": conditions,
             "medications_evaluated": medications,
             "suggestions": suggestions,
             "total_suggested": len(suggestions),
+            "order_rationale": order_rationale,
         }
 
         return self.build_output(

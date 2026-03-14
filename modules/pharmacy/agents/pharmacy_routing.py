@@ -5,6 +5,8 @@ Layer 4 (Action): Finds nearest/preferred pharmacy and transmits prescription or
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -16,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # Sample pharmacy network
 PHARMACY_NETWORK: list[dict[str, Any]] = [
@@ -44,7 +49,7 @@ class PharmacyRoutingAgent(BaseAgent):
         action = ctx.get("action", "find_pharmacy")
 
         if action == "find_pharmacy":
-            return self._find_pharmacy(input_data)
+            return await self._find_pharmacy(input_data)
         elif action == "transmit_prescription":
             return self._transmit_prescription(input_data)
         elif action == "check_availability":
@@ -60,7 +65,7 @@ class PharmacyRoutingAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _find_pharmacy(self, input_data: AgentInput) -> AgentOutput:
+    async def _find_pharmacy(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         preferred_chain = ctx.get("preferred_chain", "").lower()
@@ -84,11 +89,50 @@ class PharmacyRoutingAgent(BaseAgent):
         # Sort by distance (mail-order has None distance, put at end for retail queries)
         candidates.sort(key=lambda p: p["distance_mi"] if p["distance_mi"] is not None else 999)
 
+        # --- LLM-generated routing rationale ---
+        recommended = candidates[0] if candidates else None
+        routing_rationale = (
+            f"Recommended {recommended['name']} based on proximity and availability."
+            if recommended
+            else "No pharmacies found matching the given criteria."
+        )
+        try:
+            routing_payload = {
+                "preferred_chain": preferred_chain or None,
+                "specialty_required": need_specialty,
+                "mail_order_preferred": prefer_mail_order,
+                "candidates": candidates[:5],
+                "recommended": recommended,
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Explain why the recommended pharmacy was selected and summarize "
+                    f"the routing decision based on patient preferences and pharmacy attributes.\n\n"
+                    f"Routing data:\n{json.dumps(routing_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a pharmacy routing AI. Explain the rationale for pharmacy "
+                    "selection in plain language. Consider factors like distance, hours, "
+                    "drive-thru availability, specialty capabilities, mail-order preferences, "
+                    "and patient chain preferences. Be concise and clinically relevant."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                routing_rationale = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for routing rationale; using fallback narrative",
+                exc_info=True,
+            )
+
         result = {
             "searched_at": now.isoformat(),
             "pharmacies": candidates[:5],
             "total_found": len(candidates),
-            "recommended": candidates[0] if candidates else None,
+            "recommended": recommended,
+            "routing_rationale": routing_rationale,
         }
 
         return self.build_output(

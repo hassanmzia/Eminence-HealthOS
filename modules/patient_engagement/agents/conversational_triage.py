@@ -6,6 +6,7 @@ before scheduling, using evidence-based clinical protocols.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 TRIAGE_LEVELS = {
     "emergent": {"action": "Call 911 or go to nearest ER immediately", "timeframe": "Immediate", "color": "red"},
@@ -53,7 +57,7 @@ class ConversationalTriageAgent(BaseAgent):
         action = ctx.get("action", "triage_symptoms")
 
         if action == "triage_symptoms":
-            return self._triage_symptoms(input_data)
+            return await self._triage_symptoms(input_data)
         elif action == "ask_followup":
             return self._ask_followup(input_data)
         elif action == "get_recommendation":
@@ -69,7 +73,7 @@ class ConversationalTriageAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _triage_symptoms(self, input_data: AgentInput) -> AgentOutput:
+    async def _triage_symptoms(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         chief_complaint = ctx.get("chief_complaint", "").lower()
@@ -94,6 +98,32 @@ class ConversationalTriageAgent(BaseAgent):
 
         triage_info = TRIAGE_LEVELS[triage_level]
 
+        # --- LLM: generate empathetic conversational response ---
+        conversation_response = None
+        try:
+            prompt = (
+                f"A patient reports: '{chief_complaint}'. "
+                f"Symptoms: {', '.join(symptoms) if symptoms else 'not specified'}. "
+                f"Red flags: {', '.join(red_flags_present) if red_flags_present else 'none'}. "
+                f"Triage level: {triage_level} — {triage_info['action']}.\n\n"
+                "Write a brief, empathetic, patient-friendly response (3-5 sentences) explaining "
+                "the triage recommendation. Use warm, reassuring language. Do NOT diagnose. "
+                "Remind them this is guidance, not a diagnosis."
+            )
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a compassionate medical triage assistant. Provide empathetic, "
+                    "clear guidance to patients about their next steps. Never diagnose conditions. "
+                    "Always encourage seeking professional medical care when appropriate."
+                ),
+                temperature=0.4,
+                max_tokens=512,
+            ))
+            conversation_response = llm_response.content
+        except Exception:
+            logger.warning("LLM call failed in conversational_triage._triage_symptoms; using rule-based output only")
+
         result = {
             "triage_id": str(uuid.uuid4()),
             "triaged_at": now.isoformat(),
@@ -107,6 +137,7 @@ class ConversationalTriageAgent(BaseAgent):
             "recommended_action": triage_info["action"],
             "timeframe": triage_info["timeframe"],
             "follow_up_questions": protocol.get("red_flags", [])[:3],
+            "conversation_response": conversation_response,
             "disclaimer": "This is not a medical diagnosis. If you are experiencing a medical emergency, call 911.",
         }
 

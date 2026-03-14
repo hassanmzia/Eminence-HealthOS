@@ -6,6 +6,8 @@ for research export with verified compliance.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # HIPAA Safe Harbor 18 identifiers
 SAFE_HARBOR_IDENTIFIERS = [
@@ -61,7 +66,7 @@ class DeIdentificationAgent(BaseAgent):
         elif action == "verify_deidentification":
             return self._verify_deidentification(input_data)
         elif action == "scan_phi":
-            return self._scan_phi(input_data)
+            return await self._scan_phi(input_data)
         elif action == "export_dataset":
             return self._export_dataset(input_data)
         else:
@@ -160,10 +165,11 @@ class DeIdentificationAgent(BaseAgent):
             rationale=f"Verification: {'all checks passed' if result['all_passed'] else 'issues found'}",
         )
 
-    def _scan_phi(self, input_data: AgentInput) -> AgentOutput:
+    async def _scan_phi(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         text = ctx.get("text", "")
+        free_text_fields = ctx.get("free_text_fields", [])
         record_count = ctx.get("record_count", 1)
 
         phi_detected = [
@@ -172,12 +178,48 @@ class DeIdentificationAgent(BaseAgent):
             {"type": "mrn", "count": 1, "examples": ["[REDACTED]"], "confidence": 0.99},
         ]
 
+        # --- LLM-assisted PHI detection in free-text fields ---
+        llm_phi_findings = None
+        scan_text = text or " | ".join(free_text_fields)
+        if scan_text.strip():
+            try:
+                llm_response = await llm_router.complete(LLMRequest(
+                    messages=[{"role": "user", "content": (
+                        f"Scan the following free-text for any potential PHI "
+                        f"(Protected Health Information) that may not be caught "
+                        f"by pattern-based detection.\n\n"
+                        f"Text to scan:\n{scan_text[:3000]}"
+                    )}],
+                    system=(
+                        "You are a HIPAA compliance specialist AI focused on PHI "
+                        "detection. Analyze the provided free-text for any potential "
+                        "Protected Health Information per the HIPAA Safe Harbor 18 "
+                        "identifiers. Flag: patient names, dates (birth, admission, "
+                        "discharge, service), geographic data more specific than state, "
+                        "phone/fax numbers, email addresses, SSNs, MRNs, account "
+                        "numbers, device/vehicle identifiers, URLs, IP addresses, and "
+                        "any other uniquely identifying information. For each finding, "
+                        "state the PHI type, approximate location in text, and "
+                        "confidence level. Be thorough — missing PHI is a compliance risk."
+                    ),
+                    temperature=0.1,
+                    max_tokens=1024,
+                ))
+                if llm_response and llm_response.content:
+                    llm_phi_findings = llm_response.content
+            except Exception:
+                logger.warning(
+                    "LLM call failed for PHI detection in free-text; skipping",
+                    exc_info=True,
+                )
+
         result = {
             "scanned_at": now.isoformat(),
             "records_scanned": record_count,
             "phi_detected": phi_detected,
             "total_phi_instances": sum(p["count"] for p in phi_detected),
             "phi_categories_found": len(phi_detected),
+            "llm_phi_findings": llm_phi_findings,
             "requires_deidentification": True,
         }
 

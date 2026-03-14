@@ -6,10 +6,14 @@ statistical, and pattern-based methods.
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any
 
 from healthos_platform.agents.base import BaseAgent
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger("healthos.agent.anomaly_detection")
 from healthos_platform.agents.types import (
     AgentInput,
     AgentOutput,
@@ -68,11 +72,35 @@ class AnomalyDetectionAgent(BaseAgent):
         vitals = input_data.context.get("normalized_vitals", [])
         anomalies = self._check_thresholds_raw(vitals)
 
+        # LLM enhancement: generate clinical interpretation of anomaly patterns
+        clinical_interpretation = ""
+        if anomalies:
+            try:
+                prompt = (
+                    f"Analyze these clinical anomalies detected in a patient's vital signs "
+                    f"and provide a concise clinical interpretation:\n\n"
+                    f"Anomalies detected: {anomalies}\n"
+                    f"Total vitals reviewed: {len(vitals)}\n\n"
+                    f"Explain the anomaly pattern and its clinical significance in 2-3 sentences."
+                )
+                llm_response = await llm_router.complete(LLMRequest(
+                    messages=[{"role": "user", "content": prompt}],
+                    system="You are a clinical decision support system. Provide concise, "
+                           "evidence-based interpretations of vital sign anomalies. "
+                           "Focus on clinical significance and potential underlying causes.",
+                    temperature=0.3,
+                    max_tokens=1024,
+                ))
+                clinical_interpretation = llm_response.content
+            except Exception as e:
+                logger.warning("LLM call failed for clinical interpretation, using rule-based only: %s", e)
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result={
                 "anomalies_detected": len(anomalies),
                 "anomalies": anomalies,
+                "clinical_interpretation": clinical_interpretation,
             },
             confidence=0.9 if anomalies else 0.95,
             rationale=f"Detected {len(anomalies)} anomalies across {len(vitals)} readings",

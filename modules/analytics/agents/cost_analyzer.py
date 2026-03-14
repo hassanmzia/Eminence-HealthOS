@@ -9,6 +9,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -16,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger("healthos.agent.cost_analyzer")
 
 
 class CostAnalyzerAgent(BaseAgent):
@@ -38,7 +43,7 @@ class CostAnalyzerAgent(BaseAgent):
         elif action == "savings_forecast":
             return self._savings_forecast(input_data)
         elif action == "summary":
-            return self._cost_summary(input_data)
+            return await self._cost_summary(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -162,15 +167,46 @@ class CostAnalyzerAgent(BaseAgent):
             rationale=f"Savings forecast: ${result['three_year_total']:,} over 3 years at {growth_rate:.0%} growth",
         )
 
-    def _cost_summary(self, input_data: AgentInput) -> AgentOutput:
+    async def _cost_summary(self, input_data: AgentInput) -> AgentOutput:
         """Generate cost summary overview."""
         ctx = input_data.context
 
+        total_patients = ctx.get("patient_count", 0)
+        monthly_cost = ctx.get("monthly_cost", 0)
+        efficiency_score = ctx.get("efficiency_score", 0)
+        cost_trend = ctx.get("cost_trend", "stable")
+
+        # --- LLM: generate cost narrative ---
+        cost_narrative: str | None = None
+        try:
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Analyze the following healthcare cost data and provide a narrative "
+                    f"covering cost drivers, efficiency opportunities, and savings recommendations.\n\n"
+                    f"Total patients: {total_patients}\n"
+                    f"Monthly operating cost: ${monthly_cost:,}\n"
+                    f"Cost efficiency score: {efficiency_score}\n"
+                    f"Cost trend: {cost_trend}\n\n"
+                    f"Provide actionable insights on cost drivers and savings opportunities."
+                )}],
+                system=(
+                    "You are a healthcare financial analyst for Eminence HealthOS. "
+                    "Provide clear, actionable cost analysis narratives. Focus on "
+                    "identifying cost drivers, benchmarking, and savings opportunities."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            cost_narrative = resp.content
+        except Exception:
+            logger.warning("LLM cost_narrative generation failed; continuing without it")
+
         result = {
-            "total_patients": ctx.get("patient_count", 0),
-            "monthly_operating_cost": ctx.get("monthly_cost", 0),
-            "cost_efficiency_score": ctx.get("efficiency_score", 0),
-            "cost_trend": ctx.get("cost_trend", "stable"),
+            "total_patients": total_patients,
+            "monthly_operating_cost": monthly_cost,
+            "cost_efficiency_score": efficiency_score,
+            "cost_trend": cost_trend,
+            "cost_narrative": cost_narrative,
             "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }
 

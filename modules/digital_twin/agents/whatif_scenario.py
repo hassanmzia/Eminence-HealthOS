@@ -21,6 +21,7 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
 
 # Effect profiles for common medication classes on key vitals
 MEDICATION_EFFECTS: dict[str, dict[str, float]] = {
@@ -88,13 +89,13 @@ class WhatIfScenarioAgent(BaseAgent):
         action = input_data.context.get("action", "simulate_medication_change")
 
         if action == "simulate_medication_change":
-            return self._simulate_medication_change(input_data)
+            return await self._simulate_medication_change(input_data)
         elif action == "simulate_lifestyle_change":
-            return self._simulate_lifestyle_change(input_data)
+            return await self._simulate_lifestyle_change(input_data)
         elif action == "simulate_treatment_stop":
-            return self._simulate_treatment_stop(input_data)
+            return await self._simulate_treatment_stop(input_data)
         elif action == "compare_scenarios":
-            return self._compare_scenarios(input_data)
+            return await self._compare_scenarios(input_data)
         elif action == "risk_impact":
             return self._risk_impact(input_data)
         else:
@@ -108,7 +109,7 @@ class WhatIfScenarioAgent(BaseAgent):
 
     # ── simulate_medication_change ────────────────────────────────────────────
 
-    def _simulate_medication_change(self, input_data: AgentInput) -> AgentOutput:
+    async def _simulate_medication_change(self, input_data: AgentInput) -> AgentOutput:
         """Model the effect of adding/removing/changing a medication on key vitals."""
         ctx = input_data.context
         scenario = ctx.get("scenario", {})
@@ -163,18 +164,46 @@ class WhatIfScenarioAgent(BaseAgent):
                 "effect_ramp": round(ramp, 3),
             })
 
+        result = {
+            "scenario_type": "medication_change",
+            "medication_class": medication_class,
+            "change_type": change_type,
+            "dosage_factor": dosage_factor,
+            "baseline_vitals": baseline,
+            "projections": projections,
+            "effect_profile": effects,
+            "simulated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        # --- LLM: generate scenario analysis ---
+        try:
+            prompt = (
+                f"You are a clinical pharmacology specialist analyzing a what-if scenario.\n\n"
+                f"Scenario: {change_type} {medication_class} (dosage factor: {dosage_factor})\n"
+                f"Baseline Vitals: {baseline}\n"
+                f"Effect Profile: {effects}\n"
+                f"30/60/90-Day Projections: {projections}\n\n"
+                f"Provide a concise clinical narrative explaining the simulation results, "
+                f"expected physiological impacts, potential risks or benefits of this medication change, "
+                f"and any clinical considerations the care team should be aware of."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system="You are a clinical pharmacology AI that generates clear, evidence-based what-if scenario analyses for medication changes.",
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["scenario_analysis"] = resp.content
+        except Exception:
+            result["scenario_analysis"] = (
+                f"Simulation of {change_type} {medication_class} (dosage factor {dosage_factor}) "
+                f"projects changes across {len(effects)} vitals over 90 days. "
+                f"Key affected parameters: {', '.join(effects.keys())}."
+            )
+
         return self.build_output(
             trace_id=input_data.trace_id,
-            result={
-                "scenario_type": "medication_change",
-                "medication_class": medication_class,
-                "change_type": change_type,
-                "dosage_factor": dosage_factor,
-                "baseline_vitals": baseline,
-                "projections": projections,
-                "effect_profile": effects,
-                "simulated_at": datetime.now(timezone.utc).isoformat(),
-            },
+            result=result,
             confidence=0.78,
             rationale=(
                 f"Simulated {change_type} of {medication_class} over 90 days with "
@@ -184,7 +213,7 @@ class WhatIfScenarioAgent(BaseAgent):
 
     # ── simulate_lifestyle_change ─────────────────────────────────────────────
 
-    def _simulate_lifestyle_change(self, input_data: AgentInput) -> AgentOutput:
+    async def _simulate_lifestyle_change(self, input_data: AgentInput) -> AgentOutput:
         """Model exercise, diet, smoking cessation impacts on health metrics."""
         ctx = input_data.context
         scenario = ctx.get("scenario", {})
@@ -233,17 +262,46 @@ class WhatIfScenarioAgent(BaseAgent):
                 "cumulative_months": round(months, 1),
             })
 
+        result = {
+            "scenario_type": "lifestyle_change",
+            "interventions": applied_interventions,
+            "adherence_rate": adherence_rate,
+            "baseline_vitals": baseline,
+            "projections": projections,
+            "monthly_effects": combined_monthly_effects,
+            "simulated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        # --- LLM: generate scenario analysis ---
+        try:
+            prompt = (
+                f"You are a preventive medicine specialist analyzing a lifestyle intervention scenario.\n\n"
+                f"Interventions: {applied_interventions}\n"
+                f"Adherence Rate: {adherence_rate:.0%}\n"
+                f"Baseline Vitals: {baseline}\n"
+                f"Combined Monthly Effects: {combined_monthly_effects}\n"
+                f"30/60/90-Day Projections: {projections}\n\n"
+                f"Provide a concise clinical narrative explaining the projected outcomes of these "
+                f"lifestyle changes, realistic expectations given the adherence rate, and practical "
+                f"recommendations for maximizing benefit."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system="You are a preventive medicine AI that generates clear, motivating lifestyle intervention scenario analyses.",
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["scenario_analysis"] = resp.content
+        except Exception:
+            result["scenario_analysis"] = (
+                f"Lifestyle simulation of {len(applied_interventions)} intervention(s) "
+                f"at {adherence_rate:.0%} adherence projects improvements across "
+                f"{len(combined_monthly_effects)} vitals over 90 days."
+            )
+
         return self.build_output(
             trace_id=input_data.trace_id,
-            result={
-                "scenario_type": "lifestyle_change",
-                "interventions": applied_interventions,
-                "adherence_rate": adherence_rate,
-                "baseline_vitals": baseline,
-                "projections": projections,
-                "monthly_effects": combined_monthly_effects,
-                "simulated_at": datetime.now(timezone.utc).isoformat(),
-            },
+            result=result,
             confidence=0.72,
             rationale=(
                 f"Simulated {len(applied_interventions)} lifestyle intervention(s) "
@@ -253,7 +311,7 @@ class WhatIfScenarioAgent(BaseAgent):
 
     # ── simulate_treatment_stop ───────────────────────────────────────────────
 
-    def _simulate_treatment_stop(self, input_data: AgentInput) -> AgentOutput:
+    async def _simulate_treatment_stop(self, input_data: AgentInput) -> AgentOutput:
         """Project deterioration curves if a patient stops a treatment."""
         ctx = input_data.context
         scenario = ctx.get("scenario", {})
@@ -304,20 +362,48 @@ class WhatIfScenarioAgent(BaseAgent):
                 "deterioration_factor": round(accel, 2),
             })
 
+        result = {
+            "scenario_type": "treatment_stop",
+            "treatment_category": treatment_category,
+            "baseline_vitals": baseline,
+            "projections": projections,
+            "monthly_deterioration_rates": deterioration,
+            "warning": (
+                "Stopping treatment may lead to significant clinical deterioration. "
+                "This simulation is for clinical decision support only."
+            ),
+            "simulated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        # --- LLM: generate scenario analysis ---
+        try:
+            prompt = (
+                f"You are a clinical risk specialist analyzing a treatment cessation scenario.\n\n"
+                f"Treatment Category Being Stopped: {treatment_category}\n"
+                f"Baseline Vitals: {baseline}\n"
+                f"Monthly Deterioration Rates: {deterioration}\n"
+                f"30/60/90-Day Projections: {projections}\n\n"
+                f"Provide a concise clinical narrative explaining the risks of stopping this treatment, "
+                f"the expected deterioration trajectory, clinical warning signs to monitor, "
+                f"and recommended safeguards if the patient insists on discontinuation."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system="You are a clinical risk AI that generates clear, evidence-based treatment cessation risk analyses.",
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["scenario_analysis"] = resp.content
+        except Exception:
+            result["scenario_analysis"] = (
+                f"Cessation of {treatment_category} treatment projects deterioration across "
+                f"{len(deterioration)} vitals over 90 days with accelerating decay. "
+                f"Close monitoring is strongly recommended."
+            )
+
         return self.build_output(
             trace_id=input_data.trace_id,
-            result={
-                "scenario_type": "treatment_stop",
-                "treatment_category": treatment_category,
-                "baseline_vitals": baseline,
-                "projections": projections,
-                "monthly_deterioration_rates": deterioration,
-                "warning": (
-                    "Stopping treatment may lead to significant clinical deterioration. "
-                    "This simulation is for clinical decision support only."
-                ),
-                "simulated_at": datetime.now(timezone.utc).isoformat(),
-            },
+            result=result,
             confidence=0.74,
             rationale=(
                 f"Simulated cessation of {treatment_category} treatment — "
@@ -327,7 +413,7 @@ class WhatIfScenarioAgent(BaseAgent):
 
     # ── compare_scenarios ─────────────────────────────────────────────────────
 
-    def _compare_scenarios(self, input_data: AgentInput) -> AgentOutput:
+    async def _compare_scenarios(self, input_data: AgentInput) -> AgentOutput:
         """Run multiple scenarios side by side and rank by projected outcome."""
         ctx = input_data.context
         scenarios = ctx.get("scenarios", [])
@@ -359,11 +445,11 @@ class WhatIfScenarioAgent(BaseAgent):
             )
 
             if scenario_type == "medication_change":
-                sim_output = self._simulate_medication_change(scenario_input)
+                sim_output = await self._simulate_medication_change(scenario_input)
             elif scenario_type == "lifestyle_change":
-                sim_output = self._simulate_lifestyle_change(scenario_input)
+                sim_output = await self._simulate_lifestyle_change(scenario_input)
             elif scenario_type == "treatment_stop":
-                sim_output = self._simulate_treatment_stop(scenario_input)
+                sim_output = await self._simulate_treatment_stop(scenario_input)
             else:
                 continue
 

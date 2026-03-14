@@ -10,6 +10,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger("healthos.agent.ambient_listening")
 
 # Supported audio sources
 AUDIO_SOURCES = ["telehealth_webrtc", "in_person_microphone", "uploaded_recording", "phone_call"]
@@ -50,7 +55,7 @@ class AmbientListeningAgent(BaseAgent):
         action = ctx.get("action", "transcribe")
 
         if action == "transcribe":
-            return self._transcribe(input_data)
+            return await self._transcribe(input_data)
         elif action == "start_session":
             return self._start_session(input_data)
         elif action == "end_session":
@@ -109,7 +114,7 @@ class AmbientListeningAgent(BaseAgent):
             rationale=f"Recording session started for encounter {encounter_id} via {source}",
         )
 
-    def _transcribe(self, input_data: AgentInput) -> AgentOutput:
+    async def _transcribe(self, input_data: AgentInput) -> AgentOutput:
         """Transcribe audio data into a timestamped raw transcript."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -167,6 +172,33 @@ class AmbientListeningAgent(BaseAgent):
             sum(s["confidence"] for s in segments) / len(segments) if segments else 0.0
         )
 
+        # --- LLM: extract clinical insights from transcription segments ---
+        clinical_insights: str | None = None
+        try:
+            transcript_text = "\n".join(
+                f"[{s['start_sec']:.1f}s] {s['text']}" for s in segments
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Analyze the following clinical encounter transcript and extract:\n"
+                    f"1. Key clinical terms and medical concepts\n"
+                    f"2. Patient concerns and symptoms\n"
+                    f"3. Action items (orders, referrals, follow-ups)\n"
+                    f"4. Medication mentions and changes\n\n"
+                    f"Transcript:\n{transcript_text}"
+                )}],
+                system=(
+                    "You are a clinical NLP assistant for Eminence HealthOS. "
+                    "Extract structured clinical insights from doctor-patient "
+                    "conversation transcripts. Be concise and medically precise."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            clinical_insights = resp.content
+        except Exception:
+            logger.warning("LLM clinical_insights generation failed; continuing without it")
+
         result = {
             "encounter_id": encounter_id,
             "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
@@ -177,6 +209,7 @@ class AmbientListeningAgent(BaseAgent):
             "total_segments": len(segments),
             "average_confidence": round(avg_confidence, 3),
             "segments": segments,
+            "clinical_insights": clinical_insights,
             "metadata": {
                 "model": "whisper-large-v3",
                 "sample_rate_hz": 16000,

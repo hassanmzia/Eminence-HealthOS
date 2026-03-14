@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentTier,
     Severity,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 # Known high-risk drug interaction pairs (simplified clinical reference)
 INTERACTION_DB: list[dict[str, Any]] = [
@@ -70,19 +75,54 @@ class MedicationReviewAgent(BaseAgent):
         all_findings = interactions + contraindication_warnings + duplicates
         has_critical = any(f["severity"] == "high" for f in all_findings)
 
+        # ── LLM: generate medication review narrative ─────────────────
+        medication_review_narrative: str | None = None
+        try:
+            prompt = (
+                f"Medications: {', '.join(med_names) or 'none'}.\n"
+                f"Conditions: {', '.join(str(c) for c in conditions) or 'none reported'}.\n"
+                f"Interactions found: {len(interactions)} — "
+                f"{'; '.join(i['description'] for i in interactions) or 'none'}.\n"
+                f"Contraindications found: {len(contraindication_warnings)} — "
+                f"{'; '.join(c['description'] for c in contraindication_warnings) or 'none'}.\n"
+                f"Duplicate therapies: {len(duplicates)} — "
+                f"{'; '.join(d['description'] for d in duplicates) or 'none'}.\n\n"
+                "Provide a concise medication review narrative analyzing the appropriateness "
+                "of this medication regimen. Highlight any safety concerns, recommend "
+                "monitoring parameters, and suggest potential optimizations."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a clinical pharmacist reviewing a patient's medication list "
+                    "in a telehealth platform. Provide a professional medication review "
+                    "narrative suitable for provider decision-support. Focus on safety, "
+                    "efficacy, and actionable recommendations."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            medication_review_narrative = resp.content
+        except Exception:
+            logger.warning("LLM unavailable for medication review narrative; continuing without it.")
+
+        result = {
+            "medications_reviewed": med_names,
+            "interactions": interactions,
+            "contraindications": contraindication_warnings,
+            "duplicates": duplicates,
+            "total_findings": len(all_findings),
+            "has_critical_findings": has_critical,
+        }
+        if medication_review_narrative:
+            result["medication_review_narrative"] = medication_review_narrative
+
         return AgentOutput(
             trace_id=input_data.trace_id,
             agent_name=self.name,
             status=AgentStatus.WAITING_HITL if has_critical else AgentStatus.COMPLETED,
             confidence=0.85,
-            result={
-                "medications_reviewed": med_names,
-                "interactions": interactions,
-                "contraindications": contraindication_warnings,
-                "duplicates": duplicates,
-                "total_findings": len(all_findings),
-                "has_critical_findings": has_critical,
-            },
+            result=result,
             rationale=(
                 f"Reviewed {len(med_names)} medications: "
                 f"{len(interactions)} interaction(s), "

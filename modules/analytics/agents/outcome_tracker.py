@@ -9,6 +9,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+import json
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -16,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 
 class OutcomeTrackerAgent(BaseAgent):
@@ -32,11 +38,11 @@ class OutcomeTrackerAgent(BaseAgent):
         action = ctx.get("action", "track")
 
         if action == "track":
-            return self._track_outcomes(input_data)
+            return await self._track_outcomes(input_data)
         elif action == "adherence":
-            return self._check_adherence(input_data)
+            return await self._check_adherence(input_data)
         elif action == "effectiveness":
-            return self._assess_effectiveness(input_data)
+            return await self._assess_effectiveness(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -46,7 +52,7 @@ class OutcomeTrackerAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _track_outcomes(self, input_data: AgentInput) -> AgentOutput:
+    async def _track_outcomes(self, input_data: AgentInput) -> AgentOutput:
         """Track outcomes for a patient's care plan."""
         ctx = input_data.context
         patient_id = str(input_data.patient_id or "unknown")
@@ -73,6 +79,30 @@ class OutcomeTrackerAgent(BaseAgent):
             "tracked_at": datetime.now(timezone.utc).isoformat(),
         }
 
+        # ── LLM: generate outcome narrative ──────────────────────────────────
+        try:
+            prompt = (
+                "You are a clinical outcomes analyst. Based on the following patient outcome "
+                "tracking data, produce a concise narrative (2-3 paragraphs) explaining "
+                "treatment outcomes, goal progress, adherence patterns, and recommendations "
+                "for care plan adjustments.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered clinical outcomes analyst for a healthcare platform. "
+                    "Provide clear, evidence-based analysis of treatment outcomes and effectiveness."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["outcome_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for track_outcomes; continuing without narrative")
+            result["outcome_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -83,7 +113,7 @@ class OutcomeTrackerAgent(BaseAgent):
             ),
         )
 
-    def _check_adherence(self, input_data: AgentInput) -> AgentOutput:
+    async def _check_adherence(self, input_data: AgentInput) -> AgentOutput:
         """Check care plan adherence for a patient."""
         ctx = input_data.context
         patient_id = str(input_data.patient_id or "unknown")
@@ -119,6 +149,30 @@ class OutcomeTrackerAgent(BaseAgent):
             "checked_at": datetime.now(timezone.utc).isoformat(),
         }
 
+        # ── LLM: generate outcome narrative ──────────────────────────────────
+        try:
+            prompt = (
+                "You are a clinical adherence specialist. Based on the following adherence "
+                "data, produce a concise narrative (2-3 paragraphs) explaining adherence "
+                "patterns, identifying barriers to compliance, and recommending strategies "
+                "to improve adherence.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered clinical outcomes analyst for a healthcare platform. "
+                    "Provide clear, evidence-based analysis of treatment outcomes and effectiveness."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["outcome_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for check_adherence; continuing without narrative")
+            result["outcome_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -126,7 +180,7 @@ class OutcomeTrackerAgent(BaseAgent):
             rationale=f"Adherence check: {result['adherence_level']} ({adherence:.0%}), {len(non_adherent)} gaps",
         )
 
-    def _assess_effectiveness(self, input_data: AgentInput) -> AgentOutput:
+    async def _assess_effectiveness(self, input_data: AgentInput) -> AgentOutput:
         """Assess treatment effectiveness across multiple patients."""
         ctx = input_data.context
         treatments = ctx.get("treatments", [])
@@ -156,6 +210,30 @@ class OutcomeTrackerAgent(BaseAgent):
             ),
             "assessed_at": datetime.now(timezone.utc).isoformat(),
         }
+
+        # ── LLM: generate outcome narrative ──────────────────────────────────
+        try:
+            prompt = (
+                "You are a clinical effectiveness researcher. Based on the following "
+                "treatment effectiveness data, produce a concise narrative (2-3 paragraphs) "
+                "explaining which treatments are most effective, comparative effectiveness "
+                "insights, and recommendations for treatment protocol optimization.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered clinical outcomes analyst for a healthcare platform. "
+                    "Provide clear, evidence-based analysis of treatment outcomes and effectiveness."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["outcome_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for assess_effectiveness; continuing without narrative")
+            result["outcome_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
 
         return self.build_output(
             trace_id=input_data.trace_id,

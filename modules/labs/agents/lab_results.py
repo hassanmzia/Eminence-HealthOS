@@ -6,6 +6,8 @@ flags abnormals, and triggers risk re-scoring.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # Reference ranges for common lab values
 REFERENCE_RANGES: dict[str, dict[str, Any]] = {
@@ -62,7 +67,7 @@ class LabResultsAgent(BaseAgent):
         action = ctx.get("action", "ingest_results")
 
         if action == "ingest_results":
-            return self._ingest_results(input_data)
+            return await self._ingest_results(input_data)
         elif action == "flag_abnormals":
             return self._flag_abnormals(input_data)
         elif action == "get_results":
@@ -78,7 +83,7 @@ class LabResultsAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _ingest_results(self, input_data: AgentInput) -> AgentOutput:
+    async def _ingest_results(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         source_format = ctx.get("format", "HL7_ORU")
@@ -129,6 +134,43 @@ class LabResultsAgent(BaseAgent):
                 "is_critical": flag.startswith("critical"),
             })
 
+        # --- LLM-generated results interpretation ---
+        results_interpretation = (
+            f"{len(processed)} results ingested: {abnormals} abnormal, {criticals} critical."
+            if abnormals or criticals
+            else f"{len(processed)} results ingested; all within normal limits."
+        )
+        try:
+            interpretation_payload = {
+                "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
+                "results": processed,
+                "abnormal_count": abnormals,
+                "critical_count": criticals,
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Interpret the following lab results and provide a clinical narrative "
+                    f"on their significance. Highlight abnormal and critical values with "
+                    f"possible clinical implications.\n\n"
+                    f"Lab results:\n{json.dumps(interpretation_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a clinical laboratory medicine AI. Interpret lab results and "
+                    "generate a concise clinical narrative. Explain the clinical significance "
+                    "of abnormal values, potential underlying conditions, and recommended "
+                    "follow-up actions. Prioritize critical values."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                results_interpretation = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for results interpretation; using fallback narrative",
+                exc_info=True,
+            )
+
         result = {
             "result_set_id": str(uuid.uuid4()),
             "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
@@ -140,6 +182,7 @@ class LabResultsAgent(BaseAgent):
             "results": processed,
             "requires_risk_rescore": abnormals > 0 or criticals > 0,
             "requires_critical_alert": criticals > 0,
+            "results_interpretation": results_interpretation,
         }
 
         return self.build_output(

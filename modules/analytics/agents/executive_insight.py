@@ -10,6 +10,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+import json
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -17,6 +20,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 
 # Benchmark targets for KPI scorecards
@@ -48,15 +54,15 @@ class ExecutiveInsightAgent(BaseAgent):
         action = ctx.get("action", "executive_summary")
 
         if action == "executive_summary":
-            return self._executive_summary(input_data)
+            return await self._executive_summary(input_data)
         elif action == "kpi_scorecard":
-            return self._kpi_scorecard(input_data)
+            return await self._kpi_scorecard(input_data)
         elif action == "strategic_brief":
-            return self._strategic_brief(input_data)
+            return await self._strategic_brief(input_data)
         elif action == "department_report":
-            return self._department_report(input_data)
+            return await self._department_report(input_data)
         elif action == "trend_digest":
-            return self._trend_digest(input_data)
+            return await self._trend_digest(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -66,7 +72,7 @@ class ExecutiveInsightAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _executive_summary(self, input_data: AgentInput) -> AgentOutput:
+    async def _executive_summary(self, input_data: AgentInput) -> AgentOutput:
         """Generate a comprehensive executive summary."""
         ctx = input_data.context
         period = ctx.get("period", "monthly")
@@ -125,6 +131,30 @@ class ExecutiveInsightAgent(BaseAgent):
             ],
         }
 
+        # ── LLM: generate executive narrative ────────────────────────────────
+        try:
+            prompt = (
+                "You are a healthcare executive strategist. Based on the following "
+                "executive summary data, produce a concise strategic narrative (3-5 paragraphs) "
+                "covering performance highlights, areas of concern, and recommended next steps. "
+                "Write for a C-suite audience.\n\n"
+                f"{json.dumps(summary, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered executive insight analyst for a healthcare platform. "
+                    "Provide strategic, data-driven analysis suitable for C-suite leadership."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            summary["executive_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for executive_summary; continuing without narrative")
+            summary["executive_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=summary,
@@ -132,7 +162,7 @@ class ExecutiveInsightAgent(BaseAgent):
             rationale=f"Executive summary ({period}): {len(summary['key_achievements'])} achievements, {len(summary['areas_of_concern'])} concerns",
         )
 
-    def _kpi_scorecard(self, input_data: AgentInput) -> AgentOutput:
+    async def _kpi_scorecard(self, input_data: AgentInput) -> AgentOutput:
         """Generate a KPI scorecard with target comparison."""
         ctx = input_data.context
         actuals = ctx.get("actuals", {})
@@ -195,6 +225,30 @@ class ExecutiveInsightAgent(BaseAgent):
             "generated_at": datetime.now(timezone.utc).isoformat(),
         }
 
+        # ── LLM: generate executive narrative for scorecard ──────────────────
+        try:
+            prompt = (
+                "You are a healthcare KPI analyst. Based on the following scorecard data, "
+                "write a concise executive narrative (2-3 paragraphs) summarizing overall "
+                "performance health, highlighting KPIs that are off-target, and recommending "
+                "priority actions.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered executive insight analyst for a healthcare platform. "
+                    "Provide strategic, data-driven analysis suitable for C-suite leadership."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["executive_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for kpi_scorecard; continuing without narrative")
+            result["executive_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -202,7 +256,7 @@ class ExecutiveInsightAgent(BaseAgent):
             rationale=f"KPI scorecard: {met_count}/{len(scorecard)} on target — {result['overall_health']}",
         )
 
-    def _strategic_brief(self, input_data: AgentInput) -> AgentOutput:
+    async def _strategic_brief(self, input_data: AgentInput) -> AgentOutput:
         """Generate a strategic briefing for leadership."""
         ctx = input_data.context
         focus_area = ctx.get("focus_area", "overall")
@@ -275,6 +329,30 @@ class ExecutiveInsightAgent(BaseAgent):
             },
         }
 
+        # ── LLM: generate executive narrative for strategic brief ────────────
+        try:
+            prompt = (
+                "You are a healthcare strategy advisor. Based on the following strategic "
+                "briefing data, write a compelling executive narrative (3-4 paragraphs) "
+                "that synthesizes strategic themes, resource needs, and projected impact "
+                "into an actionable leadership summary.\n\n"
+                f"{json.dumps(brief, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered executive insight analyst for a healthcare platform. "
+                    "Provide strategic, data-driven analysis suitable for C-suite leadership."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            brief["executive_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for strategic_brief; continuing without narrative")
+            brief["executive_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=brief,
@@ -285,7 +363,7 @@ class ExecutiveInsightAgent(BaseAgent):
             ),
         )
 
-    def _department_report(self, input_data: AgentInput) -> AgentOutput:
+    async def _department_report(self, input_data: AgentInput) -> AgentOutput:
         """Generate department-specific performance report."""
         ctx = input_data.context
         department = ctx.get("department", "clinical")
@@ -366,6 +444,29 @@ class ExecutiveInsightAgent(BaseAgent):
             "generated_at": datetime.now(timezone.utc).isoformat(),
         }
 
+        # ── LLM: generate executive narrative for department report ─────────
+        try:
+            prompt = (
+                "You are a healthcare department performance analyst. Based on the following "
+                "department report data, write a concise executive narrative (2-3 paragraphs) "
+                "covering key metrics, highlights, and action items for department leadership.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered executive insight analyst for a healthcare platform. "
+                    "Provide strategic, data-driven analysis suitable for C-suite leadership."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["executive_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for department_report; continuing without narrative")
+            result["executive_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -373,7 +474,7 @@ class ExecutiveInsightAgent(BaseAgent):
             rationale=f"Department report ({report['department']}): {len(report['highlights'])} highlights",
         )
 
-    def _trend_digest(self, input_data: AgentInput) -> AgentOutput:
+    async def _trend_digest(self, input_data: AgentInput) -> AgentOutput:
         """Generate a digestible trend summary for executives."""
 
         digest = {
@@ -443,6 +544,30 @@ class ExecutiveInsightAgent(BaseAgent):
                 "with SLA compliance at 91.7% versus 95% target."
             ),
         }
+
+        # ── LLM: generate executive narrative for trend digest ────────────────
+        try:
+            prompt = (
+                "You are a healthcare trend analyst. Based on the following trend digest data, "
+                "write a concise executive narrative (2-3 paragraphs) explaining the most "
+                "significant trends, their implications for the organization, and forward-looking "
+                "guidance.\n\n"
+                f"{json.dumps(digest, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered executive insight analyst for a healthcare platform. "
+                    "Provide strategic, data-driven analysis suitable for C-suite leadership."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            digest["executive_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for trend_digest; continuing without narrative")
+            digest["executive_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
 
         return self.build_output(
             trace_id=input_data.trace_id,

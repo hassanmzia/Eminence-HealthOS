@@ -5,7 +5,9 @@ Generates patient-friendly messages, education content, reminders,
 and notification delivery. Adapts language to patient health literacy.
 """
 
+import json
 import logging
+
 from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
@@ -13,6 +15,7 @@ from healthos_platform.agents.base import (
     AgentTier,
     HealthOSAgent,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
 
 logger = logging.getLogger("healthos.agent.patient_communicator")
 
@@ -60,6 +63,33 @@ class PatientCommunicatorAgent(HealthOSAgent):
                 confidence=0.90,
             )
 
+        # --- LLM: generate empathetic, health-literate patient message ---
+        patient_message = None
+        try:
+            prompt = (
+                "You are a compassionate patient communication specialist. "
+                "Given the following messages that will be sent to a patient, "
+                "generate a single cohesive, empathetic, health-literate summary message "
+                "that a patient can easily understand. Use plain language (6th-grade reading level), "
+                "show empathy, and include clear next steps.\n\n"
+                f"Messages to combine:\n{json.dumps(messages, indent=2)}\n\n"
+                f"Communication type: {comm_type}\n"
+                f"Number of prior clinical outputs: {len(prior_outputs)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a patient communication specialist for a healthcare system. "
+                    "Write warm, clear messages that patients can understand regardless of "
+                    "health literacy level. Avoid medical jargon. Be reassuring but accurate."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            patient_message = resp.content
+        except Exception:
+            logger.warning("LLM patient_message generation failed; continuing without it")
+
         return AgentOutput(
             agent_name=self.name,
             agent_tier=self.tier.value,
@@ -70,6 +100,7 @@ class PatientCommunicatorAgent(HealthOSAgent):
                 "messages": messages,
                 "count": len(messages),
                 "channels": list(set(m.get("channel", "in_app") for m in messages)),
+                "patient_message": patient_message,
             },
             feature_contributions=[
                 {"feature": "pipeline_events", "contribution": 0.4, "value": len(prior_outputs)},

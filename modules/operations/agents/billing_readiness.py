@@ -7,6 +7,7 @@ claims are ready for submission to payers.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -17,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 
 # ICD-10 / CPT compatibility rules (simplified)
@@ -74,7 +78,7 @@ class BillingReadinessAgent(BaseAgent):
         action = ctx.get("action", "validate")
 
         if action == "validate":
-            return self._validate_encounter(input_data)
+            return await self._validate_encounter(input_data)
         elif action == "check_coding":
             return self._check_coding_accuracy(input_data)
         elif action == "prepare_claim":
@@ -90,7 +94,7 @@ class BillingReadinessAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _validate_encounter(self, input_data: AgentInput) -> AgentOutput:
+    async def _validate_encounter(self, input_data: AgentInput) -> AgentOutput:
         """Validate encounter has all required fields for billing."""
         ctx = input_data.context
         encounter_type = ctx.get("encounter_type", "office_visit")
@@ -109,6 +113,48 @@ class BillingReadinessAgent(BaseAgent):
         completeness = len(present_fields) / len(required) if required else 0
         is_ready = len(missing_fields) == 0 and len(doc_issues) == 0
 
+        # --- LLM: generate billing review notes ---
+        billing_review_notes = None
+        try:
+            missing_desc = ", ".join(missing_fields) if missing_fields else "none"
+            doc_issues_desc = "\n".join(f"- {i}" for i in doc_issues) if doc_issues else "none"
+            warnings_desc = "\n".join(f"- {w}" for w in billing_warnings) if billing_warnings else "none"
+            cpt_codes = encounter_data.get("cpt_codes", [])
+            diagnosis_codes = encounter_data.get("diagnosis_codes", [])
+            prompt = (
+                f"Encounter type: {encounter_type}\n"
+                f"Completeness: {completeness:.0%} ({len(present_fields)}/{len(required)} fields)\n"
+                f"CPT codes: {', '.join(cpt_codes) if cpt_codes else 'none'}\n"
+                f"Diagnosis codes: {', '.join(diagnosis_codes) if diagnosis_codes else 'none'}\n"
+                f"Missing fields: {missing_desc}\n"
+                f"Documentation issues:\n{doc_issues_desc}\n"
+                f"Billing warnings:\n{warnings_desc}\n\n"
+                f"Analyze this claim for completeness and provide specific suggestions "
+                f"to improve documentation, resolve coding issues, and ensure successful "
+                f"claim submission."
+            )
+            llm_response = await llm_router.complete(
+                LLMRequest(
+                    messages=[{"role": "user", "content": prompt}],
+                    system=(
+                        "You are a healthcare billing compliance specialist. Analyze "
+                        "claim data for completeness and accuracy. Provide clear, "
+                        "actionable recommendations to resolve documentation gaps, "
+                        "coding issues, and billing warnings. Reference specific "
+                        "fields and codes. Be concise and practical."
+                    ),
+                    temperature=0.3,
+                    max_tokens=1024,
+                )
+            )
+            billing_review_notes = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM billing review notes generation failed; "
+                "returning validation without narrative review",
+                exc_info=True,
+            )
+
         result = {
             "encounter_type": encounter_type,
             "is_billing_ready": is_ready,
@@ -121,6 +167,8 @@ class BillingReadinessAgent(BaseAgent):
             "recommendation": "ready_to_bill" if is_ready else "needs_review",
             "validated_at": datetime.now(timezone.utc).isoformat(),
         }
+        if billing_review_notes is not None:
+            result["billing_review_notes"] = billing_review_notes
 
         confidence = 0.92 if is_ready else 0.85
 

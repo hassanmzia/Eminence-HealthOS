@@ -10,6 +10,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger("healthos.agent.critical_value_alert")
 
 # Critical value definitions per CLIA requirements
 CRITICAL_VALUES: dict[str, dict[str, Any]] = {
@@ -57,7 +62,7 @@ class CriticalValueAlertAgent(BaseAgent):
         action = ctx.get("action", "evaluate_critical")
 
         if action == "evaluate_critical":
-            return self._evaluate_critical(input_data)
+            return await self._evaluate_critical(input_data)
         elif action == "escalate":
             return self._escalate(input_data)
         elif action == "acknowledge":
@@ -73,7 +78,7 @@ class CriticalValueAlertAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _evaluate_critical(self, input_data: AgentInput) -> AgentOutput:
+    async def _evaluate_critical(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         results = ctx.get("results", [])
@@ -112,6 +117,35 @@ class CriticalValueAlertAgent(BaseAgent):
                     "escalation_timeout_min": urgency_info.get("timeout_min", 15),
                 })
 
+        # --- LLM: generate critical value narrative ---
+        critical_value_narrative: str | None = None
+        if critical_alerts:
+            try:
+                alerts_text = "\n".join(
+                    f"- {a['test'].upper()}: {a['value']} {a['unit']} "
+                    f"({a['direction']}, threshold: {a['critical_threshold']} {a['unit']}, "
+                    f"urgency: {a['urgency']})"
+                    for a in critical_alerts
+                )
+                resp = await llm_router.complete(LLMRequest(
+                    messages=[{"role": "user", "content": (
+                        f"Explain the clinical significance of the following critical lab values "
+                        f"for the care team. Include potential causes, immediate risks, and "
+                        f"recommended actions.\n\n"
+                        f"Critical values:\n{alerts_text}"
+                    )}],
+                    system=(
+                        "You are a clinical laboratory advisor for Eminence HealthOS. "
+                        "Explain critical lab values in clear, actionable language for "
+                        "the care team. Prioritize patient safety and urgency."
+                    ),
+                    temperature=0.3,
+                    max_tokens=1024,
+                ))
+                critical_value_narrative = resp.content
+            except Exception:
+                logger.warning("LLM critical_value_narrative generation failed; continuing without it")
+
         result = {
             "evaluated_at": now.isoformat(),
             "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
@@ -120,6 +154,7 @@ class CriticalValueAlertAgent(BaseAgent):
             "alerts": sorted(critical_alerts, key=lambda a: {"stat": 0, "immediate": 1, "urgent": 2}.get(a["urgency"], 3)),
             "requires_escalation": len(critical_alerts) > 0,
             "highest_urgency": critical_alerts[0]["urgency"] if critical_alerts else None,
+            "critical_value_narrative": critical_value_narrative,
         }
 
         return self.build_output(

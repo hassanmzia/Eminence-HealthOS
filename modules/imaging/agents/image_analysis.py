@@ -17,6 +17,7 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
 
 # AI models per modality
 AI_MODELS: dict[str, dict[str, Any]] = {
@@ -78,7 +79,7 @@ class ImageAnalysisAgent(BaseAgent):
         action = ctx.get("action", "analyze_image")
 
         if action == "analyze_image":
-            return self._analyze_image(input_data)
+            return await self._analyze_image(input_data)
         elif action == "detect_findings":
             return self._detect_findings(input_data)
         elif action == "compare_priors":
@@ -94,7 +95,7 @@ class ImageAnalysisAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _analyze_image(self, input_data: AgentInput) -> AgentOutput:
+    async def _analyze_image(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         study_type = ctx.get("study_type", "chest_xray")
@@ -138,6 +139,38 @@ class ImageAnalysisAgent(BaseAgent):
             "requires_urgent_read": has_critical,
             "ai_confidence": round(sum(f["confidence"] for f in findings) / max(len(findings), 1), 3),
         }
+
+        # --- LLM: generate findings narrative ---
+        try:
+            findings_text = "\n".join(
+                f"  - {f['finding']} ({f['severity']}, confidence {f['confidence']:.0%}): {f['description']}"
+                for f in findings
+            )
+            prompt = (
+                f"You are a board-certified radiologist generating a structured report.\n\n"
+                f"Study Type: {study_type}\n"
+                f"AI Model: {model_info['model']} ({model_info['architecture']})\n"
+                f"Study ID: {study_id}\n"
+                f"Findings:\n{findings_text}\n"
+                f"Has Critical Finding: {has_critical}\n\n"
+                f"Generate a concise radiology report narrative covering the findings, "
+                f"their clinical significance, and recommended follow-up actions. "
+                f"Use standard radiology report format (Findings, Impression, Recommendation)."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system="You are a radiology AI that generates structured, ACR-compliant imaging findings narratives in standard radiology report format.",
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["findings_narrative"] = resp.content
+        except Exception:
+            finding_descriptions = "; ".join(f["description"] for f in findings)
+            result["findings_narrative"] = (
+                f"{study_type.replace('_', ' ').title()} analysis by {model_info['model']}: "
+                f"{len(findings)} finding(s). {finding_descriptions}. "
+                f"{'CRITICAL FINDING DETECTED — urgent radiologist review required.' if has_critical else 'No critical findings.'}"
+            )
 
         return self.build_output(
             trace_id=input_data.trace_id,

@@ -6,6 +6,8 @@ auto-generates appeal documents for resubmission.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # Denial reason codes (CARC — Claim Adjustment Reason Codes)
 DENIAL_REASONS: dict[str, dict[str, Any]] = {
@@ -53,7 +58,7 @@ class DenialManagementAgent(BaseAgent):
         if action == "analyze_denial":
             return self._analyze_denial(input_data)
         elif action == "generate_appeal":
-            return self._generate_appeal(input_data)
+            return await self._generate_appeal(input_data)
         elif action == "denial_trends":
             return self._denial_trends(input_data)
         elif action == "batch_appeal":
@@ -116,7 +121,7 @@ class DenialManagementAgent(BaseAgent):
             ),
         )
 
-    def _generate_appeal(self, input_data: AgentInput) -> AgentOutput:
+    async def _generate_appeal(self, input_data: AgentInput) -> AgentOutput:
         """Generate an appeal letter and supporting documentation."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -159,12 +164,56 @@ class DenialManagementAgent(BaseAgent):
             f"Revenue Cycle Management Department"
         )
 
+        # --- LLM-generated appeal narrative with clinical justification ---
+        appeal_narrative = None
+        try:
+            appeal_context = {
+                "claim_id": claim_id,
+                "denial_code": denial_code,
+                "denial_description": reason_info["description"],
+                "denial_category": reason_info.get("category", "unknown"),
+                "patient_name": patient_name,
+                "provider_name": provider_name,
+                "payer_name": payer_name,
+                "service_date": service_date,
+                "denied_amount": denied_amount,
+                "clinical_notes": ctx.get("clinical_notes", ""),
+                "icd10_codes": ctx.get("icd10_codes", []),
+                "cpt_codes": ctx.get("cpt_codes", []),
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Generate a compelling clinical justification narrative for "
+                    f"appealing this denied claim.\n\n"
+                    f"Denial details:\n{json.dumps(appeal_context, indent=2)}"
+                )}],
+                system=(
+                    "You are a healthcare appeals specialist AI with deep knowledge "
+                    "of payer policies, medical necessity criteria, and clinical "
+                    "documentation requirements. Generate a persuasive clinical "
+                    "justification narrative for the appeal that references relevant "
+                    "clinical guidelines, explains medical necessity, and addresses "
+                    "the specific denial reason. Be factual, specific, and professional."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                appeal_narrative = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for appeal narrative on claim %s; skipping",
+                claim_id,
+                exc_info=True,
+            )
+
         result = {
             "appeal_id": str(uuid.uuid4()),
             "claim_id": claim_id,
             "generated_at": now.isoformat(),
             "denial_code": denial_code,
             "appeal_letter": appeal_letter,
+            "appeal_narrative": appeal_narrative,
             "required_attachments": [
                 "Medical record for date of service",
                 "Physician attestation",

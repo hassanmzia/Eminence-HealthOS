@@ -6,6 +6,8 @@ and care activities, producing charge entries for the billing pipeline.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # Fee schedule (simplified national average RVU-based)
 FEE_SCHEDULE: dict[str, dict[str, Any]] = {
@@ -58,7 +63,7 @@ class ChargeCaptureAgent(BaseAgent):
         if action == "capture_charges":
             return self._capture_charges(input_data)
         elif action == "review_encounter":
-            return self._review_encounter(input_data)
+            return await self._review_encounter(input_data)
         elif action == "estimate_reimbursement":
             return self._estimate_reimbursement(input_data)
         elif action == "missed_charge_scan":
@@ -145,7 +150,7 @@ class ChargeCaptureAgent(BaseAgent):
             ),
         )
 
-    def _review_encounter(self, input_data: AgentInput) -> AgentOutput:
+    async def _review_encounter(self, input_data: AgentInput) -> AgentOutput:
         """Review an encounter for billable services that may have been missed."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -167,11 +172,49 @@ class ChargeCaptureAgent(BaseAgent):
                     "reason": svc.get("reason", "Service identified in encounter documentation"),
                 })
 
+        # --- LLM-generated charge review for missed charges ---
+        charge_review = None
+        try:
+            review_payload = {
+                "encounter_id": encounter_id,
+                "existing_charges": [c.get("code", "") for c in existing_charges],
+                "services_found": services_found,
+                "missed_charges": missed,
+                "clinical_notes": ctx.get("clinical_notes", ""),
+                "encounter_type": ctx.get("encounter_type", ""),
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Analyze this encounter documentation for missed charges "
+                    f"and billing opportunities.\n\n"
+                    f"Encounter details:\n{json.dumps(review_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a certified medical coder and charge capture specialist AI. "
+                    "Analyze the encounter documentation to identify any services that "
+                    "were performed but not captured as charges. Look for missed E&M "
+                    "level opportunities, ancillary services, lab draws, procedures "
+                    "mentioned in notes but not billed, and care coordination time. "
+                    "Be specific about CPT codes and estimated revenue impact."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                charge_review = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for charge review on encounter %s; skipping",
+                encounter_id,
+                exc_info=True,
+            )
+
         result = {
             "encounter_id": encounter_id,
             "reviewed_at": now.isoformat(),
             "existing_charges": len(existing_charges),
             "missed_charges": missed,
+            "charge_review": charge_review,
             "potential_revenue_recovery": round(sum(m["estimated_amount"] for m in missed), 2),
         }
 

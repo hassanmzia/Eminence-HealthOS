@@ -6,6 +6,8 @@ decisions, transmitting them electronically to the pharmacy.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 PRESCRIPTION_STATUSES = ["draft", "pending_review", "signed", "transmitted", "dispensed", "cancelled"]
 
@@ -54,7 +59,7 @@ class PrescriptionAgent(BaseAgent):
         if action == "create_prescription":
             return self._create_prescription(input_data)
         elif action == "review_prescription":
-            return self._review_prescription(input_data)
+            return await self._review_prescription(input_data)
         elif action == "sign_and_transmit":
             return self._sign_and_transmit(input_data)
         elif action == "cancel_prescription":
@@ -113,7 +118,7 @@ class PrescriptionAgent(BaseAgent):
             rationale=f"Created prescription for {template['generic']} — pending safety checks",
         )
 
-    def _review_prescription(self, input_data: AgentInput) -> AgentOutput:
+    async def _review_prescription(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         rx_id = ctx.get("prescription_id", "unknown")
@@ -129,6 +134,46 @@ class PrescriptionAgent(BaseAgent):
         all_clear = all(checks.values())
         issues = [k for k, v in checks.items() if not v]
 
+        # --- LLM-generated prescription review narrative ---
+        prescription_review = (
+            "All safety checks passed; prescription is appropriate."
+            if all_clear
+            else f"Issues detected: {', '.join(issues)}. Review required before signing."
+        )
+        try:
+            review_payload = {
+                "prescription_id": rx_id,
+                "medication": ctx.get("medication", "unknown"),
+                "dose": ctx.get("dose", "unknown"),
+                "frequency": ctx.get("frequency", "unknown"),
+                "checks": checks,
+                "all_clear": all_clear,
+                "issues": issues,
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Analyze the following prescription review results and provide a "
+                    f"clinical narrative on prescription appropriateness.\n\n"
+                    f"Review data:\n{json.dumps(review_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a clinical pharmacist AI. Analyze prescription safety check "
+                    "results and generate a concise narrative assessing the prescription's "
+                    "appropriateness. Highlight any flagged issues with clinical context "
+                    "and recommend next steps."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                prescription_review = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for prescription review on %s; using fallback narrative",
+                rx_id,
+                exc_info=True,
+            )
+
         result = {
             "prescription_id": rx_id,
             "reviewed_at": now.isoformat(),
@@ -136,6 +181,7 @@ class PrescriptionAgent(BaseAgent):
             "all_clear": all_clear,
             "issues": issues,
             "status": "ready_to_sign" if all_clear else "requires_attention",
+            "prescription_review": prescription_review,
         }
 
         return self.build_output(

@@ -6,6 +6,8 @@ for precision medicine, drug metabolism prediction, and adverse effect risk.
 
 from __future__ import annotations
 
+import json
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # Gene-drug interactions (CPIC guidelines)
 GENE_DRUG_INTERACTIONS: dict[str, dict[str, Any]] = {
@@ -86,7 +91,7 @@ class PharmacogenomicsAgent(BaseAgent):
         action = ctx.get("action", "check_drug_gene")
 
         if action == "check_drug_gene":
-            return self._check_drug_gene(input_data)
+            return await self._check_drug_gene(input_data)
         elif action == "patient_profile":
             return self._patient_profile(input_data)
         elif action == "dose_recommendation":
@@ -102,7 +107,7 @@ class PharmacogenomicsAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _check_drug_gene(self, input_data: AgentInput) -> AgentOutput:
+    async def _check_drug_gene(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         medication = ctx.get("medication", "").lower()
@@ -127,12 +132,49 @@ class PharmacogenomicsAgent(BaseAgent):
                     "clinical_significance": "high" if "CONTRAINDICATED" in phenotype_info["action"] or "alternative" in phenotype_info["action"].lower() else "moderate",
                 })
 
+        # --- LLM-generated PGx recommendation ---
+        pgx_recommendation = None
+        try:
+            pgx_payload = {
+                "medication": medication,
+                "interactions": interactions,
+                "patient_genotype": genotype,
+                "current_medications": ctx.get("current_medications", []),
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Explain how these genetic variants affect drug metabolism "
+                    f"and dosing for this patient.\n\n"
+                    f"Pharmacogenomic details:\n{json.dumps(pgx_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a pharmacogenomics specialist AI with expertise in "
+                    "CPIC guidelines. Explain in clinician-friendly language how "
+                    "the patient's genetic variants affect metabolism of the "
+                    "prescribed medication. Include specific dosing recommendations, "
+                    "alternative drug suggestions where appropriate, monitoring "
+                    "recommendations, and the strength of evidence (CPIC level). "
+                    "Be concise and clinically actionable."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                pgx_recommendation = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for PGx recommendation on %s; skipping",
+                medication,
+                exc_info=True,
+            )
+
         result = {
             "checked_at": now.isoformat(),
             "medication": medication,
             "interactions": interactions,
             "total_interactions": len(interactions),
             "requires_action": any(i["clinical_significance"] == "high" for i in interactions),
+            "pgx_recommendation": pgx_recommendation,
         }
 
         return self.build_output(

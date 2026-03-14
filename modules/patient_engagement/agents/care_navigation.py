@@ -6,6 +6,7 @@ coordinating appointments, referrals, and follow-ups.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 CARE_PATHWAYS: dict[str, dict[str, Any]] = {
     "diabetes_management": {
@@ -71,7 +75,7 @@ class CareNavigationAgent(BaseAgent):
         action = ctx.get("action", "create_journey")
 
         if action == "create_journey":
-            return self._create_journey(input_data)
+            return await self._create_journey(input_data)
         elif action == "get_next_step":
             return self._get_next_step(input_data)
         elif action == "update_progress":
@@ -87,7 +91,7 @@ class CareNavigationAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _create_journey(self, input_data: AgentInput) -> AgentOutput:
+    async def _create_journey(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         pathway_key = ctx.get("pathway", "diabetes_management")
@@ -103,6 +107,37 @@ class CareNavigationAgent(BaseAgent):
             })
         journey_steps[0]["status"] = "current"
 
+        # --- LLM: generate personalized navigation guidance ---
+        navigation_guidance = None
+        try:
+            steps_desc = "\n".join(
+                f"  Step {s['step']}: {s['action']} ({s['timeframe']})"
+                for s in pathway["steps"]
+            )
+            prompt = (
+                f"A patient is starting the \"{pathway['name']}\" care pathway.\n"
+                f"Steps:\n{steps_desc}\n\n"
+                f"Patient conditions: {ctx.get('conditions', 'not specified')}.\n"
+                f"Estimated completion: {ctx.get('estimated_completion', '6-8 weeks')}.\n\n"
+                "Write a brief, personalized step-by-step guide (4-6 sentences) explaining "
+                "what the patient should expect. Use plain language. Reassure them and "
+                "highlight what the first step involves and how to prepare."
+            )
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a patient care navigator. Provide clear, reassuring, "
+                    "step-by-step guidance to patients starting a care journey. Use plain "
+                    "language, be specific about what to expect, and help reduce anxiety "
+                    "about upcoming medical steps."
+                ),
+                temperature=0.3,
+                max_tokens=512,
+            ))
+            navigation_guidance = llm_response.content
+        except Exception:
+            logger.warning("LLM call failed in care_navigation._create_journey; using rule-based output only")
+
         result = {
             "journey_id": str(uuid.uuid4()),
             "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
@@ -114,6 +149,7 @@ class CareNavigationAgent(BaseAgent):
             "current_step": 1,
             "steps": journey_steps,
             "estimated_completion": ctx.get("estimated_completion", "6-8 weeks"),
+            "navigation_guidance": navigation_guidance,
         }
 
         return self.build_output(

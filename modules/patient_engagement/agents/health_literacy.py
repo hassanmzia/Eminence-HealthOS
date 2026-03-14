@@ -6,6 +6,7 @@ Layer 3 (Decisioning): Adapts clinical content to patient's reading level
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 READING_LEVELS = {
     "5th_grade": {"flesch_kincaid": 5.0, "description": "Simple words and short sentences", "audience": "Low health literacy"},
@@ -45,7 +49,7 @@ class HealthLiteracyAgent(BaseAgent):
         action = ctx.get("action", "adapt_content")
 
         if action == "adapt_content":
-            return self._adapt_content(input_data)
+            return await self._adapt_content(input_data)
         elif action == "assess_readability":
             return self._assess_readability(input_data)
         elif action == "simplify_terms":
@@ -61,7 +65,7 @@ class HealthLiteracyAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _adapt_content(self, input_data: AgentInput) -> AgentOutput:
+    async def _adapt_content(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         target_level = ctx.get("target_level", "8th_grade")
@@ -80,11 +84,38 @@ class HealthLiteracyAgent(BaseAgent):
             "college": original_text,
         }
 
+        # --- LLM: generate simplified explanation at target reading level ---
+        simplified_explanation = None
+        try:
+            prompt = (
+                f"Rewrite the following clinical text for a patient at a {target_level.replace('_', ' ')} "
+                f"reading level ({level_info['description']}).\n\n"
+                f"Original clinical text:\n\"{original_text}\"\n\n"
+                f"Content type: {content_type}.\n"
+                "Translate all medical jargon into plain language. Keep the explanation accurate "
+                "but easy to understand. Use short sentences and common words."
+            )
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a health literacy specialist. Rewrite medical content so patients "
+                    "can understand it at their reading level. Replace medical jargon with plain "
+                    "language. Be accurate, clear, and concise. Do not add medical advice beyond "
+                    "what is stated in the original text."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            simplified_explanation = llm_response.content
+        except Exception:
+            logger.warning("LLM call failed in health_literacy._adapt_content; using rule-based output only")
+
         result = {
             "adaptation_id": str(uuid.uuid4()),
             "adapted_at": now.isoformat(),
             "original_text": original_text,
             "adapted_text": adapted_examples.get(target_level, adapted_examples["8th_grade"]),
+            "simplified_explanation": simplified_explanation,
             "target_level": target_level,
             "target_flesch_kincaid": level_info["flesch_kincaid"],
             "content_type": content_type,

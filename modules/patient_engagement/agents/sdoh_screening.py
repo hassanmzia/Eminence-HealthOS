@@ -6,6 +6,7 @@ using PRAPARE/AHC-HRSN protocols across 5 domains.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 SDOH_DOMAINS: dict[str, dict[str, Any]] = {
     "food_insecurity": {
@@ -85,7 +89,7 @@ class SDOHScreeningAgent(BaseAgent):
         action = ctx.get("action", "screen_patient")
 
         if action == "screen_patient":
-            return self._screen_patient(input_data)
+            return await self._screen_patient(input_data)
         elif action == "score_responses":
             return self._score_responses(input_data)
         elif action == "get_questions":
@@ -101,7 +105,7 @@ class SDOHScreeningAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _screen_patient(self, input_data: AgentInput) -> AgentOutput:
+    async def _screen_patient(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context
         now = datetime.now(timezone.utc)
         responses = ctx.get("responses", {})
@@ -135,6 +139,38 @@ class SDOHScreeningAgent(BaseAgent):
 
         overall_risk = "high" if risks_identified >= 3 else ("moderate" if risks_identified >= 1 else "low")
 
+        # --- LLM: generate SDOH assessment narrative ---
+        sdoh_assessment_narrative = None
+        try:
+            domain_summary = "\n".join(
+                f"  - {d['domain_name']}: {d['risk_level']} risk "
+                f"({d['positive_responses']}/{d['total_questions']} positive)"
+                for d in domain_results
+            )
+            prompt = (
+                f"SDOH screening results (PRAPARE + AHC-HRSN protocol):\n"
+                f"{domain_summary}\n"
+                f"Overall risk: {overall_risk} ({risks_identified}/{len(domain_results)} domains at risk).\n\n"
+                "Write a clinical narrative (4-6 sentences) analyzing these social determinants "
+                "of health screening results. Identify the most pressing needs, discuss how "
+                "they may interact to affect health outcomes, and suggest priority areas for "
+                "intervention and community resource referrals."
+            )
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a social determinants of health specialist. Analyze SDOH "
+                    "screening results and provide clinical narratives that help care teams "
+                    "understand patients' social needs. Be specific about how social factors "
+                    "interact with health outcomes. Suggest actionable interventions."
+                ),
+                temperature=0.3,
+                max_tokens=512,
+            ))
+            sdoh_assessment_narrative = llm_response.content
+        except Exception:
+            logger.warning("LLM call failed in sdoh_screening._screen_patient; using rule-based output only")
+
         result = {
             "screening_id": str(uuid.uuid4()),
             "patient_id": str(input_data.patient_id) if input_data.patient_id else None,
@@ -146,6 +182,7 @@ class SDOHScreeningAgent(BaseAgent):
             "overall_risk": overall_risk,
             "referral_recommended": risks_identified > 0,
             "next_screening_due": "6 months",
+            "sdoh_assessment_narrative": sdoh_assessment_narrative,
         }
 
         return self.build_output(

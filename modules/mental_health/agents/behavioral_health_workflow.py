@@ -10,6 +10,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 
 # ── Specialties & Modalities ────────────────────────────────────────────────
@@ -90,7 +95,7 @@ class BehavioralHealthWorkflowAgent(BaseAgent):
         elif action == "follow_up_check":
             return self._follow_up_check(input_data)
         elif action == "treatment_plan":
-            return self._treatment_plan(input_data)
+            return await self._treatment_plan(input_data)
         elif action == "care_coordination":
             return self._care_coordination(input_data)
         else:
@@ -336,7 +341,7 @@ class BehavioralHealthWorkflowAgent(BaseAgent):
 
     # ── Treatment Plan ───────────────────────────────────────────────────────
 
-    def _treatment_plan(self, input_data: AgentInput) -> AgentOutput:
+    async def _treatment_plan(self, input_data: AgentInput) -> AgentOutput:
         """Create a structured behavioral health treatment plan."""
         ctx = input_data.context
         patient_id = str(input_data.patient_id or "unknown")
@@ -415,6 +420,37 @@ class BehavioralHealthWorkflowAgent(BaseAgent):
             {"week": 12, "checkpoint": "Treatment outcome evaluation and continuation decision"},
         ]
 
+        # ── LLM: generate treatment plan narrative ─────────────────────
+        treatment_plan_narrative: str | None = None
+        try:
+            prompt = (
+                f"Patient conditions: {', '.join(condition_types)}.\n"
+                f"Screening scores: {screening_scores or 'not available'}.\n"
+                f"Treatment goals: {'; '.join(g['description'] for g in goals) or 'none defined'}.\n"
+                f"Planned interventions: {', '.join(i['type'] for i in interventions) or 'none'}.\n"
+                f"Session frequency: {patient_preferences.get('frequency', 'weekly')}.\n"
+                f"Existing medications: {', '.join(str(m) for m in existing_medications) or 'none'}.\n"
+                f"Estimated duration: {max(g['timeline_weeks'] for g in goals) if goals else 12} weeks.\n\n"
+                "Write a personalized behavioral health treatment plan narrative. "
+                "Summarize the clinical rationale, treatment approach, expected milestones, "
+                "and how the interventions address the patient's specific conditions. "
+                "Include guidance on what the patient can expect during treatment."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a behavioral health treatment planning assistant. "
+                    "Produce a clear, professional treatment plan narrative suitable "
+                    "for both the clinical record and patient communication. "
+                    "Be specific to the patient's conditions and evidence-based interventions."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            treatment_plan_narrative = resp.content
+        except Exception:
+            logger.warning("LLM unavailable for treatment plan narrative; continuing without it.")
+
         result = {
             "plan_id": plan_id,
             "patient_id": patient_id,
@@ -431,6 +467,8 @@ class BehavioralHealthWorkflowAgent(BaseAgent):
             "status": "active",
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
+        if treatment_plan_narrative:
+            result["treatment_plan_narrative"] = treatment_plan_narrative
 
         return self.build_output(
             trace_id=input_data.trace_id,

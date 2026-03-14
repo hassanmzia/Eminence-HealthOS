@@ -10,6 +10,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -17,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger("healthos.agent.speaker_diarization")
 
 SPEAKER_ROLES = ["provider", "patient", "family_member", "nurse", "interpreter", "unknown"]
 
@@ -49,7 +54,7 @@ class SpeakerDiarizationAgent(BaseAgent):
         action = ctx.get("action", "diarize")
 
         if action == "diarize":
-            return self._diarize(input_data)
+            return await self._diarize(input_data)
         elif action == "identify_speakers":
             return self._identify_speakers(input_data)
         elif action == "assign_roles":
@@ -65,7 +70,7 @@ class SpeakerDiarizationAgent(BaseAgent):
                 status=AgentStatus.FAILED,
             )
 
-    def _diarize(self, input_data: AgentInput) -> AgentOutput:
+    async def _diarize(self, input_data: AgentInput) -> AgentOutput:
         """Full diarization pipeline: identify speakers and assign roles."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -115,6 +120,35 @@ class SpeakerDiarizationAgent(BaseAgent):
         provider_talk = speaker_map.get("provider", {}).get("total_duration_sec", 0)
         patient_talk = speaker_map.get("patient", {}).get("total_duration_sec", 0)
 
+        # --- LLM: generate conversation summary per speaker ---
+        conversation_summary: str | None = None
+        try:
+            speaker_lines: dict[str, list[str]] = {}
+            for seg in diarized:
+                role = seg.get("role", "unknown")
+                speaker_lines.setdefault(role, []).append(seg.get("text", ""))
+            speaker_block = "\n\n".join(
+                f"[{role.upper()}]:\n" + "\n".join(lines)
+                for role, lines in speaker_lines.items()
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Summarize what each speaker discussed in this clinical conversation.\n"
+                    f"Include key topics, concerns raised, and decisions made.\n\n"
+                    f"{speaker_block}"
+                )}],
+                system=(
+                    "You are a clinical conversation analyst for Eminence HealthOS. "
+                    "Provide a concise per-speaker summary of a diarized clinical "
+                    "encounter. Use professional medical language."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            conversation_summary = resp.content
+        except Exception:
+            logger.warning("LLM conversation_summary generation failed; continuing without it")
+
         result = {
             "encounter_id": encounter_id,
             "diarization_timestamp": now.isoformat(),
@@ -126,6 +160,7 @@ class SpeakerDiarizationAgent(BaseAgent):
                 "provider_pct": round(provider_talk / max(total_duration, 0.01) * 100, 1),
                 "patient_pct": round(patient_talk / max(total_duration, 0.01) * 100, 1),
             },
+            "conversation_summary": conversation_summary,
             "segments": diarized,
         }
 

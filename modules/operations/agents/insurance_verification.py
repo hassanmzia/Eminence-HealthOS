@@ -6,6 +6,8 @@ benefits, and co-pay information before appointments and procedures.
 
 from __future__ import annotations
 
+import json
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -16,6 +18,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger("healthos.agent.insurance_verification")
 
 
 class InsuranceVerificationAgent(BaseAgent):
@@ -32,11 +37,11 @@ class InsuranceVerificationAgent(BaseAgent):
         action = ctx.get("action", "verify_eligibility")
 
         if action == "verify_eligibility":
-            return self._verify_eligibility(input_data)
+            return await self._verify_eligibility_with_llm(input_data)
         elif action == "check_benefits":
-            return self._check_benefits(input_data)
+            return await self._check_benefits_with_llm(input_data)
         elif action == "estimate_cost":
-            return self._estimate_patient_cost(input_data)
+            return await self._estimate_cost_with_llm(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -173,6 +178,49 @@ class InsuranceVerificationAgent(BaseAgent):
                 f"patient responsibility ~${patient_responsibility:.2f}"
             ),
         )
+
+    async def _verify_eligibility_with_llm(self, input_data: AgentInput) -> AgentOutput:
+        output = self._verify_eligibility(input_data)
+        output = await self._add_verification_summary(output)
+        return output
+
+    async def _check_benefits_with_llm(self, input_data: AgentInput) -> AgentOutput:
+        output = self._check_benefits(input_data)
+        output = await self._add_verification_summary(output)
+        return output
+
+    async def _estimate_cost_with_llm(self, input_data: AgentInput) -> AgentOutput:
+        output = self._estimate_patient_cost(input_data)
+        output = await self._add_verification_summary(output)
+        return output
+
+    async def _add_verification_summary(self, output: AgentOutput) -> AgentOutput:
+        """Add LLM-generated verification summary to any output."""
+        try:
+            result_data = output.result if hasattr(output, "result") else {}
+            prompt = (
+                "You are an insurance verification specialist. "
+                "Analyze the following insurance verification results and provide a concise "
+                "coverage analysis summary that highlights key findings, coverage status, "
+                "patient financial responsibility, and any action items for the front desk staff.\n\n"
+                f"Verification results: {json.dumps(result_data, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an insurance verification narrator for a healthcare operations platform. "
+                    "Provide clear, actionable summaries of coverage analysis that help front desk "
+                    "and billing staff understand patient coverage quickly. Highlight any issues "
+                    "that need attention."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if isinstance(result_data, dict):
+                result_data["verification_summary"] = resp.content
+        except Exception:
+            logger.warning("LLM verification_summary generation failed; continuing without it")
+        return output
 
     @staticmethod
     def _simulate_eligibility_check(member_id: str, group_number: str, payer: str) -> dict:

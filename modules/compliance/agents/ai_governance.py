@@ -9,6 +9,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+import json
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -16,6 +19,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import llm_router, LLMRequest
+
+logger = logging.getLogger(__name__)
 
 # ── Model Registry ───────────────────────────────────────────────────────────
 

@@ -11,6 +11,8 @@ import random
 from datetime import datetime, timezone
 from typing import Any
 
+import logging
+
 from healthos_platform.agents.base import BaseAgent
 from healthos_platform.agents.types import (
     AgentInput,
@@ -18,6 +20,9 @@ from healthos_platform.agents.types import (
     AgentStatus,
     AgentTier,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
+
+logger = logging.getLogger(__name__)
 
 
 # ── CBT Exercises ────────────────────────────────────────────────────────────
@@ -259,7 +264,7 @@ class TherapeuticEngagementAgent(BaseAgent):
         action = ctx.get("action", "mood_check_in")
 
         if action == "mood_check_in":
-            return self._mood_check_in(input_data)
+            return await self._mood_check_in(input_data)
         elif action == "cbt_exercise":
             return self._cbt_exercise(input_data)
         elif action == "mindfulness_prompt":
@@ -279,7 +284,7 @@ class TherapeuticEngagementAgent(BaseAgent):
 
     # ── Mood Check-in ────────────────────────────────────────────────────────
 
-    def _mood_check_in(self, input_data: AgentInput) -> AgentOutput:
+    async def _mood_check_in(self, input_data: AgentInput) -> AgentOutput:
         """Generate structured mood check-in and provide personalized response."""
         ctx = input_data.context
         patient_id = str(input_data.patient_id or "unknown")
@@ -357,6 +362,36 @@ class TherapeuticEngagementAgent(BaseAgent):
         if mood_score <= 3 or anxiety_level >= 8:
             suggestions.append("thought_record")
 
+        # ── LLM: generate empathetic therapeutic response ─────────────
+        therapeutic_response: str | None = None
+        try:
+            prompt = (
+                f"Patient mood check-in data:\n"
+                f"Mood: {mood_score}/10, Sleep quality: {sleep_quality}/10, "
+                f"Energy: {energy_level}/10, Anxiety: {anxiety_level}/10.\n"
+                f"Patient note: {free_text or 'none provided'}.\n"
+                f"Concerns identified: {', '.join(c['type'] for c in concerns) or 'none'}.\n"
+                f"Suggested exercises: {', '.join(suggestions) or 'none'}.\n\n"
+                "Write a warm, empathetic therapeutic response to this patient. "
+                "Acknowledge their current state, validate their feelings, offer "
+                "one or two brief coping suggestions tailored to their data, "
+                "and gently encourage continued engagement with their treatment."
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a compassionate therapeutic support assistant in a mental "
+                    "health platform. Provide empathetic, person-centered responses that "
+                    "validate the patient's experience. Use a warm but professional tone. "
+                    "Keep responses concise (3-5 sentences). Never diagnose or prescribe."
+                ),
+                temperature=0.4,
+                max_tokens=512,
+            ))
+            therapeutic_response = resp.content
+        except Exception:
+            logger.warning("LLM unavailable for therapeutic response; continuing without it.")
+
         result = {
             "patient_id": patient_id,
             "check_in": {
@@ -372,6 +407,8 @@ class TherapeuticEngagementAgent(BaseAgent):
             "requires_provider_attention": any(c["severity"] == "high" for c in concerns),
             "recorded_at": datetime.now(timezone.utc).isoformat(),
         }
+        if therapeutic_response:
+            result["therapeutic_response"] = therapeutic_response
 
         return self.build_output(
             trace_id=input_data.trace_id,

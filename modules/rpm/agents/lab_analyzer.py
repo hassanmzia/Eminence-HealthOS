@@ -5,7 +5,9 @@ Analyzes incoming lab results, identifies abnormalities, trends,
 and correlations with other clinical data.
 """
 
+import json
 import logging
+
 from healthos_platform.agents.base import (
     AgentCapability,
     AgentInput,
@@ -13,6 +15,7 @@ from healthos_platform.agents.base import (
     AgentTier,
     HealthOSAgent,
 )
+from healthos_platform.ml.llm.router import LLMRequest, llm_router
 
 logger = logging.getLogger("healthos.agent.lab_analyzer")
 
@@ -72,6 +75,36 @@ class LabAnalyzerAgent(HealthOSAgent):
         if pattern_notes:
             assessment["rationale"] += f" {pattern_notes}"
 
+        # --- LLM: generate lab narrative ---
+        lab_narrative = None
+        try:
+            prompt = (
+                "You are a clinical laboratory medicine specialist. "
+                "Analyze the following lab result and provide a concise clinical narrative "
+                "explaining the result in context, its clinical significance, potential causes "
+                "of abnormality (if any), and recommended follow-up.\n\n"
+                f"Lab test: {ref['name']} (LOINC: {loinc_code})\n"
+                f"Value: {value} {ref['unit']}\n"
+                f"Reference range: {ref['low']}-{ref['high']} {ref['unit']}\n"
+                f"Assessment: {assessment['decision']} — severity: {assessment['severity']}\n"
+                f"Clinical significance: {assessment['significance']}\n"
+                f"Pattern notes: {pattern_notes if pattern_notes else 'None'}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are a clinical laboratory results narrator for a healthcare AI platform. "
+                    "Provide concise, evidence-based narratives that help clinicians interpret lab "
+                    "results in clinical context. Include differential considerations for abnormal "
+                    "results and suggest appropriate follow-up testing."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            lab_narrative = resp.content
+        except Exception:
+            logger.warning("LLM lab_narrative generation failed; continuing without it")
+
         return AgentOutput(
             agent_name=self.name,
             agent_tier=self.tier.value,
@@ -85,6 +118,7 @@ class LabAnalyzerAgent(HealthOSAgent):
                 "unit": ref["unit"],
                 "severity": assessment["severity"],
                 "clinical_significance": assessment["significance"],
+                "lab_narrative": lab_narrative,
             },
             feature_contributions=[
                 {"feature": "lab_value", "contribution": 0.5, "value": value},
