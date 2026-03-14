@@ -19,6 +19,8 @@ from shared.models.insurance_verification import InsuranceVerification
 from shared.models.referral import Referral
 from shared.models.billing_claim import BillingClaim
 from shared.models.workflow import Workflow, WorkflowStepModel
+from shared.models.cohort import Cohort, PopulationMetric
+from shared.models.analytics import AnalyticsRiskScore
 
 __all__ = [
     "TimestampMixin", "TenantMixin", "UUIDMixin",
@@ -29,4 +31,5 @@ __all__ = [
     "TelehealthSession", "ClinicalNote", "FollowUpPlan",
     "PriorAuthRequest", "InsuranceVerification", "Referral", "BillingClaim",
     "Workflow", "WorkflowStepModel",
+    "Cohort", "PopulationMetric", "AnalyticsRiskScore",
 ]
