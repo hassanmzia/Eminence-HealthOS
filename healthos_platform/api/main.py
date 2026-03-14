@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from healthos_platform.api.middleware.audit import AuditMiddleware
-from healthos_platform.api.routes import agents, alerts, auth, dashboard, fhir, patient_portal, patients, profile, vitals
+from healthos_platform.api.routes import agents, alerts, auth, dashboard, ehr_sync, fhir, patient_portal, patients, profile, vitals
 from healthos_platform.config import get_settings
 from healthos_platform.database import close_db, get_db_context, init_db
 
@@ -339,6 +339,7 @@ def create_app() -> FastAPI:
     app.include_router(alerts.router, prefix=api_prefix)
     app.include_router(agents.router, prefix=api_prefix)
     app.include_router(fhir.router, prefix=api_prefix)
+    app.include_router(ehr_sync.router, prefix=api_prefix)
     app.include_router(patient_portal.router, prefix=api_prefix)
     app.include_router(profile.router, prefix=api_prefix)
 
