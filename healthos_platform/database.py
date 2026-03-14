@@ -7,6 +7,8 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+import structlog
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -14,6 +16,8 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase
+
+logger = structlog.get_logger()
 
 from healthos_platform.config import get_settings
 
@@ -78,11 +82,25 @@ async def get_db_context() -> AsyncGenerator[AsyncSession, None]:
             raise
 
 
+_MISSING_COLUMN_MIGRATIONS = [
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "avatar_url" VARCHAR(500)',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "phone" VARCHAR(50)',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mfa_enabled" BOOLEAN DEFAULT false',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mfa_secret" VARCHAR(255)',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "updated_at" TIMESTAMPTZ DEFAULT now()',
+]
+
+
 async def init_db() -> None:
-    """Create all tables if they don't exist."""
+    """Create all tables if they don't exist, and add missing columns."""
     engine = get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        for stmt in _MISSING_COLUMN_MIGRATIONS:
+            try:
+                await conn.execute(text(stmt))
+            except Exception as exc:
+                logger.warning("healthos.migration_stmt_skipped", stmt=stmt, error=str(exc))
 
 
 async def close_db() -> None:
