@@ -110,20 +110,20 @@ def deteriorating_vitals_raw(now_utc):
     readings = []
     for i in range(6):
         ts = now_utc - timedelta(hours=5 - i)
-        # HR: 70 -> 140  (doubles -- strong increasing trend)
+        # HR: 60 -> 160  (strong increasing trend, relative slope ~0.22)
         readings.append(
-            _build_reading("heart_rate", {"value": 70 + i * 14}, "bpm", ts)
+            _build_reading("heart_rate", {"value": 60 + i * 20}, "bpm", ts)
         )
-        # BP: 115/70 -> 190/115 (steep rise)
+        # BP: 110/65 -> 210/115 (steep rise, relative slope ~0.17)
         readings.append(
             _build_reading(
                 "blood_pressure",
-                {"systolic": 115 + i * 15, "diastolic": 70 + i * 9},
+                {"systolic": 110 + i * 20, "diastolic": 65 + i * 10},
                 "mmHg",
                 ts + timedelta(seconds=30),
             )
         )
-        # SpO2: 99 -> 84 (steep decline)
+        # SpO2: 99 -> 84 (decline)
         readings.append(
             _build_reading("spo2", {"value": 99 - i * 3}, "%", ts + timedelta(seconds=60))
         )

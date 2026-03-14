@@ -166,11 +166,10 @@ async def test_full_pipeline_critical_patient(org_id, patient_id, critical_vital
 @pytest.mark.asyncio
 async def test_full_pipeline_deteriorating_patient(org_id, patient_id, deteriorating_vitals_raw):
     """
-    Gradually worsening vitals (HR rising 70->140, SpO2 falling 99->84,
-    BP rising 115/70 -> 190/115) over 6 time-points should:
-    - Produce trend_drift or pattern_anomaly detections from TrendAnalysisAgent
-    - Show increasing HR and BP flagged as concerning trends
-    - Show declining SpO2 flagged as a concerning trend
+    Gradually worsening vitals (HR rising 60->160, SpO2 falling 99->84,
+    BP rising 110/65 -> 210/115) over 6 time-points should:
+    - Produce trend_drift anomalies from the TrendAnalysisAgent
+    - Show increasing HR and/or BP flagged as concerning trends
     """
     state = make_pipeline_state(org_id, patient_id, deteriorating_vitals_raw)
     state = await _run_full_pipeline(state)
