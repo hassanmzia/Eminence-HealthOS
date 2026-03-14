@@ -20,7 +20,7 @@ from healthos_platform.agents.types import AgentInput, AgentOutput, AgentStatus
 # Register telehealth fixtures so pytest discovers them from the companion module.
 pytest_plugins = ["tests.e2e.conftest_telehealth"]
 
-from tests.e2e.conftest_telehealth import (
+from tests.e2e.conftest_telehealth import (  # noqa: E402
     make_communication_input,
     make_escalation_input,
     make_medication_review_input,
