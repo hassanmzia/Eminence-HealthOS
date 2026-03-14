@@ -457,7 +457,7 @@ class AIGovernanceAgent(BaseAgent):
 
     # ── Performance Report ───────────────────────────────────────────────────
 
-    def _performance_report(self, input_data: AgentInput) -> AgentOutput:
+    async def _performance_report(self, input_data: AgentInput) -> AgentOutput:
         """Generate model performance dashboard data."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -499,6 +499,30 @@ class AIGovernanceAgent(BaseAgent):
             },
         }
 
+        # ── LLM: generate governance narrative ─────────────────────────────────
+        try:
+            prompt = (
+                "You are an AI model performance analyst. Based on the following performance "
+                "report data, produce a concise narrative (2-3 paragraphs) summarizing overall "
+                "model health across the portfolio, highlighting degraded or critical models, "
+                "and recommending remediation or retraining actions.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered governance analyst for a healthcare platform. "
+                    "Provide expert analysis of AI model health, bias risks, and governance recommendations."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["governance_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for performance_report; continuing without narrative")
+            result["governance_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -513,7 +537,7 @@ class AIGovernanceAgent(BaseAgent):
 
     # ── Governance Check ─────────────────────────────────────────────────────
 
-    def _governance_check(self, input_data: AgentInput) -> AgentOutput:
+    async def _governance_check(self, input_data: AgentInput) -> AgentOutput:
         """Validate model lifecycle compliance — approval, testing, monitoring, retraining."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -580,6 +604,30 @@ class AIGovernanceAgent(BaseAgent):
         }
 
         confidence = 0.93
+
+        # ── LLM: generate governance narrative ─────────────────────────────────
+        try:
+            prompt = (
+                "You are an AI governance compliance expert. Based on the following governance "
+                "check results, produce a concise narrative (2-3 paragraphs) assessing model "
+                "lifecycle compliance, highlighting models due for retraining, and recommending "
+                "governance improvements.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered governance analyst for a healthcare platform. "
+                    "Provide expert analysis of AI model health, bias risks, and governance recommendations."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["governance_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for governance_check; continuing without narrative")
+            result["governance_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
 
         return self.build_output(
             trace_id=input_data.trace_id,

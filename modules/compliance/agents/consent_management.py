@@ -89,15 +89,15 @@ class ConsentManagementAgent(BaseAgent):
         action = ctx.get("action", "check_consent")
 
         if action == "check_consent":
-            return self._check_consent(input_data)
+            return await self._check_consent(input_data)
         elif action == "record_consent":
-            return self._record_consent(input_data)
+            return await self._record_consent(input_data)
         elif action == "revoke_consent":
-            return self._revoke_consent(input_data)
+            return await self._revoke_consent(input_data)
         elif action == "consent_summary":
-            return self._consent_summary(input_data)
+            return await self._consent_summary(input_data)
         elif action == "consent_audit":
-            return self._consent_audit(input_data)
+            return await self._consent_audit(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -109,7 +109,7 @@ class ConsentManagementAgent(BaseAgent):
 
     # ── Check Consent ────────────────────────────────────────────────────────
 
-    def _check_consent(self, input_data: AgentInput) -> AgentOutput:
+    async def _check_consent(self, input_data: AgentInput) -> AgentOutput:
         """Verify patient has valid consent for a specific purpose."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -171,6 +171,30 @@ class ConsentManagementAgent(BaseAgent):
             "regulatory_basis": purpose_config["regulatory_basis"],
         }
 
+        # ── LLM: generate consent guidance ───────────────────────────────────
+        try:
+            prompt = (
+                "You are a patient consent specialist. Based on the following consent check "
+                "result, produce a concise, patient-friendly explanation (2-3 paragraphs) of "
+                "the consent requirements for this purpose, what the decision means for the "
+                "patient, and any actions needed.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered consent management assistant for a healthcare platform. "
+                    "Explain consent requirements in clear, patient-friendly language."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["consent_guidance"] = resp.content
+        except Exception:
+            logger.warning("LLM guidance generation failed for check_consent; continuing without guidance")
+            result["consent_guidance"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -183,7 +207,7 @@ class ConsentManagementAgent(BaseAgent):
 
     # ── Record Consent ───────────────────────────────────────────────────────
 
-    def _record_consent(self, input_data: AgentInput) -> AgentOutput:
+    async def _record_consent(self, input_data: AgentInput) -> AgentOutput:
         """Record new consent with purpose, scope, expiry, and granular permissions."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -237,6 +261,30 @@ class ConsentManagementAgent(BaseAgent):
             "consent_record": consent_record,
         }
 
+        # ── LLM: generate consent guidance ───────────────────────────────────
+        try:
+            prompt = (
+                "You are a patient consent specialist. Based on the following consent record, "
+                "produce a concise, patient-friendly explanation (2-3 paragraphs) of what the "
+                "patient has consented to, what their data will be used for, their rights "
+                "including revocation, and when the consent expires.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered consent management assistant for a healthcare platform. "
+                    "Explain consent requirements in clear, patient-friendly language."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["consent_guidance"] = resp.content
+        except Exception:
+            logger.warning("LLM guidance generation failed for record_consent; continuing without guidance")
+            result["consent_guidance"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -249,7 +297,7 @@ class ConsentManagementAgent(BaseAgent):
 
     # ── Revoke Consent ───────────────────────────────────────────────────────
 
-    def _revoke_consent(self, input_data: AgentInput) -> AgentOutput:
+    async def _revoke_consent(self, input_data: AgentInput) -> AgentOutput:
         """Process consent revocation and trigger downstream access restrictions."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -297,6 +345,31 @@ class ConsentManagementAgent(BaseAgent):
             "revocation_record": revocation_record,
         }
 
+        # ── LLM: generate consent guidance ───────────────────────────────────
+        try:
+            prompt = (
+                "You are a patient consent specialist. Based on the following consent "
+                "revocation record, produce a concise, patient-friendly explanation "
+                "(2-3 paragraphs) of what the revocation means, what downstream actions "
+                "will be taken, and any important information the patient should know about "
+                "how their data will be handled going forward.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered consent management assistant for a healthcare platform. "
+                    "Explain consent requirements in clear, patient-friendly language."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["consent_guidance"] = resp.content
+        except Exception:
+            logger.warning("LLM guidance generation failed for revoke_consent; continuing without guidance")
+            result["consent_guidance"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -309,7 +382,7 @@ class ConsentManagementAgent(BaseAgent):
 
     # ── Consent Summary ──────────────────────────────────────────────────────
 
-    def _consent_summary(self, input_data: AgentInput) -> AgentOutput:
+    async def _consent_summary(self, input_data: AgentInput) -> AgentOutput:
         """Return complete consent profile for a patient across all purposes."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -366,6 +439,31 @@ class ConsentManagementAgent(BaseAgent):
             "consents": summary,
         }
 
+        # ── LLM: generate consent guidance ───────────────────────────────────
+        try:
+            prompt = (
+                "You are a patient consent specialist. Based on the following consent "
+                "summary for a patient, produce a concise, patient-friendly explanation "
+                "(2-3 paragraphs) of their current consent status across all purposes, "
+                "highlighting any expired consents that need renewal and explaining what "
+                "each consent purpose means in plain language.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered consent management assistant for a healthcare platform. "
+                    "Explain consent requirements in clear, patient-friendly language."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["consent_guidance"] = resp.content
+        except Exception:
+            logger.warning("LLM guidance generation failed for consent_summary; continuing without guidance")
+            result["consent_guidance"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -378,7 +476,7 @@ class ConsentManagementAgent(BaseAgent):
 
     # ── Consent Audit ────────────────────────────────────────────────────────
 
-    def _consent_audit(self, input_data: AgentInput) -> AgentOutput:
+    async def _consent_audit(self, input_data: AgentInput) -> AgentOutput:
         """Generate audit trail of all consent changes for compliance reporting."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -435,6 +533,30 @@ class ConsentManagementAgent(BaseAgent):
                 "all consent documentation retained for minimum 6 years"
             ),
         }
+
+        # ── LLM: generate consent guidance ───────────────────────────────────
+        try:
+            prompt = (
+                "You are a consent compliance auditor. Based on the following consent audit "
+                "trail data, produce a concise, patient-friendly explanation (2-3 paragraphs) "
+                "summarizing the consent change history, highlighting any compliance concerns, "
+                "and explaining the patient's rights regarding their consent records.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered consent management assistant for a healthcare platform. "
+                    "Explain consent requirements in clear, patient-friendly language."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["consent_guidance"] = resp.content
+        except Exception:
+            logger.warning("LLM guidance generation failed for consent_audit; continuing without guidance")
+            result["consent_guidance"] = None
+        # ─────────────────────────────────────────────────────────────────────
 
         return self.build_output(
             trace_id=input_data.trace_id,
