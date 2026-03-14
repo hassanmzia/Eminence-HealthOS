@@ -2,8 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { fetchVitals, type VitalData } from "@/lib/api";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  ReferenceLine,
+} from "recharts";
 
 type VitalKey = "heart_rate" | "blood_pressure" | "spo2" | "glucose" | "temperature";
+
+interface VitalPoint {
+  time: string;
+  value: number;
+}
 
 const VITAL_TABS: { key: VitalKey; label: string; unit: string; color: string }[] = [
   { key: "heart_rate", label: "Heart Rate", unit: "bpm", color: "#ef4444" },
@@ -13,6 +28,14 @@ const VITAL_TABS: { key: VitalKey; label: string; unit: string; color: string }[
   { key: "temperature", label: "Temp", unit: "F", color: "#8b5cf6" },
 ];
 
+const NORMAL_RANGES: Record<VitalKey, { low: number; high: number }> = {
+  heart_rate: { low: 60, high: 100 },
+  blood_pressure: { low: 90, high: 140 },
+  spo2: { low: 95, high: 100 },
+  glucose: { low: 70, high: 140 },
+  temperature: { low: 97, high: 99.5 },
+};
+
 function extractValue(vital: VitalData): number | null {
   const v = vital.value;
   if (v.value != null) return Number(v.value);
@@ -20,51 +43,56 @@ function extractValue(vital: VitalData): number | null {
   return null;
 }
 
-function MiniSparkline({ data, color }: { data: number[]; color: string }) {
-  if (data.length < 2) return null;
+function formatTime(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-  const height = 120;
-  const width = 500;
-  const stepX = width / (data.length - 1);
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: string;
+  unit: string;
+  color: string;
+}
 
-  const points = data
-    .map((v, i) => `${i * stepX},${height - ((v - min) / range) * (height - 20) - 10}`)
-    .join(" ");
-
+function CustomTooltip({ active, payload, label, unit, color }: CustomTooltipProps) {
+  if (!active || !payload?.length) return null;
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full" preserveAspectRatio="none">
-      <polyline fill="none" stroke={color} strokeWidth="2.5" points={points} />
-      <circle
-        cx={(data.length - 1) * stepX}
-        cy={height - ((data[data.length - 1] - min) / range) * (height - 20) - 10}
-        r="4"
-        fill={color}
-      />
-    </svg>
+    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-md">
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-sm font-semibold" style={{ color }}>
+        {payload[0].value} <span className="font-normal text-gray-400">{unit}</span>
+      </p>
+    </div>
   );
 }
 
 export function VitalsTrendChart({ patientId }: { patientId: string }) {
   const [activeTab, setActiveTab] = useState<VitalKey>("heart_rate");
-  const [vitals, setVitals] = useState<Record<string, number[]>>({});
+  const [vitals, setVitals] = useState<Record<string, VitalPoint[]>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
     fetchVitals(patientId)
       .then((data) => {
-        // Group values by vital_type, chronologically
-        const grouped: Record<string, number[]> = {};
+        const grouped: Record<string, VitalPoint[]> = {};
         // Data comes newest-first from API, reverse for chronological order
         const sorted = [...data].reverse();
         for (const v of sorted) {
           const val = extractValue(v);
           if (val != null) {
             if (!grouped[v.vital_type]) grouped[v.vital_type] = [];
-            grouped[v.vital_type].push(val);
+            grouped[v.vital_type].push({
+              time: formatTime(v.recorded_at),
+              value: val,
+            });
           }
         }
         setVitals(grouped);
@@ -75,7 +103,8 @@ export function VitalsTrendChart({ patientId }: { patientId: string }) {
 
   const tab = VITAL_TABS.find((t) => t.key === activeTab)!;
   const data = vitals[activeTab] || [];
-  const currentValue = data.length > 0 ? data[data.length - 1] : null;
+  const currentValue = data.length > 0 ? data[data.length - 1].value : null;
+  const normalRange = NORMAL_RANGES[activeTab];
 
   return (
     <div className="card">
@@ -120,8 +149,47 @@ export function VitalsTrendChart({ patientId }: { patientId: string }) {
           </div>
 
           {/* Chart */}
-          <div className="h-32">
-            <MiniSparkline data={data} color={tab.color} />
+          <div className="h-40">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="time"
+                  tick={{ fontSize: 10, fill: "#9ca3af" }}
+                  tickLine={false}
+                  axisLine={{ stroke: "#e5e7eb" }}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: "#9ca3af" }}
+                  tickLine={false}
+                  axisLine={false}
+                  domain={["auto", "auto"]}
+                />
+                <Tooltip
+                  content={<CustomTooltip unit={tab.unit} color={tab.color} />}
+                />
+                <ReferenceLine
+                  y={normalRange.low}
+                  stroke="#d1d5db"
+                  strokeDasharray="4 4"
+                  label={{ value: "Low", position: "left", fontSize: 9, fill: "#9ca3af" }}
+                />
+                <ReferenceLine
+                  y={normalRange.high}
+                  stroke="#d1d5db"
+                  strokeDasharray="4 4"
+                  label={{ value: "High", position: "left", fontSize: 9, fill: "#9ca3af" }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={tab.color}
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: tab.color, strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: tab.color, strokeWidth: 2, stroke: "#fff" }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </>
       )}

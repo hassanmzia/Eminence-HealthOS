@@ -1,0 +1,69 @@
+# HealthOS Production Environment Overrides
+
+global:
+  namespace: healthos-production
+
+api:
+  replicaCount: 3
+  image:
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+
+dashboard:
+  replicaCount: 3
+  image:
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+ingress:
+  host: healthos.example.com
+  tls:
+    enabled: true
+    secretName: healthos-production-tls
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+
+hpa:
+  api:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 60
+    targetMemoryUtilizationPercentage: 70
+  dashboard:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 60
+    targetMemoryUtilizationPercentage: 70
+
+config:
+  logLevel: warning
+  corsOrigins: "https://healthos.example.com"
+
+# Secrets should be injected via external secrets manager (e.g. Vault, AWS Secrets Manager).
+# The values below are placeholders only.
+secrets:
+  databaseUser: healthos_prod
+  databasePassword: REPLACE_VIA_SECRETS_MANAGER
+  neo4jUser: neo4j
+  neo4jPassword: REPLACE_VIA_SECRETS_MANAGER
+  keycloakAdminUser: admin
+  keycloakAdminPassword: REPLACE_VIA_SECRETS_MANAGER
+  anthropicApiKey: REPLACE_VIA_SECRETS_MANAGER
+  jwtSecret: REPLACE_VIA_SECRETS_MANAGER

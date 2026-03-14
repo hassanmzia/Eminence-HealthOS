@@ -18,6 +18,7 @@ services:
       NEO4J_USER: neo4j
       NEO4J_PASSWORD: healthos
       CORS_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:3052"
+      KEYCLOAK_URL: http://keycloak:8080
     depends_on:
       postgres:
         condition: service_healthy
@@ -132,6 +133,34 @@ services:
     networks:
       - healthos
 
+  # ─── Keycloak Identity Provider ────────────────────────────────────────────
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    ports:
+      - "8180:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: healthos
+      KC_DB_PASSWORD: healthos
+    command: start-dev --import-realm
+    volumes:
+      - keycloakdata:/opt/keycloak/data
+      - ./infrastructure/keycloak/healthos-realm.json:/opt/keycloak/data/import/healthos-realm.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - healthos
+
   # ─── Prometheus ────────────────────────────────────────────────────────────
   prometheus:
     image: prom/prometheus:v2.54.1
@@ -166,6 +195,7 @@ volumes:
   qdrantdata:
   neo4jdata:
   prometheusdata:
+  keycloakdata:
   grafanadata:
 
 networks:

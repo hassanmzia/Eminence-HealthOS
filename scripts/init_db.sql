@@ -1,6 +1,10 @@
 -- Eminence HealthOS — Database Initialization
 -- Run on PostgreSQL container startup
 
+-- Create keycloak database for Keycloak identity provider
+CREATE DATABASE keycloak;
+GRANT ALL PRIVILEGES ON DATABASE keycloak TO healthos;
+
 -- Enable extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";

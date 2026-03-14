@@ -263,6 +263,38 @@ export async function fetchRecentAgentActivity() {
   return request<AgentAuditEntry[]>("/dashboard/agent-activity");
 }
 
+// ── Agent Activity (detailed) ────────────────────────────────────────────────
+
+export interface AgentExecutionEntry {
+  id: string;
+  agent_name: string;
+  action: string;
+  status: string;
+  confidence_score: number | null;
+  duration_ms: number | null;
+  patient_id: string | null;
+  trace_id: string;
+  created_at: string | null;
+}
+
+export interface PipelineRunEntry {
+  trace_id: string;
+  agents_executed: string[];
+  total_duration_ms: number;
+  trigger_event: string;
+  started_at: string | null;
+}
+
+export interface AgentActivityResponse {
+  executions: AgentExecutionEntry[];
+  pipeline_runs: PipelineRunEntry[];
+  agent_statuses: Record<string, string>;
+}
+
+export async function fetchAgentActivity(limit = 10) {
+  return request<AgentActivityResponse>(`/agents/activity?limit=${limit}`);
+}
+
 // ── Health ───────────────────────────────────────────────────────────────────
 
 export interface HealthStatus {

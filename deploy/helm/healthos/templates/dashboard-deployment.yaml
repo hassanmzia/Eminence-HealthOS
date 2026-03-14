@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.dashboard.name }}
+  namespace: {{ include "healthos.namespace" . }}
+  labels:
+    {{- include "healthos.labels" . | nindent 4 }}
+    {{- include "healthos.dashboard.selectorLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.dashboard.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "healthos.dashboard.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        {{- include "healthos.labels" . | nindent 8 }}
+        {{- include "healthos.dashboard.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: dashboard
+          image: {{ include "healthos.dashboard.image" . }}
+          imagePullPolicy: {{ .Values.dashboard.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.dashboard.port }}
+              protocol: TCP
+          env:
+            - name: NEXT_PUBLIC_API_URL
+              value: "http://{{ .Values.api.name }}:80"
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.dashboard.probes.readiness.path }}
+              port: {{ .Values.dashboard.probes.readiness.port }}
+            initialDelaySeconds: {{ .Values.dashboard.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.dashboard.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.dashboard.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.dashboard.probes.readiness.failureThreshold }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.dashboard.probes.liveness.path }}
+              port: {{ .Values.dashboard.probes.liveness.port }}
+            initialDelaySeconds: {{ .Values.dashboard.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.dashboard.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.dashboard.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.dashboard.probes.liveness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.dashboard.resources | nindent 12 }}
+      {{- with .Values.dashboard.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.dashboard.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.dashboard.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

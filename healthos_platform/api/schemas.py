@@ -225,6 +225,32 @@ class PipelineResultResponse(BaseModel):
     alerts_generated: int
 
 
+class AgentExecutionEntry(BaseModel):
+    id: str
+    agent_name: str
+    action: str
+    status: str
+    confidence_score: float | None = None
+    duration_ms: int | None = None
+    patient_id: str | None = None
+    trace_id: str
+    created_at: str | None = None
+
+
+class PipelineRunEntry(BaseModel):
+    trace_id: str
+    agents_executed: list[str]
+    total_duration_ms: int
+    trigger_event: str
+    started_at: str | None = None
+
+
+class AgentActivityResponse(BaseModel):
+    executions: list[AgentExecutionEntry]
+    pipeline_runs: list[PipelineRunEntry]
+    agent_statuses: dict[str, str]
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # COMMON
 # ═══════════════════════════════════════════════════════════════════════════════
