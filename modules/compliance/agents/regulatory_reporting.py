@@ -123,15 +123,15 @@ class RegulatoryReportingAgent(BaseAgent):
         action = ctx.get("action", "generate_report")
 
         if action == "generate_report":
-            return self._generate_report(input_data)
+            return await self._generate_report(input_data)
         elif action == "compliance_dashboard":
-            return self._compliance_dashboard(input_data)
+            return await self._compliance_dashboard(input_data)
         elif action == "gap_analysis":
-            return self._gap_analysis(input_data)
+            return await self._gap_analysis(input_data)
         elif action == "audit_package":
-            return self._audit_package(input_data)
+            return await self._audit_package(input_data)
         elif action == "regulatory_calendar":
-            return self._regulatory_calendar(input_data)
+            return await self._regulatory_calendar(input_data)
         else:
             return self.build_output(
                 trace_id=input_data.trace_id,
@@ -143,7 +143,7 @@ class RegulatoryReportingAgent(BaseAgent):
 
     # ── Generate Report ──────────────────────────────────────────────────────
 
-    def _generate_report(self, input_data: AgentInput) -> AgentOutput:
+    async def _generate_report(self, input_data: AgentInput) -> AgentOutput:
         """Create a formatted compliance report for a specified framework."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -238,6 +238,30 @@ class RegulatoryReportingAgent(BaseAgent):
 
         confidence = 0.92 if control_results else 0.75
 
+        # ── LLM: generate regulatory narrative ───────────────────────────────
+        try:
+            prompt = (
+                "You are a regulatory compliance reporting specialist. Based on the following "
+                "compliance report data, produce a concise narrative (2-3 paragraphs) summarizing "
+                "the organization's compliance posture, key findings requiring remediation, and "
+                "upcoming deadlines or actions needed.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered regulatory compliance analyst for a healthcare platform. "
+                    "Provide expert summaries of compliance posture and upcoming regulatory deadlines."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["regulatory_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for generate_report; continuing without narrative")
+            result["regulatory_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -250,7 +274,7 @@ class RegulatoryReportingAgent(BaseAgent):
 
     # ── Compliance Dashboard ─────────────────────────────────────────────────
 
-    def _compliance_dashboard(self, input_data: AgentInput) -> AgentOutput:
+    async def _compliance_dashboard(self, input_data: AgentInput) -> AgentOutput:
         """Return aggregate compliance scores per framework."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -304,6 +328,30 @@ class RegulatoryReportingAgent(BaseAgent):
             "frameworks": dashboard,
         }
 
+        # ── LLM: generate regulatory narrative ───────────────────────────────
+        try:
+            prompt = (
+                "You are a regulatory compliance dashboard analyst. Based on the following "
+                "multi-framework compliance dashboard data, produce a concise narrative "
+                "(2-3 paragraphs) summarizing the overall compliance posture across all "
+                "frameworks, highlighting areas needing attention, and recommending priorities.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered regulatory compliance analyst for a healthcare platform. "
+                    "Provide expert summaries of compliance posture and upcoming regulatory deadlines."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["regulatory_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for compliance_dashboard; continuing without narrative")
+            result["regulatory_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -316,7 +364,7 @@ class RegulatoryReportingAgent(BaseAgent):
 
     # ── Gap Analysis ─────────────────────────────────────────────────────────
 
-    def _gap_analysis(self, input_data: AgentInput) -> AgentOutput:
+    async def _gap_analysis(self, input_data: AgentInput) -> AgentOutput:
         """Identify gaps between current state and target compliance, prioritized by risk."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -392,6 +440,30 @@ class RegulatoryReportingAgent(BaseAgent):
 
         confidence = 0.88 if current_state else 0.70
 
+        # ── LLM: generate regulatory narrative ───────────────────────────────
+        try:
+            prompt = (
+                "You are a regulatory gap analysis specialist. Based on the following gap "
+                "analysis data, produce a concise narrative (2-3 paragraphs) explaining the "
+                "most critical gaps, their regulatory risk implications, and a recommended "
+                "prioritized remediation roadmap.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered regulatory compliance analyst for a healthcare platform. "
+                    "Provide expert summaries of compliance posture and upcoming regulatory deadlines."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["regulatory_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for gap_analysis; continuing without narrative")
+            result["regulatory_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -406,7 +478,7 @@ class RegulatoryReportingAgent(BaseAgent):
 
     # ── Audit Package ────────────────────────────────────────────────────────
 
-    def _audit_package(self, input_data: AgentInput) -> AgentOutput:
+    async def _audit_package(self, input_data: AgentInput) -> AgentOutput:
         """Assemble documentation package for external auditors."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -484,6 +556,30 @@ class RegulatoryReportingAgent(BaseAgent):
             },
         }
 
+        # ── LLM: generate regulatory narrative ───────────────────────────────
+        try:
+            prompt = (
+                "You are a regulatory audit preparation specialist. Based on the following "
+                "audit package summary, produce a concise narrative (2-3 paragraphs) assessing "
+                "audit readiness, identifying any documentation gaps, and recommending final "
+                "preparation steps before the external audit.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered regulatory compliance analyst for a healthcare platform. "
+                    "Provide expert summaries of compliance posture and upcoming regulatory deadlines."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["regulatory_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for audit_package; continuing without narrative")
+            result["regulatory_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
+
         return self.build_output(
             trace_id=input_data.trace_id,
             result=result,
@@ -497,7 +593,7 @@ class RegulatoryReportingAgent(BaseAgent):
 
     # ── Regulatory Calendar ──────────────────────────────────────────────────
 
-    def _regulatory_calendar(self, input_data: AgentInput) -> AgentOutput:
+    async def _regulatory_calendar(self, input_data: AgentInput) -> AgentOutput:
         """Generate upcoming regulatory deadlines and required submissions."""
         ctx = input_data.context
         now = datetime.now(timezone.utc)
@@ -636,6 +732,30 @@ class RegulatoryReportingAgent(BaseAgent):
             "upcoming": sum(1 for d in deadlines if d["status"] == "upcoming"),
             "deadlines": deadlines,
         }
+
+        # ── LLM: generate regulatory narrative ───────────────────────────────
+        try:
+            prompt = (
+                "You are a regulatory deadline management specialist. Based on the following "
+                "regulatory calendar data, produce a concise narrative (2-3 paragraphs) "
+                "highlighting overdue and upcoming deadlines, assessing organizational "
+                "readiness, and recommending preparation priorities.\n\n"
+                f"{json.dumps(result, indent=2, default=str)}"
+            )
+            resp = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": prompt}],
+                system=(
+                    "You are an AI-powered regulatory compliance analyst for a healthcare platform. "
+                    "Provide expert summaries of compliance posture and upcoming regulatory deadlines."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            result["regulatory_narrative"] = resp.content
+        except Exception:
+            logger.warning("LLM narrative generation failed for regulatory_calendar; continuing without narrative")
+            result["regulatory_narrative"] = None
+        # ─────────────────────────────────────────────────────────────────────
 
         return self.build_output(
             trace_id=input_data.trace_id,
