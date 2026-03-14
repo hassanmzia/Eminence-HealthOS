@@ -56,3 +56,4 @@ htmlcov/
 *.key
 credentials.json
 secrets.yaml
+frontend/tsconfig.tsbuildinfo
