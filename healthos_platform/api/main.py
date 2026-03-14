@@ -100,15 +100,32 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Import models so Base.metadata knows about all tables
     import healthos_platform.models  # noqa: F401
 
-    # Create tables if they don't exist yet
-    await init_db()
-    logger.info("healthos.db_initialized")
+    # Create tables if they don't exist yet (retry for DB readiness race)
+    import asyncio
+
+    for attempt in range(1, 4):
+        try:
+            await init_db()
+            logger.info("healthos.db_initialized")
+            break
+        except Exception:
+            if attempt == 3:
+                logger.exception("healthos.db_init_failed_after_retries")
+                raise
+            logger.warning("healthos.db_init_retry", attempt=attempt)
+            await asyncio.sleep(2 * attempt)
 
     # Seed default data if the users table is empty
-    await _seed_if_empty()
+    try:
+        await _seed_if_empty()
+    except Exception:
+        logger.exception("healthos.seed_failed")
 
     # Register all agents on startup
-    _register_agents()
+    try:
+        _register_agents()
+    except Exception:
+        logger.exception("healthos.agent_registration_failed")
 
     # Initialize optional services (non-blocking)
     try:
