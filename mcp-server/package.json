@@ -1,0 +1,19 @@
+{
+  "name": "@healthos/mcp-server",
+  "version": "1.0.0",
+  "description": "HealthOS MCP (Model Context Protocol) Server",
+  "main": "dist/mcp/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/mcp/server.js",
+    "dev": "ts-node src/mcp/server.ts"
+  },
+  "dependencies": {
+    "redis": "^4.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.3.0"
+  }
+}

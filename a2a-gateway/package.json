@@ -1,0 +1,23 @@
+{
+  "name": "@healthos/a2a-gateway",
+  "version": "1.0.0",
+  "description": "HealthOS A2A (Agent-to-Agent) Protocol Gateway",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.0",
+    "redis": "^4.6.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.0",
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.3.0"
+  }
+}

@@ -145,6 +145,13 @@ def create_app() -> FastAPI:
     from modules.marketplace.routes import router as marketplace_router
     app.include_router(marketplace_router, prefix="/api/v1", tags=["AI Marketplace"])
 
+    # ── Protocol Bridge Routes ────────────────────────────────────
+    from healthos_platform.interop.mcp_bridge.routes import router as mcp_bridge_router
+    from healthos_platform.interop.a2a_bridge.routes import router as a2a_bridge_router
+
+    app.include_router(mcp_bridge_router, prefix="/api/v1", tags=["MCP Bridge"])
+    app.include_router(a2a_bridge_router, prefix="/api/v1", tags=["A2A Bridge"])
+
     return app
 
 
