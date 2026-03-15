@@ -59,9 +59,13 @@ const trajectoryColor = (t: string) =>
 const scoreColor = (s: number) =>
   s >= 0.7 ? "text-green-600" : s >= 0.5 ? "text-yellow-600" : "text-red-600";
 
+type Twin = typeof SAMPLE_TWINS[number];
+
 export default function DigitalTwinPage() {
-  const [selectedTwin, setSelectedTwin] = useState(SAMPLE_TWINS[0]);
+  const [twins, setTwins] = useState<Twin[]>(SAMPLE_TWINS);
+  const [selectedTwin, setSelectedTwin] = useState<Twin>(SAMPLE_TWINS[0]);
   const [activeTab, setActiveTab] = useState<"overview" | "scenarios" | "trajectory">("overview");
+  const [building, setBuilding] = useState(false);
 
   const handleSimulate = useCallback(async (scenarioId: string) => {
     try {
@@ -72,12 +76,51 @@ export default function DigitalTwinPage() {
   }, [selectedTwin.id]);
 
   const handleBuildTwin = useCallback(async () => {
+    setBuilding(true);
     try {
-      await buildDigitalTwin({ patient_id: "new" });
+      const result = await buildDigitalTwin({});
+      const twinId = (result as Record<string, unknown>).twin_id as string || `DT-${String(twins.length + 1).padStart(3, "0")}`;
+      const patientId = (result as Record<string, unknown>).patient_id as string || twinId;
+      const healthScore = (result as Record<string, unknown>).overall_health_score as number ?? 0.75;
+      const params = (result as Record<string, unknown>).physiological_parameters as Record<string, number> | undefined;
+      const conditions = (result as Record<string, unknown>).active_conditions as string[] ?? [];
+
+      const newTwin: Twin = {
+        id: twinId,
+        patient: `Patient ${patientId.slice(0, 8)}`,
+        age: 0,
+        conditions,
+        healthScore,
+        lastUpdated: new Date().toISOString(),
+        trajectory: "stable",
+        vitals: {
+          hr: params?.heart_rate_baseline ?? 72,
+          bp: `${Math.round(params?.bp_systolic ?? 120)}/${Math.round(params?.bp_diastolic ?? 80)}`,
+          bmi: params?.bmi ?? 25.0,
+          hba1c: params?.hba1c ?? 5.4,
+          egfr: params?.egfr ?? 90,
+        },
+      };
+      setTwins((prev) => [...prev, newTwin]);
+      setSelectedTwin(newTwin);
     } catch {
-      // API unavailable — demo mode
+      // API unavailable — add a demo twin as fallback
+      const newTwin: Twin = {
+        id: `DT-${String(twins.length + 1).padStart(3, "0")}`,
+        patient: `New Patient`,
+        age: 0,
+        conditions: [],
+        healthScore: 0.75,
+        lastUpdated: new Date().toISOString(),
+        trajectory: "stable",
+        vitals: { hr: 72, bp: "120/80", bmi: 25.0, hba1c: 5.4, egfr: 90 },
+      };
+      setTwins((prev) => [...prev, newTwin]);
+      setSelectedTwin(newTwin);
+    } finally {
+      setBuilding(false);
     }
-  }, []);
+  }, [twins.length]);
 
   return (
     <div className="space-y-6">
@@ -86,16 +129,16 @@ export default function DigitalTwinPage() {
           <h1 className="text-2xl font-bold text-gray-900">Digital Twin & Simulation</h1>
           <p className="text-sm text-gray-500">Patient digital twins, what-if scenarios, and predictive trajectories</p>
         </div>
-        <button onClick={handleBuildTwin} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">
-          + Build New Twin
+        <button onClick={handleBuildTwin} disabled={building} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50">
+          {building ? "Building..." : "+ Build New Twin"}
         </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
-          { label: "Active Twins", value: SAMPLE_TWINS.length.toString() },
-          { label: "Avg Health Score", value: (SAMPLE_TWINS.reduce((s, t) => s + t.healthScore, 0) / SAMPLE_TWINS.length * 100).toFixed(0) + "%" },
+          { label: "Active Twins", value: twins.length.toString() },
+          { label: "Avg Health Score", value: (twins.reduce((s, t) => s + t.healthScore, 0) / twins.length * 100).toFixed(0) + "%" },
           { label: "Scenarios Run (7d)", value: "47" },
           { label: "Predictions Active", value: "12" },
         ].map((s) => (
@@ -110,7 +153,7 @@ export default function DigitalTwinPage() {
         {/* Twin List */}
         <div className="lg:col-span-1 space-y-2">
           <h2 className="text-sm font-semibold text-gray-700">Patient Twins</h2>
-          {SAMPLE_TWINS.map((twin) => (
+          {twins.map((twin) => (
             <button
               key={twin.id}
               onClick={() => setSelectedTwin(twin)}
