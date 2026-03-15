@@ -11,7 +11,7 @@ from healthos_platform.agents.types import AgentInput
 from services.api.middleware.auth import CurrentUser, require_auth, require_role
 from services.api.middleware.tenant import get_tenant_id
 
-router = APIRouter()
+router = APIRouter(prefix="/compliance")
 
 DEFAULT_ORG = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
@@ -19,7 +19,7 @@ DEFAULT_ORG = uuid.UUID("00000000-0000-0000-0000-000000000001")
 # ── HIPAA Compliance ──────────────────────────────────────────────────────────
 
 
-@router.post("/compliance/hipaa/scan")
+@router.post("/hipaa/scan")
 async def run_hipaa_scan(
     body: dict[str, Any],
     tenant_id: str = Depends(get_tenant_id),
@@ -38,7 +38,7 @@ async def run_hipaa_scan(
     return output.result
 
 
-@router.get("/compliance/hipaa/status")
+@router.get("/hipaa/status")
 async def get_hipaa_status(
     tenant_id: str = Depends(get_tenant_id),
     user: CurrentUser = Depends(require_auth),
@@ -56,7 +56,7 @@ async def get_hipaa_status(
     return output.result
 
 
-@router.post("/compliance/hipaa/audit-log")
+@router.post("/hipaa/audit-log")
 async def query_hipaa_audit_log(
     body: dict[str, Any],
     tenant_id: str = Depends(get_tenant_id),
@@ -78,7 +78,7 @@ async def query_hipaa_audit_log(
 # ── AI Governance ─────────────────────────────────────────────────────────────
 
 
-@router.get("/compliance/ai-governance/models")
+@router.get("/ai-governance/models")
 async def list_ai_models(
     tenant_id: str = Depends(get_tenant_id),
     user: CurrentUser = Depends(require_auth),
@@ -96,7 +96,7 @@ async def list_ai_models(
     return output.result
 
 
-@router.post("/compliance/ai-governance/audit")
+@router.post("/ai-governance/audit")
 async def audit_ai_model(
     body: dict[str, Any],
     tenant_id: str = Depends(get_tenant_id),
@@ -115,7 +115,7 @@ async def audit_ai_model(
     return output.result
 
 
-@router.post("/compliance/ai-governance/drift-check")
+@router.post("/ai-governance/drift-check")
 async def check_model_drift(
     body: dict[str, Any],
     tenant_id: str = Depends(get_tenant_id),
@@ -137,7 +137,7 @@ async def check_model_drift(
 # ── Consent Management ────────────────────────────────────────────────────────
 
 
-@router.post("/compliance/consent/capture")
+@router.post("/consent/capture")
 async def capture_consent(
     body: dict[str, Any],
     tenant_id: str = Depends(get_tenant_id),
@@ -156,7 +156,7 @@ async def capture_consent(
     return output.result
 
 
-@router.post("/compliance/consent/revoke")
+@router.post("/consent/revoke")
 async def revoke_consent(
     body: dict[str, Any],
     tenant_id: str = Depends(get_tenant_id),
@@ -175,7 +175,7 @@ async def revoke_consent(
     return output.result
 
 
-@router.post("/compliance/consent/status")
+@router.post("/consent/status")
 async def get_consent_status(
     body: dict[str, Any],
     tenant_id: str = Depends(get_tenant_id),
@@ -194,7 +194,7 @@ async def get_consent_status(
     return output.result
 
 
-@router.get("/compliance/consent/audit-trail")
+@router.get("/consent/audit-trail")
 async def get_consent_audit_trail(
     tenant_id: str = Depends(get_tenant_id),
     user: CurrentUser = Depends(require_auth),
@@ -215,7 +215,7 @@ async def get_consent_audit_trail(
 # ── Regulatory Reporting ──────────────────────────────────────────────────────
 
 
-@router.post("/compliance/reports/generate")
+@router.post("/reports/generate")
 async def generate_compliance_report(
     body: dict[str, Any],
     tenant_id: str = Depends(get_tenant_id),
@@ -234,7 +234,7 @@ async def generate_compliance_report(
     return output.result
 
 
-@router.post("/compliance/reports/gap-analysis")
+@router.post("/reports/gap-analysis")
 async def run_gap_analysis(
     body: dict[str, Any],
     tenant_id: str = Depends(get_tenant_id),
@@ -253,7 +253,7 @@ async def run_gap_analysis(
     return output.result
 
 
-@router.get("/compliance/frameworks")
+@router.get("/frameworks")
 async def list_frameworks(
     tenant_id: str = Depends(get_tenant_id),
     user: CurrentUser = Depends(require_auth),

@@ -109,12 +109,31 @@ def create_app() -> FastAPI:
     from modules.operations.routes import router as operations_router
     from modules.analytics.routes import router as analytics_router
 
-    app.include_router(telehealth_router, prefix="/api/v1/telehealth", tags=["Telehealth"])
-    app.include_router(operations_router, prefix="/api/v1/operations", tags=["Operations"])
-    app.include_router(analytics_router, prefix="/api/v1/analytics", tags=["Analytics"])
+    app.include_router(telehealth_router, prefix="/api/v1", tags=["Telehealth"])
+    app.include_router(operations_router, prefix="/api/v1", tags=["Operations"])
+    app.include_router(analytics_router, prefix="/api/v1", tags=["Analytics"])
 
     from modules.research_genomics.routes import router as research_genomics_router
-    app.include_router(research_genomics_router, prefix="/api/v1/research", tags=["Research & Genomics"])
+    from modules.compliance.routes import router as compliance_router
+    from modules.digital_twin.routes import router as digital_twin_router
+    from modules.imaging.routes import router as imaging_router
+    from modules.labs.routes import router as labs_router
+    from modules.pharmacy.routes import router as pharmacy_router
+    from modules.rcm.routes import router as rcm_router
+    from modules.mental_health.routes import router as mental_health_router
+    from modules.patient_engagement.routes import router as patient_engagement_router
+    from modules.ambient_ai.routes import router as ambient_ai_router
+
+    app.include_router(research_genomics_router, prefix="/api/v1", tags=["Research & Genomics"])
+    app.include_router(compliance_router, prefix="/api/v1", tags=["Compliance & Governance"])
+    app.include_router(digital_twin_router, prefix="/api/v1", tags=["Digital Twin"])
+    app.include_router(imaging_router, prefix="/api/v1", tags=["Imaging"])
+    app.include_router(labs_router, prefix="/api/v1", tags=["Labs"])
+    app.include_router(pharmacy_router, prefix="/api/v1", tags=["Pharmacy"])
+    app.include_router(rcm_router, prefix="/api/v1", tags=["Revenue Cycle"])
+    app.include_router(mental_health_router, prefix="/api/v1", tags=["Mental Health"])
+    app.include_router(patient_engagement_router, prefix="/api/v1", tags=["Patient Engagement"])
+    app.include_router(ambient_ai_router, prefix="/api/v1", tags=["Ambient AI"])
 
     return app
 
