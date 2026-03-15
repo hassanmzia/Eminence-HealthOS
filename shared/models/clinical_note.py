@@ -22,8 +22,8 @@ class ClinicalNote(Base, UUIDMixin, TimestampMixin, TenantMixin):
     )
 
     # Links
-    encounter_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=False,
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=True,
     )
     session_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("telehealth_sessions.id"), nullable=True,

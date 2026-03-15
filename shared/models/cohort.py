@@ -1,5 +1,6 @@
 """Cohort and PopulationMetric models for population health analytics."""
 
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import Float, ForeignKey, Index, Integer, String, DateTime
@@ -43,8 +44,8 @@ class PopulationMetric(Base, UUIDMixin, TimestampMixin, TenantMixin):
     )
     metric_type: Mapped[str] = mapped_column(String(50), nullable=False)
     value: Mapped[float] = mapped_column(Float, nullable=False)
-    period_start: Mapped[Optional[str]] = mapped_column(DateTime(timezone=True), nullable=True)
-    period_end: Mapped[Optional[str]] = mapped_column(DateTime(timezone=True), nullable=True)
+    period_start: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    period_end: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     breakdown: Mapped[dict] = mapped_column(JSONB, default=dict)
 
     # Relationships

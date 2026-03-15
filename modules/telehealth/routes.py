@@ -12,6 +12,8 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.telehealth.schemas.session import (
     SessionCreate,
@@ -21,8 +23,10 @@ from modules.telehealth.schemas.session import (
 )
 from healthos_platform.agents.types import AgentInput
 from healthos_platform.api.middleware.tenant import TenantContext, get_current_user
+from healthos_platform.config.database import get_db as get_shared_db
 from healthos_platform.security.rbac import Permission
 from modules.telehealth.events import TelehealthEventPublisher
+from shared.models.clinical_note import ClinicalNote
 
 logger = logging.getLogger("healthos.telehealth.routes")
 
@@ -46,12 +50,31 @@ class SignNoteRequest(BaseModel):
     amendments: str | None = None
 
 
-# In-memory note store (in production, use a database)
-_notes_store: dict[str, list[dict[str, Any]]] = {}
-
 # Shared publisher — the producer is injected at app startup; until then
 # the publisher gracefully logs events instead of sending them to Kafka.
 _event_publisher = TelehealthEventPublisher()
+
+
+def _note_to_dict(note: ClinicalNote) -> dict[str, Any]:
+    """Convert a ClinicalNote ORM object to the HITL response dict."""
+    sections = []
+    for section_name in ("subjective", "objective", "assessment", "plan"):
+        content = getattr(note, section_name, None)
+        if content is not None:
+            sections.append({"section": section_name, "content": content})
+    return {
+        "note_id": str(note.id),
+        "session_id": str(note.session_id) if note.session_id else None,
+        "status": note.status,
+        "sections": sections,
+        "generated_at": note.created_at.isoformat() if note.created_at else None,
+        "generated_by": "Clinical Note Agent",
+        "overall_confidence": note.ai_confidence,
+        "amendments": note.amendments or [],
+        "note_type": note.note_type,
+        "signed_at": note.signed_at.isoformat() if note.signed_at else None,
+        "signed_by": str(note.signed_by) if note.signed_by else None,
+    }
 
 
 @router.post("/sessions", response_model=SessionResponse)
@@ -146,6 +169,7 @@ async def generate_clinical_note(
     session_id: str,
     body: dict[str, Any],
     ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_shared_db),
 ):
     """Generate clinical note (SOAP) for a telehealth encounter."""
     from modules.telehealth.agents.clinical_note import ClinicalNoteAgent
@@ -171,24 +195,35 @@ async def generate_clinical_note(
     output = await agent.run(agent_input)
     result = output.result
 
-    # Store the note for HITL review workflow
-    note_id = result.get("note_id") or str(uuid.uuid4())
-    now = datetime.now(timezone.utc).isoformat()
-    stored_note = {
-        "note_id": note_id,
-        "session_id": session_id,
-        "status": "draft",
-        "sections": result.get("sections", []),
-        "generated_at": result.get("generated_at", now),
-        "generated_by": result.get("generated_by", "Clinical Note Agent"),
-        "overall_confidence": result.get("overall_confidence"),
-        "amendments": [],
-        **{k: v for k, v in result.items() if k not in (
-            "note_id", "session_id", "status", "sections",
-            "generated_at", "generated_by", "overall_confidence", "amendments",
-        )},
+    # Map sections from the agent result to SOAP fields
+    sections = result.get("sections", [])
+    soap_fields: dict[str, str | None] = {
+        "subjective": None, "objective": None, "assessment": None, "plan": None,
     }
-    _notes_store.setdefault(session_id, []).append(stored_note)
+    for section in sections:
+        name = section.get("section", "").lower()
+        if name in soap_fields:
+            soap_fields[name] = section.get("content")
+
+    # Persist to DB via ClinicalNote model
+    note = ClinicalNote(
+        session_id=uuid.UUID(session_id) if session_id else None,
+        encounter_id=None,
+        tenant_id=str(ctx.org_id) if ctx.org_id else "default",
+        note_type="soap",
+        status="draft",
+        subjective=soap_fields["subjective"],
+        objective=soap_fields["objective"],
+        assessment=soap_fields["assessment"],
+        plan=soap_fields["plan"],
+        ai_generated=True,
+        ai_confidence=result.get("overall_confidence"),
+        amendments=[],
+    )
+    db.add(note)
+    await db.flush()
+
+    response = _note_to_dict(note)
 
     # Emit note.generated event
     await _event_publisher.note_generated(
@@ -198,7 +233,7 @@ async def generate_clinical_note(
         data={"encounter_type": "telehealth"},
     )
 
-    return result
+    return response
 
 
 @router.post("/sessions/{session_id}/follow-up")
@@ -331,12 +366,19 @@ async def get_session(
 async def list_clinical_notes(
     session_id: str,
     ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_shared_db),
 ):
     """List all clinical notes for a telehealth session."""
     ctx.require_permission(Permission.ENCOUNTERS_READ)
 
-    notes = _notes_store.get(session_id, [])
-    return {"notes": notes}
+    result = await db.execute(
+        select(ClinicalNote)
+        .where(ClinicalNote.session_id == uuid.UUID(session_id))
+        .order_by(ClinicalNote.created_at.desc())
+    )
+    notes = result.scalars().all()
+
+    return {"notes": [_note_to_dict(n) for n in notes]}
 
 
 @router.put("/sessions/{session_id}/note")
@@ -344,43 +386,41 @@ async def amend_clinical_note(
     session_id: str,
     body: AmendNoteRequest,
     ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_shared_db),
 ):
     """Update / amend a clinical note. Applies provider edits to specific sections."""
     ctx.require_permission(Permission.ENCOUNTERS_WRITE)
 
-    notes = _notes_store.get(session_id, [])
-    note = next((n for n in notes if n["note_id"] == body.note_id), None)
+    result = await db.execute(
+        select(ClinicalNote).where(ClinicalNote.id == uuid.UUID(body.note_id))
+    )
+    note = result.scalar_one_or_none()
 
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
 
-    if note.get("status") == "signed":
-        raise HTTPException(
-            status_code=400,
-            detail="Cannot amend a signed note",
-        )
+    if note.status == "signed":
+        raise HTTPException(status_code=400, detail="Cannot amend a signed note")
 
     now = datetime.now(timezone.utc).isoformat()
+    amendment_history = list(note.amendments or [])
 
-    # Apply each amendment to the matching section
+    # Apply each amendment to the matching SOAP section
     for amendment in body.amendments:
-        for section in note.get("sections", []):
-            if section["section"] == amendment.section:
-                section["content"] = amendment.content
-                break
+        section_name = amendment.section.lower()
+        if section_name in ("subjective", "objective", "assessment", "plan"):
+            setattr(note, section_name, amendment.content)
 
-        # Record the amendment in history
-        note.setdefault("amendments", []).append(
-            {
-                "section": amendment.section,
-                "content": amendment.content,
-                "amended_at": now,
-                "amended_by": ctx.user_id or "unknown",
-            }
-        )
+        amendment_history.append({
+            "section": amendment.section,
+            "content": amendment.content,
+            "amended_at": now,
+            "amended_by": str(ctx.user_id) if ctx.user_id else "unknown",
+        })
 
-    note["status"] = "pending_review"
-    note["updated_at"] = now
+    note.amendments = amendment_history
+    note.status = "pending_review"
+    await db.flush()
 
     logger.info(
         "Clinical note %s amended for session %s by %s",
@@ -389,7 +429,7 @@ async def amend_clinical_note(
         ctx.user_id,
     )
 
-    return note
+    return _note_to_dict(note)
 
 
 @router.post("/sessions/{session_id}/note/sign")
@@ -397,40 +437,39 @@ async def sign_clinical_note(
     session_id: str,
     body: SignNoteRequest,
     ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_shared_db),
 ):
-    """Sign and finalize a clinical note.
-
-    Sets status to 'signed' and records signed_at / signed_by.
-    """
+    """Sign and finalize a clinical note."""
     ctx.require_permission(Permission.ENCOUNTERS_WRITE)
 
-    notes = _notes_store.get(session_id, [])
-    note = next((n for n in notes if n["note_id"] == body.note_id), None)
+    result = await db.execute(
+        select(ClinicalNote).where(ClinicalNote.id == uuid.UUID(body.note_id))
+    )
+    note = result.scalar_one_or_none()
 
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
 
-    if note.get("status") == "signed":
-        raise HTTPException(
-            status_code=400,
-            detail="Note is already signed",
-        )
+    if note.status == "signed":
+        raise HTTPException(status_code=400, detail="Note is already signed")
 
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc)
 
-    note["status"] = "signed"
-    note["signed_at"] = now
-    note["signed_by"] = ctx.user_id or "unknown"
+    note.status = "signed"
+    note.signed_at = now
+    note.signed_by = ctx.user_id
 
     if body.amendments:
-        note.setdefault("amendments", []).append(
-            {
-                "section": "_attestation",
-                "content": body.amendments,
-                "amended_at": now,
-                "amended_by": ctx.user_id or "unknown",
-            }
-        )
+        amendment_history = list(note.amendments or [])
+        amendment_history.append({
+            "section": "_attestation",
+            "content": body.amendments,
+            "amended_at": now.isoformat(),
+            "amended_by": str(ctx.user_id) if ctx.user_id else "unknown",
+        })
+        note.amendments = amendment_history
+
+    await db.flush()
 
     logger.info(
         "Clinical note %s signed for session %s by %s",
@@ -446,9 +485,9 @@ async def sign_clinical_note(
         tenant_id=ctx.org_id or "default",
         data={
             "note_id": body.note_id,
-            "signed_by": ctx.user_id,
-            "signed_at": now,
+            "signed_by": str(ctx.user_id),
+            "signed_at": now.isoformat(),
         },
     )
 
-    return note
+    return _note_to_dict(note)
