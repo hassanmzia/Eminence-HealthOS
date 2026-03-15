@@ -737,23 +737,47 @@ function PermissionsTab() {
 /* ================================================================== */
 function AuditTrailTab() {
   const [filterAction, setFilterAction] = useState("All");
+  const [filterUser, setFilterUser] = useState("All");
+  const [searchTarget, setSearchTarget] = useState("");
 
   const actionTypes = useMemo(
     () => Array.from(new Set(AUDIT_LOG.map((e) => e.action))).sort(),
     []
   );
 
+  const auditUsers = useMemo(
+    () => Array.from(new Set(AUDIT_LOG.map((e) => e.user))).sort(),
+    []
+  );
+
   const filtered = useMemo(() => {
-    if (filterAction === "All") return AUDIT_LOG;
-    return AUDIT_LOG.filter((e) => e.action === filterAction);
-  }, [filterAction]);
+    return AUDIT_LOG.filter((e) => {
+      const matchAction = filterAction === "All" || e.action === filterAction;
+      const matchUser = filterUser === "All" || e.user === filterUser;
+      const matchTarget =
+        !searchTarget || e.target.toLowerCase().includes(searchTarget.toLowerCase());
+      return matchAction && matchUser && matchTarget;
+    });
+  }, [filterAction, filterUser, searchTarget]);
 
   const actionColor = (action: string) => {
-    if (action.includes("Created") || action.includes("Added")) return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300";
-    if (action.includes("Modified")) return "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300";
-    if (action.includes("Deactivated") || action.includes("Locked")) return "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300";
-    if (action.includes("Reset")) return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300";
+    if (action.includes("Created") || action.includes("Added"))
+      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300";
+    if (action.includes("Modified"))
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300";
+    if (action.includes("Deactivated") || action.includes("Locked"))
+      return "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300";
+    if (action.includes("Reset"))
+      return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300";
     return "bg-zinc-100 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300";
+  };
+
+  const actionIcon = (action: string) => {
+    if (action.includes("Created") || action.includes("Added")) return "+";
+    if (action.includes("Modified")) return "~";
+    if (action.includes("Deactivated") || action.includes("Locked")) return "!";
+    if (action.includes("Reset")) return "*";
+    return "?";
   };
 
   return (
@@ -761,12 +785,32 @@ function AuditTrailTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div>
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Audit Trail</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Recent administrative actions log</p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Recent administrative actions log -- {AUDIT_LOG.length} total entries
+          </p>
         </div>
+        <button className="btn-secondary text-sm">Export CSV</button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <input
+          type="text"
+          placeholder="Search target..."
+          value={searchTarget}
+          onChange={(e) => setSearchTarget(e.target.value)}
+          className="input w-full sm:w-48"
+        />
         <select value={filterAction} onChange={(e) => setFilterAction(e.target.value)} className="select">
           <option value="All">All Actions</option>
           {actionTypes.map((a) => (
             <option key={a} value={a}>{a}</option>
+          ))}
+        </select>
+        <select value={filterUser} onChange={(e) => setFilterUser(e.target.value)} className="select">
+          <option value="All">All Admins</option>
+          {auditUsers.map((u) => (
+            <option key={u} value={u}>{u}</option>
           ))}
         </select>
       </div>
@@ -775,8 +819,9 @@ function AuditTrailTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="table-header">
+              <th className="text-center p-3 font-semibold w-10"></th>
               <th className="text-left p-3 font-semibold">Timestamp</th>
-              <th className="text-left p-3 font-semibold">User</th>
+              <th className="text-left p-3 font-semibold">Admin User</th>
               <th className="text-left p-3 font-semibold">Action</th>
               <th className="text-left p-3 font-semibold">Target</th>
               <th className="text-left p-3 font-semibold">IP Address</th>
@@ -784,7 +829,12 @@ function AuditTrailTab() {
           </thead>
           <tbody>
             {filtered.map((entry) => (
-              <tr key={entry.id} className="table-row border-b border-zinc-100 dark:border-zinc-800">
+              <tr key={entry.id} className="table-row border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                <td className="p-3 text-center">
+                  <span className={`${actionColor(entry.action)} inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold`}>
+                    {actionIcon(entry.action)}
+                  </span>
+                </td>
                 <td className="p-3 text-zinc-500 dark:text-zinc-400 whitespace-nowrap font-mono text-xs">
                   {entry.timestamp}
                 </td>
@@ -800,11 +850,22 @@ function AuditTrailTab() {
             ))}
           </tbody>
         </table>
+        {filtered.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-zinc-400 dark:text-zinc-500 text-lg mb-1">No audit entries found</p>
+            <p className="text-zinc-300 dark:text-zinc-600 text-sm">Try adjusting your filters.</p>
+          </div>
+        )}
       </div>
 
-      <p className="mt-4 text-xs text-zinc-400 dark:text-zinc-500">
-        Showing {filtered.length} of {AUDIT_LOG.length} entries
-      </p>
+      <div className="mt-4 flex items-center justify-between">
+        <p className="text-xs text-zinc-400 dark:text-zinc-500">
+          Showing {filtered.length} of {AUDIT_LOG.length} entries
+        </p>
+        <p className="text-xs text-zinc-400 dark:text-zinc-500">
+          Retention policy: 90 days
+        </p>
+      </div>
     </div>
   );
 }
