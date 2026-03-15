@@ -1001,6 +1001,7 @@ export default function MarketplacePage() {
   }, []);
 
   const handleInstall = (agentId: string) => {
+    fetchMarketplaceAgent(agentId).catch(() => {});
     installMarketplaceAgent(agentId).catch(() => {});
     scanMarketplaceAgent(agentId).catch(() => {});
     setAgents((prev) =>
