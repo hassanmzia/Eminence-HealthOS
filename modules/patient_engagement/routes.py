@@ -310,3 +310,103 @@ async def engagement_report(
         context={"action": "engagement_report"},
     ))
     return output.result
+
+
+# ── Physician Notifications ──────────────────────────────────────────────
+
+
+@router.post("/notifications/physician/send")
+async def send_physician_notification(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Send a priority-based physician notification."""
+    from modules.patient_engagement.agents.physician_notify_agent import PhysicianNotifyAgent
+
+    agent = PhysicianNotifyAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        trigger="engagement.notification.physician",
+        context={"action": "notify_physician", **body},
+    ))
+    return output.result
+
+
+@router.post("/notifications/physician/acknowledge")
+async def acknowledge_physician_notification(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Acknowledge a physician notification."""
+    from modules.patient_engagement.agents.physician_notify_agent import PhysicianNotifyAgent
+
+    agent = PhysicianNotifyAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        trigger="engagement.notification.acknowledge",
+        context={"action": "check_acknowledgement", **body},
+    ))
+    return output.result
+
+
+# ── Patient Notifications ────────────────────────────────────────────────
+
+
+@router.post("/notifications/patient/send")
+async def send_patient_notification(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Send a health-literacy-adapted patient notification."""
+    from modules.patient_engagement.agents.patient_notify_agent import PatientNotifyAgent
+
+    agent = PatientNotifyAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        trigger="engagement.notification.patient",
+        context={"action": "notify_patient", **body},
+    ))
+    return output.result
+
+
+@router.post("/notifications/patient/educational")
+async def send_educational_content(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Send educational content to a patient."""
+    from modules.patient_engagement.agents.patient_notify_agent import PatientNotifyAgent
+
+    agent = PatientNotifyAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        trigger="engagement.notification.educational",
+        context={"action": "send_educational", **body},
+    ))
+    return output.result
+
+
+@router.post("/notifications/patient/appointment-reminder")
+async def send_appointment_reminder(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Send an appointment reminder to a patient."""
+    from modules.patient_engagement.agents.patient_notify_agent import PatientNotifyAgent
+
+    agent = PatientNotifyAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        trigger="engagement.notification.appointment",
+        context={"action": "send_appointment_reminder", **body},
+    ))
+    return output.result
