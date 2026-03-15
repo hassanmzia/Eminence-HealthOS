@@ -408,6 +408,20 @@ export async function amendClinicalNote(
   });
 }
 
+// ── Telehealth Video ────────────────────────────────────────────────────────
+
+export async function startVideoSession(sessionId: string) {
+  return request<Record<string, unknown>>(`/telehealth/sessions/${sessionId}/video/start`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function getVideoToken(sessionId: string, role: string = "participant") {
+  return request<Record<string, unknown>>(`/telehealth/sessions/${sessionId}/video/token?role=${role}`);
+}
+
+export async function endVideoSession(sessionId: string) {
+  return request<Record<string, unknown>>(`/telehealth/sessions/${sessionId}/video/end`, { method: "POST", body: JSON.stringify({}) });
+}
+
 // ── FHIR ─────────────────────────────────────────────────────────────────────
 
 export async function fetchFHIRPatient(patientId: string) {

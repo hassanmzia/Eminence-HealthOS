@@ -329,6 +329,99 @@ async def schedule_appointment(
     return output.result
 
 
+# ── Video Session Endpoints ──────────────────────────────────────────────────
+
+
+@router.post("/sessions/{session_id}/video/start")
+async def start_video_session(
+    session_id: str,
+    ctx: TenantContext = Depends(get_current_user),
+):
+    """Allocate a video room and return provider credentials for a telehealth session."""
+    from modules.telehealth.services.video_service import video_service
+
+    ctx.require_permission(Permission.ENCOUNTERS_WRITE)
+
+    room = await video_service.create_room(session_id)
+    token = await video_service.generate_token(
+        room["room_name"],
+        user_name=f"Provider-{ctx.user_id or 'unknown'}",
+        user_id=str(ctx.user_id or ""),
+        is_owner=True,
+    )
+
+    await _event_publisher.session_started(
+        session_id=session_id,
+        patient_id="",
+        tenant_id=ctx.org_id or "default",
+        data={"video_provider": "daily", "room_name": room["room_name"]},
+    )
+
+    return {
+        "session_id": session_id,
+        "room_url": room["room_url"],
+        "room_name": room["room_name"],
+        "token": token["token"],
+        "provider": "daily",
+        "expires_at": room["expires_at"],
+        "demo_mode": room.get("demo_mode", False),
+    }
+
+
+@router.get("/sessions/{session_id}/video/token")
+async def get_video_token(
+    session_id: str,
+    role: str = "participant",
+    ctx: TenantContext = Depends(get_current_user),
+):
+    """Generate a video token for a participant joining an existing session."""
+    from modules.telehealth.services.video_service import video_service
+
+    ctx.require_permission(Permission.ENCOUNTERS_READ)
+
+    room_name = f"healthos-{session_id}"
+    is_owner = role == "provider"
+
+    token = await video_service.generate_token(
+        room_name,
+        user_name=f"{'Provider' if is_owner else 'Patient'}-{ctx.user_id or 'unknown'}",
+        user_id=str(ctx.user_id or ""),
+        is_owner=is_owner,
+    )
+
+    return {
+        "session_id": session_id,
+        "token": token["token"],
+        "room_name": room_name,
+        "is_owner": is_owner,
+        "expires_at": token["expires_at"],
+        "demo_mode": token.get("demo_mode", False),
+    }
+
+
+@router.post("/sessions/{session_id}/video/end")
+async def end_video_session(
+    session_id: str,
+    ctx: TenantContext = Depends(get_current_user),
+):
+    """End the video session and clean up the room."""
+    from modules.telehealth.services.video_service import video_service
+
+    ctx.require_permission(Permission.ENCOUNTERS_WRITE)
+
+    room_name = f"healthos-{session_id}"
+    deleted = await video_service.delete_room(room_name)
+
+    await _event_publisher.session_ended(
+        session_id=session_id,
+        patient_id="",
+        tenant_id=ctx.org_id or "default",
+        data={"video_provider": "daily", "room_name": room_name, "cleaned_up": deleted},
+    )
+
+    return {"session_id": session_id, "status": "ended", "room_cleaned_up": deleted}
+
+
 @router.get("/sessions")
 async def list_sessions(ctx: TenantContext = Depends(get_current_user)):
     """List recent telehealth sessions (queue view)."""
