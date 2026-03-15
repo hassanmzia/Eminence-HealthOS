@@ -203,10 +203,6 @@ function delta(before: number, after: number) {
   return after - before;
 }
 
-function pct(before: number, after: number) {
-  if (before === 0) return 0;
-  return ((after - before) / before) * 100;
-}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    PAGE COMPONENT
