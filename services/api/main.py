@@ -31,8 +31,13 @@ async def lifespan(app: FastAPI):
     logger.info("Starting HealthOS %s (%s)", settings.app_version, settings.environment)
 
     # Initialize database
-    if settings.is_development:
-        await init_db()
+    try:
+        if settings.is_development:
+            await init_db()
+        logger.info("Database initialized")
+    except Exception as e:
+        logger.warning("Database init failed (service may be unavailable): %s", e)
+        app.state.db_available = False
 
     # Initialize observability
     try:
