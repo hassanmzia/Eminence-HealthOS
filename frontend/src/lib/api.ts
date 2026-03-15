@@ -855,3 +855,345 @@ export async function scanMarketplaceAgent(agentId: string) {
 export async function fetchMarketplaceAnalytics() {
   return request<Record<string, unknown>>("/marketplace/analytics");
 }
+
+// ── Clinical RAG Intelligence ─────────────────────────────────────────────────
+
+export interface RAGSearchResult {
+  query: string;
+  results: Array<{
+    content: string;
+    source: string;
+    collection: string;
+    score: number;
+    metadata: Record<string, unknown>;
+  }>;
+  answer: string;
+  sources: string[];
+  confidence: number;
+}
+
+export async function searchClinicalRAG(body: {
+  query: string;
+  collection?: string;
+  top_k?: number;
+}) {
+  return request<RAGSearchResult>("/rag/search", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchRAGCollections() {
+  return request<{ collections: Array<{ name: string; doc_count: number; description: string }> }>("/rag/collections");
+}
+
+export async function ingestRAGDocument(body: {
+  collection: string;
+  content: string;
+  metadata?: Record<string, unknown>;
+}) {
+  return request<{ document_id: string; status: string }>("/rag/ingest", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── Knowledge Graph ───────────────────────────────────────────────────────────
+
+export interface KGNode {
+  id: string;
+  label: string;
+  type: string;
+  properties: Record<string, unknown>;
+}
+
+export interface KGEdge {
+  source: string;
+  target: string;
+  relationship: string;
+  properties: Record<string, unknown>;
+}
+
+export interface KGQueryResult {
+  nodes: KGNode[];
+  edges: KGEdge[];
+  total_nodes: number;
+  total_edges: number;
+}
+
+export async function queryKnowledgeGraph(body: {
+  query_type: string;
+  entity?: string;
+  depth?: number;
+  limit?: number;
+}) {
+  return request<KGQueryResult>("/knowledge-graph/query", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchKGStats() {
+  return request<{
+    total_nodes: number;
+    total_edges: number;
+    node_types: Record<string, number>;
+    edge_types: Record<string, number>;
+  }>("/knowledge-graph/stats");
+}
+
+export async function fetchDrugInteractionsKG(drugName: string) {
+  return request<KGQueryResult>(`/knowledge-graph/drugs/${encodeURIComponent(drugName)}/interactions`);
+}
+
+export async function fetchDiseaseRelationsKG(diseaseName: string) {
+  return request<KGQueryResult>(`/knowledge-graph/diseases/${encodeURIComponent(diseaseName)}/relations`);
+}
+
+export async function fetchPatientGraphKG(patientId: string) {
+  return request<KGQueryResult>(`/knowledge-graph/patients/${patientId}/graph`);
+}
+
+// ── EHR Interoperability ──────────────────────────────────────────────────────
+
+export interface EHRConnector {
+  id: string;
+  name: string;
+  type: "fhir" | "hl7v2";
+  status: "active" | "inactive" | "error";
+  base_url?: string;
+  last_sync?: string;
+  sync_count: number;
+  error_count: number;
+  created_at: string;
+}
+
+export async function fetchEHRConnectors() {
+  return request<{ connectors: EHRConnector[] }>("/ehr/connectors");
+}
+
+export async function registerEHRConnector(body: {
+  name: string;
+  type: "fhir" | "hl7v2";
+  config: Record<string, unknown>;
+}) {
+  return request<EHRConnector>("/ehr/connectors/register", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function syncEHRPatient(body: {
+  connector_id: string;
+  patient_id: string;
+  direction: "push" | "pull";
+}) {
+  return request<Record<string, unknown>>("/ehr/sync/patient", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function syncEHREncounters(body: {
+  connector_id: string;
+  patient_id: string;
+}) {
+  return request<Record<string, unknown>>("/ehr/sync/encounters", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchEHRSyncHistory(connectorId: string) {
+  return request<Array<{ id: string; direction: string; status: string; records: number; timestamp: string }>>(`/ehr/connectors/${connectorId}/history`);
+}
+
+// ── MCP Bridge ────────────────────────────────────────────────────────────────
+
+export interface MCPServer {
+  id: string;
+  name: string;
+  url: string;
+  status: "connected" | "disconnected" | "error";
+  tools: string[];
+  last_heartbeat?: string;
+}
+
+export async function fetchMCPServers() {
+  return request<{ servers: MCPServer[] }>("/mcp/servers");
+}
+
+export async function registerMCPServer(body: { name: string; url: string }) {
+  return request<MCPServer>("/mcp/servers/register", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function executeMCPTool(body: {
+  server_id: string;
+  tool_name: string;
+  parameters: Record<string, unknown>;
+}) {
+  return request<Record<string, unknown>>("/mcp/tools/execute", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── ML Models ─────────────────────────────────────────────────────────────────
+
+export interface MLModelInfo {
+  id: string;
+  name: string;
+  type: string;
+  version: string;
+  status: "active" | "training" | "inactive" | "error";
+  accuracy?: number;
+  last_trained?: string;
+  predictions_count: number;
+  description: string;
+}
+
+export interface MLPrediction {
+  model_name: string;
+  prediction: Record<string, unknown>;
+  confidence: number;
+  features_used: string[];
+  timestamp: string;
+}
+
+export async function fetchMLModels() {
+  return request<{ models: MLModelInfo[] }>("/ml/models");
+}
+
+export async function fetchMLModelMetrics(modelId: string) {
+  return request<{
+    accuracy: number;
+    precision: number;
+    recall: number;
+    f1_score: number;
+    auc_roc: number;
+    predictions_today: number;
+    avg_latency_ms: number;
+    fairness_metrics: Record<string, number>;
+  }>(`/ml/models/${modelId}/metrics`);
+}
+
+export async function runMLPrediction(body: {
+  model_name: string;
+  patient_id: string;
+  features?: Record<string, unknown>;
+}) {
+  return request<MLPrediction>("/ml/predict", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchFederatedStatus() {
+  return request<{
+    status: string;
+    current_round: number;
+    total_rounds: number;
+    participating_tenants: number;
+    global_accuracy: number;
+    privacy_budget_remaining: number;
+    last_aggregation?: string;
+  }>("/ml/federated/status");
+}
+
+export async function startFederatedRound(body: {
+  model_name: string;
+  rounds: number;
+  min_clients: number;
+}) {
+  return request<{ round_id: string; status: string }>("/ml/federated/start", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── SDOH (Social Determinants of Health) ──────────────────────────────────────
+
+export interface SDOHAssessment {
+  id: string;
+  patient_id: string;
+  domains: Array<{
+    domain: string;
+    risk_level: string;
+    score: number;
+    factors: string[];
+  }>;
+  overall_risk: string;
+  recommendations: string[];
+  resources: Array<{
+    name: string;
+    type: string;
+    distance?: string;
+    phone?: string;
+    address?: string;
+  }>;
+  assessed_at: string;
+}
+
+export async function runSDOHAssessment(body: {
+  patient_id: string;
+  responses: Record<string, unknown>;
+}) {
+  return request<SDOHAssessment>("/sdoh/assess", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchSDOHHistory(patientId: string) {
+  return request<SDOHAssessment[]>(`/sdoh/history/${patientId}`);
+}
+
+export async function fetchCommunityResources(body: {
+  needs: string[];
+  zip_code?: string;
+  radius_miles?: number;
+}) {
+  return request<{ resources: Array<{ name: string; type: string; distance: string; phone: string; address: string; services: string[] }> }>("/sdoh/resources", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── Agent Pipelines ───────────────────────────────────────────────────────────
+
+export interface PipelineExecution {
+  trace_id: string;
+  status: "running" | "completed" | "failed" | "halted";
+  agents: Array<{
+    name: string;
+    tier: string;
+    status: string;
+    duration_ms: number;
+    confidence?: number;
+    output_summary?: string;
+  }>;
+  trigger_event: string;
+  patient_id?: string;
+  started_at: string;
+  completed_at?: string;
+  hitl_required: boolean;
+}
+
+export interface HITLReviewItem {
+  id: string;
+  trace_id: string;
+  agent_name: string;
+  patient_id: string;
+  action: string;
+  confidence: number;
+  reason: string;
+  context: Record<string, unknown>;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+}
+
+export async function fetchPipelineExecutions(params?: { status?: string; limit?: number }) {
+  const query = new URLSearchParams();
+  if (params?.status) query.set("status", params.status);
+  if (params?.limit) query.set("limit", String(params.limit));
+  const qs = query.toString();
+  return request<{ executions: PipelineExecution[] }>(`/agents/pipelines${qs ? `?${qs}` : ""}`);
+}
+
+export async function triggerPipeline(body: {
+  event_type: string;
+  patient_id?: string;
+  payload?: Record<string, unknown>;
+}) {
+  return request<{ trace_id: string; status: string }>("/agents/trigger", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchHITLQueue() {
+  return request<{ items: HITLReviewItem[] }>("/agents/hitl/queue");
+}
+
+export async function resolveHITLItem(itemId: string, body: {
+  action: "approve" | "reject";
+  notes?: string;
+}) {
+  return request<HITLReviewItem>(`/agents/hitl/${itemId}/resolve`, { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── Feature Store ─────────────────────────────────────────────────────────────
+
+export async function fetchFeatureStoreStats() {
+  return request<{
+    total_features: number;
+    cached_patients: number;
+    hit_rate: number;
+    avg_compute_ms: number;
+    feature_groups: Array<{ name: string; feature_count: number; last_updated: string }>;
+  }>("/feature-store/stats");
+}
