@@ -829,3 +829,29 @@ export async function createReferral(body: Record<string, unknown>) {
 export async function scheduleAppointment(body: Record<string, unknown>) {
   return request<Record<string, unknown>>("/operations/schedule/suggest", { method: "POST", body: JSON.stringify(body) });
 }
+
+// ── AI Marketplace ──────────────────────────────────────────────────────────
+
+export async function fetchMarketplaceAgents() {
+  return request<Record<string, unknown>>("/marketplace/agents");
+}
+
+export async function fetchMarketplaceAgent(agentId: string) {
+  return request<Record<string, unknown>>(`/marketplace/agents/${agentId}`);
+}
+
+export async function publishMarketplaceAgent(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/marketplace/agents/publish", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function installMarketplaceAgent(agentId: string) {
+  return request<Record<string, unknown>>(`/marketplace/agents/${agentId}/install`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function scanMarketplaceAgent(agentId: string) {
+  return request<Record<string, unknown>>(`/marketplace/agents/${agentId}/scan`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchMarketplaceAnalytics() {
+  return request<Record<string, unknown>>("/marketplace/analytics");
+}
