@@ -282,7 +282,7 @@ export default function AnalyticsPage() {
       ]);
       if (riskRes.status === "fulfilled") {
         const d = riskRes.value as Record<string, unknown>;
-        if (d.distribution) setRiskDist(d.distribution as typeof DEMO_RISK_DISTRIBUTION);
+        if (Array.isArray(d.distribution)) setRiskDist(d.distribution as typeof DEMO_RISK_DISTRIBUTION);
       }
       if (qualRes.status === "fulfilled") {
         const d = qualRes.value as Record<string, unknown>;
