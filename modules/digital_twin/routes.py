@@ -16,6 +16,16 @@ router = APIRouter(prefix="/digital-twin", tags=["digital-twin"])
 DEFAULT_ORG = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
 
+def _parse_patient_id(raw: Any) -> uuid.UUID | None:
+    """Parse a patient_id string to UUID, returning None for missing or invalid values."""
+    if not raw:
+        return None
+    try:
+        return uuid.UUID(str(raw))
+    except (ValueError, AttributeError):
+        return None
+
+
 # ── Patient Digital Twin ────────────────────────────────────────────────────
 
 
@@ -31,7 +41,7 @@ async def build_twin(
     agent = PatientDigitalTwinAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=_parse_patient_id(body.get("patient_id")),
         trigger="digital_twin.build",
         context={"action": "build_twin", **body},
     ))
@@ -50,7 +60,7 @@ async def update_twin(
     agent = PatientDigitalTwinAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=_parse_patient_id(body.get("patient_id")),
         trigger="digital_twin.update",
         context={"action": "update_twin", **body},
     ))
@@ -106,7 +116,7 @@ async def simulate_medication_change(
     agent = WhatIfScenarioAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=_parse_patient_id(body.get("patient_id")),
         trigger="scenario.medication_change",
         context={"action": "simulate_medication_change", **body},
     ))
@@ -125,7 +135,7 @@ async def simulate_lifestyle_change(
     agent = WhatIfScenarioAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=_parse_patient_id(body.get("patient_id")),
         trigger="scenario.lifestyle_change",
         context={"action": "simulate_lifestyle_change", **body},
     ))
@@ -144,7 +154,7 @@ async def simulate_treatment_stop(
     agent = WhatIfScenarioAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=_parse_patient_id(body.get("patient_id")),
         trigger="scenario.treatment_stop",
         context={"action": "simulate_treatment_stop", **body},
     ))
@@ -163,7 +173,7 @@ async def compare_scenarios(
     agent = WhatIfScenarioAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=_parse_patient_id(body.get("patient_id")),
         trigger="scenario.compare",
         context={"action": "compare_scenarios", **body},
     ))
@@ -185,7 +195,7 @@ async def forecast_trajectory(
     agent = PredictiveTrajectoryAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=_parse_patient_id(body.get("patient_id")),
         trigger="trajectory.forecast",
         context={"action": "forecast", **body},
     ))
@@ -221,7 +231,7 @@ async def assess_deterioration_risk(
     agent = PredictiveTrajectoryAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=_parse_patient_id(body.get("patient_id")),
         trigger="trajectory.deterioration_risk",
         context={"action": "deterioration_risk", **body},
     ))
@@ -243,7 +253,7 @@ async def optimize_care_plan(
     agent = TreatmentOptimizationAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=_parse_patient_id(body.get("patient_id")),
         trigger="optimize.plan",
         context={"action": "optimize_plan", **body},
     ))
@@ -262,7 +272,7 @@ async def rank_interventions(
     agent = TreatmentOptimizationAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=_parse_patient_id(body.get("patient_id")),
         trigger="optimize.rank_interventions",
         context={"action": "rank_interventions", **body},
     ))
