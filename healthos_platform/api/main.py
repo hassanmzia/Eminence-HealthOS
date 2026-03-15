@@ -99,13 +99,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Import models so Base.metadata knows about all tables
     import healthos_platform.models  # noqa: F401
+    import shared.models  # noqa: F401
 
     # Create tables if they don't exist yet (retry for DB readiness race)
     import asyncio
+    from healthos_platform.config.database import init_db as init_shared_db
 
     for attempt in range(1, 4):
         try:
             await init_db()
+            await init_shared_db()
             logger.info("healthos.db_initialized")
             break
         except Exception:
