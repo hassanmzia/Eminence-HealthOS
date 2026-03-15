@@ -606,6 +606,14 @@ export default function AuditLogPage() {
             <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">To</label>
             <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="input text-sm px-3 py-2 rounded-lg" />
           </div>
+          <div className="flex items-end">
+            <button
+              onClick={handleClearFilters}
+              className="btn-secondary text-sm px-4 py-2 rounded-lg whitespace-nowrap"
+            >
+              Clear Filters
+            </button>
+          </div>
         </div>
       </div>
 
@@ -626,7 +634,7 @@ export default function AuditLogPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredEntries.map((entry) => (
+              {paginatedEntries.map((entry) => (
                 <React.Fragment key={entry.id}>
                   <tr
                     className="table-row cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
@@ -738,10 +746,117 @@ export default function AuditLogPage() {
           </div>
         )}
 
-        {/* Table footer */}
-        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-          <span>Showing {filteredEntries.length} of {totalEvents} entries</span>
-          <span>Click any row to expand details</span>
+        {/* Table footer with pagination */}
+        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-500 dark:text-gray-400">
+          <span>
+            Showing {Math.min((currentPage - 1) * pageSize + 1, filteredEntries.length)}–
+            {Math.min(currentPage * pageSize, filteredEntries.length)} of{" "}
+            {filteredEntries.length} entries
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="btn-secondary text-xs px-3 py-1.5 rounded-md disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`text-xs px-3 py-1.5 rounded-md ${
+                  page === currentPage
+                    ? "btn-primary"
+                    : "btn-secondary"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="btn-secondary text-xs px-3 py-1.5 rounded-md disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+          <span className="hidden sm:inline">Click any row to expand details</span>
+        </div>
+      </div>
+
+      {/* ---- Critical Events Sidebar Section ---- */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 card p-5">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            HIPAA Compliance Summary
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+              <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                Access Logs Intact
+              </p>
+              <p className="text-2xl font-bold text-emerald-800 dark:text-emerald-300 mt-1">
+                100%
+              </p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-1">
+                No gaps in audit trail
+              </p>
+            </div>
+            <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                Flagged Access Events
+              </p>
+              <p className="text-2xl font-bold text-amber-800 dark:text-amber-300 mt-1">
+                3
+              </p>
+              <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+                Pending supervisor review
+              </p>
+            </div>
+            <div className="p-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
+              <p className="text-sm font-medium text-indigo-700 dark:text-indigo-400">
+                Retention Compliance
+              </p>
+              <p className="text-2xl font-bold text-indigo-800 dark:text-indigo-300 mt-1">
+                7 yrs
+              </p>
+              <p className="text-xs text-indigo-600 dark:text-indigo-500 mt-1">
+                Meets federal requirements
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card p-5">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Recent Alerts
+          </h2>
+          <div className="space-y-3">
+            {criticalEvents.map((evt) => (
+              <div
+                key={evt.id}
+                className="flex items-start gap-3 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+              >
+                <span
+                  className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${
+                    evt.status === "failure"
+                      ? "bg-red-500"
+                      : "bg-amber-500"
+                  }`}
+                />
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
+                    {evt.action}
+                  </p>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                    {evt.user} &middot; {formatTimestamp(evt.timestamp)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
