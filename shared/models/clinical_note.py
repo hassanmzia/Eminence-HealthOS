@@ -66,7 +66,7 @@ class ClinicalNote(Base, UUIDMixin, TimestampMixin, TenantMixin):
     amendments: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Relationships
-    encounter = relationship("Encounter", backref="clinical_notes")
+    encounter = relationship("Encounter", backref="clinical_note_records")
 
     def __repr__(self) -> str:
         return f"<ClinicalNote {self.note_type} status={self.status}>"
