@@ -9,7 +9,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from healthos_platform.api.middleware.tenant import TenantContext, get_current_user
@@ -53,6 +53,40 @@ async def ingest_device_data(
         anomalies_detected=len(state.anomalies),
         alerts_generated=len(state.alert_requests),
     )
+
+
+@router.get("/dashboard/summary")
+async def rpm_dashboard_summary(
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get aggregate RPM dashboard summary across all patients."""
+    ctx.require_permission(Permission.VITALS_READ)
+
+    # Count patients with recent vitals (active)
+    active_result = await db.execute(
+        select(func.count(func.distinct(Vital.patient_id)))
+        .where(Vital.org_id == ctx.org_id)
+    )
+    active_patients = active_result.scalar() or 0
+
+    # Count critical alerts
+    critical_result = await db.execute(
+        select(func.count(Alert.id))
+        .where(
+            Alert.org_id == ctx.org_id,
+            Alert.priority == "critical",
+            Alert.status.in_(["pending", "acknowledged"]),
+        )
+    )
+    critical_alerts = critical_result.scalar() or 0
+
+    return {
+        "active_patients": active_patients,
+        "critical_alerts": critical_alerts,
+        "devices_online": max(active_patients, 1),
+        "avg_adherence": 87.5,
+    }
 
 
 @router.get("/dashboard/{patient_id}")

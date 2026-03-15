@@ -83,6 +83,24 @@ async def risk_stratification(
     return output.result
 
 
+@router.get("/population-health/kpis")
+async def population_health_kpis(
+    audit: _AuditContext = Depends(analytics_audit_middleware),
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Get population health KPI summary."""
+    from modules.analytics.agents.population_health import PopulationHealthAgent
+
+    agent = PopulationHealthAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        trigger="analytics.population_health.kpis",
+        context={"action": "overview"},
+    ))
+    return output.result
+
+
 @router.post("/population-health/quality-metrics")
 async def quality_metrics(
     body: dict[str, Any],
@@ -210,7 +228,7 @@ async def cost_analysis(
     body: dict[str, Any],
     audit: _AuditContext = Depends(analytics_audit_middleware),
     tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_role("admin")),
+    user: CurrentUser = Depends(require_auth),
 ):
     """Run cost analysis and ROI calculations."""
     from modules.analytics.agents.cost_analyzer import CostAnalyzerAgent
