@@ -758,6 +758,34 @@ export async function predictReadmissionRisk(body: Record<string, unknown>) {
   return request<Record<string, unknown>>("/analytics/readmission-risk", { method: "POST", body: JSON.stringify(body) });
 }
 
+export async function fetchExecutiveSummary() {
+  return request<Record<string, unknown>>("/analytics/executive/summary");
+}
+
+export async function fetchKPIScorecard(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/analytics/executive/scorecard", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchTrendDigest() {
+  return request<Record<string, unknown>>("/analytics/executive/trends");
+}
+
+export async function fetchCostDrivers(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/analytics/cost-risk/drivers", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchOpportunities(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/analytics/cost-risk/opportunities", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchRiskDistribution(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/analytics/population-health/risk-stratification", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchPopulationKPIs() {
+  return request<Record<string, unknown>>("/analytics/population-health/kpis");
+}
+
 // ── Operations ───────────────────────────────────────────────────────────────
 
 export async function evaluatePriorAuth(body: Record<string, unknown>) {

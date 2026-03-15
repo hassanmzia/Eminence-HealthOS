@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { fetchCohortTemplates, createCohort } from "@/lib/api";
 
-const COHORT_TEMPLATES = [
+const MOCK_COHORT_TEMPLATES = [
   { key: "high_risk_chronic", name: "High-Risk Chronic", patients: 524, criteria: ["Risk score > 0.7", "2+ chronic conditions"], description: "Patients with multiple chronic conditions and elevated risk scores" },
   { key: "diabetes_management", name: "Diabetes Management", patients: 412, criteria: ["HbA1c > 7.0", "Diabetes diagnosis"], description: "Active diabetes patients requiring management intervention" },
   { key: "heart_failure", name: "Heart Failure", patients: 186, criteria: ["CHF diagnosis", "LVEF < 40%"], description: "Heart failure patients with reduced ejection fraction" },
@@ -13,7 +14,7 @@ const COHORT_TEMPLATES = [
   { key: "care_gap", name: "Care Gaps", patients: 341, criteria: ["Overdue screenings", "Missing follow-ups"], description: "Patients with identified gaps in preventive care" },
 ];
 
-const ACTIVE_COHORTS = [
+const MOCK_ACTIVE_COHORTS = [
   {
     id: "COH-20260310",
     name: "Q1 Diabetes Intervention",
@@ -56,6 +57,25 @@ const ACTIVE_COHORTS = [
   },
 ];
 
+type CohortTemplate = {
+  key: string;
+  name: string;
+  patients: number;
+  criteria: string[];
+  description: string;
+};
+
+type ActiveCohort = {
+  id: string;
+  name: string;
+  patients: number;
+  avgRisk: number;
+  trend: "improving" | "stable" | "declining";
+  created: string;
+  lastUpdated: string;
+  outcomes: { improved: number; stable: number; declined: number };
+};
+
 const trendColor = (trend: string) =>
   trend === "improving"
     ? "bg-green-50 text-green-700"
@@ -66,11 +86,64 @@ const trendColor = (trend: string) =>
 export default function CohortBuilderPage() {
   const [tab, setTab] = useState<"active" | "templates">("active");
   const [search, setSearch] = useState("");
+  const [templates, setTemplates] = useState<CohortTemplate[]>(MOCK_COHORT_TEMPLATES);
+  const [activeCohorts, setActiveCohorts] = useState<ActiveCohort[]>(MOCK_ACTIVE_COHORTS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredCohorts = ACTIVE_COHORTS.filter((c) =>
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetchCohortTemplates();
+      const data = res as Record<string, unknown>;
+
+      const tpls = data.templates as Array<Record<string, unknown>> | undefined;
+      if (tpls && tpls.length > 0) {
+        setTemplates(
+          tpls.map((t) => ({
+            key: t.key as string,
+            name: t.name as string,
+            patients: t.patients as number,
+            criteria: (t.criteria as string[]) ?? [],
+            description: (t.description as string) ?? "",
+          }))
+        );
+      }
+
+      const cohorts = data.active_cohorts as Array<Record<string, unknown>> | undefined;
+      if (cohorts && cohorts.length > 0) {
+        setActiveCohorts(
+          cohorts.map((c) => {
+            const outcomes = c.outcomes as Record<string, number> | undefined;
+            return {
+              id: c.id as string,
+              name: c.name as string,
+              patients: c.patients as number,
+              avgRisk: c.avg_risk as number,
+              trend: c.trend as "improving" | "stable" | "declining",
+              created: c.created as string,
+              lastUpdated: (c.last_updated as string) ?? (c.created as string),
+              outcomes: outcomes
+                ? { improved: outcomes.improved, stable: outcomes.stable, declined: outcomes.declined }
+                : { improved: 0, stable: 0, declined: 0 },
+            };
+          })
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load cohort data");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const filteredCohorts = activeCohorts.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase())
   );
-  const filteredTemplates = COHORT_TEMPLATES.filter((t) =>
+  const filteredTemplates = templates.filter((t) =>
     t.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -100,19 +173,36 @@ export default function CohortBuilderPage() {
         </button>
       </div>
 
+      {/* Error state */}
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+          <p className="text-sm text-red-600">{error}</p>
+          <button onClick={loadData} className="mt-2 rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700">
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Stats row */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {[
-          { label: "Active Cohorts", value: ACTIVE_COHORTS.length.toString() },
-          { label: "Total Patients", value: ACTIVE_COHORTS.reduce((s, c) => s + c.patients, 0).toLocaleString() },
-          { label: "Avg Risk Score", value: (ACTIVE_COHORTS.reduce((s, c) => s + c.avgRisk, 0) / ACTIVE_COHORTS.length * 100).toFixed(0) + "%" },
-          { label: "Templates", value: COHORT_TEMPLATES.length.toString() },
-        ].map((s) => (
-          <div key={s.label} className="card text-center">
-            <p className="text-xs font-medium text-gray-500">{s.label}</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{s.value}</p>
-          </div>
-        ))}
+        {loading
+          ? [1, 2, 3, 4].map((i) => (
+              <div key={i} className="card animate-pulse text-center">
+                <div className="mx-auto h-3 w-16 rounded bg-gray-200" />
+                <div className="mx-auto mt-2 h-7 w-10 rounded bg-gray-200" />
+              </div>
+            ))
+          : [
+              { label: "Active Cohorts", value: activeCohorts.length.toString() },
+              { label: "Total Patients", value: activeCohorts.reduce((s, c) => s + c.patients, 0).toLocaleString() },
+              { label: "Avg Risk Score", value: (activeCohorts.reduce((s, c) => s + c.avgRisk, 0) / (activeCohorts.length || 1) * 100).toFixed(0) + "%" },
+              { label: "Templates", value: templates.length.toString() },
+            ].map((s) => (
+              <div key={s.label} className="card text-center">
+                <p className="text-xs font-medium text-gray-500">{s.label}</p>
+                <p className="mt-1 text-2xl font-bold text-gray-900">{s.value}</p>
+              </div>
+            ))}
       </div>
 
       {/* Tabs + Search */}
@@ -124,7 +214,7 @@ export default function CohortBuilderPage() {
               tab === "active" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
             }`}
           >
-            Active Cohorts ({ACTIVE_COHORTS.length})
+            Active Cohorts ({activeCohorts.length})
           </button>
           <button
             onClick={() => setTab("templates")}
@@ -132,7 +222,7 @@ export default function CohortBuilderPage() {
               tab === "templates" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
             }`}
           >
-            Templates ({COHORT_TEMPLATES.length})
+            Templates ({templates.length})
           </button>
         </div>
         <input
@@ -144,8 +234,17 @@ export default function CohortBuilderPage() {
         />
       </div>
 
+      {/* Loading skeleton for content */}
+      {loading && (
+        <div className="animate-pulse space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="card h-28" />
+          ))}
+        </div>
+      )}
+
       {/* Active Cohorts */}
-      {tab === "active" && (
+      {!loading && tab === "active" && (
         <div className="space-y-3">
           {filteredCohorts.map((c) => (
             <div key={c.id} className="card">
@@ -195,7 +294,7 @@ export default function CohortBuilderPage() {
       )}
 
       {/* Templates */}
-      {tab === "templates" && (
+      {!loading && tab === "templates" && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {filteredTemplates.map((t) => (
             <div key={t.key} className="card">

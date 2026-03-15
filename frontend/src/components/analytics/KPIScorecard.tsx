@@ -1,6 +1,9 @@
 "use client";
 
-const SCORECARD = [
+import { useState, useEffect, useCallback } from "react";
+import { fetchKPIScorecard } from "@/lib/api";
+
+const MOCK_SCORECARD = [
   { kpi: "30-Day Readmission", actual: "8.2%", target: "<10%", status: "on_target" },
   { kpi: "ED Visit Rate", actual: "9.0%", target: "<8%", status: "off_target" },
   { kpi: "SLA Compliance", actual: "91.7%", target: "95%", status: "near_target" },
@@ -20,20 +23,77 @@ const STATUS_STYLE = {
 } as const;
 
 export function KPIScorecard() {
-  const onTarget = SCORECARD.filter((s) => s.status === "on_target").length;
+  const [scorecard, setScorecard] = useState(MOCK_SCORECARD);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetchKPIScorecard({ period: "current" });
+      const data = res as Record<string, unknown>;
+      const items = data.scorecard as Array<Record<string, unknown>> | undefined;
+      if (items && items.length > 0) {
+        setScorecard(
+          items.map((s) => ({
+            kpi: s.kpi as string,
+            actual: s.actual as string,
+            target: s.target as string,
+            status: s.status as string,
+          }))
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load KPI scorecard");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const onTarget = scorecard.filter((s) => s.status === "on_target").length;
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-gray-200 bg-white p-5">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900">KPI Scorecard</h2>
+        <div className="animate-pulse space-y-2">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+            <div key={i} className="h-10 rounded-lg bg-gray-100" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-gray-200 bg-white p-5">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900">KPI Scorecard</h2>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+          <p className="text-sm text-red-600">{error}</p>
+          <button onClick={loadData} className="mt-2 rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">KPI Scorecard</h2>
         <span className="rounded bg-healthos-50 px-2 py-0.5 text-xs font-medium text-healthos-700">
-          {onTarget}/{SCORECARD.length} on target
+          {onTarget}/{scorecard.length} on target
         </span>
       </div>
 
       <div className="space-y-2">
-        {SCORECARD.map((s) => {
-          const style = STATUS_STYLE[s.status];
+        {scorecard.map((s) => {
+          const style = STATUS_STYLE[s.status as keyof typeof STATUS_STYLE] ?? STATUS_STYLE.off_target;
           return (
             <div key={s.kpi} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
               <div className="flex items-center gap-2">

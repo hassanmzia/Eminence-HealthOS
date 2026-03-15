@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { fetchCohortTemplates, createCohort } from "@/lib/api";
 
-const COHORT_TEMPLATES = [
+const MOCK_COHORT_TEMPLATES = [
   { key: "high_risk_chronic", name: "High-Risk Chronic", patients: 524, criteria: 2 },
   { key: "diabetes_management", name: "Diabetes Management", patients: 412, criteria: 2 },
   { key: "heart_failure", name: "Heart Failure", patients: 186, criteria: 2 },
@@ -12,7 +13,7 @@ const COHORT_TEMPLATES = [
   { key: "care_gap", name: "Care Gaps", patients: 341, criteria: 2 },
 ];
 
-const ACTIVE_COHORTS = [
+const MOCK_ACTIVE_COHORTS = [
   {
     id: "COH-20260310",
     name: "Q1 Diabetes Intervention",
@@ -41,6 +42,76 @@ const ACTIVE_COHORTS = [
 
 export function CohortSummary() {
   const [tab, setTab] = useState<"active" | "templates">("active");
+  const [templates, setTemplates] = useState(MOCK_COHORT_TEMPLATES);
+  const [activeCohorts, setActiveCohorts] = useState(MOCK_ACTIVE_COHORTS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetchCohortTemplates();
+      const data = res as Record<string, unknown>;
+      const tpls = data.templates as Array<Record<string, unknown>> | undefined;
+      if (tpls && tpls.length > 0) {
+        setTemplates(
+          tpls.map((t) => ({
+            key: t.key as string,
+            name: t.name as string,
+            patients: t.patients as number,
+            criteria: t.criteria as number,
+          }))
+        );
+      }
+      const cohorts = data.active_cohorts as Array<Record<string, unknown>> | undefined;
+      if (cohorts && cohorts.length > 0) {
+        setActiveCohorts(
+          cohorts.map((c) => ({
+            id: c.id as string,
+            name: c.name as string,
+            patients: c.patients as number,
+            avgRisk: c.avg_risk as number,
+            trend: c.trend as string,
+            created: c.created as string,
+          }))
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load cohort data");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  if (loading) {
+    return (
+      <div className="card">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900">Cohort Management</h2>
+        <div className="animate-pulse space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-16 rounded-lg bg-gray-100" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="card">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900">Cohort Management</h2>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+          <p className="text-sm text-red-600">{error}</p>
+          <button onClick={loadData} className="mt-2 rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card">
@@ -64,7 +135,7 @@ export function CohortSummary() {
 
       {tab === "active" ? (
         <div className="space-y-2">
-          {ACTIVE_COHORTS.map((c) => (
+          {activeCohorts.map((c) => (
             <div key={c.id} className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
@@ -89,7 +160,7 @@ export function CohortSummary() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          {COHORT_TEMPLATES.map((t) => (
+          {templates.map((t) => (
             <div key={t.key} className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
               <div>
                 <span className="text-sm font-medium text-gray-900">{t.name}</span>
