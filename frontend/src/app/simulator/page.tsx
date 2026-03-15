@@ -1,19 +1,15 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import {
   Activity,
   Beaker,
   Brain,
-  ChevronDown,
-  ChevronUp,
-  Clock,
   Copy,
   FlaskConical,
   Globe,
   Layers,
   Library,
-  Minus,
   Pill,
   Play,
   Plus,
