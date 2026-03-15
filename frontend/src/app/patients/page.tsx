@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchPatients, type PatientData } from "@/lib/api";
+import { fetchPatients, createPatient, type PatientData } from "@/lib/api";
 
 const RISK_BADGE: Record<string, { class: string; dot: string }> = {
   critical: { class: "badge-critical", dot: "bg-red-500" },
@@ -29,6 +29,35 @@ export default function PatientsPage() {
   const [patients, setPatients] = useState<PatientData[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [showAdd, setShowAdd] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [addForm, setAddForm] = useState({ firstName: "", lastName: "", dob: "", gender: "male", mrn: "" });
+
+  const handleAddPatient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdding(true);
+    try {
+      await createPatient({
+        mrn: addForm.mrn || undefined,
+        demographics: {
+          first_name: addForm.firstName,
+          last_name: addForm.lastName,
+          date_of_birth: addForm.dob,
+          gender: addForm.gender,
+        },
+        conditions: [],
+        medications: [],
+      });
+      setShowAdd(false);
+      setAddForm({ firstName: "", lastName: "", dob: "", gender: "male", mrn: "" });
+      setLoading(true);
+      fetchPatients({ page: 1 }).then((res) => setPatients(res.patients)).catch(() => {}).finally(() => setLoading(false));
+    } catch {
+      // silently handle
+    } finally {
+      setAdding(false);
+    }
+  };
 
   useEffect(() => {
     fetchPatients({ page: 1 })
@@ -58,7 +87,7 @@ export default function PatientsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Patients</h1>
           <p className="text-sm text-gray-500">{patients.length} patients enrolled across monitoring programs</p>
         </div>
-        <button className="btn-primary w-fit">
+        <button onClick={() => setShowAdd(true)} className="btn-primary w-fit">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
@@ -288,6 +317,52 @@ export default function PatientsPage() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Add Patient Modal */}
+      {showAdd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAdd(false)}>
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">Add New Patient</h2>
+              <button onClick={() => setShowAdd(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+            <form onSubmit={handleAddPatient} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                  <input required value={addForm.firstName} onChange={(e) => setAddForm({ ...addForm, firstName: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                  <input required value={addForm.lastName} onChange={(e) => setAddForm({ ...addForm, lastName: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
+                  <input required type="date" value={addForm.dob} onChange={(e) => setAddForm({ ...addForm, dob: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gender *</label>
+                  <select required value={addForm.gender} onChange={(e) => setAddForm({ ...addForm, gender: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">MRN</label>
+                <input value={addForm.mrn} onChange={(e) => setAddForm({ ...addForm, mrn: e.target.value })} placeholder="e.g. MRN-10042" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowAdd(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="submit" disabled={adding} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50">{adding ? "Adding..." : "Add Patient"}</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

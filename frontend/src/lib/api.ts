@@ -244,6 +244,18 @@ export async function fetchAlerts(params?: {
   return request<AlertData[]>(`/alerts${qs ? `?${qs}` : ""}`);
 }
 
+export async function acknowledgeAlert(alertId: string) {
+  return request<AlertData>(`/alerts/${alertId}/acknowledge`, { method: "POST" });
+}
+
+export async function resolveAlert(alertId: string) {
+  return request<AlertData>(`/alerts/${alertId}/resolve`, { method: "POST" });
+}
+
+export async function createTelehealthSession(body: Record<string, unknown>) {
+  return request<TelehealthSession>("/telehealth/sessions", { method: "POST", body: JSON.stringify(body) });
+}
+
 // ── Agents ───────────────────────────────────────────────────────────────────
 
 export interface AgentAuditEntry {

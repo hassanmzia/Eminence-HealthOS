@@ -83,6 +83,26 @@ const priorityColor = (p: string) =>
 
 export default function MentalHealthPage() {
   const [tab, setTab] = useState<"screening" | "cases" | "engagement">("screening");
+  const [showNewScreen, setShowNewScreen] = useState(false);
+  const [screenForm, setScreenForm] = useState({ patient: "", type: "PHQ-9 + GAD-7" });
+  const [submittingScreen, setSubmittingScreen] = useState(false);
+  const [showCrisisProtocol, setShowCrisisProtocol] = useState(false);
+
+  const handleNewScreen = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingScreen(true);
+    try {
+      if (screenForm.type.includes("PHQ-9")) await submitPHQ9Screening({ patient_name: screenForm.patient });
+      if (screenForm.type.includes("GAD-7")) await submitGAD7Screening({ patient_name: screenForm.patient });
+      setShowNewScreen(false);
+      setScreenForm({ patient: "", type: "PHQ-9 + GAD-7" });
+    } catch { /* silently handle */ }
+    finally { setSubmittingScreen(false); }
+  };
+
+  const handleCrisisDetect = useCallback(async (patientId: string) => {
+    try { await detectCrisis({ patient_id: patientId, action: "assess" }); } catch { /* demo mode */ }
+  }, []);
 
   const handleStartScreen = useCallback(async (patientId: string, type: string) => {
     try {
@@ -109,14 +129,61 @@ export default function MentalHealthPage() {
           <p className="text-sm text-gray-500">Screening, behavioral health workflows, crisis detection, and therapeutic engagement</p>
         </div>
         <div className="flex gap-2">
-          <button className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          <button onClick={() => setShowCrisisProtocol(!showCrisisProtocol)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
             Crisis Protocol
           </button>
-          <button className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">
+          <button onClick={() => setShowNewScreen(true)} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">
             New Screening
           </button>
         </div>
       </div>
+
+      {/* Crisis Protocol Panel */}
+      {showCrisisProtocol && (
+        <div className="rounded-lg border-2 border-red-300 bg-red-50 p-6 animate-fade-in">
+          <h3 className="text-sm font-bold text-red-900 mb-3">Crisis Intervention Protocol</h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {ACTIVE_CASES.map((c) => (
+              <div key={c.id} className="rounded-lg bg-white p-3 border border-red-200">
+                <p className="text-sm font-semibold text-gray-900">{c.patient}</p>
+                <p className="text-xs text-gray-500">{c.diagnosis}</p>
+                <button onClick={() => handleCrisisDetect(c.id)} className="mt-2 w-full rounded bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700">Assess Crisis Risk</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* New Screening Modal */}
+      {showNewScreen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowNewScreen(false)}>
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">New Screening</h2>
+              <button onClick={() => setShowNewScreen(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+            <form onSubmit={handleNewScreen} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Patient Name *</label>
+                <input required value={screenForm.patient} onChange={(e) => setScreenForm({ ...screenForm, patient: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. Emily Davis" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Screening Type *</label>
+                <select required value={screenForm.type} onChange={(e) => setScreenForm({ ...screenForm, type: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
+                  <option value="PHQ-9 + GAD-7">PHQ-9 + GAD-7 (Comprehensive)</option>
+                  <option value="PHQ-9">PHQ-9 (Depression)</option>
+                  <option value="GAD-7">GAD-7 (Anxiety)</option>
+                  <option value="AUDIT-C">AUDIT-C (Alcohol Use)</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowNewScreen(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="submit" disabled={submittingScreen} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50">{submittingScreen ? "Starting..." : "Start Screening"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
