@@ -6,22 +6,163 @@
   body {
     @apply bg-gray-50 text-gray-900 antialiased;
   }
+  * {
+    @apply scroll-smooth;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-gray-200;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-300;
+  }
 }
 
 @layer components {
+  /* ── Card System ──────────────────────────────────────────────────── */
   .card {
-    @apply rounded-xl border border-gray-200 bg-white p-6 shadow-sm;
+    @apply rounded-xl border border-gray-200/80 bg-white p-6 shadow-sm transition-all duration-200;
   }
+  .card-hover:hover {
+    @apply border-gray-300/80 shadow-card-hover;
+  }
+  .card-glass {
+    @apply rounded-xl border border-white/20 bg-white/70 p-6 shadow-sm backdrop-blur-xl;
+  }
+  .card-gradient {
+    @apply rounded-xl border-0 p-6 shadow-card-elevated;
+    background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(238,247,255,0.95) 100%);
+  }
+
+  /* ── Badge System ─────────────────────────────────────────────────── */
   .badge-critical {
-    @apply inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800;
+    @apply inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700 ring-1 ring-inset ring-red-600/20;
   }
   .badge-high {
-    @apply inline-flex items-center rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-medium text-orange-800;
+    @apply inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-semibold text-orange-700 ring-1 ring-inset ring-orange-600/20;
   }
   .badge-moderate {
-    @apply inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800;
+    @apply inline-flex items-center gap-1 rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs font-semibold text-yellow-700 ring-1 ring-inset ring-yellow-600/20;
   }
   .badge-low {
-    @apply inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800;
+    @apply inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700 ring-1 ring-inset ring-green-600/20;
   }
+  .badge-info {
+    @apply inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-600/20;
+  }
+  .badge-neutral {
+    @apply inline-flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-0.5 text-xs font-semibold text-gray-600 ring-1 ring-inset ring-gray-500/20;
+  }
+
+  /* ── Button System ────────────────────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-lg bg-healthos-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-healthos-700 hover:shadow-md active:scale-[0.98];
+  }
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 hover:border-gray-400 active:scale-[0.98];
+  }
+  .btn-danger {
+    @apply inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-red-700 hover:shadow-md active:scale-[0.98];
+  }
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900;
+  }
+
+  /* ── Input System ─────────────────────────────────────────────────── */
+  .input {
+    @apply w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm transition-all duration-200 placeholder:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-2 focus:ring-healthos-500/20;
+  }
+  .select {
+    @apply w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm transition-all duration-200 focus:border-healthos-500 focus:outline-none focus:ring-2 focus:ring-healthos-500/20;
+  }
+
+  /* ── Metric Card (KPI) ────────────────────────────────────────────── */
+  .metric-card {
+    @apply relative overflow-hidden rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-card-hover;
+  }
+  .metric-card::before {
+    content: "";
+    @apply absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-transparent opacity-0 transition-opacity duration-300;
+  }
+  .metric-card:hover::before {
+    @apply opacity-100;
+  }
+
+  /* ── Skeleton Loading ─────────────────────────────────────────────── */
+  .skeleton {
+    @apply animate-pulse rounded-lg bg-gray-200;
+  }
+  .skeleton-text {
+    @apply h-4 animate-pulse rounded bg-gray-200;
+  }
+  .skeleton-circle {
+    @apply animate-pulse rounded-full bg-gray-200;
+  }
+
+  /* ── Status Dot ───────────────────────────────────────────────────── */
+  .status-dot {
+    @apply h-2 w-2 rounded-full;
+  }
+  .status-dot-healthy {
+    @apply status-dot bg-emerald-500 shadow-glow-green;
+  }
+  .status-dot-warning {
+    @apply status-dot bg-amber-500 shadow-glow-orange;
+  }
+  .status-dot-critical {
+    @apply status-dot bg-red-500 shadow-glow-red;
+  }
+  .status-dot-live {
+    @apply status-dot animate-pulse bg-emerald-500;
+  }
+
+  /* ── Table ────────────────────────────────────────────────────────── */
+  .table-header {
+    @apply bg-gray-50/80 text-left text-xs font-semibold uppercase tracking-wider text-gray-500;
+  }
+  .table-row {
+    @apply border-b border-gray-100 transition-colors duration-150 hover:bg-gray-50/50;
+  }
+
+  /* ── Progress Bar ─────────────────────────────────────────────────── */
+  .progress-bar {
+    @apply h-2 overflow-hidden rounded-full bg-gray-100;
+  }
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-700 ease-out;
+  }
+
+  /* ── Divider ──────────────────────────────────────────────────────── */
+  .divider {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #136bfa, #0c55e6);
+  }
+  .text-gradient-warm {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #f97316, #ef4444);
+  }
+  .bg-mesh {
+    background-image:
+      radial-gradient(at 40% 20%, rgba(19, 107, 250, 0.04) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, rgba(12, 85, 230, 0.03) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, rgba(89, 204, 255, 0.03) 0px, transparent 50%);
+  }
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.1s; }
+  .stagger-3 { animation-delay: 0.15s; }
+  .stagger-4 { animation-delay: 0.2s; }
+  .stagger-5 { animation-delay: 0.25s; }
+  .stagger-6 { animation-delay: 0.3s; }
 }
