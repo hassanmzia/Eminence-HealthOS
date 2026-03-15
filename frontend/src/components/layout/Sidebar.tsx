@@ -26,6 +26,7 @@ const NAV_SECTIONS = [
       { href: "/imaging", label: "Imaging", icon: "scan" },
       { href: "/mental-health", label: "Mental Health", icon: "heart" },
       { href: "/sdoh", label: "SDOH", icon: "home" },
+      { href: "/patient-timeline", label: "Timeline", icon: "clock" },
     ],
   },
   {
@@ -37,6 +38,7 @@ const NAV_SECTIONS = [
       { href: "/agents", label: "AI Orchestration", icon: "cpu" },
       { href: "/digital-twin", label: "Digital Twin", icon: "twin" },
       { href: "/fairness", label: "AI Fairness", icon: "scale" },
+      { href: "/ai-explainability", label: "Explainability", icon: "explain" },
     ],
   },
   {
@@ -47,6 +49,8 @@ const NAV_SECTIONS = [
       { href: "/analytics", label: "Analytics", icon: "chart" },
       { href: "/compliance", label: "Compliance", icon: "shield" },
       { href: "/ehr-connect", label: "EHR Connect", icon: "link" },
+      { href: "/audit-log", label: "Audit Log", icon: "document" },
+      { href: "/admin", label: "Admin", icon: "settings" },
     ],
   },
   {
@@ -204,6 +208,26 @@ function NavIcon({ icon }: { icon: string }) {
         <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
       </svg>
     ),
+    clock: (
+      <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+      </svg>
+    ),
+    explain: (
+      <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5" />
+      </svg>
+    ),
+    document: (
+      <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+      </svg>
+    ),
+    settings: (
+      <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+      </svg>
+    ),
   };
   return <>{icons[icon] ?? null}</>;
 }
@@ -212,16 +236,16 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-full w-64 flex-col bg-white border-r border-gray-200/80">
+    <aside className="flex h-full w-64 flex-col bg-white border-r border-gray-200/80 dark:bg-gray-900 dark:border-gray-700/80">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-gray-200/80 px-5">
+      <div className="flex h-16 items-center gap-3 border-b border-gray-200/80 px-5 dark:border-gray-700/80">
         <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-healthos-500 to-healthos-700 text-sm font-bold text-white shadow-sm">
           E
-          <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
+          <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-gray-900" />
         </div>
         <div>
-          <span className="text-base font-bold text-gray-900">Eminence</span>
-          <span className="ml-1 text-[10px] font-semibold uppercase tracking-wider text-healthos-600">HealthOS</span>
+          <span className="text-base font-bold text-gray-900 dark:text-gray-100">Eminence</span>
+          <span className="ml-1 text-[10px] font-semibold uppercase tracking-wider text-healthos-600 dark:text-healthos-400">HealthOS</span>
         </div>
       </div>
 
@@ -229,7 +253,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
       <nav className="flex-1 overflow-y-auto px-3 py-3">
         {NAV_SECTIONS.map((section) => (
           <div key={section.label} className="mb-4">
-            <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-[0.08em] text-gray-400">
+            <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-[0.08em] text-gray-400 dark:text-gray-500">
               {section.label}
             </p>
             <div className="space-y-0.5">
@@ -243,13 +267,13 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
                     className={clsx(
                       "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150",
                       isActive
-                        ? "bg-healthos-50 text-healthos-700 shadow-sm ring-1 ring-inset ring-healthos-500/10"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        ? "bg-healthos-50 text-healthos-700 shadow-sm ring-1 ring-inset ring-healthos-500/10 dark:bg-healthos-950/50 dark:text-healthos-400 dark:ring-healthos-500/20"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
                     )}
                   >
                     <span className={clsx(
                       "transition-colors",
-                      isActive ? "text-healthos-600" : "text-gray-400 group-hover:text-gray-500"
+                      isActive ? "text-healthos-600 dark:text-healthos-400" : "text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400"
                     )}>
                       <NavIcon icon={item.icon} />
                     </span>
@@ -263,15 +287,15 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
       </nav>
 
       {/* Patient Portal link */}
-      <div className="border-t border-gray-200/80 px-3 py-3">
+      <div className="border-t border-gray-200/80 px-3 py-3 dark:border-gray-700/80">
         <Link
           href="/patient-portal"
           onClick={onNavigate}
           className={clsx(
             "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-all",
             pathname?.startsWith("/patient-portal")
-              ? "bg-healthos-50 text-healthos-700"
-              : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+              ? "bg-healthos-50 text-healthos-700 dark:bg-healthos-950/50 dark:text-healthos-400"
+              : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300"
           )}
         >
           <NavIcon icon="portal" />
@@ -280,10 +304,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
       </div>
 
       {/* System Status */}
-      <div className="border-t border-gray-200/80 px-5 py-3">
+      <div className="border-t border-gray-200/80 px-5 py-3 dark:border-gray-700/80">
         <div className="flex items-center gap-2">
           <span className="status-dot-healthy" />
-          <span className="text-xs font-medium text-gray-500">All Systems Operational</span>
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">All Systems Operational</span>
         </div>
       </div>
     </aside>
