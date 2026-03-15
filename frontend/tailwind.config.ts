@@ -2,6 +2,7 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
@@ -30,6 +31,8 @@ const config: Config = {
         "count-up": "countUp 1s ease-out",
         "glow": "glow 2s ease-in-out infinite alternate",
         "float": "float 6s ease-in-out infinite",
+        "slide-up": "slideUp 0.2s ease-out",
+        "slide-down": "slideDown 0.3s ease-out",
       },
       keyframes: {
         fadeIn: {
@@ -71,6 +74,14 @@ const config: Config = {
         float: {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-5px)" },
+        },
+        slideUp: {
+          "0%": { opacity: "0", transform: "translateY(8px) scale(0.98)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        slideDown: {
+          "0%": { opacity: "0", transform: "translateY(-10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
       },
       backgroundImage: {
