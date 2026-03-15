@@ -259,14 +259,14 @@ export default function LabsPage() {
     try {
       await evaluateCriticalLabValue({ critical_value_id: id, action: "acknowledge" });
     } catch { /* fallback */ }
-    setCriticalValues((prev) => prev.map((cv) => cv.id === id ? { ...cv, status: "acknowledged" as const, escalation: "provider_notified" as const } : cv));
+    setCriticalValues((prev) => prev.map((cv): CriticalValue => cv.id === id ? { ...cv, status: "acknowledged", escalation: "provider_notified" } : cv));
   }, []);
 
   const handleEscalate = useCallback(async (id: string) => {
     try {
       await evaluateCriticalLabValue({ critical_value_id: id, action: "escalate" });
     } catch { /* fallback */ }
-    setCriticalValues((prev) => prev.map((cv) => cv.id === id ? { ...cv, escalation: "escalated" as const } : cv));
+    setCriticalValues((prev) => prev.map((cv): CriticalValue => cv.id === id ? { ...cv, escalation: "escalated" } : cv));
   }, []);
 
   const togglePanel = (panel: string) => {
