@@ -30,6 +30,10 @@ class TelehealthEventType:
     NOTE_SIGNED = "telehealth.note.signed"
     ESCALATION_TRIGGERED = "telehealth.escalation.triggered"
     FOLLOW_UP_CREATED = "telehealth.follow_up.created"
+    VIDEO_STARTED = "telehealth.video.started"
+    VIDEO_ENDED = "telehealth.video.ended"
+    VIDEO_PARTICIPANT_JOINED = "telehealth.video.participant_joined"
+    VIDEO_PARTICIPANT_LEFT = "telehealth.video.participant_left"
 
 
 # ── Publisher ────────────────────────────────────────────────────────
@@ -233,6 +237,46 @@ class TelehealthEventPublisher:
             tenant_id=tenant_id,
             trace_id=trace_id,
             data=payload,
+        )
+        await self._publish(event)
+
+    # ── video ────────────────────────────────────────────────────────
+
+    async def video_started(
+        self,
+        session_id: str,
+        patient_id: str,
+        *,
+        tenant_id: str = "default",
+        trace_id: Optional[str] = None,
+        data: Optional[dict[str, Any]] = None,
+    ) -> None:
+        event = self._build_event(
+            TelehealthEventType.VIDEO_STARTED,
+            session_id=session_id,
+            patient_id=patient_id,
+            tenant_id=tenant_id,
+            trace_id=trace_id,
+            data=data,
+        )
+        await self._publish(event)
+
+    async def video_ended(
+        self,
+        session_id: str,
+        patient_id: str,
+        *,
+        tenant_id: str = "default",
+        trace_id: Optional[str] = None,
+        data: Optional[dict[str, Any]] = None,
+    ) -> None:
+        event = self._build_event(
+            TelehealthEventType.VIDEO_ENDED,
+            session_id=session_id,
+            patient_id=patient_id,
+            tenant_id=tenant_id,
+            trace_id=trace_id,
+            data=data,
         )
         await self._publish(event)
 

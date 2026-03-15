@@ -408,6 +408,20 @@ export async function amendClinicalNote(
   });
 }
 
+// ── Telehealth Video ────────────────────────────────────────────────────────
+
+export async function startVideoSession(sessionId: string) {
+  return request<Record<string, unknown>>(`/telehealth/sessions/${sessionId}/video/start`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function getVideoToken(sessionId: string, role: string = "participant") {
+  return request<Record<string, unknown>>(`/telehealth/sessions/${sessionId}/video/token?role=${role}`);
+}
+
+export async function endVideoSession(sessionId: string) {
+  return request<Record<string, unknown>>(`/telehealth/sessions/${sessionId}/video/end`, { method: "POST", body: JSON.stringify({}) });
+}
+
 // ── FHIR ─────────────────────────────────────────────────────────────────────
 
 export async function fetchFHIRPatient(patientId: string) {
@@ -814,4 +828,30 @@ export async function createReferral(body: Record<string, unknown>) {
 
 export async function scheduleAppointment(body: Record<string, unknown>) {
   return request<Record<string, unknown>>("/operations/schedule/suggest", { method: "POST", body: JSON.stringify(body) });
+}
+
+// ── AI Marketplace ──────────────────────────────────────────────────────────
+
+export async function fetchMarketplaceAgents() {
+  return request<Record<string, unknown>>("/marketplace/agents");
+}
+
+export async function fetchMarketplaceAgent(agentId: string) {
+  return request<Record<string, unknown>>(`/marketplace/agents/${agentId}`);
+}
+
+export async function publishMarketplaceAgent(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/marketplace/agents/publish", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function installMarketplaceAgent(agentId: string) {
+  return request<Record<string, unknown>>(`/marketplace/agents/${agentId}/install`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function scanMarketplaceAgent(agentId: string) {
+  return request<Record<string, unknown>>(`/marketplace/agents/${agentId}/scan`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export async function fetchMarketplaceAnalytics() {
+  return request<Record<string, unknown>>("/marketplace/analytics");
 }

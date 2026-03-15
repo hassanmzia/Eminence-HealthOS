@@ -135,6 +135,9 @@ def create_app() -> FastAPI:
     app.include_router(patient_engagement_router, prefix="/api/v1", tags=["Patient Engagement"])
     app.include_router(ambient_ai_router, prefix="/api/v1", tags=["Ambient AI"])
 
+    from modules.marketplace.routes import router as marketplace_router
+    app.include_router(marketplace_router, prefix="/api/v1", tags=["AI Marketplace"])
+
     return app
 
 

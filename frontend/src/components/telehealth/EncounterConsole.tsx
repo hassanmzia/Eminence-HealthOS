@@ -8,6 +8,7 @@ import {
   type ClinicalNoteSection,
 } from "@/lib/api";
 import { NoteReview } from "./NoteReview";
+import { useVideoSession } from "@/hooks/useVideoSession";
 
 type Tab = "encounter" | "notes" | "plan";
 
@@ -30,6 +31,7 @@ export function EncounterConsole({ sessionId }: Props) {
   const [planLoading, setPlanLoading] = useState(false);
   const [notesError, setNotesError] = useState<string | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
+  const video = useVideoSession(sessionId);
 
   async function handleGenerateNote() {
     if (!sessionId) return;
@@ -146,48 +148,110 @@ export function EncounterConsole({ sessionId }: Props) {
       {/* Encounter tab */}
       {activeTab === "encounter" && (
         <div className="space-y-4">
-          {/* Video placeholder */}
-          <div className="flex h-64 items-center justify-center rounded-lg bg-gray-900 text-gray-400">
-            <div className="text-center">
-              <svg
-                className="mx-auto h-12 w-12"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"
-                />
-              </svg>
-              <p className="mt-2 text-sm">Video encounter area</p>
-              <p className="text-xs text-gray-500">
-                {sessionId
-                  ? 'Click "Start Visit" to begin'
-                  : "Select a session from the queue"}
-              </p>
-            </div>
+          {/* Video area */}
+          <div
+            ref={video.containerRef}
+            className="relative flex h-64 items-center justify-center overflow-hidden rounded-lg bg-gray-900 text-gray-400"
+          >
+            {video.state === "idle" && (
+              <div className="text-center">
+                <svg
+                  className="mx-auto h-12 w-12"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"
+                  />
+                </svg>
+                <p className="mt-2 text-sm">Video encounter area</p>
+                <p className="text-xs text-gray-500">
+                  {sessionId
+                    ? 'Click "Start Visit" to begin'
+                    : "Select a session from the queue"}
+                </p>
+              </div>
+            )}
+
+            {video.state === "connecting" && (
+              <div className="text-center">
+                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-gray-500 border-t-white" />
+                <p className="mt-3 text-sm text-gray-300">Connecting to video...</p>
+              </div>
+            )}
+
+            {video.state === "connected" && video.demoMode && (
+              <div className="text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-healthos-600">
+                  <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                  </svg>
+                </div>
+                <p className="mt-3 text-sm text-green-400">Visit in Progress</p>
+                <p className="text-xs text-gray-500">
+                  Video provider: Daily.co (demo mode)
+                </p>
+                <div className="mt-2 flex items-center justify-center gap-2">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+                  <span className="text-xs text-green-400">Connected</span>
+                  {video.isMuted && <span className="rounded bg-red-900/50 px-1.5 py-0.5 text-[10px] text-red-300">Muted</span>}
+                  {video.isCameraOff && <span className="rounded bg-red-900/50 px-1.5 py-0.5 text-[10px] text-red-300">Camera Off</span>}
+                </div>
+              </div>
+            )}
+
+            {video.state === "error" && (
+              <div className="text-center">
+                <p className="text-sm text-red-400">Connection failed</p>
+                <p className="text-xs text-gray-500">{video.error}</p>
+              </div>
+            )}
           </div>
 
           {/* Controls */}
           <div className="flex items-center justify-center gap-3">
-            <button
-              disabled={!sessionId}
-              className="rounded-lg bg-green-600 px-6 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
-            >
-              Start Visit
-            </button>
-            <button className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
-              Mute
-            </button>
-            <button className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
-              Camera
-            </button>
-            <button className="rounded-lg bg-red-600 px-6 py-2 text-sm font-medium text-white hover:bg-red-700">
-              End Visit
-            </button>
+            {video.state === "idle" || video.state === "error" ? (
+              <button
+                disabled={!sessionId}
+                onClick={video.startVisit}
+                className="rounded-lg bg-green-600 px-6 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+              >
+                Start Visit
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={video.toggleMute}
+                  className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                    video.isMuted
+                      ? "border-red-300 bg-red-50 text-red-700"
+                      : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {video.isMuted ? "Unmute" : "Mute"}
+                </button>
+                <button
+                  onClick={video.toggleCamera}
+                  className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                    video.isCameraOff
+                      ? "border-red-300 bg-red-50 text-red-700"
+                      : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {video.isCameraOff ? "Camera On" : "Camera Off"}
+                </button>
+                <button
+                  onClick={video.endVisit}
+                  className="rounded-lg bg-red-600 px-6 py-2 text-sm font-medium text-white hover:bg-red-700"
+                >
+                  End Visit
+                </button>
+              </>
+            )}
           </div>
 
           {/* AI Agent sidebar */}
@@ -198,7 +262,9 @@ export function EncounterConsole({ sessionId }: Props) {
                 AI Agent Insights
               </div>
               <p className="mt-2 text-xs text-gray-500">
-                AI insights will appear here during the encounter.
+                {video.state === "connected"
+                  ? "Listening to encounter... AI-generated SOAP notes will be available when the visit ends."
+                  : "AI insights will appear here during the encounter."}
               </p>
             </div>
           )}
