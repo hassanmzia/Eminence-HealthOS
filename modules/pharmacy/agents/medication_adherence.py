@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from healthos_platform.agents.base import BaseAgent
@@ -150,7 +150,7 @@ class MedicationAdherenceAgent(BaseAgent):
         gaps: list[dict[str, Any]] = []
         for med in medications:
             last_filled = datetime.fromisoformat(med["last_filled"]).replace(tzinfo=timezone.utc)
-            expected_end = last_filled + __import__("datetime").timedelta(days=med.get("days_supply", 30))
+            expected_end = last_filled + timedelta(days=med.get("days_supply", 30))
             gap_days = (now - expected_end).days
 
             if gap_days > 0:

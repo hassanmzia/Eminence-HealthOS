@@ -1,23 +1,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchRecentAgentActivity, type AgentAuditEntry } from "@/lib/api";
+import { fetchAgents, fetchRecentAgentActivity, type AgentAuditEntry } from "@/lib/api";
 
-interface AgentSummary {
+interface RegisteredAgent {
   name: string;
   tier: string;
-  totalRuns: number;
-  avgConfidence: number;
-  lastAction: string;
-  lastRunAt: string;
-  status: "active" | "idle" | "error";
+  version: string;
+  description: string;
+  requires_hitl: boolean;
 }
 
-const TIER_COLORS: Record<string, { bg: string; text: string; ring: string }> = {
-  tier1: { bg: "bg-emerald-50", text: "text-emerald-700", ring: "ring-emerald-500/20" },
-  tier2: { bg: "bg-amber-50", text: "text-amber-700", ring: "ring-amber-500/20" },
-  tier3: { bg: "bg-red-50", text: "text-red-700", ring: "ring-red-500/20" },
+const TIER_MAP: Record<string, { key: string; label: string; bg: string; text: string; ring: string; gradient: string }> = {
+  autonomous: { key: "tier1", label: "Tier 1 — Autonomous", bg: "bg-emerald-50", text: "text-emerald-700", ring: "ring-emerald-500/20", gradient: "bg-gradient-to-r from-emerald-400 to-emerald-600" },
+  supervised: { key: "tier2", label: "Tier 2 — Supervised", bg: "bg-amber-50", text: "text-amber-700", ring: "ring-amber-500/20", gradient: "bg-gradient-to-r from-amber-400 to-amber-600" },
+  advisory: { key: "tier3", label: "Tier 3 — Advisory", bg: "bg-purple-50", text: "text-purple-700", ring: "ring-purple-500/20", gradient: "bg-gradient-to-r from-purple-400 to-purple-600" },
 };
+
+function tierConfig(tier: string) {
+  const t = tier.toLowerCase();
+  if (t.includes("autonomous") || t === "action" || t === "ingestion" || t === "normalization") return TIER_MAP.autonomous;
+  if (t.includes("supervised") || t === "detection" || t === "scoring" || t === "analysis") return TIER_MAP.supervised;
+  if (t.includes("advisory") || t === "measurement" || t === "advisory") return TIER_MAP.advisory;
+  return TIER_MAP.autonomous;
+}
 
 function timeAgo(iso: string): string {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -46,52 +52,66 @@ function ConfidenceRing({ value }: { value: number }) {
 }
 
 export default function AgentsPage() {
+  const [registeredAgents, setRegisteredAgents] = useState<RegisteredAgent[]>([]);
   const [events, setEvents] = useState<AgentAuditEntry[]>([]);
-  const [agents, setAgents] = useState<AgentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchRecentAgentActivity()
-      .then((data) => {
-        setEvents(data);
-        // Build agent summary from events
-        const agentMap = new Map<string, AgentSummary>();
-        for (const event of data) {
-          const existing = agentMap.get(event.agent_name);
-          if (existing) {
-            existing.totalRuns += 1;
-            existing.avgConfidence = (existing.avgConfidence * (existing.totalRuns - 1) + (event.confidence_score || 0)) / existing.totalRuns;
-            if (!existing.lastRunAt || event.created_at > existing.lastRunAt) {
-              existing.lastRunAt = event.created_at;
-              existing.lastAction = event.action;
-            }
-          } else {
-            agentMap.set(event.agent_name, {
-              name: event.agent_name,
-              tier: event.agent_name.toLowerCase().includes("anomaly") || event.agent_name.toLowerCase().includes("risk")
-                ? "tier2"
-                : event.agent_name.toLowerCase().includes("clinical")
-                  ? "tier3"
-                  : "tier1",
-              totalRuns: 1,
-              avgConfidence: event.confidence_score || 0,
-              lastAction: event.action,
-              lastRunAt: event.created_at,
-              status: "active",
-            });
-          }
-        }
-        setAgents(Array.from(agentMap.values()).sort((a, b) => b.totalRuns - a.totalRuns));
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetchAgents()
+        .then((data) => {
+          // data may be { agents: [...] } or an array directly
+          const list = Array.isArray(data) ? data : (data as Record<string, unknown>)?.agents;
+          if (Array.isArray(list)) setRegisteredAgents(list as RegisteredAgent[]);
+        })
+        .catch(() => {}),
+      fetchRecentAgentActivity()
+        .then(setEvents)
+        .catch(() => {}),
+    ]).finally(() => setLoading(false));
   }, []);
 
-  const tierCounts = agents.reduce<Record<string, number>>((acc, a) => {
-    acc[a.tier] = (acc[a.tier] || 0) + 1;
-    return acc;
-  }, {});
+  // Build activity stats per agent
+  const activityMap = new Map<string, { runs: number; avgConf: number; lastAction: string; lastRunAt: string }>();
+  for (const event of events) {
+    const existing = activityMap.get(event.agent_name);
+    if (existing) {
+      existing.runs += 1;
+      existing.avgConf = (existing.avgConf * (existing.runs - 1) + (event.confidence_score || 0)) / existing.runs;
+      if (event.created_at > existing.lastRunAt) {
+        existing.lastRunAt = event.created_at;
+        existing.lastAction = event.action;
+      }
+    } else {
+      activityMap.set(event.agent_name, {
+        runs: 1,
+        avgConf: event.confidence_score || 0,
+        lastAction: event.action,
+        lastRunAt: event.created_at,
+      });
+    }
+  }
+
+  // Merge registered agents with activity data
+  const agents = registeredAgents.map((ra) => {
+    const activity = activityMap.get(ra.name);
+    return {
+      ...ra,
+      totalRuns: activity?.runs || 0,
+      avgConfidence: activity?.avgConf || 0,
+      lastAction: activity?.lastAction || "",
+      lastRunAt: activity?.lastRunAt || "",
+      status: activity ? "active" as const : "idle" as const,
+    };
+  });
+
+  // Tier counts
+  const tierCounts = { tier1: 0, tier2: 0, tier3: 0 };
+  for (const a of agents) {
+    const tc = tierConfig(a.tier);
+    tierCounts[tc.key as keyof typeof tierCounts] += 1;
+  }
 
   const selectedAgentEvents = selectedAgent
     ? events.filter((e) => e.agent_name === selectedAgent)
@@ -116,22 +136,18 @@ export default function AgentsPage() {
       {/* Tier overview cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[
-          { tier: "tier1", label: "Tier 1 — Autonomous", desc: "Fully automated decisions", icon: "M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" },
-          { tier: "tier2", label: "Tier 2 — Supervised", desc: "Requires human approval", icon: "M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" },
-          { tier: "tier3", label: "Tier 3 — Advisory", desc: "Suggestions only, clinician decides", icon: "M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" },
-        ].map(({ tier, label, desc, icon }) => {
-          const cfg = TIER_COLORS[tier];
+          { key: "tier1", label: "Tier 1 — Autonomous", desc: "Fully automated decisions", icon: "M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" },
+          { key: "tier2", label: "Tier 2 — Supervised", desc: "Requires human approval", icon: "M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" },
+          { key: "tier3", label: "Tier 3 — Advisory", desc: "Suggestions only, clinician decides", icon: "M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" },
+        ].map(({ key, label, desc, icon }) => {
+          const cfg = TIER_MAP[key === "tier1" ? "autonomous" : key === "tier2" ? "supervised" : "advisory"];
           return (
-            <div key={tier} className="metric-card">
-              <div className={`absolute left-0 top-0 h-1 w-full rounded-t-xl ${
-                tier === "tier1" ? "bg-gradient-to-r from-emerald-400 to-emerald-600" :
-                tier === "tier2" ? "bg-gradient-to-r from-amber-400 to-amber-600" :
-                "bg-gradient-to-r from-red-400 to-red-600"
-              }`} />
+            <div key={key} className="metric-card">
+              <div className={`absolute left-0 top-0 h-1 w-full rounded-t-xl ${cfg.gradient}`} />
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{label}</p>
-                  <p className="mt-2 text-3xl font-bold tabular-nums text-gray-900">{tierCounts[tier] || 0}</p>
+                  <p className="mt-2 text-3xl font-bold tabular-nums text-gray-900">{tierCounts[key as keyof typeof tierCounts]}</p>
                   <p className="mt-1 text-xs text-gray-500">{desc}</p>
                 </div>
                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${cfg.bg} ring-1 ring-inset ${cfg.ring}`}>
@@ -151,7 +167,7 @@ export default function AgentsPage() {
         <div className="lg:col-span-2">
           <div className="card">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Active Agents ({agents.length})</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Registered Agents ({agents.length})</h2>
             </div>
 
             {loading ? (
@@ -174,13 +190,14 @@ export default function AgentsPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                   </svg>
                 </div>
-                <p className="mt-3 text-sm text-gray-500">No agent activity recorded</p>
+                <p className="mt-3 text-sm text-gray-500">No agents registered</p>
               </div>
             ) : (
               <div className="space-y-1">
                 {agents.map((agent, i) => {
-                  const tcfg = TIER_COLORS[agent.tier] || TIER_COLORS.tier1;
+                  const tcfg = tierConfig(agent.tier);
                   const isSelected = selectedAgent === agent.name;
+                  const hasActivity = agent.totalRuns > 0;
                   return (
                     <button
                       key={agent.name}
@@ -202,16 +219,33 @@ export default function AgentsPage() {
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-semibold text-gray-900">{agent.name}</p>
                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${tcfg.bg} ${tcfg.text} ring-1 ring-inset ${tcfg.ring}`}>
-                            {agent.tier.replace("tier", "T")}
+                            {agent.tier}
                           </span>
+                          {agent.requires_hitl && (
+                            <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 ring-1 ring-inset ring-amber-500/20">
+                              HITL
+                            </span>
+                          )}
                         </div>
-                        <p className="mt-0.5 text-xs text-gray-500">
-                          {agent.totalRuns} run{agent.totalRuns !== 1 ? "s" : ""} &middot; Last: {agent.lastRunAt ? timeAgo(agent.lastRunAt) : "—"}
+                        <p className="mt-0.5 text-xs text-gray-500 truncate">{agent.description}</p>
+                        <p className="mt-0.5 text-xs text-gray-400">
+                          v{agent.version}
+                          {hasActivity && <> &middot; {agent.totalRuns} run{agent.totalRuns !== 1 ? "s" : ""} &middot; Last: {timeAgo(agent.lastRunAt)}</>}
+                          {!hasActivity && <> &middot; Idle</>}
                         </p>
                       </div>
 
-                      {/* Confidence ring */}
-                      <ConfidenceRing value={agent.avgConfidence} />
+                      {/* Status / Confidence */}
+                      {hasActivity ? (
+                        <ConfidenceRing value={agent.avgConfidence} />
+                      ) : (
+                        <div className="flex h-12 w-12 items-center justify-center">
+                          <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                            <span className="h-2 w-2 rounded-full bg-gray-300" />
+                            Idle
+                          </span>
+                        </div>
+                      )}
                     </button>
                   );
                 })}
@@ -273,7 +307,13 @@ export default function AgentsPage() {
 
               {events.length === 0 && !loading && (
                 <div className="flex flex-col items-center py-8">
-                  <p className="text-xs text-gray-400">No activity to display</p>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-400">No activity recorded yet</p>
+                  <p className="mt-1 text-[10px] text-gray-300">Agent activity will appear here when agents process events</p>
                 </div>
               )}
             </div>

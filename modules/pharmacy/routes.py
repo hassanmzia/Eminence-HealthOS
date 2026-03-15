@@ -66,10 +66,15 @@ async def prescription_history(
     """Get prescription history for a patient."""
     from modules.pharmacy.agents.prescription import PrescriptionAgent
 
+    try:
+        pid = uuid.UUID(patient_id)
+    except ValueError:
+        pid = DEFAULT_ORG  # fallback for demo IDs
+
     agent = PrescriptionAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(patient_id),
+        patient_id=pid,
         trigger="pharmacy.prescription.history",
         context={"action": "prescription_history"},
     ))
@@ -266,10 +271,17 @@ async def calculate_adherence(
     """Calculate medication adherence metrics (PDC/MPR)."""
     from modules.pharmacy.agents.medication_adherence import MedicationAdherenceAgent
 
+    pid = None
+    if body.get("patient_id"):
+        try:
+            pid = uuid.UUID(body["patient_id"])
+        except ValueError:
+            pid = DEFAULT_ORG  # fallback for demo IDs
+
     agent = MedicationAdherenceAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=pid,
         trigger="pharmacy.adherence.calculate",
         context={"action": "calculate_adherence", **body},
     ))
