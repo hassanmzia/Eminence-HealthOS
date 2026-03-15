@@ -314,14 +314,6 @@ const classificationLabel = (c: string) => {
   return "Benign";
 };
 
-const riskScoreColor = (score: number) => {
-  if (score >= 80) return "from-red-500 to-red-600";
-  if (score >= 60) return "from-orange-400 to-red-500";
-  if (score >= 40) return "from-yellow-400 to-orange-400";
-  if (score >= 20) return "from-green-400 to-yellow-400";
-  return "from-green-500 to-green-400";
-};
-
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function ResearchGenomicsPage() {
