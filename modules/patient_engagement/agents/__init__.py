@@ -1,4 +1,4 @@
-"""Patient Engagement & SDOH module agents — health literacy, multilingual, triage, care navigation, SDOH, community resources, engagement."""
+"""Patient Engagement & SDOH module agents — health literacy, multilingual, triage, care navigation, SDOH, community resources, engagement, notifications."""
 
 
 def register_patient_engagement_agents() -> None:
@@ -11,6 +11,8 @@ def register_patient_engagement_agents() -> None:
     from .health_literacy import HealthLiteracyAgent
     from .motivational_engagement import MotivationalEngagementAgent
     from .multilingual_communication import MultilingualCommunicationAgent
+    from .patient_notify_agent import PatientNotifyAgent
+    from .physician_notify_agent import PhysicianNotifyAgent
     from .sdoh_screening import SDOHScreeningAgent
 
     registry.register(HealthLiteracyAgent())
@@ -20,3 +22,5 @@ def register_patient_engagement_agents() -> None:
     registry.register(SDOHScreeningAgent())
     registry.register(CommunityResourceAgent())
     registry.register(MotivationalEngagementAgent())
+    registry.register(PhysicianNotifyAgent())
+    registry.register(PatientNotifyAgent())
