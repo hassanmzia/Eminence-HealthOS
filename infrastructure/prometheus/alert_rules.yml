@@ -1,0 +1,238 @@
+# HealthOS Prometheus Alert Rules
+# Aligned with metrics from observability/metrics/collector.py
+
+groups:
+  # ── Agent Health ──────────────────────────────────────────────────
+  - name: healthos_agent_alerts
+    rules:
+      - alert: AgentHighErrorRate
+        expr: |
+          (
+            sum(rate(healthos_agent_errors_total[5m])) by (agent_name, agent_tier)
+            /
+            sum(rate(healthos_agent_runs_total[5m])) by (agent_name, agent_tier)
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Agent {{ $labels.agent_name }} error rate above 10%"
+          description: "Agent {{ $labels.agent_name }} (tier={{ $labels.agent_tier }}) has a {{ $value | humanizePercentage }} error rate over the last 5 minutes."
+
+      - alert: AgentCriticalErrorRate
+        expr: |
+          (
+            sum(rate(healthos_agent_errors_total[5m])) by (agent_name, agent_tier)
+            /
+            sum(rate(healthos_agent_runs_total[5m])) by (agent_name, agent_tier)
+          ) > 0.25
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Agent {{ $labels.agent_name }} error rate above 25%"
+          description: "Agent {{ $labels.agent_name }} has a {{ $value | humanizePercentage }} error rate. Immediate investigation required."
+
+      - alert: AgentHighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(healthos_agent_latency_seconds_bucket[5m])) by (le, agent_name)) > 30
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Agent {{ $labels.agent_name }} p95 latency above 30s"
+          description: "Agent {{ $labels.agent_name }} p95 latency is {{ $value | humanizeDuration }}."
+
+      - alert: NoAgentActivity
+        expr: |
+          sum(rate(healthos_agent_runs_total[15m])) == 0
+        for: 15m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "No agent activity detected for 15 minutes"
+          description: "Zero agent executions recorded in the last 15 minutes. Check if the platform is healthy."
+
+  # ── LLM Cost & Usage ─────────────────────────────────────────────
+  - name: healthos_llm_alerts
+    rules:
+      - alert: LLMHighCostRate
+        expr: |
+          sum(rate(healthos_llm_cost_usd_total[1h])) * 3600 > 50
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "LLM spend exceeding $50/hour"
+          description: "Current LLM spend rate is ${{ $value | humanize }}/hour. Review agent usage patterns."
+
+      - alert: LLMCostSpike
+        expr: |
+          sum(rate(healthos_llm_cost_usd_total[10m])) * 600
+          >
+          3 * sum(rate(healthos_llm_cost_usd_total[1h] offset 1h)) * 3600 / 6
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "LLM cost spike detected (3x baseline)"
+          description: "LLM spend in the last 10 minutes is 3x higher than the previous hour's average."
+
+      - alert: LLMHighErrorRate
+        expr: |
+          (
+            sum(rate(healthos_llm_calls_total{status!="success"}[5m]))
+            /
+            sum(rate(healthos_llm_calls_total[5m]))
+          ) > 0.15
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "LLM API error rate above 15%"
+          description: "{{ $value | humanizePercentage }} of LLM calls are failing."
+
+      - alert: LLMHighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(healthos_llm_latency_seconds_bucket[5m])) by (le, model)) > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "LLM p95 latency above 10s for model {{ $labels.model }}"
+          description: "LLM calls to {{ $labels.model }} have p95 latency of {{ $value | humanizeDuration }}."
+
+      - alert: LLMFallbacksHigh
+        expr: |
+          sum(rate(healthos_fallbacks_total[10m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High LLM fallback rate"
+          description: "LLM provider fallbacks are occurring at {{ $value }}/s. Primary provider may be degraded."
+
+  # ── Clinical Safety ──────────────────────────────────────────────
+  - name: healthos_clinical_safety_alerts
+    rules:
+      - alert: CriticalAlertSurge
+        expr: |
+          sum(rate(healthos_alerts_generated_total{severity=~"CRITICAL|EMERGENCY"}[5m])) > 1
+        for: 2m
+        labels:
+          severity: critical
+          team: clinical
+        annotations:
+          summary: "Surge in critical/emergency clinical alerts"
+          description: "{{ $value }}/s critical or emergency alerts being generated. Verify clinical safety."
+
+      - alert: HITLInterruptBacklog
+        expr: |
+          sum(rate(healthos_hitl_interrupts_total[10m])) * 600
+          -
+          sum(rate(healthos_hitl_decisions_total[10m])) * 600
+          > 10
+        for: 10m
+        labels:
+          severity: warning
+          team: clinical
+        annotations:
+          summary: "HITL decision backlog growing"
+          description: "More HITL interrupts than decisions in the last 10 minutes. Clinicians may need to review pending items."
+
+      - alert: HITLRejectionRateHigh
+        expr: |
+          (
+            sum(rate(healthos_hitl_decisions_total{decision="reject"}[1h]))
+            /
+            sum(rate(healthos_hitl_decisions_total[1h]))
+          ) > 0.3
+        for: 15m
+        labels:
+          severity: warning
+          team: clinical
+        annotations:
+          summary: "High HITL rejection rate (>30%)"
+          description: "Clinicians are rejecting {{ $value | humanizePercentage }} of AI recommendations. Model accuracy may need review."
+
+      - alert: GuardrailViolationsHigh
+        expr: |
+          sum(rate(healthos_guardrail_violations_total[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "Elevated guardrail violations"
+          description: "Guardrail violations at {{ $value }}/s. Check for prompt injection or abuse attempts."
+
+      - alert: PHIExposureDetected
+        expr: |
+          sum(rate(healthos_phi_detections_total{event_type="PHI_DETECTED"}[5m])) > 0.5
+        for: 2m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "High rate of PHI detections"
+          description: "PHI detections occurring at {{ $value }}/s. Verify data handling pipelines."
+
+  # ── System Health ────────────────────────────────────────────────
+  - name: healthos_system_alerts
+    rules:
+      - alert: QueueDepthHigh
+        expr: |
+          healthos_queue_depth > 100
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Task queue {{ $labels.queue_name }} depth above 100"
+          description: "Queue {{ $labels.queue_name }} has {{ $value }} pending items. Processing may be falling behind."
+
+      - alert: QueueDepthCritical
+        expr: |
+          healthos_queue_depth > 500
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Task queue {{ $labels.queue_name }} depth above 500"
+          description: "Queue {{ $labels.queue_name }} has {{ $value }} pending items. Immediate scaling or investigation needed."
+
+      - alert: A2AMessageFailures
+        expr: |
+          (
+            sum(rate(healthos_a2a_messages_total{status="error"}[5m]))
+            /
+            sum(rate(healthos_a2a_messages_total[5m]))
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Agent-to-agent message failure rate above 10%"
+          description: "{{ $value | humanizePercentage }} of A2A messages are failing."
+
+      - alert: HighRetryRate
+        expr: |
+          sum(rate(healthos_retries_total[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High agent retry rate"
+          description: "Agent retries occurring at {{ $value }}/s. Upstream service may be degraded."

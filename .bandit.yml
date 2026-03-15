@@ -1,0 +1,19 @@
+# Bandit security linter configuration for HealthOS
+# https://bandit.readthedocs.io/en/latest/config.html
+
+skips:
+  # B101: assert used for test fixtures and dev-time checks (not security-critical)
+  - B101
+
+exclude_dirs:
+  - tests
+  - __pycache__
+  - .venv
+  - node_modules
+
+# Healthcare-specific: ensure these checks always run
+# B105/B106/B107: hardcoded passwords
+# B301/B302: pickle usage (deserialization attacks)
+# B608: SQL injection
+# B603/B604: subprocess injection
+# B501: requests without certificate verification

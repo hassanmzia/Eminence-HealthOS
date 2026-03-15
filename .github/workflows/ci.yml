@@ -70,3 +70,43 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: mypy healthos_platform/ modules/ --ignore-missing-imports
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install security tools
+        run: pip install bandit safety pip-audit
+
+      - name: Bandit - Python security linter
+        run: >
+          bandit -r healthos_platform/ modules/
+          -f json -o bandit-report.json
+          --severity-level medium
+          --confidence-level medium
+          -x "*/tests/*,*/__pycache__/*"
+          || true
+
+      - name: Bandit - Check for high-severity issues (fails CI)
+        run: >
+          bandit -r healthos_platform/ modules/
+          --severity-level high
+          --confidence-level high
+          -x "*/tests/*,*/__pycache__/*"
+
+      - name: pip-audit - Dependency vulnerability scan
+        run: |
+          pip install -e ".[dev]"
+          pip-audit --strict --desc 2>&1 || true
+
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-security-report
+          path: bandit-report.json
+          retention-days: 30
