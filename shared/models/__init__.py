@@ -21,6 +21,7 @@ from shared.models.billing_claim import BillingClaim
 from shared.models.workflow import Workflow, WorkflowStepModel
 from shared.models.cohort import Cohort, PopulationMetric
 from shared.models.analytics import AnalyticsRiskScore
+from shared.models.portal_message import PortalMessage
 
 __all__ = [
     "TimestampMixin", "TenantMixin", "UUIDMixin",
@@ -32,4 +33,5 @@ __all__ = [
     "PriorAuthRequest", "InsuranceVerification", "Referral", "BillingClaim",
     "Workflow", "WorkflowStepModel",
     "Cohort", "PopulationMetric", "AnalyticsRiskScore",
+    "PortalMessage",
 ]

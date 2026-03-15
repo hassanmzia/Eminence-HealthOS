@@ -6,6 +6,7 @@ storage, and multi-tenant isolation.
 """
 
 import uuid
+from datetime import datetime
 
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -30,7 +31,7 @@ class Workflow(Base, UUIDMixin, TimestampMixin, TenantMixin):
     priority: Mapped[str] = mapped_column(String(20), default="normal")
     status: Mapped[str] = mapped_column(String(20), default="created", index=True)
     context: Mapped[dict] = mapped_column(JSONB, default=dict)
-    completed_at: Mapped[None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Relationship to steps
     steps: Mapped[list["WorkflowStepModel"]] = relationship(
@@ -67,8 +68,8 @@ class WorkflowStepModel(Base, UUIDMixin, TimestampMixin):
     sla_hours: Mapped[float] = mapped_column(Float, default=24.0)
     output: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
-    started_at: Mapped[None] = mapped_column(DateTime(timezone=True), nullable=True)
-    completed_at: Mapped[None] = mapped_column(DateTime(timezone=True), nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Relationship back to workflow
     workflow: Mapped["Workflow"] = relationship("Workflow", back_populates="steps")

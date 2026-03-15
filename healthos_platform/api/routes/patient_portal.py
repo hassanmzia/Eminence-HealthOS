@@ -14,9 +14,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from healthos_platform.api.middleware.tenant import TenantContext, get_current_user
+from healthos_platform.config.database import get_db as get_shared_db
 from healthos_platform.database import get_db
 from healthos_platform.models import Alert, CarePlan, Encounter, Patient, Vital
 from healthos_platform.security.rbac import Permission
+from shared.models.portal_message import PortalMessage
 
 router = APIRouter(prefix="/portal", tags=["Patient Portal"])
 
@@ -267,23 +269,40 @@ async def get_my_alerts(
 # My Messages
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# In-memory message store (replace with a Message table in production)
-_message_store: dict[str, list[dict]] = {}
-
-
 @router.get("/me/messages")
 async def get_my_messages(
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    msg_db: AsyncSession = Depends(get_shared_db),
 ):
     """Get the patient's secure messages."""
     patient = await _get_patient_for_user(ctx, db)
-    patient_key = f"{ctx.org_id}:{patient.id}"
-    messages = _message_store.get(patient_key, [])
-    unread = sum(1 for m in messages if not m.get("is_read"))
+
+    result = await msg_db.execute(
+        select(PortalMessage)
+        .where(
+            PortalMessage.patient_id == patient.id,
+            PortalMessage.tenant_id == str(ctx.org_id),
+        )
+        .order_by(PortalMessage.created_at.desc())
+    )
+    messages = result.scalars().all()
+
+    unread = sum(1 for m in messages if not m.is_read)
 
     return {
-        "messages": messages,
+        "messages": [
+            {
+                "id": str(m.id),
+                "sender_type": m.sender_type,
+                "sender_name": m.sender_name,
+                "subject": m.subject,
+                "body": m.body,
+                "is_read": m.is_read,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+            }
+            for m in messages
+        ],
         "total": len(messages),
         "unread": unread,
     }
@@ -294,31 +313,37 @@ async def send_patient_message(
     body: dict,
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    msg_db: AsyncSession = Depends(get_shared_db),
 ):
     """Send a message from the patient to their care team."""
     patient = await _get_patient_for_user(ctx, db)
-    patient_key = f"{ctx.org_id}:{patient.id}"
 
     subject = body.get("subject", "").strip()
     message_body = body.get("body", "").strip()
     if not subject or not message_body:
         raise HTTPException(status_code=422, detail="Subject and body are required")
 
-    message = {
-        "id": str(uuid.uuid4()),
-        "sender_type": "patient",
-        "sender_name": patient.demographics.get("name", "Patient"),
-        "subject": subject,
-        "body": message_body,
-        "is_read": True,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+    message = PortalMessage(
+        patient_id=patient.id,
+        tenant_id=str(ctx.org_id) if ctx.org_id else "default",
+        sender_type="patient",
+        sender_name=patient.demographics.get("name", "Patient"),
+        subject=subject,
+        body=message_body,
+        is_read=True,
+    )
+    msg_db.add(message)
+    await msg_db.flush()
+
+    return {
+        "id": str(message.id),
+        "sender_type": message.sender_type,
+        "sender_name": message.sender_name,
+        "subject": message.subject,
+        "body": message.body,
+        "is_read": message.is_read,
+        "created_at": message.created_at.isoformat() if message.created_at else None,
     }
-
-    if patient_key not in _message_store:
-        _message_store[patient_key] = []
-    _message_store[patient_key].insert(0, message)
-
-    return message
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
