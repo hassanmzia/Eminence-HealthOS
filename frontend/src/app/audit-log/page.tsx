@@ -97,19 +97,272 @@ const demoAuditEntries: AuditEntry[] = [
   { id: "AUD-052", timestamp: "2026-03-15T10:45:30Z", eventType: "Clinical", user: "dr.williams@eminence.health", action: "Create Referral", resource: "Referral #REF-3321 – Cardiology", ipAddress: "10.0.3.45", status: "success", duration: 340, details: { requestMethod: "POST", requestPath: "/api/v1/referrals", requestPayload: '{"patientId":10678,"specialty":"cardiology","reason":"Abnormal lipid panel","urgency":"routine"}', responseCode: 201, notes: "Cardiology referral placed" } },
   { id: "AUD-053", timestamp: "2026-03-15T10:50:15Z", eventType: "API", user: "integration-svc", action: "FHIR Resource Fetch", resource: "/api/v1/fhir/Patient", ipAddress: "10.0.5.100", status: "success", duration: 680, details: { requestMethod: "GET", requestPath: "/api/v1/fhir/Patient?_count=50", responseCode: 200, responseBody: '{"resourceType":"Bundle","total":50}', notes: "FHIR API access – compliant with R4 spec" } },
   { id: "AUD-054", timestamp: "2026-03-15T10:55:00Z", eventType: "Authentication", user: "nurse.jones@eminence.health", action: "Logout", resource: "/auth/logout", ipAddress: "10.0.2.18", status: "success", duration: 38, details: { requestMethod: "POST", requestPath: "/api/v1/auth/logout", responseCode: 200, sessionId: "sess_7b4e1d", notes: "End of shift logout" } },
+  {
+    id: "AUD-055",
+    timestamp: "2026-03-15T11:02:30Z",
+    eventType: "Data Access",
+    user: "dr.chen@eminence.health",
+    action: "View Medication History",
+    resource: "Patient #10102 – Full Medication History",
+    ipAddress: "10.0.3.60",
+    status: "success",
+    duration: 245,
+    details: {
+      requestMethod: "GET",
+      requestPath: "/api/v1/patients/10102/medications?history=full",
+      responseCode: 200,
+      responseBody: '{"active":3,"discontinued":7,"total":10}',
+      notes: "HIPAA audit – full medication history reviewed before prescribing",
+    },
+  },
+  {
+    id: "AUD-056",
+    timestamp: "2026-03-15T11:08:15Z",
+    eventType: "Clinical",
+    user: "dr.chen@eminence.health",
+    action: "Create Prescription",
+    resource: "Rx #88450 – Losartan 50mg",
+    ipAddress: "10.0.3.60",
+    status: "success",
+    duration: 298,
+    details: {
+      requestMethod: "POST",
+      requestPath: "/api/v1/prescriptions",
+      requestPayload: '{"patientId":10102,"medication":"Losartan","dose":"50mg","frequency":"QD","reason":"Replacement for discontinued Lisinopril"}',
+      responseCode: 201,
+      notes: "Alternative medication prescribed after Lisinopril discontinuation",
+    },
+  },
+  {
+    id: "AUD-057",
+    timestamp: "2026-03-15T11:12:45Z",
+    eventType: "API",
+    user: "integration-svc",
+    action: "Drug Interaction Check",
+    resource: "/api/v1/clinical/drug-interactions",
+    ipAddress: "10.0.5.100",
+    status: "warning",
+    duration: 430,
+    details: {
+      requestMethod: "POST",
+      requestPath: "/api/v1/clinical/drug-interactions",
+      requestPayload: '{"medications":["Losartan","Metformin","Aspirin"]}',
+      responseCode: 200,
+      responseBody: '{"interactions":1,"severity":"low","detail":"Monitor potassium levels with Losartan"}',
+      notes: "Low-severity interaction detected – informational alert sent to provider",
+    },
+  },
+  {
+    id: "AUD-058",
+    timestamp: "2026-03-15T11:18:20Z",
+    eventType: "Authentication",
+    user: "pharmacist.lee@eminence.health",
+    action: "Login",
+    resource: "/auth/login",
+    ipAddress: "10.0.4.15",
+    status: "success",
+    duration: 202,
+    details: {
+      requestMethod: "POST",
+      requestPath: "/api/v1/auth/login",
+      responseCode: 200,
+      sessionId: "sess_5b1d8c",
+      userAgent: "Mozilla/5.0 Firefox/125",
+      notes: "Pharmacist login – prescription verification queue",
+    },
+  },
+  {
+    id: "AUD-059",
+    timestamp: "2026-03-15T11:22:00Z",
+    eventType: "Clinical",
+    user: "pharmacist.lee@eminence.health",
+    action: "Verify Prescription",
+    resource: "Rx #88450 – Losartan 50mg",
+    ipAddress: "10.0.4.15",
+    status: "success",
+    duration: 155,
+    details: {
+      requestMethod: "PATCH",
+      requestPath: "/api/v1/prescriptions/88450/verify",
+      requestPayload: '{"verified":true,"pharmacistNotes":"Dosage appropriate, no contraindications"}',
+      responseCode: 200,
+      notes: "Prescription verified by pharmacist",
+    },
+  },
+  {
+    id: "AUD-060",
+    timestamp: "2026-03-15T11:25:35Z",
+    eventType: "System",
+    user: "system",
+    action: "Queue Processing",
+    resource: "Message Queue: prescription-notifications",
+    ipAddress: "10.0.10.1",
+    status: "success",
+    duration: 1200,
+    details: {
+      requestMethod: "POST",
+      requestPath: "/internal/queues/prescription-notifications/process",
+      responseCode: 200,
+      responseBody: '{"processed":12,"failed":0,"pending":3}',
+      notes: "Batch notification processing for verified prescriptions",
+    },
+  },
+  {
+    id: "AUD-061",
+    timestamp: "2026-03-15T11:30:10Z",
+    eventType: "Data Access",
+    user: "dr.williams@eminence.health",
+    action: "View Discharge Summary",
+    resource: "Patient #10445 – Discharge Summary",
+    ipAddress: "10.0.3.45",
+    status: "success",
+    duration: 178,
+    details: {
+      requestMethod: "GET",
+      requestPath: "/api/v1/patients/10445/encounters/latest/discharge",
+      responseCode: 200,
+      notes: "HIPAA audit – provider reviewed discharge documentation",
+    },
+  },
+  {
+    id: "AUD-062",
+    timestamp: "2026-03-15T11:35:50Z",
+    eventType: "Configuration",
+    user: "admin@eminence.health",
+    action: "Update Audit Retention Policy",
+    resource: "Policy: Audit Log Retention",
+    ipAddress: "10.0.1.5",
+    status: "success",
+    duration: 110,
+    details: {
+      requestMethod: "PUT",
+      requestPath: "/api/v1/config/audit/retention",
+      requestPayload: '{"retentionDays":2555,"archiveEnabled":true,"compressionLevel":"high"}',
+      responseCode: 200,
+      notes: "Retention extended to 7 years per HIPAA compliance requirements",
+    },
+  },
+  {
+    id: "AUD-063",
+    timestamp: "2026-03-15T11:40:25Z",
+    eventType: "Authentication",
+    user: "unknown@brute.io",
+    action: "Login Attempt",
+    resource: "/auth/login",
+    ipAddress: "192.0.2.44",
+    status: "failure",
+    duration: 72,
+    details: {
+      requestMethod: "POST",
+      requestPath: "/api/v1/auth/login",
+      responseCode: 401,
+      userAgent: "python-requests/2.31",
+      notes: "Automated brute-force attempt detected – IP added to threat list",
+    },
+  },
+  {
+    id: "AUD-064",
+    timestamp: "2026-03-15T11:40:26Z",
+    eventType: "System",
+    user: "system",
+    action: "Threat Detection Alert",
+    resource: "Security: Threat Intelligence",
+    ipAddress: "10.0.10.1",
+    status: "warning",
+    duration: 45,
+    details: {
+      requestMethod: "POST",
+      requestPath: "/internal/security/threats/alert",
+      responseCode: 200,
+      responseBody: '{"threatLevel":"medium","source":"192.0.2.44","action":"auto-blocked"}',
+      notes: "Automated threat response – IP blocked and security team notified",
+    },
+  },
+  {
+    id: "AUD-065",
+    timestamp: "2026-03-15T11:45:00Z",
+    eventType: "API",
+    user: "integration-svc",
+    action: "Patient Portal Sync",
+    resource: "/api/v1/portal/sync",
+    ipAddress: "10.0.5.100",
+    status: "success",
+    duration: 1890,
+    details: {
+      requestMethod: "POST",
+      requestPath: "/api/v1/portal/sync",
+      requestPayload: '{"scope":"appointments,results,messages","window":"24h"}',
+      responseCode: 200,
+      responseBody: '{"appointmentsSynced":28,"resultsSynced":15,"messagesSynced":42}',
+      notes: "Patient portal data synchronization completed",
+    },
+  },
+  {
+    id: "AUD-066",
+    timestamp: "2026-03-15T11:50:30Z",
+    eventType: "Data Access",
+    user: "nurse.brown@eminence.health",
+    action: "View Care Plan",
+    resource: "Patient #10234 – Care Plan",
+    ipAddress: "10.0.2.72",
+    status: "success",
+    duration: 135,
+    details: {
+      requestMethod: "GET",
+      requestPath: "/api/v1/patients/10234/care-plan",
+      responseCode: 200,
+      notes: "HIPAA audit – nurse reviewed care plan for medication administration",
+    },
+  },
+  {
+    id: "AUD-067",
+    timestamp: "2026-03-15T11:55:15Z",
+    eventType: "Clinical",
+    user: "dr.patel@eminence.health",
+    action: "Sign Clinical Note",
+    resource: "Patient #10891 – Progress Note (Signed)",
+    ipAddress: "10.0.3.22",
+    status: "success",
+    duration: 92,
+    details: {
+      requestMethod: "PATCH",
+      requestPath: "/api/v1/patients/10891/notes/latest/sign",
+      requestPayload: '{"signature":"digital","attestation":true}',
+      responseCode: 200,
+      notes: "Clinical note digitally signed and locked for editing",
+    },
+  },
+  {
+    id: "AUD-068",
+    timestamp: "2026-03-15T12:00:00Z",
+    eventType: "System",
+    user: "system",
+    action: "Scheduled Maintenance Window",
+    resource: "Maintenance: Read-Only Mode",
+    ipAddress: "10.0.10.1",
+    status: "warning",
+    duration: 15,
+    details: {
+      requestMethod: "POST",
+      requestPath: "/internal/maintenance/schedule",
+      responseCode: 200,
+      responseBody: '{"window":"2026-03-16T02:00:00Z/2026-03-16T04:00:00Z","mode":"read-only"}',
+      notes: "Maintenance window scheduled for database migration – users notified",
+    },
+  },
 ];
 
 /* ------------------------------------------------------------------ */
 /*  Chart data                                                         */
 /* ------------------------------------------------------------------ */
 const activityTrendData = [
-  { day: "Mar 9", events: 312 },
-  { day: "Mar 10", events: 458 },
-  { day: "Mar 11", events: 389 },
-  { day: "Mar 12", events: 421 },
-  { day: "Mar 13", events: 510 },
-  { day: "Mar 14", events: 475 },
-  { day: "Mar 15", events: 348 },
+  { day: "Mar 9", events: 312, failures: 8, warnings: 15 },
+  { day: "Mar 10", events: 458, failures: 12, warnings: 22 },
+  { day: "Mar 11", events: 389, failures: 5, warnings: 18 },
+  { day: "Mar 12", events: 421, failures: 9, warnings: 20 },
+  { day: "Mar 13", events: 510, failures: 14, warnings: 28 },
+  { day: "Mar 14", events: 475, failures: 11, warnings: 24 },
+  { day: "Mar 15", events: 348, failures: 6, warnings: 16 },
 ];
 
 const categoryData = [
@@ -191,8 +444,33 @@ export default function AuditLogPage() {
   const uniqueUserCount = new Set(demoAuditEntries.map((e) => e.user)).size;
   const avgResponse = Math.round(demoAuditEntries.reduce((s, e) => s + e.duration, 0) / totalEvents);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+  const totalPages = Math.ceil(filteredEntries.length / pageSize);
+  const paginatedEntries = filteredEntries.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  /* Critical / warning events for sidebar */
+  const criticalEvents = useMemo(() => {
+    return demoAuditEntries
+      .filter((e) => e.status === "failure" || e.status === "warning")
+      .slice(0, 6);
+  }, []);
+
   const handleExport = () => {
     alert("Export initiated — generating PDF audit report...");
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setFilterEventType("All");
+    setFilterStatus("All");
+    setFilterUser("All");
+    setDateFrom("");
+    setDateTo("");
+    setCurrentPage(1);
   };
 
   return (
