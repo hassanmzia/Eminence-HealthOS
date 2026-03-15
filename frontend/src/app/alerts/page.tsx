@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchAlerts, type AlertData } from "@/lib/api";
+import { fetchAlerts, acknowledgeAlert, resolveAlert, type AlertData } from "@/lib/api";
 
 const PRIORITY_CONFIG: Record<string, { badge: string; bg: string; icon: string }> = {
   critical: { badge: "badge-critical", bg: "bg-red-500", icon: "M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" },
@@ -240,9 +240,22 @@ export default function AlertsPage() {
                           </div>
                         </div>
                         <div className="mt-4 flex gap-2">
-                          <button className="btn-primary !py-1.5 !px-3 !text-xs">Acknowledge</button>
-                          <button className="btn-secondary !py-1.5 !px-3 !text-xs">Resolve</button>
-                          <button className="btn-ghost !py-1.5 !px-3 !text-xs">Assign</button>
+                          {alert.status !== "acknowledged" && alert.status !== "resolved" && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); acknowledgeAlert(alert.id).then((updated) => { setAlerts((prev) => prev.map((a) => a.id === alert.id ? { ...a, status: updated.status || "acknowledged" } : a)); setSelectedAlert(null); }).catch(() => {}); }}
+                              className="btn-primary !py-1.5 !px-3 !text-xs"
+                            >Acknowledge</button>
+                          )}
+                          {alert.status !== "resolved" && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); resolveAlert(alert.id).then((updated) => { setAlerts((prev) => prev.map((a) => a.id === alert.id ? { ...a, status: updated.status || "resolved" } : a)); setSelectedAlert(null); }).catch(() => {}); }}
+                              className="btn-secondary !py-1.5 !px-3 !text-xs"
+                            >Resolve</button>
+                          )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(alert.id); }}
+                            className="btn-ghost !py-1.5 !px-3 !text-xs"
+                          >Copy ID</button>
                         </div>
                       </div>
                     )}

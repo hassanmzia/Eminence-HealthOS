@@ -59,6 +59,36 @@ const statusBadge = (s: string) => {
 export default function RCMPage() {
   const [tab, setTab] = useState<"pipeline" | "denials" | "ar" | "leakage">("pipeline");
   const [apiCleanRate, setApiCleanRate] = useState<Record<string, unknown> | null>(null);
+  const [showNewClaim, setShowNewClaim] = useState(false);
+  const [claimForm, setClaimForm] = useState({ patient: "", payer: "", codes: "", amount: "" });
+  const [submittingClaim, setSubmittingClaim] = useState(false);
+
+  const handleExportReport = () => {
+    const data = { kpis: KPI_DATA, claims: CLAIMS_PIPELINE, denials: DENIAL_SUMMARY, arBuckets: AR_BUCKETS, leakage: LEAKAGE_ITEMS, cleanRate: apiCleanRate };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `rcm-report-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleNewClaim = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingClaim(true);
+    try {
+      await captureCharges({ patient_name: claimForm.patient, payer: claimForm.payer, codes: claimForm.codes.split(",").map((c) => c.trim()), amount: parseFloat(claimForm.amount) || 0 });
+      setShowNewClaim(false);
+      setClaimForm({ patient: "", payer: "", codes: "", amount: "" });
+    } catch { /* silently handle */ }
+    finally { setSubmittingClaim(false); }
+  };
+
+  const handleBatchAppeal = async (denialCode: string) => {
+    try { await appealDenial({ denial_code: denialCode, batch: true }); } catch { /* silently handle */ }
+  };
+
+  const handleRecover = async (category: string) => {
+    try { await verifyRevenueIntegrity({ category, action: "recover" }); } catch { /* silently handle */ }
+  };
 
   useEffect(() => {
     fetchCleanClaimRate()
@@ -90,8 +120,8 @@ export default function RCMPage() {
           <p className="text-sm text-gray-500">End-to-end billing automation, claims optimization, and revenue integrity</p>
         </div>
         <div className="flex gap-2">
-          <button className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Export Report</button>
-          <button className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">New Claim</button>
+          <button onClick={handleExportReport} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Export Report</button>
+          <button onClick={() => setShowNewClaim(true)} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">New Claim</button>
         </div>
       </div>
 
@@ -183,7 +213,7 @@ export default function RCMPage() {
                     </td>
                     <td className="px-4 py-3">
                       {d.appealable && (
-                        <button className="rounded bg-healthos-600 px-3 py-1 text-xs font-medium text-white hover:bg-healthos-700">Batch Appeal</button>
+                        <button onClick={() => handleBatchAppeal(d.code)} className="rounded bg-healthos-600 px-3 py-1 text-xs font-medium text-white hover:bg-healthos-700">Batch Appeal</button>
                       )}
                     </td>
                   </tr>
@@ -270,12 +300,52 @@ export default function RCMPage() {
                     <td className="px-4 py-3 text-sm text-gray-600">{l.encounters}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{(l.amount / 1135).toFixed(1)}%</td>
                     <td className="px-4 py-3">
-                      <button className="rounded border border-orange-300 px-3 py-1 text-xs font-medium text-orange-700 hover:bg-orange-50">Recover</button>
+                      <button onClick={() => handleRecover(l.category)} className="rounded border border-orange-300 px-3 py-1 text-xs font-medium text-orange-700 hover:bg-orange-50">Recover</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+      {/* New Claim Modal */}
+      {showNewClaim && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowNewClaim(false)}>
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">New Claim</h2>
+              <button onClick={() => setShowNewClaim(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+            <form onSubmit={handleNewClaim} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Patient Name *</label>
+                <input required value={claimForm.patient} onChange={(e) => setClaimForm({ ...claimForm, patient: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Payer *</label>
+                <select required value={claimForm.payer} onChange={(e) => setClaimForm({ ...claimForm, payer: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
+                  <option value="">Select Payer</option>
+                  <option value="Blue Cross">Blue Cross</option>
+                  <option value="Aetna">Aetna</option>
+                  <option value="UnitedHealth">UnitedHealth</option>
+                  <option value="Medicare">Medicare</option>
+                  <option value="Cigna">Cigna</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">CPT Codes *</label>
+                <input required value={claimForm.codes} onChange={(e) => setClaimForm({ ...claimForm, codes: e.target.value })} placeholder="e.g. 99214, 80048" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Amount ($) *</label>
+                <input required type="number" step="0.01" value={claimForm.amount} onChange={(e) => setClaimForm({ ...claimForm, amount: e.target.value })} placeholder="425.00" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowNewClaim(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="submit" disabled={submittingClaim} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50">{submittingClaim ? "Submitting..." : "Submit Claim"}</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

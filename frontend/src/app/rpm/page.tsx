@@ -142,7 +142,16 @@ export default function RPMPage() {
           <p className="text-sm text-gray-500">Real-time vitals ingestion, anomaly detection, risk scoring, and device management</p>
         </div>
         <div className="flex gap-2">
-          <button className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Export Report</button>
+          <button
+            onClick={() => {
+              const data = { activePatients, criticalAlerts, avgAdherence, devicesOnline, patients: DEMO_PATIENTS, alerts: RPM_ALERTS, adherence: ADHERENCE, devices: DEVICES };
+              const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a"); a.href = url; a.download = `rpm-report-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >Export Report</button>
           <button onClick={() => setShowEnroll(true)} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">Enroll Patient</button>
         </div>
       </div>

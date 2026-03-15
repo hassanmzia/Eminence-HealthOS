@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { matchClinicalTrials, checkTrialEligibility, deidentifyDataset, assessGeneticRisk, analyzePharmacogenomics } from "@/lib/api";
+import { matchClinicalTrials, checkTrialEligibility, deidentifyDataset, assessGeneticRisk, analyzePharmacogenomics, createCohort } from "@/lib/api";
 
 const SAMPLE_TRIALS = [
   {
@@ -78,6 +78,38 @@ type Tab = "trials" | "genomics" | "cohorts" | "deidentify";
 
 export default function ResearchGenomicsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("trials");
+  const [showNewStudy, setShowNewStudy] = useState(false);
+  const [showCustomCohort, setShowCustomCohort] = useState(false);
+  const [studyForm, setStudyForm] = useState({ title: "", phase: "Phase II", targetEnrollment: "" });
+  const [cohortForm, setCohortForm] = useState({ name: "", criteria: "" });
+  const [buildingCohort, setBuildingCohort] = useState<string | null>(null);
+  const [detailCohort, setDetailCohort] = useState<string | null>(null);
+
+  const handleNewStudy = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await matchClinicalTrials({ title: studyForm.title, phase: studyForm.phase, target_enrollment: parseInt(studyForm.targetEnrollment) || 100 });
+      setShowNewStudy(false);
+      setStudyForm({ title: "", phase: "Phase II", targetEnrollment: "" });
+    } catch { /* silently handle */ }
+  };
+
+  const handleCustomCohort = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createCohort({ name: cohortForm.name, criteria: cohortForm.criteria.split(",").map((c) => c.trim()) });
+      setShowCustomCohort(false);
+      setCohortForm({ name: "", criteria: "" });
+    } catch { /* silently handle */ }
+  };
+
+  const handleBuildCohort = async (key: string) => {
+    setBuildingCohort(key);
+    try {
+      await createCohort({ template_key: key, action: "build" });
+    } catch { /* silently handle */ }
+    finally { setBuildingCohort(null); }
+  };
 
   return (
     <div className="space-y-6">
@@ -86,7 +118,7 @@ export default function ResearchGenomicsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Research & Genomics</h1>
           <p className="text-sm text-gray-500">Clinical trials, pharmacogenomics, genetic risk, cohort management, and de-identification</p>
         </div>
-        <button className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">
+        <button onClick={() => setShowNewStudy(true)} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">
           + New Research Study
         </button>
       </div>
@@ -216,7 +248,7 @@ export default function ResearchGenomicsPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-700">Research Cohort Templates</h3>
-            <button className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50">
+            <button onClick={() => setShowCustomCohort(true)} className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50">
               + Custom Cohort
             </button>
           </div>
@@ -229,9 +261,17 @@ export default function ResearchGenomicsPage() {
                   <p className="text-xs text-gray-500">Criteria: <span className="font-medium text-gray-900">{cohort.criteria}</span></p>
                 </div>
                 <div className="mt-3 flex gap-2">
-                  <button className="rounded bg-healthos-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-healthos-700">Build</button>
-                  <button className="rounded border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50">Details</button>
+                  <button onClick={() => handleBuildCohort(cohort.key)} disabled={buildingCohort === cohort.key} className="rounded bg-healthos-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-healthos-700 disabled:opacity-50">{buildingCohort === cohort.key ? "Building..." : "Build"}</button>
+                  <button onClick={() => setDetailCohort(detailCohort === cohort.key ? null : cohort.key)} className="rounded border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50">Details</button>
                 </div>
+                {detailCohort === cohort.key && (
+                  <div className="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-600 animate-fade-in">
+                    <p><span className="font-semibold">Cohort:</span> {cohort.name}</p>
+                    <p><span className="font-semibold">Population Size:</span> {cohort.size.toLocaleString()} patients</p>
+                    <p><span className="font-semibold">Inclusion Criteria:</span> {cohort.criteria} rules applied</p>
+                    <p><span className="font-semibold">Status:</span> Ready to build</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -321,6 +361,66 @@ export default function ResearchGenomicsPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+      {/* New Research Study Modal */}
+      {showNewStudy && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowNewStudy(false)}>
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">New Research Study</h2>
+              <button onClick={() => setShowNewStudy(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+            <form onSubmit={handleNewStudy} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Study Title *</label>
+                <input required value={studyForm.title} onChange={(e) => setStudyForm({ ...studyForm, title: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. SGLT2 Inhibitor for CKD" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phase *</label>
+                <select required value={studyForm.phase} onChange={(e) => setStudyForm({ ...studyForm, phase: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
+                  <option value="Phase I">Phase I</option>
+                  <option value="Phase II">Phase II</option>
+                  <option value="Phase III">Phase III</option>
+                  <option value="Phase IV">Phase IV</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Target Enrollment</label>
+                <input type="number" value={studyForm.targetEnrollment} onChange={(e) => setStudyForm({ ...studyForm, targetEnrollment: e.target.value })} placeholder="e.g. 500" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowNewStudy(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="submit" className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">Create Study</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Cohort Modal */}
+      {showCustomCohort && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowCustomCohort(false)}>
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">Custom Cohort</h2>
+              <button onClick={() => setShowCustomCohort(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+            <form onSubmit={handleCustomCohort} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cohort Name *</label>
+                <input required value={cohortForm.name} onChange={(e) => setCohortForm({ ...cohortForm, name: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. Elderly Diabetics with CKD" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Inclusion Criteria *</label>
+                <input required value={cohortForm.criteria} onChange={(e) => setCohortForm({ ...cohortForm, criteria: e.target.value })} placeholder="Comma-separated, e.g. Age > 65, HbA1c > 7.0, eGFR < 60" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowCustomCohort(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="submit" className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">Create Cohort</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -19,9 +19,12 @@ const TIER_MAP: Record<string, { key: string; label: string; bg: string; text: s
 
 function tierConfig(tier: string) {
   const t = tier.toLowerCase();
-  if (t.includes("autonomous") || t === "action" || t === "ingestion" || t === "normalization") return TIER_MAP.autonomous;
-  if (t.includes("supervised") || t === "detection" || t === "scoring" || t === "analysis") return TIER_MAP.supervised;
-  if (t.includes("advisory") || t === "measurement" || t === "advisory") return TIER_MAP.advisory;
+  // Tier 1 — Autonomous: sensing (data ingestion) & action (alerts, orders, notifications)
+  if (t === "sensing" || t === "action" || t.includes("autonomous") || t === "ingestion" || t === "normalization") return TIER_MAP.autonomous;
+  // Tier 2 — Supervised: interpretation (analysis, anomaly detection) & decisioning (risk scoring, policy checks)
+  if (t === "interpretation" || t === "decisioning" || t.includes("supervised") || t === "detection" || t === "scoring" || t === "analysis") return TIER_MAP.supervised;
+  // Tier 3 — Advisory: measurement (outcomes, population health, quality metrics)
+  if (t === "measurement" || t.includes("advisory")) return TIER_MAP.advisory;
   return TIER_MAP.autonomous;
 }
 
