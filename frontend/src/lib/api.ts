@@ -1197,3 +1197,130 @@ export async function fetchFeatureStoreStats() {
     feature_groups: Array<{ name: string; feature_count: number; last_updated: string }>;
   }>("/feature-store/stats");
 }
+
+// ── MS Risk Screening ──────────────────────────────────────────────────────
+
+export interface MSRiskDashboard {
+  total_patients: number;
+  total_assessments: number;
+  latest_run: {
+    id: string;
+    status: string;
+    candidates_found: number;
+    precision: number | null;
+    recall: number | null;
+    created_at: string;
+  } | null;
+  action_breakdown: {
+    no_action: number;
+    recommend_neuro_review: number;
+    draft_mri_order: number;
+    auto_order: number;
+  };
+}
+
+export interface MSRiskAssessment {
+  id: string;
+  patient: { patient_id: string; age: number; sex: string };
+  risk_score: number;
+  action: string;
+  autonomy_level: string;
+  feature_contributions: Record<string, number>;
+  flags: string[];
+  flag_count: number;
+  rationale: Record<string, unknown>;
+  llm_summary: string;
+  reviewed_by: string;
+  review_notes: string;
+  reviewed_at: string | null;
+  created_at: string;
+}
+
+export interface MSRiskWorkflow {
+  id: string;
+  status: string;
+  total_patients: number;
+  candidates_found: number;
+  flagged_count: number;
+  precision: number | null;
+  recall: number | null;
+  auto_actions: number;
+  draft_actions: number;
+  recommend_actions: number;
+  safety_flag_rate: number | null;
+  duration_seconds: number | null;
+  created_at: string;
+}
+
+export interface MSRiskPolicy {
+  id: string;
+  name: string;
+  risk_review_threshold: number;
+  draft_order_threshold: number;
+  auto_order_threshold: number;
+  max_auto_actions_per_day: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export async function fetchMSRiskDashboard() {
+  return request<MSRiskDashboard>("/ms-risk-screening/dashboard");
+}
+
+export async function fetchMSRiskPatients(params?: { page?: number; page_size?: number }) {
+  const query = new URLSearchParams();
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.page_size) query.set("page_size", String(params.page_size));
+  const qs = query.toString();
+  return request<{ results: unknown[]; count: number }>(`/ms-risk-screening/patients${qs ? `?${qs}` : ""}`);
+}
+
+export async function fetchMSRiskAssessments(params?: { page?: number; page_size?: number }) {
+  const query = new URLSearchParams();
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.page_size) query.set("page_size", String(params.page_size));
+  const qs = query.toString();
+  return request<{ results: MSRiskAssessment[]; count: number }>(`/ms-risk-screening/assessments${qs ? `?${qs}` : ""}`);
+}
+
+export async function fetchMSRiskWorkflows(params?: { page?: number }) {
+  const query = new URLSearchParams();
+  if (params?.page) query.set("page", String(params.page));
+  const qs = query.toString();
+  return request<{ results: MSRiskWorkflow[]; count: number }>(`/ms-risk-screening/workflows${qs ? `?${qs}` : ""}`);
+}
+
+export async function triggerMSRiskWorkflow(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/ms-risk-screening/workflows/trigger", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchMSRiskPolicies() {
+  return request<{ results: MSRiskPolicy[] }>("/ms-risk-screening/policies");
+}
+
+export async function createMSRiskPolicy(body: Record<string, unknown>) {
+  return request<MSRiskPolicy>("/ms-risk-screening/policies", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function runMSRiskWhatIf(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/ms-risk-screening/what-if", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function reviewMSRiskAssessment(assessmentId: string, body: Record<string, unknown>) {
+  return request<Record<string, unknown>>(`/ms-risk-screening/assessments/${assessmentId}/review`, { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchMSRiskGovernanceRules() {
+  return request<{ results: unknown[] }>("/ms-risk-screening/governance-rules");
+}
+
+export async function fetchMSRiskComplianceReports() {
+  return request<{ results: unknown[] }>("/ms-risk-screening/compliance-reports");
+}
+
+export async function fetchMSRiskAuditLogs(params?: { page?: number }) {
+  const query = new URLSearchParams();
+  if (params?.page) query.set("page", String(params.page));
+  const qs = query.toString();
+  return request<{ results: unknown[]; count: number }>(`/ms-risk-screening/audit-logs${qs ? `?${qs}` : ""}`);
+}

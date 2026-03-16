@@ -1,0 +1,210 @@
+"""MS Risk Screening proxy routes.
+
+Proxies requests from the main HealthOS API to the ms-risk-backend
+Django service, keeping a single unified API surface for the frontend.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any, Optional
+
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
+
+from services.api.middleware.auth import CurrentUser, require_auth
+from services.api.middleware.tenant import get_tenant_id
+
+logger = logging.getLogger("healthos.modules.ms_risk_screening")
+
+router = APIRouter(prefix="/ms-risk-screening", tags=["MS Risk Screening"])
+
+MS_RISK_BACKEND = "http://ms-risk-backend:8000"
+
+
+async def _proxy(method: str, path: str, body: Any = None, params: dict | None = None) -> Any:
+    """Forward a request to the ms-risk-backend Django service."""
+    url = f"{MS_RISK_BACKEND}{path}"
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.request(method, url, json=body, params=params)
+            resp.raise_for_status()
+            return resp.json()
+    except httpx.ConnectError:
+        raise HTTPException(status_code=503, detail="MS Risk Screening service unavailable")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+
+
+# ── Dashboard / Summary ──────────────────────────────────────────────────────
+
+@router.get("/dashboard")
+async def ms_risk_dashboard(
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Aggregated MS Risk Screening dashboard data."""
+    return await _proxy("GET", "/api/dashboard/")
+
+
+@router.get("/health")
+async def ms_risk_health():
+    """Health check for the MS Risk Screening backend."""
+    return await _proxy("GET", "/api/health/")
+
+
+# ── Patients ─────────────────────────────────────────────────────────────────
+
+@router.get("/patients")
+async def list_ms_patients(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=100),
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """List MS risk screening patients."""
+    return await _proxy("GET", "/api/patients/", params={"page": page, "page_size": page_size})
+
+
+@router.get("/patients/{patient_id}")
+async def get_ms_patient(
+    patient_id: str,
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Get a specific MS screening patient."""
+    return await _proxy("GET", f"/api/patients/{patient_id}/")
+
+
+# ── Risk Assessments ─────────────────────────────────────────────────────────
+
+@router.get("/assessments")
+async def list_assessments(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=100),
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """List risk assessments."""
+    return await _proxy("GET", "/api/assessments/", params={"page": page, "page_size": page_size})
+
+
+@router.get("/assessments/{assessment_id}")
+async def get_assessment(
+    assessment_id: str,
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Get a specific risk assessment."""
+    return await _proxy("GET", f"/api/assessments/{assessment_id}/")
+
+
+@router.post("/assessments/{assessment_id}/review")
+async def review_assessment(
+    assessment_id: str,
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Submit a clinician review for an assessment."""
+    return await _proxy("POST", f"/api/assessments/{assessment_id}/review/", body=body)
+
+
+# ── Workflow Runs ─────────────────────────────────────────────────────────────
+
+@router.get("/workflows")
+async def list_workflows(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=50),
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """List workflow runs."""
+    return await _proxy("GET", "/api/workflows/", params={"page": page, "page_size": page_size})
+
+
+@router.post("/workflows/trigger")
+async def trigger_workflow(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Trigger a new multi-agent screening workflow."""
+    return await _proxy("POST", "/api/workflows/trigger/", body=body)
+
+
+@router.get("/workflows/{run_id}")
+async def get_workflow(
+    run_id: str,
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Get workflow run details."""
+    return await _proxy("GET", f"/api/workflows/{run_id}/")
+
+
+# ── Policy Configuration ─────────────────────────────────────────────────────
+
+@router.get("/policies")
+async def list_policies(
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """List policy configurations."""
+    return await _proxy("GET", "/api/policies/")
+
+
+@router.post("/policies")
+async def create_policy(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Create a new policy configuration."""
+    return await _proxy("POST", "/api/policies/", body=body)
+
+
+# ── What-If Analysis ─────────────────────────────────────────────────────────
+
+@router.post("/what-if")
+async def what_if_analysis(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Run what-if policy simulation."""
+    return await _proxy("POST", "/api/what-if/", body=body)
+
+
+# ── Governance ────────────────────────────────────────────────────────────────
+
+@router.get("/governance-rules")
+async def list_governance_rules(
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """List governance rules."""
+    return await _proxy("GET", "/api/governance-rules/")
+
+
+@router.get("/compliance-reports")
+async def list_compliance_reports(
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """List compliance reports."""
+    return await _proxy("GET", "/api/compliance-reports/")
+
+
+# ── Audit Logs ────────────────────────────────────────────────────────────────
+
+@router.get("/audit-logs")
+async def list_audit_logs(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """List audit logs."""
+    return await _proxy("GET", "/api/audit-logs/", params={"page": page, "page_size": page_size})
