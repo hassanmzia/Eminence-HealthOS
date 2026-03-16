@@ -22,12 +22,8 @@ dependencies = [
     "langchain-core>=0.3.0",
     "langchain-anthropic>=0.3.0",
     "langchain-community>=0.3.0",
-    # ML / AI
+    # AI
     "anthropic>=0.40.0",
-    "scikit-learn>=1.6.0",
-    "xgboost>=2.1.0",
-    "numpy>=2.0.0",
-    "pandas>=2.2.0",
     # Healthcare
     "fhir.resources>=7.1.0",
     # Messaging & Events
@@ -60,6 +56,10 @@ dependencies = [
 ml = [
     "torch",
     "sentence-transformers>=3.3.0",
+    "scikit-learn>=1.6.0",
+    "xgboost>=2.1.0",
+    "numpy>=2.0.0",
+    "pandas>=2.2.0",
 ]
 dev = [
     "pytest>=8.3.0",
