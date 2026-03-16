@@ -27,6 +27,7 @@ const NAV_SECTIONS = [
       { href: "/mental-health", label: "Mental Health", icon: "heart" },
       { href: "/sdoh", label: "SDOH", icon: "home" },
       { href: "/patient-timeline", label: "Timeline", icon: "clock" },
+      { href: "/clinical-assessment", label: "Clinical AI", icon: "stethoscope" },
     ],
   },
   {
@@ -211,6 +212,13 @@ function NavIcon({ icon }: { icon: string }) {
     clock: (
       <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+      </svg>
+    ),
+    stethoscope: (
+      <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        <circle cx="19" cy="16" r="2.5" fill="none" stroke="currentColor" strokeWidth={1.8} />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 13.5V8a3 3 0 00-3-3h-1M8 5H7a3 3 0 00-3 3v5" />
       </svg>
     ),
     explain: (
