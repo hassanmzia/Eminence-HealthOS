@@ -17,7 +17,7 @@ services:
       NEO4J_URI: bolt://neo4j:7687
       NEO4J_USER: neo4j
       NEO4J_PASSWORD: healthos
-      CORS_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:3052"
+      CORS_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:3052,http://clinical-orchestrator:8001,http://iot-simulator:8004"
       KEYCLOAK_URL: http://keycloak:8080
       TEMPORAL_ADDRESS: temporal:7233
     depends_on:
@@ -46,6 +46,110 @@ services:
       - api
     volumes:
       - ./frontend/src:/app/src
+    networks:
+      - healthos
+
+  # ─── Clinical Decision Support Orchestrator ─────────────────────────────────
+  clinical-orchestrator:
+    build:
+      context: ./clinical_decision_support/orchestrator
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      BACKEND_INTERNAL: http://api:8000
+      LLM_PROVIDER: claude
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_MODEL: claude-sonnet-4-20250514
+      OLLAMA_BASE_URL: http://ollama:11434
+      LLM_TEMPERATURE: "0.3"
+      LLM_MAX_TOKENS: "2000"
+      MCP_FHIR_SERVER_URL: http://mcp-fhir-server:8005
+      MCP_LABS_SERVER_URL: http://mcp-labs-server:8006
+      MCP_RAG_SERVER_URL: http://mcp-rag-server:8007
+      MCP_FHIR_ADAPTER_URL: http://mcp-fhir-adapter:8002
+    depends_on:
+      - api
+    networks:
+      - healthos
+
+  # ─── MCP FHIR Server ────────────────────────────────────────────────────────
+  mcp-fhir-server:
+    build:
+      context: ./clinical_decision_support/mcp/servers
+      dockerfile: Dockerfile
+    ports:
+      - "8005:8005"
+    environment:
+      PORT: "8005"
+      SERVER_NAME: mcp-fhir-server
+      FHIR_BASE: http://hapi-fhir:8080/fhir
+    command: python mcp_fhir_server.py
+    networks:
+      - healthos
+
+  # ─── MCP Labs Server ────────────────────────────────────────────────────────
+  mcp-labs-server:
+    build:
+      context: ./clinical_decision_support/mcp/servers
+      dockerfile: Dockerfile
+    ports:
+      - "8006:8006"
+    environment:
+      PORT: "8006"
+      SERVER_NAME: mcp-labs-server
+    command: python mcp_labs_server.py
+    networks:
+      - healthos
+
+  # ─── MCP RAG Server ─────────────────────────────────────────────────────────
+  mcp-rag-server:
+    build:
+      context: ./clinical_decision_support/mcp/servers
+      dockerfile: Dockerfile
+    ports:
+      - "8007:8007"
+    environment:
+      PORT: "8007"
+      SERVER_NAME: mcp-rag-server
+      QDRANT_URL: http://qdrant:6333
+    command: python mcp_rag_server.py
+    depends_on:
+      - qdrant
+    networks:
+      - healthos
+
+  # ─── MCP FHIR Writeback Adapter ────────────────────────────────────────────
+  mcp-fhir-adapter:
+    build:
+      context: ./clinical_decision_support/mcp/tool_adapters/fhir_writeback
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      PORT: "8002"
+      FHIR_BASE: http://hapi-fhir:8080/fhir
+    networks:
+      - healthos
+
+  # ─── IoT Device Simulator ──────────────────────────────────────────────────
+  iot-simulator:
+    build:
+      context: ./clinical_decision_support/iot-simulator
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8004"
+    environment:
+      BACKEND_URL: http://api:8000
+      MCP_ADAPTER_URL: http://mcp-fhir-adapter:8002
+      ORCHESTRATOR_URL: http://clinical-orchestrator:8001
+      DEFAULT_INTERVAL: "30"
+      ENABLE_ALERTS: "true"
+      ENABLE_AI_RECOMMENDATIONS: "true"
+      AUTO_START: "false"
+    depends_on:
+      - api
+      - clinical-orchestrator
     networks:
       - healthos
 

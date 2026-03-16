@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from healthos_platform.api.middleware.audit import AuditMiddleware
-from healthos_platform.api.routes import agents, alerts, auth, dashboard, ehr_sync, fhir, patient_portal, patients, profile, vitals
+from healthos_platform.api.routes import agents, alerts, auth, clinical_assessment, dashboard, ehr_sync, fhir, patient_portal, patients, profile, vitals
 from healthos_platform.config import get_settings
 from healthos_platform.database import close_db, get_db_context, init_db
 
@@ -220,6 +220,14 @@ def _register_agents() -> None:
     except ImportError:
         logger.warning("agents.research_genomics.not_available")
 
+    # Register clinical decision support agents
+    try:
+        from clinical_decision_support.orchestrator.agents.registration import register_clinical_agents
+        register_clinical_agents()
+        logger.info("agents.clinical_decision_support.registered")
+    except ImportError:
+        logger.warning("agents.clinical_decision_support.not_available")
+
     # Register remaining module agents dynamically
     _optional_agent_modules = [
         ("modules.analytics.agents", "register_analytics_agents"),
@@ -345,6 +353,7 @@ def create_app() -> FastAPI:
     app.include_router(ehr_sync.router, prefix=api_prefix)
     app.include_router(patient_portal.router, prefix=api_prefix)
     app.include_router(profile.router, prefix=api_prefix)
+    app.include_router(clinical_assessment.router, prefix=api_prefix)
 
     # Serve uploaded files (avatars)
     from fastapi.staticfiles import StaticFiles
