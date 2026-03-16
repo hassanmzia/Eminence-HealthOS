@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
+  <meta name="theme-color" content="#1565c0" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0d47a1" media="(prefers-color-scheme: dark)" />
+  <meta name="description" content="MS Risk Lab - AI Healthcare Interaction Embodiment Assistant" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MS Risk Lab" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>MS Risk Lab | AI Healthcare Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+  <style>
+    /* Prevent horizontal overflow on mobile */
+    html, body {
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+    /* Smooth scrolling */
+    html {
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+    }
+    /* Fix iOS input zoom */
+    @media screen and (max-width: 600px) {
+      input, select, textarea {
+        font-size: 16px !important;
+      }
+    }
+    /* Touch-friendly tap targets */
+    @media (pointer: coarse) {
+      button, a, [role="button"] {
+        min-height: 44px;
+        min-width: 44px;
+      }
+    }
+  </style>
+</body>
+</html>
