@@ -5,6 +5,10 @@
 CREATE DATABASE keycloak;
 GRANT ALL PRIVILEGES ON DATABASE keycloak TO healthos;
 
+-- Create MS Risk Screening database
+CREATE DATABASE ms_risk_lab;
+GRANT ALL PRIVILEGES ON DATABASE ms_risk_lab TO healthos;
+
 -- Create temporal databases for Temporal workflow engine
 CREATE DATABASE temporal;
 GRANT ALL PRIVILEGES ON DATABASE temporal TO healthos;

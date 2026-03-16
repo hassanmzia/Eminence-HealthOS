@@ -79,6 +79,14 @@ const PLATFORM_FEATURES = [
     color: "text-emerald-600 bg-emerald-50",
     stat: "7 domains",
   },
+  {
+    label: "MS Screening",
+    href: "/ms-risk-screening",
+    description: "Multi-agent MS risk detection",
+    icon: "M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5m14-11.396v5.714a2.25 2.25 0 00.659 1.591L19 14.5M12 18a3 3 0 100-6 3 3 0 000 6z",
+    color: "text-fuchsia-600 bg-fuchsia-50",
+    stat: "5 agents",
+  },
 ];
 
 export default function DashboardPage() {

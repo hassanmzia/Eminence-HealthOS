@@ -38,6 +38,7 @@ const NAV_SECTIONS = [
       { href: "/ml-models", label: "ML Models", icon: "brain" },
       { href: "/agents", label: "AI Orchestration", icon: "cpu" },
       { href: "/digital-twin", label: "Digital Twin", icon: "twin" },
+      { href: "/ms-risk-screening", label: "MS Screening", icon: "ms_screen" },
       { href: "/fairness", label: "AI Fairness", icon: "scale" },
       { href: "/ai-explainability", label: "Explainability", icon: "explain" },
     ],
@@ -182,6 +183,13 @@ function NavIcon({ icon }: { icon: string }) {
     graph: (
       <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z" />
+      </svg>
+    ),
+    ms_screen: (
+      <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19 14.5m-4.75-11.396c.251.023.501.05.75.082" />
+        <circle cx="12" cy="18" r="3" fill="none" stroke="currentColor" strokeWidth={1.8} />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v-1" />
       </svg>
     ),
     brain: (

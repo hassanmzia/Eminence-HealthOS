@@ -17,6 +17,12 @@ scrape_configs:
     metrics_path: "/metrics"
     scrape_interval: 10s
 
+  - job_name: "ms-risk-screening"
+    static_configs:
+      - targets: ["ms-risk-backend:8000"]
+    metrics_path: "/api/metrics/"
+    scrape_interval: 15s
+
   - job_name: "prometheus"
     static_configs:
       - targets: ["localhost:9090"]
