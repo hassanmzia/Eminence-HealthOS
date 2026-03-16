@@ -22,10 +22,9 @@ RUN pip install --no-cache-dir \
     neo4j qdrant-client \
     httpx python-multipart python-dotenv tenacity orjson
 
-# Layer 3: ML libs (no PyTorch/sentence-transformers — those are lazy-loaded
-# and belong in a dedicated ML worker image if needed)
-RUN pip install --no-cache-dir \
-    scikit-learn xgboost numpy pandas
+# NOTE: scikit-learn, xgboost, numpy, pandas, torch, sentence-transformers
+# are all lazy-loaded in healthos_platform/ml/ and NOT needed at API startup.
+# Install them in a dedicated ML worker image via: pip install -e ".[ml]"
 
 COPY pyproject.toml .
 COPY healthos_platform/ healthos_platform/
