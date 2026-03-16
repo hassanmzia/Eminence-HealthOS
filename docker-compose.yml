@@ -125,7 +125,7 @@ services:
       context: ./clinical_decision_support/mcp/tool_adapters/fhir_writeback
       dockerfile: Dockerfile
     ports:
-      - "8002:8002"
+      - "8102:8002"
     environment:
       PORT: "8002"
       FHIR_BASE: http://hapi-fhir:8080/fhir
