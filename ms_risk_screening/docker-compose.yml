@@ -1,0 +1,247 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database - Port 5455 (non-default)
+  postgres:
+    image: postgres:16-alpine
+    container_name: ms_risk_postgres
+    environment:
+      POSTGRES_DB: ms_risk_lab
+      POSTGRES_USER: msrisk_admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-MSRisk2024Secure!}
+    ports:
+      - "5455:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U msrisk_admin -d ms_risk_lab"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ms_risk_network
+
+  # Redis for Celery, Caching, WebSocket - Port 6399 (non-default)
+  redis:
+    image: redis:7-alpine
+    container_name: ms_risk_redis
+    ports:
+      - "6399:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ms_risk_network
+
+  # Django Backend API - Port 8055 (non-default)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ms_risk_backend
+    command: >
+      bash -c "
+        python manage.py makemigrations core patients agents governance analytics --noinput &&
+        python manage.py migrate --noinput &&
+        python manage.py collectstatic --noinput &&
+        python manage.py seed_data --patients 2500 || true &&
+        daphne -b 0.0.0.0 -p 8000 config.asgi:application
+      "
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=postgresql://msrisk_admin:${POSTGRES_PASSWORD:-MSRisk2024Secure!}@postgres:5432/ms_risk_lab
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-ms-risk-lab-secret-key-change-in-production}
+      - ALLOWED_HOSTS=*
+      - CORS_ALLOWED_ORIGINS=https://demo.eminencetechsolutions.com:3055,https://108.48.39.238:3055,http://108.48.39.238:3055,http://localhost:3055
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - MCP_ENABLED=true
+      - A2A_ENABLED=true
+    ports:
+      - "8055:8000"
+    volumes:
+      - ./backend:/app
+      - backend_static:/app/staticfiles
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - ms_risk_network
+
+  # Celery Worker for async agent tasks
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ms_risk_celery_worker
+    command: >
+      bash -c "
+        echo 'Waiting for backend migrations...' &&
+        until python manage.py showmigrations --plan 2>/dev/null | grep -q '\[X\]'; do
+          echo 'Backend not ready, waiting 5s...';
+          sleep 5;
+        done &&
+        echo 'Backend ready, starting Celery worker...' &&
+        celery -A config worker -l info -c 4 -Q default,agents,analytics
+      "
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=postgresql://msrisk_admin:${POSTGRES_PASSWORD:-MSRisk2024Secure!}@postgres:5432/ms_risk_lab
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-ms-risk-lab-secret-key-change-in-production}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ms_risk_network
+
+  # Celery Beat for scheduled tasks
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ms_risk_celery_beat
+    command: >
+      bash -c "
+        echo 'Waiting for backend migrations...' &&
+        until python manage.py showmigrations --plan 2>/dev/null | grep -q '\[X\]'; do
+          echo 'Backend not ready, waiting 5s...';
+          sleep 5;
+        done &&
+        echo 'Backend ready, starting Celery beat...' &&
+        celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+      "
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=postgresql://msrisk_admin:${POSTGRES_PASSWORD:-MSRisk2024Secure!}@postgres:5432/ms_risk_lab
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-ms-risk-lab-secret-key-change-in-production}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ms_risk_network
+
+  # MCP Server (Model Context Protocol) - Port 9055
+  mcp_server:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ms_risk_mcp_server
+    command: python manage.py run_mcp_server --host 0.0.0.0 --port 9000
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=postgresql://msrisk_admin:${POSTGRES_PASSWORD:-MSRisk2024Secure!}@postgres:5432/ms_risk_lab
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-ms-risk-lab-secret-key-change-in-production}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+    ports:
+      - "9055:9000"
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ms_risk_network
+
+  # A2A Gateway (Agent-to-Agent Protocol) - Port 9155
+  a2a_gateway:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ms_risk_a2a_gateway
+    command: python manage.py run_a2a_gateway --host 0.0.0.0 --port 9100
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=postgresql://msrisk_admin:${POSTGRES_PASSWORD:-MSRisk2024Secure!}@postgres:5432/ms_risk_lab
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-ms-risk-lab-secret-key-change-in-production}
+      - MCP_SERVER_URL=http://mcp_server:9000
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+    ports:
+      - "9155:9100"
+    depends_on:
+      backend:
+        condition: service_healthy
+      mcp_server:
+        condition: service_started
+    networks:
+      - ms_risk_network
+
+  # Node.js API Gateway / BFF - Port 4055
+  node_gateway:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.gateway
+    container_name: ms_risk_node_gateway
+    environment:
+      - PORT=4000
+      - BACKEND_URL=http://backend:8000
+      - MCP_URL=http://mcp_server:9000
+      - A2A_URL=http://a2a_gateway:9100
+      - REDIS_URL=redis://redis:6379/2
+      - NODE_ENV=production
+    ports:
+      - "4055:4000"
+    depends_on:
+      - backend
+    networks:
+      - ms_risk_network
+
+  # React Frontend (served by Nginx with SSL) - Port 3055
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=
+        - REACT_APP_WS_URL=
+        - REACT_APP_MCP_URL=
+    container_name: ms_risk_frontend
+    ports:
+      - "3055:443"
+    volumes:
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - node_gateway
+      - backend
+    networks:
+      - ms_risk_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_static:
+
+networks:
+  ms_risk_network:
+    driver: bridge
