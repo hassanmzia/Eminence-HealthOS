@@ -94,7 +94,7 @@ services:
       context: ./clinical_decision_support/mcp/servers
       dockerfile: Dockerfile
     ports:
-      - "8006:8006"
+      - "8106:8006"
     environment:
       PORT: "8006"
       SERVER_NAME: mcp-labs-server
