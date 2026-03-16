@@ -79,7 +79,7 @@ services:
       context: ./clinical_decision_support/mcp/servers
       dockerfile: Dockerfile
     ports:
-      - "8005:8005"
+      - "8105:8005"
     environment:
       PORT: "8005"
       SERVER_NAME: mcp-fhir-server
