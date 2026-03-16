@@ -108,7 +108,7 @@ services:
       context: ./clinical_decision_support/mcp/servers
       dockerfile: Dockerfile
     ports:
-      - "8007:8007"
+      - "8107:8007"
     environment:
       PORT: "8007"
       SERVER_NAME: mcp-rag-server
