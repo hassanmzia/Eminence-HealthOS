@@ -367,7 +367,7 @@ services:
       context: ./ms_risk_screening/backend
       dockerfile: Dockerfile
     ports:
-      - "8055:8000"
+      - "8155:8000"
     command: >
       bash -c "
         python manage.py makemigrations core patients agents governance analytics --noinput &&
