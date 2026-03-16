@@ -1,0 +1,528 @@
+/* Modern Healthcare Dashboard Styles */
+:root {
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --primary-light: #60a5fa;
+  --secondary: #8b5cf6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --sidebar-width: 260px;
+  --header-height: 64px;
+  --border-radius: 12px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  width: 100%;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--gray-800);
+  background: var(--gray-50);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-400);
+}
+
+/* Button Reset */
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* Input Styling */
+input, select, textarea {
+  font-family: inherit;
+  font-size: 14px;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Card Styles */
+.card {
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--gray-200);
+}
+
+.card-hover:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+/* Badge Styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-primary {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--primary-dark);
+}
+
+.badge-success {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.badge-warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+.badge-danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+/* Loading Spinner */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--gray-200);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Transitions */
+.transition-all {
+  transition: all 0.2s ease;
+}
+
+/* Utility Classes */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+
+.text-sm { font-size: 13px; }
+.text-xs { font-size: 12px; }
+.text-lg { font-size: 16px; }
+.text-xl { font-size: 18px; }
+
+.text-gray-400 { color: var(--gray-400); }
+.text-gray-500 { color: var(--gray-500); }
+.text-gray-600 { color: var(--gray-600); }
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Mobile Responsive Styles
+   ============================================================ */
+
+/* Mobile sidebar overlay backdrop */
+.mobile-sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+}
+
+.mobile-sidebar-overlay.active {
+  display: block;
+}
+
+/* Hamburger menu button */
+.mobile-menu-btn {
+  display: none !important;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--gray-100);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid var(--gray-200);
+  color: var(--gray-700);
+  flex-shrink: 0;
+}
+
+/* Mobile-friendly table wrapper */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---- Small tablets & large phones (max-width: 1024px) ---- */
+@media (max-width: 1024px) {
+  /* Doctor portal: stack search + content vertically */
+  .doctor-portal-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .doctor-portal-grid > div:first-child {
+    position: static !important;
+  }
+}
+
+/* ---- Phones & small tablets (max-width: 768px) ---- */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px;
+    --header-height: 56px;
+  }
+
+  /* Show hamburger */
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+
+  /* Sidebar: off-canvas drawer */
+  .app-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    width: 260px !important;
+    z-index: 200 !important;
+  }
+
+  .app-sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Hide the sidebar collapse toggle on mobile */
+  .sidebar-collapse-btn {
+    display: none !important;
+  }
+
+  /* Main content: full width, no left margin */
+  .app-main {
+    margin-left: 0 !important;
+  }
+
+  /* Header adjustments */
+  .app-header {
+    padding: 12px 16px !important;
+  }
+
+  .app-header h1 {
+    font-size: 16px !important;
+  }
+
+  /* Hide user info text in header on small screens */
+  .header-user-info {
+    display: none !important;
+  }
+
+  /* Content area padding */
+  .app-content {
+    padding: 16px !important;
+  }
+
+  /* Stat cards: 2 columns on tablets, stack on phones */
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  /* Doctor portal: full width */
+  .doctor-portal-grid {
+    grid-template-columns: 1fr !important;
+    padding: 0 !important;
+  }
+
+  /* Patient overview: single column */
+  .patient-overview-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Vitals grid inside patient overview */
+  .vitals-inner-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Care plans grid */
+  .care-plans-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tabs: horizontally scrollable */
+  .tabs-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+
+  .tabs-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Patient header: stack buttons below info */
+  .patient-header-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100%;
+    margin-top: 12px;
+  }
+
+  .patient-header-actions button {
+    width: 100%;
+  }
+
+  .patient-header-layout {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  .patient-meta-row {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .allergies-meds-row {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  /* Modals: full width on mobile */
+  .modal-overlay {
+    padding: 16px !important;
+    align-items: flex-start !important;
+  }
+
+  .modal-content {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Form grids: single column on mobile */
+  .form-grid-2col {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Controls bar: stack vertically */
+  .controls-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  /* Encounter details row: wrap */
+  .encounter-details-row {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* Login page */
+  .login-card {
+    margin: 16px;
+    padding: 24px !important;
+    border-radius: 12px !important;
+  }
+
+  /* Tables: make parent scrollable, table keeps natural width */
+  table {
+    min-width: 600px;
+  }
+
+  /* All table parent containers: allow horizontal scroll */
+  div:has(> table) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* All modals: full-width on mobile via fixed position inset:0 */
+  div[style*="position: fixed"][style*="inset: 0"],
+  div[style*="position: fixed"][style*="inset:0"] {
+    padding: 16px !important;
+    align-items: flex-start !important;
+  }
+
+  /* Modal content boxes inside overlays */
+  div[style*="position: fixed"][style*="inset: 0"] > div[style*="maxWidth"],
+  div[style*="position: fixed"][style*="inset:0"] > div[style*="max-width"],
+  div[style*="position: fixed"] > div[style*="maxWidth"] {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  /* Recharts responsive container override */
+  .recharts-responsive-container {
+    min-width: 0 !important;
+  }
+
+  .recharts-wrapper {
+    max-width: 100% !important;
+  }
+}
+
+/* ---- Very small phones (max-width: 480px) ---- */
+@media (max-width: 480px) {
+  .app-content {
+    padding: 12px !important;
+  }
+
+  /* Stat cards: single column */
+  .stat-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Vitals grid: single column */
+  .vitals-inner-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Smaller text */
+  body {
+    font-size: 13px;
+  }
+
+  h1 {
+    font-size: 18px !important;
+  }
+
+  h2 {
+    font-size: 16px !important;
+  }
+
+  /* Hide header avatar on very small screens */
+  .header-avatar {
+    display: none !important;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (pointer: coarse) {
+  button, a, select, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Prevent zoom on input focus (iOS) */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Ensure images and media don't overflow */
+img, video, svg, canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Print styles */
+@media print {
+  .app-sidebar,
+  .mobile-menu-btn,
+  .mobile-sidebar-overlay {
+    display: none !important;
+  }
+
+  .app-main {
+    margin-left: 0 !important;
+  }
+}
