@@ -13,8 +13,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 
-from services.api.middleware.auth import CurrentUser, require_auth
-from services.api.middleware.tenant import get_tenant_id
+from healthos_platform.api.middleware.tenant import TenantContext, get_current_user
 
 logger = logging.getLogger("healthos.modules.ms_risk_screening")
 
@@ -40,10 +39,7 @@ async def _proxy(method: str, path: str, body: Any = None, params: dict | None =
 # ── Dashboard / Summary ──────────────────────────────────────────────────────
 
 @router.get("/dashboard")
-async def ms_risk_dashboard(
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
-):
+async def ms_risk_dashboard(ctx: TenantContext = Depends(get_current_user)):
     """Aggregated MS Risk Screening dashboard data."""
     return await _proxy("GET", "/api/dashboard/")
 
@@ -60,18 +56,14 @@ async def ms_risk_health():
 async def list_ms_patients(
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """List MS risk screening patients."""
     return await _proxy("GET", "/api/patients/", params={"page": page, "page_size": page_size})
 
 
 @router.get("/patients/summary")
-async def patient_summary(
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
-):
+async def patient_summary(ctx: TenantContext = Depends(get_current_user)):
     """Population-level patient summary statistics."""
     return await _proxy("GET", "/api/patients/summary/")
 
@@ -79,8 +71,7 @@ async def patient_summary(
 @router.get("/patients/{patient_id}")
 async def get_ms_patient(
     patient_id: str,
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Get a specific MS screening patient."""
     return await _proxy("GET", f"/api/patients/{patient_id}/")
@@ -89,8 +80,7 @@ async def get_ms_patient(
 @router.get("/patients/{patient_id}/risk_history")
 async def patient_risk_history(
     patient_id: str,
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Get risk assessment history for a specific patient."""
     return await _proxy("GET", f"/api/patients/{patient_id}/risk_history/")
@@ -102,8 +92,7 @@ async def patient_risk_history(
 async def list_assessments(
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """List risk assessments."""
     return await _proxy("GET", "/api/assessments/", params={"page": page, "page_size": page_size})
@@ -113,8 +102,7 @@ async def list_assessments(
 async def high_risk_assessments(
     threshold: float = Query(0.65, ge=0.0, le=1.0),
     run_id: str | None = Query(None),
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Get high-risk assessments filtered by threshold."""
     params: dict[str, Any] = {"threshold": threshold}
@@ -124,10 +112,7 @@ async def high_risk_assessments(
 
 
 @router.get("/assessments/pending_review")
-async def pending_review_assessments(
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
-):
+async def pending_review_assessments(ctx: TenantContext = Depends(get_current_user)):
     """Get assessments awaiting clinician review."""
     return await _proxy("GET", "/api/assessments/pending_review/")
 
@@ -135,8 +120,7 @@ async def pending_review_assessments(
 @router.get("/assessments/{assessment_id}")
 async def get_assessment(
     assessment_id: str,
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Get a specific risk assessment."""
     return await _proxy("GET", f"/api/assessments/{assessment_id}/")
@@ -146,8 +130,7 @@ async def get_assessment(
 async def review_assessment(
     assessment_id: str,
     body: dict[str, Any],
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Submit a clinician review for an assessment."""
     return await _proxy("POST", f"/api/assessments/{assessment_id}/review/", body=body)
@@ -159,8 +142,7 @@ async def review_assessment(
 async def list_workflows(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=50),
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """List workflow runs."""
     return await _proxy("GET", "/api/workflows/", params={"page": page, "page_size": page_size})
@@ -169,8 +151,7 @@ async def list_workflows(
 @router.post("/workflows/trigger")
 async def trigger_workflow(
     body: dict[str, Any],
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Trigger a new multi-agent screening workflow."""
     return await _proxy("POST", "/api/workflows/trigger/", body=body)
@@ -179,8 +160,7 @@ async def trigger_workflow(
 @router.get("/workflows/{run_id}")
 async def get_workflow(
     run_id: str,
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Get workflow run details."""
     return await _proxy("GET", f"/api/workflows/{run_id}/")
@@ -189,8 +169,7 @@ async def get_workflow(
 @router.get("/workflows/{run_id}/metrics")
 async def workflow_metrics(
     run_id: str,
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Get comprehensive metrics (confusion matrix, F1, etc.) for a workflow run."""
     return await _proxy("GET", f"/api/workflows/{run_id}/metrics/")
@@ -199,8 +178,7 @@ async def workflow_metrics(
 @router.get("/workflows/{run_id}/risk_distribution")
 async def workflow_risk_distribution(
     run_id: str,
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Get risk score histogram for a workflow run."""
     return await _proxy("GET", f"/api/workflows/{run_id}/risk_distribution/")
@@ -209,8 +187,7 @@ async def workflow_risk_distribution(
 @router.get("/workflows/{run_id}/action_distribution")
 async def workflow_action_distribution(
     run_id: str,
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Get action breakdown for a workflow run."""
     return await _proxy("GET", f"/api/workflows/{run_id}/action_distribution/")
@@ -219,8 +196,7 @@ async def workflow_action_distribution(
 @router.get("/workflows/{run_id}/autonomy_distribution")
 async def workflow_autonomy_distribution(
     run_id: str,
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Get autonomy level distribution for a workflow run."""
     return await _proxy("GET", f"/api/workflows/{run_id}/autonomy_distribution/")
@@ -229,8 +205,7 @@ async def workflow_autonomy_distribution(
 @router.get("/workflows/{run_id}/calibration")
 async def workflow_calibration(
     run_id: str,
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Get calibration curve data for a workflow run."""
     return await _proxy("GET", f"/api/workflows/{run_id}/calibration/")
@@ -240,8 +215,7 @@ async def workflow_calibration(
 async def workflow_fairness(
     run_id: str,
     group_by: str = Query("sex", pattern="^(sex|age_band|lookalike_dx)$"),
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Get subgroup fairness analysis for a workflow run."""
     return await _proxy("GET", f"/api/workflows/{run_id}/fairness/", params={"group_by": group_by})
@@ -250,10 +224,7 @@ async def workflow_fairness(
 # ── Policy Configuration ─────────────────────────────────────────────────────
 
 @router.get("/policies")
-async def list_policies(
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
-):
+async def list_policies(ctx: TenantContext = Depends(get_current_user)):
     """List policy configurations."""
     return await _proxy("GET", "/api/policies/")
 
@@ -261,8 +232,7 @@ async def list_policies(
 @router.post("/policies")
 async def create_policy(
     body: dict[str, Any],
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Create a new policy configuration."""
     return await _proxy("POST", "/api/policies/", body=body)
@@ -271,8 +241,7 @@ async def create_policy(
 @router.post("/policies/{policy_id}/activate")
 async def activate_policy(
     policy_id: str,
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Set a policy as the active configuration."""
     return await _proxy("POST", f"/api/policies/{policy_id}/activate/")
@@ -283,8 +252,7 @@ async def activate_policy(
 @router.post("/what-if")
 async def what_if_analysis(
     body: dict[str, Any],
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Run what-if policy simulation."""
     return await _proxy("POST", "/api/what-if/", body=body)
@@ -293,10 +261,7 @@ async def what_if_analysis(
 # ── Governance ────────────────────────────────────────────────────────────────
 
 @router.get("/governance-rules")
-async def list_governance_rules(
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
-):
+async def list_governance_rules(ctx: TenantContext = Depends(get_current_user)):
     """List governance rules."""
     return await _proxy("GET", "/api/governance-rules/")
 
@@ -304,18 +269,14 @@ async def list_governance_rules(
 @router.post("/governance-rules")
 async def create_governance_rule(
     body: dict[str, Any],
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Create a governance rule."""
     return await _proxy("POST", "/api/governance-rules/", body=body)
 
 
 @router.get("/compliance-reports")
-async def list_compliance_reports(
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
-):
+async def list_compliance_reports(ctx: TenantContext = Depends(get_current_user)):
     """List compliance reports."""
     return await _proxy("GET", "/api/compliance-reports/")
 
@@ -323,8 +284,7 @@ async def list_compliance_reports(
 @router.post("/compliance-reports/generate")
 async def generate_compliance_report(
     body: dict[str, Any],
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Generate a new compliance report for a workflow run."""
     return await _proxy("POST", "/api/compliance-reports/generate/", body=body)
@@ -338,8 +298,7 @@ async def list_audit_logs(
     page_size: int = Query(50, ge=1, le=200),
     action_type: str | None = Query(None),
     actor: str | None = Query(None),
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """List audit logs with optional filters."""
     params: dict[str, Any] = {"page": page, "page_size": page_size}
@@ -356,18 +315,14 @@ async def list_audit_logs(
 async def list_notifications(
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """List notifications."""
     return await _proxy("GET", "/api/notifications/", params={"page": page, "page_size": page_size})
 
 
 @router.get("/notifications/unread_count")
-async def notification_unread_count(
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
-):
+async def notification_unread_count(ctx: TenantContext = Depends(get_current_user)):
     """Get count of unread notifications."""
     return await _proxy("GET", "/api/notifications/unread_count/")
 
@@ -375,18 +330,14 @@ async def notification_unread_count(
 @router.post("/notifications/{notification_id}/mark_read")
 async def mark_notification_read(
     notification_id: str,
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
+    ctx: TenantContext = Depends(get_current_user),
 ):
     """Mark a single notification as read."""
     return await _proxy("POST", f"/api/notifications/{notification_id}/mark_read/")
 
 
 @router.post("/notifications/mark_all_read")
-async def mark_all_notifications_read(
-    tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_auth),
-):
+async def mark_all_notifications_read(ctx: TenantContext = Depends(get_current_user)):
     """Mark all notifications as read."""
     return await _proxy("POST", "/api/notifications/mark_all_read/")
 
