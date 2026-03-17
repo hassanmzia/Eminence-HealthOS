@@ -6,21 +6,29 @@ function getAuthHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+interface RequestOptions extends RequestInit {
+  /** When true, a 401 response throws instead of redirecting to /login. */
+  noAuthRedirect?: boolean;
+}
+
+async function request<T>(path: string, options?: RequestOptions): Promise<T> {
+  const { noAuthRedirect, ...fetchOptions } = options ?? {};
   const url = `${API_PREFIX}${path}`;
   const res = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
       ...getAuthHeaders(),
-      ...options?.headers,
+      ...fetchOptions.headers,
     },
-    ...options,
+    ...fetchOptions,
   });
 
   if (res.status === 401 && typeof window !== "undefined") {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    window.location.href = "/login";
+    if (!noAuthRedirect) {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      window.location.href = "/login";
+    }
     throw new Error("Unauthorized");
   }
 
@@ -1263,8 +1271,11 @@ export interface MSRiskPolicy {
   created_at: string;
 }
 
+// All MS Risk Screening calls use noAuthRedirect to prevent logout when
+// the ms-risk-backend proxy is unavailable or returns 401/503.
+
 export async function fetchMSRiskDashboard() {
-  return request<MSRiskDashboard>("/ms-risk-screening/dashboard");
+  return request<MSRiskDashboard>("/ms-risk-screening/dashboard", { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskPatients(params?: { page?: number; page_size?: number }) {
@@ -1272,7 +1283,7 @@ export async function fetchMSRiskPatients(params?: { page?: number; page_size?: 
   if (params?.page) query.set("page", String(params.page));
   if (params?.page_size) query.set("page_size", String(params.page_size));
   const qs = query.toString();
-  return request<{ results: unknown[]; count: number }>(`/ms-risk-screening/patients${qs ? `?${qs}` : ""}`);
+  return request<{ results: unknown[]; count: number }>(`/ms-risk-screening/patients${qs ? `?${qs}` : ""}`, { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskAssessments(params?: { page?: number; page_size?: number }) {
@@ -1280,42 +1291,42 @@ export async function fetchMSRiskAssessments(params?: { page?: number; page_size
   if (params?.page) query.set("page", String(params.page));
   if (params?.page_size) query.set("page_size", String(params.page_size));
   const qs = query.toString();
-  return request<{ results: MSRiskAssessment[]; count: number }>(`/ms-risk-screening/assessments${qs ? `?${qs}` : ""}`);
+  return request<{ results: MSRiskAssessment[]; count: number }>(`/ms-risk-screening/assessments${qs ? `?${qs}` : ""}`, { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskWorkflows(params?: { page?: number }) {
   const query = new URLSearchParams();
   if (params?.page) query.set("page", String(params.page));
   const qs = query.toString();
-  return request<{ results: MSRiskWorkflow[]; count: number }>(`/ms-risk-screening/workflows${qs ? `?${qs}` : ""}`);
+  return request<{ results: MSRiskWorkflow[]; count: number }>(`/ms-risk-screening/workflows${qs ? `?${qs}` : ""}`, { noAuthRedirect: true });
 }
 
 export async function triggerMSRiskWorkflow(body: Record<string, unknown>) {
-  return request<Record<string, unknown>>("/ms-risk-screening/workflows/trigger", { method: "POST", body: JSON.stringify(body) });
+  return request<Record<string, unknown>>("/ms-risk-screening/workflows/trigger", { method: "POST", body: JSON.stringify(body), noAuthRedirect: true });
 }
 
 export async function fetchMSRiskPolicies() {
-  return request<{ results: MSRiskPolicy[] }>("/ms-risk-screening/policies");
+  return request<{ results: MSRiskPolicy[] }>("/ms-risk-screening/policies", { noAuthRedirect: true });
 }
 
 export async function createMSRiskPolicy(body: Record<string, unknown>) {
-  return request<MSRiskPolicy>("/ms-risk-screening/policies", { method: "POST", body: JSON.stringify(body) });
+  return request<MSRiskPolicy>("/ms-risk-screening/policies", { method: "POST", body: JSON.stringify(body), noAuthRedirect: true });
 }
 
 export async function runMSRiskWhatIf(body: Record<string, unknown>) {
-  return request<Record<string, unknown>>("/ms-risk-screening/what-if", { method: "POST", body: JSON.stringify(body) });
+  return request<Record<string, unknown>>("/ms-risk-screening/what-if", { method: "POST", body: JSON.stringify(body), noAuthRedirect: true });
 }
 
 export async function reviewMSRiskAssessment(assessmentId: string, body: Record<string, unknown>) {
-  return request<Record<string, unknown>>(`/ms-risk-screening/assessments/${assessmentId}/review`, { method: "POST", body: JSON.stringify(body) });
+  return request<Record<string, unknown>>(`/ms-risk-screening/assessments/${assessmentId}/review`, { method: "POST", body: JSON.stringify(body), noAuthRedirect: true });
 }
 
 export async function fetchMSRiskGovernanceRules() {
-  return request<{ results: unknown[] }>("/ms-risk-screening/governance-rules");
+  return request<{ results: unknown[] }>("/ms-risk-screening/governance-rules", { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskComplianceReports() {
-  return request<{ results: unknown[] }>("/ms-risk-screening/compliance-reports");
+  return request<{ results: unknown[] }>("/ms-risk-screening/compliance-reports", { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskAuditLogs(params?: { page?: number; action_type?: string; actor?: string }) {
@@ -1324,7 +1335,7 @@ export async function fetchMSRiskAuditLogs(params?: { page?: number; action_type
   if (params?.action_type) query.set("action_type", params.action_type);
   if (params?.actor) query.set("actor", params.actor);
   const qs = query.toString();
-  return request<{ results: unknown[]; count: number }>(`/ms-risk-screening/audit-logs${qs ? `?${qs}` : ""}`);
+  return request<{ results: unknown[]; count: number }>(`/ms-risk-screening/audit-logs${qs ? `?${qs}` : ""}`, { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskPatientSummary() {
@@ -1335,11 +1346,11 @@ export async function fetchMSRiskPatientSummary() {
     by_sex: { sex: string; count: number }[];
     by_diagnosis: { lookalike_dx: string; count: number }[];
     avg_age: number;
-  }>("/ms-risk-screening/patients/summary");
+  }>("/ms-risk-screening/patients/summary", { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskPatientRiskHistory(patientId: string) {
-  return request<MSRiskAssessment[]>(`/ms-risk-screening/patients/${patientId}/risk_history`);
+  return request<MSRiskAssessment[]>(`/ms-risk-screening/patients/${patientId}/risk_history`, { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskHighRiskAssessments(params?: { threshold?: number; run_id?: string }) {
@@ -1347,60 +1358,60 @@ export async function fetchMSRiskHighRiskAssessments(params?: { threshold?: numb
   if (params?.threshold != null) query.set("threshold", String(params.threshold));
   if (params?.run_id) query.set("run_id", params.run_id);
   const qs = query.toString();
-  return request<MSRiskAssessment[]>(`/ms-risk-screening/assessments/high_risk${qs ? `?${qs}` : ""}`);
+  return request<MSRiskAssessment[]>(`/ms-risk-screening/assessments/high_risk${qs ? `?${qs}` : ""}`, { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskPendingReviews() {
-  return request<MSRiskAssessment[]>("/ms-risk-screening/assessments/pending_review");
+  return request<MSRiskAssessment[]>("/ms-risk-screening/assessments/pending_review", { noAuthRedirect: true });
 }
 
 export async function activateMSRiskPolicy(policyId: string) {
-  return request<MSRiskPolicy>(`/ms-risk-screening/policies/${policyId}/activate`, { method: "POST" });
+  return request<MSRiskPolicy>(`/ms-risk-screening/policies/${policyId}/activate`, { method: "POST", noAuthRedirect: true });
 }
 
 export async function fetchMSRiskWorkflowMetrics(runId: string) {
-  return request<Record<string, unknown>>(`/ms-risk-screening/workflows/${runId}/metrics`);
+  return request<Record<string, unknown>>(`/ms-risk-screening/workflows/${runId}/metrics`, { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskWorkflowRiskDistribution(runId: string) {
-  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/risk_distribution`);
+  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/risk_distribution`, { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskWorkflowActionDistribution(runId: string) {
-  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/action_distribution`);
+  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/action_distribution`, { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskWorkflowAutonomyDistribution(runId: string) {
-  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/autonomy_distribution`);
+  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/autonomy_distribution`, { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskWorkflowCalibration(runId: string) {
-  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/calibration`);
+  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/calibration`, { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskWorkflowFairness(runId: string, groupBy: string = "sex") {
-  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/fairness?group_by=${groupBy}`);
+  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/fairness?group_by=${groupBy}`, { noAuthRedirect: true });
 }
 
 export async function generateMSRiskComplianceReport(body: { run_id: string }) {
-  return request<{ task_id: string; status: string }>("/ms-risk-screening/compliance-reports/generate", { method: "POST", body: JSON.stringify(body) });
+  return request<{ task_id: string; status: string }>("/ms-risk-screening/compliance-reports/generate", { method: "POST", body: JSON.stringify(body), noAuthRedirect: true });
 }
 
 export async function fetchMSRiskNotifications(params?: { page?: number }) {
   const query = new URLSearchParams();
   if (params?.page) query.set("page", String(params.page));
   const qs = query.toString();
-  return request<{ results: unknown[]; count: number }>(`/ms-risk-screening/notifications${qs ? `?${qs}` : ""}`);
+  return request<{ results: unknown[]; count: number }>(`/ms-risk-screening/notifications${qs ? `?${qs}` : ""}`, { noAuthRedirect: true });
 }
 
 export async function fetchMSRiskUnreadNotificationCount() {
-  return request<{ unread_count: number }>("/ms-risk-screening/notifications/unread_count");
+  return request<{ unread_count: number }>("/ms-risk-screening/notifications/unread_count", { noAuthRedirect: true });
 }
 
 export async function markMSRiskNotificationRead(notificationId: string) {
-  return request<unknown>(`/ms-risk-screening/notifications/${notificationId}/mark_read`, { method: "POST" });
+  return request<unknown>(`/ms-risk-screening/notifications/${notificationId}/mark_read`, { method: "POST", noAuthRedirect: true });
 }
 
 export async function markAllMSRiskNotificationsRead() {
-  return request<{ status: string }>("/ms-risk-screening/notifications/mark_all_read", { method: "POST" });
+  return request<{ status: string }>("/ms-risk-screening/notifications/mark_all_read", { method: "POST", noAuthRedirect: true });
 }
