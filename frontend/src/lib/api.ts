@@ -1318,9 +1318,89 @@ export async function fetchMSRiskComplianceReports() {
   return request<{ results: unknown[] }>("/ms-risk-screening/compliance-reports");
 }
 
-export async function fetchMSRiskAuditLogs(params?: { page?: number }) {
+export async function fetchMSRiskAuditLogs(params?: { page?: number; action_type?: string; actor?: string }) {
+  const query = new URLSearchParams();
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.action_type) query.set("action_type", params.action_type);
+  if (params?.actor) query.set("actor", params.actor);
+  const qs = query.toString();
+  return request<{ results: unknown[]; count: number }>(`/ms-risk-screening/audit-logs${qs ? `?${qs}` : ""}`);
+}
+
+export async function fetchMSRiskPatientSummary() {
+  return request<{
+    total_patients: number;
+    at_risk_count: number;
+    at_risk_rate: number;
+    by_sex: { sex: string; count: number }[];
+    by_diagnosis: { lookalike_dx: string; count: number }[];
+    avg_age: number;
+  }>("/ms-risk-screening/patients/summary");
+}
+
+export async function fetchMSRiskPatientRiskHistory(patientId: string) {
+  return request<MSRiskAssessment[]>(`/ms-risk-screening/patients/${patientId}/risk_history`);
+}
+
+export async function fetchMSRiskHighRiskAssessments(params?: { threshold?: number; run_id?: string }) {
+  const query = new URLSearchParams();
+  if (params?.threshold != null) query.set("threshold", String(params.threshold));
+  if (params?.run_id) query.set("run_id", params.run_id);
+  const qs = query.toString();
+  return request<MSRiskAssessment[]>(`/ms-risk-screening/assessments/high_risk${qs ? `?${qs}` : ""}`);
+}
+
+export async function fetchMSRiskPendingReviews() {
+  return request<MSRiskAssessment[]>("/ms-risk-screening/assessments/pending_review");
+}
+
+export async function activateMSRiskPolicy(policyId: string) {
+  return request<MSRiskPolicy>(`/ms-risk-screening/policies/${policyId}/activate`, { method: "POST" });
+}
+
+export async function fetchMSRiskWorkflowMetrics(runId: string) {
+  return request<Record<string, unknown>>(`/ms-risk-screening/workflows/${runId}/metrics`);
+}
+
+export async function fetchMSRiskWorkflowRiskDistribution(runId: string) {
+  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/risk_distribution`);
+}
+
+export async function fetchMSRiskWorkflowActionDistribution(runId: string) {
+  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/action_distribution`);
+}
+
+export async function fetchMSRiskWorkflowAutonomyDistribution(runId: string) {
+  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/autonomy_distribution`);
+}
+
+export async function fetchMSRiskWorkflowCalibration(runId: string) {
+  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/calibration`);
+}
+
+export async function fetchMSRiskWorkflowFairness(runId: string, groupBy: string = "sex") {
+  return request<unknown[]>(`/ms-risk-screening/workflows/${runId}/fairness?group_by=${groupBy}`);
+}
+
+export async function generateMSRiskComplianceReport(body: { run_id: string }) {
+  return request<{ task_id: string; status: string }>("/ms-risk-screening/compliance-reports/generate", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchMSRiskNotifications(params?: { page?: number }) {
   const query = new URLSearchParams();
   if (params?.page) query.set("page", String(params.page));
   const qs = query.toString();
-  return request<{ results: unknown[]; count: number }>(`/ms-risk-screening/audit-logs${qs ? `?${qs}` : ""}`);
+  return request<{ results: unknown[]; count: number }>(`/ms-risk-screening/notifications${qs ? `?${qs}` : ""}`);
+}
+
+export async function fetchMSRiskUnreadNotificationCount() {
+  return request<{ unread_count: number }>("/ms-risk-screening/notifications/unread_count");
+}
+
+export async function markMSRiskNotificationRead(notificationId: string) {
+  return request<unknown>(`/ms-risk-screening/notifications/${notificationId}/mark_read`, { method: "POST" });
+}
+
+export async function markAllMSRiskNotificationsRead() {
+  return request<{ status: string }>("/ms-risk-screening/notifications/mark_all_read", { method: "POST" });
 }

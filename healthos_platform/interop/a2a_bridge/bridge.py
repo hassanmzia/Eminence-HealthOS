@@ -126,7 +126,89 @@ class A2ABridge:
             if await self.register_agent(card):
                 registered += 1
 
+        # Register MS Risk Screening agents (proxied to ms-risk-backend)
+        ms_risk_registered = await self._register_ms_risk_agents()
+        registered += ms_risk_registered
+
         self._log.info("a2a.bulk_registration", registered=registered)
+        return registered
+
+    async def _register_ms_risk_agents(self) -> int:
+        """Register the 5 MS Risk Screening pipeline agents."""
+        ms_risk_agents = [
+            {
+                "id": "ms-risk-retrieval",
+                "name": "MS Risk Retrieval Agent",
+                "type": "retrieval",
+                "tier": 1,
+                "capabilities": ["ms_patient_retrieval", "ehr_data_fetch"],
+                "endpoint": "http://ms-risk-backend:8000/a2a/agents/retrieval/",
+                "status": "online",
+                "metadata": {
+                    "module": "ms_risk_screening",
+                    "description": "Fetches patient records, labs, and imaging data from the EHR",
+                },
+            },
+            {
+                "id": "ms-risk-phenotyping",
+                "name": "MS Risk Phenotyping Agent",
+                "type": "phenotyping",
+                "tier": 2,
+                "capabilities": ["ms_risk_scoring", "phenotype_analysis"],
+                "endpoint": "http://ms-risk-backend:8000/a2a/agents/phenotyping/",
+                "status": "online",
+                "metadata": {
+                    "module": "ms_risk_screening",
+                    "description": "Computes MS risk score from clinical features and symptom patterns",
+                },
+            },
+            {
+                "id": "ms-risk-notes-imaging",
+                "name": "MS Risk Notes & Imaging Agent",
+                "type": "notes_imaging",
+                "tier": 2,
+                "capabilities": ["nlp_note_analysis", "mri_lesion_detection"],
+                "endpoint": "http://ms-risk-backend:8000/a2a/agents/notes_imaging/",
+                "status": "online",
+                "metadata": {
+                    "module": "ms_risk_screening",
+                    "description": "NLP analysis of clinical notes and MRI lesion detection",
+                },
+            },
+            {
+                "id": "ms-risk-safety-governance",
+                "name": "MS Risk Safety & Governance Agent",
+                "type": "safety_governance",
+                "tier": 3,
+                "capabilities": ["safety_guardrails", "demographic_checks", "rate_limiting"],
+                "endpoint": "http://ms-risk-backend:8000/a2a/agents/safety_governance/",
+                "status": "online",
+                "metadata": {
+                    "module": "ms_risk_screening",
+                    "description": "Applies guardrails, demographic checks, and rate limits",
+                },
+            },
+            {
+                "id": "ms-risk-coordinator",
+                "name": "MS Risk Coordinator Agent",
+                "type": "coordinator",
+                "tier": 4,
+                "capabilities": ["ms_screening_orchestration", "action_determination"],
+                "endpoint": "http://ms-risk-backend:8000/a2a/agents/coordinator/",
+                "status": "online",
+                "metadata": {
+                    "module": "ms_risk_screening",
+                    "description": "Orchestrates the pipeline, determines action, and generates rationale",
+                },
+            },
+        ]
+
+        registered = 0
+        for card in ms_risk_agents:
+            if await self.register_agent(card):
+                registered += 1
+
+        self._log.info("a2a.ms_risk_registration", registered=registered)
         return registered
 
     @staticmethod
