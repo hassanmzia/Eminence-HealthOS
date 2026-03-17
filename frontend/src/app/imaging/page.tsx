@@ -670,7 +670,7 @@ export default function ImagingPage() {
                 </div>
                 <div className="divide-y divide-gray-100">
                   {studies.map((study) => (
-                    <div key={study.id} className="px-5 py-4">
+                    <div key={`${study.patientId}-${study.id}`} className="px-5 py-4">
                       <div className="flex items-start gap-3">
                         <div className="mt-0.5 text-lg">{modalityIcon(study.modality)}</div>
                         <div className="flex-1 min-w-0">

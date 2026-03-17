@@ -216,8 +216,11 @@ type TabId = (typeof TABS)[number]["id"];
 
 export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState<TabId>("executive");
-  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Set initial refresh time on client only to avoid hydration mismatch
+  useEffect(() => { setLastRefreshed(new Date()); }, []);
 
   // Executive state
   const [kpiScorecard, setKpiScorecard] = useState<KPICard[]>(DEMO_KPI_SCORECARD);
@@ -465,7 +468,7 @@ export default function AnalyticsPage() {
             Comprehensive insights across population health, costs, outcomes, and cohorts
           </p>
           <p className="mt-1 text-xs text-gray-400">
-            Last refreshed: {lastRefreshed.toLocaleTimeString()} &mdash;{" "}
+            Last refreshed: {lastRefreshed ? lastRefreshed.toLocaleTimeString() : "—"} &mdash;{" "}
             <button onClick={refreshData} className="text-healthos-600 hover:underline" disabled={loading}>
               {loading ? "Refreshing..." : "Refresh now"}
             </button>
