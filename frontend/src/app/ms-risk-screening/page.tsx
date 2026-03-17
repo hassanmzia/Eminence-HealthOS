@@ -112,6 +112,7 @@ export default function MSRiskScreeningPage() {
   const [workflows, setWorkflows] = useState<MSRiskWorkflow[]>([]);
   const [policies, setPolicies] = useState<MSRiskPolicy[]>([]);
   const [loading, setLoading] = useState(true);
+  const [triggering, setTriggering] = useState(false);
   // Detail navigation state
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
@@ -152,10 +153,31 @@ export default function MSRiskScreeningPage() {
           <p className="text-sm text-gray-500">Multi-agent pipeline for early Multiple Sclerosis detection &amp; governance</p>
         </div>
         <button
-          onClick={async () => { try { await triggerMSRiskWorkflow({}); loadData(); } catch { /* toast */ } }}
-          className="inline-flex items-center gap-2 rounded-lg bg-healthos-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-healthos-700 transition-colors"
+          type="button"
+          disabled={triggering}
+          onClick={async () => {
+            setTriggering(true);
+            try {
+              await triggerMSRiskWorkflow({});
+              await loadData();
+            } catch {
+              // toast / error handling
+            } finally {
+              setTriggering(false);
+            }
+          }}
+          className={clsx(
+            "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors",
+            triggering
+              ? "bg-healthos-400 cursor-not-allowed"
+              : "bg-healthos-600 hover:bg-healthos-700 active:bg-healthos-800 cursor-pointer"
+          )}
         >
-          <Play className="h-4 w-4" /> Run Screening
+          {triggering ? (
+            <><Activity className="h-4 w-4 animate-spin" /> Running...</>
+          ) : (
+            <><Play className="h-4 w-4" /> Run Screening</>
+          )}
         </button>
       </div>
 
