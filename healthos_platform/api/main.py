@@ -394,6 +394,7 @@ def create_app() -> FastAPI:
         "modules.imaging.routes",
         "modules.labs.routes",
         "modules.mental_health.routes",
+        "modules.ms_risk_screening.routes",
         "modules.operations.routes",
         "modules.patient_engagement.routes",
         "modules.pharmacy.routes",
