@@ -418,20 +418,37 @@ export default function AnalyticsPage() {
     }
   };
 
-  const handleGenerateReport = () => {
-    const reportData = {
-      generated: new Date().toISOString(),
-      kpis: popKpis,
-      scorecard: kpiScorecard,
-      costDrivers,
-    };
-    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `analytics-report-${new Date().toISOString().split("T")[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleGenerateReport = async () => {
+    const { generatePDF } = await import("@/lib/pdf-export");
+    await generatePDF({
+      title: "Analytics Report",
+      subtitle: `${activeTab === "executive" ? "Executive Dashboard" : activeTab === "cost" ? "Cost & Risk Analysis" : activeTab === "population" ? "Population Health" : "Cohort Builder"} — ${new Date().toLocaleDateString()}`,
+      generatedBy: "Eminence HealthOS",
+      filename: `analytics-report-${new Date().toISOString().split("T")[0]}.pdf`,
+      sections: [
+        {
+          title: "Key Performance Indicators",
+          table: {
+            headers: ["Metric", "Value", "Change"],
+            rows: popKpis.map((k) => [k.label, k.value, `${k.up ? "↑" : "↓"} ${k.change}`]),
+          },
+        },
+        {
+          title: "KPI Scorecard",
+          table: {
+            headers: ["Metric", "Value", "Change", "Status"],
+            rows: kpiScorecard.map((k) => [k.metric, k.value, `${k.up ? "↑" : "↓"} ${k.change}`, k.up ? "On Track" : "Needs Attention"]),
+          },
+        },
+        {
+          title: "Cost Drivers",
+          table: {
+            headers: ["Category", "Amount", "Trend", "% of Total"],
+            rows: costDrivers.map((c) => [c.category, c.amount, `${c.trendUp ? "↑" : "↓"} ${c.trend}`, `${c.pctOfTotal}%`]),
+          },
+        },
+      ],
+    });
   };
 
   // ── Render Helpers ───────────────────────────────────────────────────────
