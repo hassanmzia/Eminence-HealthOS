@@ -31,24 +31,17 @@ class MCPToolExecutor:
             "literature_search": self._handle_literature_search,
             "check_drug_interactions": self._handle_drug_interactions,
             "get_risk_scores": self._handle_risk_scores,
+            # MS Risk Screening tools — proxied to ms-risk-backend MCP server
+            "ms_screen_patient": self._handle_ms_risk_proxy,
+            "ms_run_screening_workflow": self._handle_ms_risk_proxy,
+            "ms_get_patient_risk_card": self._handle_ms_risk_proxy,
+            "ms_analyze_fairness": self._handle_ms_risk_proxy,
+            "ms_what_if_policy": self._handle_ms_risk_proxy,
+            "ms_review_assessment": self._handle_ms_risk_proxy,
+            "ms_get_workflow_metrics": self._handle_ms_risk_proxy,
+            "ms_summarize_note": self._handle_ms_risk_proxy,
         }
         self._log = logger.bind(component="mcp_tool_executor")
-
-    async def execute(
-        self, tool_name: str, arguments: dict[str, Any], org_id: str
-    ) -> dict[str, Any]:
-        """Execute a tool call and return the result."""
-        handler = self._handlers.get(tool_name)
-        if not handler:
-            return {"error": f"Unknown tool: {tool_name}", "success": False}
-
-        try:
-            result = await handler(arguments, org_id)
-            self._log.info("mcp.tool_executed", tool=tool_name, success=True)
-            return {"result": result, "success": True}
-        except Exception as e:
-            self._log.error("mcp.tool_failed", tool=tool_name, error=str(e))
-            return {"error": str(e), "success": False}
 
     def list_tools(self) -> list[dict[str, str]]:
         """List available tools."""
@@ -212,3 +205,60 @@ class MCPToolExecutor:
             ]
         except Exception:
             return []
+
+    # ── MS Risk Screening MCP Proxy ──────────────────────────────────────
+
+    _MS_TOOL_NAME_MAP = {
+        "ms_screen_patient": "screen_patient",
+        "ms_run_screening_workflow": "run_screening_workflow",
+        "ms_get_patient_risk_card": "get_patient_risk_card",
+        "ms_analyze_fairness": "analyze_fairness",
+        "ms_what_if_policy": "what_if_policy",
+        "ms_review_assessment": "review_assessment",
+        "ms_get_workflow_metrics": "get_workflow_metrics",
+        "ms_summarize_note": "summarize_note",
+    }
+
+    async def _handle_ms_risk_proxy(
+        self, args: dict[str, Any], org_id: str, *, _tool_name: str = ""
+    ) -> dict[str, Any]:
+        """Proxy MCP tool invocations to the ms-risk-backend MCP server."""
+        import httpx
+
+        # Resolve the original tool name from the caller context
+        remote_tool = self._MS_TOOL_NAME_MAP.get(_tool_name, _tool_name)
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(
+                    "http://ms-risk-backend:8000/mcp/invoke/",
+                    json={
+                        "tool_name": remote_tool,
+                        "arguments": args,
+                        "session_id": args.pop("session_id", None),
+                    },
+                )
+                resp.raise_for_status()
+                return resp.json()
+        except Exception as e:
+            self._log.warning("ms_risk_mcp.proxy_failed", tool=remote_tool, error=str(e))
+            return {"error": f"MS Risk MCP proxy failed: {e}", "success": False}
+
+    async def execute(
+        self, tool_name: str, arguments: dict[str, Any], org_id: str
+    ) -> dict[str, Any]:
+        """Execute a tool call and return the result."""
+        handler = self._handlers.get(tool_name)
+        if not handler:
+            return {"error": f"Unknown tool: {tool_name}", "success": False}
+
+        try:
+            # Pass tool_name for MS Risk proxy routing
+            if tool_name.startswith("ms_"):
+                result = await handler(arguments, org_id, _tool_name=tool_name)
+            else:
+                result = await handler(arguments, org_id)
+            self._log.info("mcp.tool_executed", tool=tool_name, success=True)
+            return {"result": result, "success": True}
+        except Exception as e:
+            self._log.error("mcp.tool_failed", tool=tool_name, error=str(e))
+            return {"error": str(e), "success": False}
