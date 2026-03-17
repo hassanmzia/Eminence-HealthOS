@@ -130,6 +130,7 @@ def create_app() -> FastAPI:
     from modules.mental_health.routes import router as mental_health_router
     from modules.patient_engagement.routes import router as patient_engagement_router
     from modules.ambient_ai.routes import router as ambient_ai_router
+    from modules.ms_risk_screening.routes import router as ms_risk_screening_router
 
     app.include_router(research_genomics_router, prefix="/api/v1", tags=["Research & Genomics"])
     app.include_router(compliance_router, prefix="/api/v1", tags=["Compliance & Governance"])
@@ -141,6 +142,7 @@ def create_app() -> FastAPI:
     app.include_router(mental_health_router, prefix="/api/v1", tags=["Mental Health"])
     app.include_router(patient_engagement_router, prefix="/api/v1", tags=["Patient Engagement"])
     app.include_router(ambient_ai_router, prefix="/api/v1", tags=["Ambient AI"])
+    app.include_router(ms_risk_screening_router, prefix="/api/v1", tags=["MS Risk Screening"])
 
     from modules.marketplace.routes import router as marketplace_router
     app.include_router(marketplace_router, prefix="/api/v1", tags=["AI Marketplace"])
