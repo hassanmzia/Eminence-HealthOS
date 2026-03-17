@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -474,7 +474,7 @@ export default function AIExplainabilityPage() {
                     shape={(props: any) => {
                       const { x, y, width, height, value } = props;
                       const color = value >= 0 ? "#ef4444" : "#3b82f6";
-                      return <rect x={x} y={y} width={width} height={height} rx={4} fill={color} />;
+                      return <rect x={width < 0 ? x + width : x} y={y} width={Math.abs(width) || 2} height={height} rx={4} fill={color} />;
                     }}
                   />
                 </BarChart>
@@ -503,8 +503,8 @@ export default function AIExplainabilityPage() {
 
                 {/* Data rows */}
                 {interactionMatrix.map((row, ri) => (
-                  <>
-                    <div key={`label-${ri}`} className="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center">
+                  <React.Fragment key={`row-${ri}`}>
+                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center">
                       {interactionFeatures[ri]}
                     </div>
                     {row.map((val, ci) => (
@@ -516,7 +516,7 @@ export default function AIExplainabilityPage() {
                         {val.toFixed(2)}
                       </div>
                     ))}
-                  </>
+                  </React.Fragment>
                 ))}
               </div>
             </div>

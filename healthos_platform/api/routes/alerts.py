@@ -20,11 +20,19 @@ from healthos_platform.security.rbac import Permission
 router = APIRouter(prefix="/alerts", tags=["Alerts"])
 
 
+def _parse_patient_id(raw: str) -> uuid.UUID:
+    """Accept both UUID and short IDs like 'pt-002'."""
+    try:
+        return uuid.UUID(raw)
+    except ValueError:
+        return uuid.uuid5(uuid.NAMESPACE_URL, f"patient:{raw}")
+
+
 @router.get("", response_model=list[AlertResponse])
 async def list_alerts(
     status: str | None = None,
     priority: str | None = None,
-    patient_id: uuid.UUID | None = None,
+    patient_id: str | None = None,
     limit: int = Query(50, ge=1, le=200),
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -43,7 +51,7 @@ async def list_alerts(
     if priority:
         query = query.where(Alert.priority == priority)
     if patient_id:
-        query = query.where(Alert.patient_id == patient_id)
+        query = query.where(Alert.patient_id == _parse_patient_id(patient_id))
 
     result = await db.execute(query)
     return result.scalars().all()

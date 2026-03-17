@@ -20,9 +20,17 @@ from healthos_platform.security.rbac import Permission
 router = APIRouter(prefix="/vitals", tags=["Vitals"])
 
 
+def _parse_patient_id(raw: str) -> uuid.UUID:
+    """Accept both UUID and short IDs like 'pt-002'."""
+    try:
+        return uuid.UUID(raw)
+    except ValueError:
+        return uuid.uuid5(uuid.NAMESPACE_URL, f"patient:{raw}")
+
+
 @router.get("/{patient_id}", response_model=list[VitalResponse])
 async def get_patient_vitals(
-    patient_id: uuid.UUID,
+    patient_id: str,
     vital_type: str | None = None,
     limit: int = Query(100, ge=1, le=1000),
     ctx: TenantContext = Depends(get_current_user),
@@ -31,9 +39,10 @@ async def get_patient_vitals(
     """Get vitals for a patient, ordered by most recent."""
     ctx.require_permission(Permission.VITALS_READ)
 
+    pid = _parse_patient_id(patient_id)
     query = (
         select(Vital)
-        .where(Vital.patient_id == patient_id, Vital.org_id == ctx.org_id)
+        .where(Vital.patient_id == pid, Vital.org_id == ctx.org_id)
         .order_by(Vital.recorded_at.desc())
         .limit(limit)
     )

@@ -64,17 +64,27 @@ async def list_patients(
     )
 
 
+def _parse_patient_id(raw: str) -> uuid.UUID:
+    """Accept both UUID and short IDs like 'pt-002'."""
+    try:
+        return uuid.UUID(raw)
+    except ValueError:
+        # Derive a deterministic UUID from short IDs so demo links work
+        return uuid.uuid5(uuid.NAMESPACE_URL, f"patient:{raw}")
+
+
 @router.get("/{patient_id}", response_model=PatientResponse)
 async def get_patient(
-    patient_id: uuid.UUID,
+    patient_id: str,
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get a single patient by ID."""
     ctx.require_permission(Permission.PATIENT_READ)
 
+    pid = _parse_patient_id(patient_id)
     result = await db.execute(
-        select(Patient).where(Patient.id == patient_id, Patient.org_id == ctx.org_id)
+        select(Patient).where(Patient.id == pid, Patient.org_id == ctx.org_id)
     )
     patient = result.scalar_one_or_none()
     if not patient:
@@ -84,16 +94,17 @@ async def get_patient(
 
 @router.get("/{patient_id}/risk-score")
 async def get_patient_risk_score(
-    patient_id: uuid.UUID,
+    patient_id: str,
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get the latest risk score for a patient."""
     ctx.require_permission(Permission.PATIENT_READ)
 
+    pid = _parse_patient_id(patient_id)
     result = await db.execute(
         select(RiskScore)
-        .where(RiskScore.patient_id == patient_id, RiskScore.org_id == ctx.org_id)
+        .where(RiskScore.patient_id == pid, RiskScore.org_id == ctx.org_id)
         .order_by(RiskScore.created_at.desc())
         .limit(1)
     )
@@ -102,7 +113,7 @@ async def get_patient_risk_score(
     if not risk:
         # Fall back to patient's risk_level field
         pat_result = await db.execute(
-            select(Patient).where(Patient.id == patient_id, Patient.org_id == ctx.org_id)
+            select(Patient).where(Patient.id == pid, Patient.org_id == ctx.org_id)
         )
         patient = pat_result.scalar_one_or_none()
         if not patient:
@@ -148,7 +159,7 @@ async def create_patient(
 
 @router.put("/{patient_id}", response_model=PatientResponse)
 async def update_patient(
-    patient_id: uuid.UUID,
+    patient_id: str,
     request: PatientCreateRequest,
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -156,8 +167,9 @@ async def update_patient(
     """Update an existing patient."""
     ctx.require_permission(Permission.PATIENT_WRITE)
 
+    pid = _parse_patient_id(patient_id)
     result = await db.execute(
-        select(Patient).where(Patient.id == patient_id, Patient.org_id == ctx.org_id)
+        select(Patient).where(Patient.id == pid, Patient.org_id == ctx.org_id)
     )
     patient = result.scalar_one_or_none()
     if not patient:
