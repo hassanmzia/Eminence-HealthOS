@@ -239,7 +239,7 @@ async def workflow_calibration(
 @router.get("/workflows/{run_id}/fairness")
 async def workflow_fairness(
     run_id: str,
-    group_by: str = Query("sex", regex="^(sex|age_band|lookalike_dx)$"),
+    group_by: str = Query("sex", pattern="^(sex|age_band|lookalike_dx)$"),
     tenant_id: str = Depends(get_tenant_id),
     user: CurrentUser = Depends(require_auth),
 ):

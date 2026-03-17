@@ -405,8 +405,8 @@ def create_app() -> FastAPI:
             mod = importlib.import_module(route_module)
             app.include_router(mod.router, prefix=api_prefix)
             logger.info(f"routes.{route_module.split('.')[1]}.registered")
-        except (ImportError, AttributeError):
-            logger.warning(f"routes.{route_module.split('.')[1]}.not_available")
+        except Exception as exc:
+            logger.warning(f"routes.{route_module.split('.')[1]}.not_available: {exc}")
 
     # Metrics endpoint (Prometheus scrape target)
     @app.get("/metrics")
