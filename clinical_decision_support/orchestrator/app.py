@@ -348,9 +348,17 @@ async def mcp_status():
                     "response_code": r.status_code
                 }
         except Exception as e:
+            raw = str(e)
+            # Simplify common connection errors for the UI
+            if "Name or service not known" in raw or "nodename nor servname" in raw:
+                friendly = "DNS resolution failed — service not running"
+            elif "Connection refused" in raw:
+                friendly = "Connection refused — service not running on this port"
+            else:
+                friendly = raw
             status[server_name] = {
                 "url": url,
                 "status": "unreachable",
-                "error": str(e)
+                "error": friendly,
             }
     return {"mcp_servers": status}

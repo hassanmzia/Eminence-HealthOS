@@ -165,10 +165,10 @@ class MCPClient:
     def __init__(self, base_urls: dict = None):
         import os
         self.base_urls = base_urls or {
-            "fhir": os.getenv("MCP_FHIR_SERVER_URL", "http://mcp-fhir-server:8005"),
-            "labs": os.getenv("MCP_LABS_SERVER_URL", "http://mcp-labs-server:8006"),
-            "rag": os.getenv("MCP_RAG_SERVER_URL", "http://mcp-rag-server:8007"),
-            "adapter": os.getenv("MCP_FHIR_ADAPTER_URL", "http://mcp-fhir-adapter:8002"),
+            "fhir": os.getenv("MCP_FHIR_SERVER_URL", "http://localhost:8005"),
+            "labs": os.getenv("MCP_LABS_SERVER_URL", "http://localhost:8006"),
+            "rag": os.getenv("MCP_RAG_SERVER_URL", "http://localhost:8007"),
+            "adapter": os.getenv("MCP_FHIR_ADAPTER_URL", "http://localhost:8002"),
         }
 
     async def call_tool(self, server: str, tool_name: str, arguments: dict) -> dict:

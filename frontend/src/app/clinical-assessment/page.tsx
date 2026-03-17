@@ -562,20 +562,31 @@ function MCPTab({ servers, onRefresh }: { servers: Record<string, MCPServerStatu
       </div>
 
       {entries.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {entries.map(([name, s]) => (
-            <div key={name} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">{name.replace(/-/g, " ")}</h4>
-                <span className={`inline-flex h-2 w-2 rounded-full ${s.status === "healthy" ? "bg-emerald-500" : "bg-red-500"}`} />
-              </div>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 font-mono">{s.url}</p>
-              <p className={`mt-1 text-xs font-medium ${s.status === "healthy" ? "text-emerald-600" : "text-red-600"}`}>
-                {s.status}{s.error ? `: ${s.error}` : ""}
-              </p>
+        <>
+          {entries.every(([, s]) => s.status === "unreachable") && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+              All MCP servers are unreachable. Start the services with <code className="rounded bg-amber-100 px-1 py-0.5 dark:bg-amber-800">docker-compose up</code> or run them locally on the configured ports.
             </div>
-          ))}
-        </div>
+          )}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {entries.map(([name, s]) => {
+              const dotColor = s.status === "healthy" ? "bg-emerald-500" : s.status === "unreachable" ? "bg-amber-400" : "bg-red-500";
+              const textColor = s.status === "healthy" ? "text-emerald-600" : s.status === "unreachable" ? "text-amber-600" : "text-red-600";
+              return (
+                <div key={name} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">{name.replace(/-/g, " ")}</h4>
+                    <span className={`inline-flex h-2 w-2 rounded-full ${dotColor}`} />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 font-mono">{s.url}</p>
+                  <p className={`mt-1 text-xs font-medium ${textColor}`}>
+                    {s.status}{s.error ? `: ${s.error}` : ""}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </>
       ) : (
         <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center dark:border-gray-600 dark:bg-gray-800/50">
           <p className="text-sm text-gray-500">No MCP servers connected. Start the clinical orchestrator to see server status.</p>

@@ -474,7 +474,7 @@ async def cost_drivers(
     body: dict[str, Any],
     audit: _AuditContext = Depends(analytics_audit_middleware),
     tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_role("admin")),
+    user: CurrentUser = Depends(require_auth),
 ):
     """Analyze cost drivers across the population."""
     from modules.analytics.agents.cost_risk_insight import CostRiskInsightAgent
@@ -531,7 +531,7 @@ async def cost_opportunities(
     body: dict[str, Any],
     audit: _AuditContext = Depends(analytics_audit_middleware),
     tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_role("admin")),
+    user: CurrentUser = Depends(require_auth),
 ):
     """Scan for cost reduction opportunities."""
     from modules.analytics.agents.cost_risk_insight import CostRiskInsightAgent
@@ -551,7 +551,7 @@ async def cost_opportunities(
 async def executive_summary(
     audit: _AuditContext = Depends(analytics_audit_middleware),
     tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_role("admin")),
+    user: CurrentUser = Depends(require_auth),
 ):
     """Generate executive summary."""
     from modules.analytics.agents.executive_insight import ExecutiveInsightAgent
@@ -570,7 +570,7 @@ async def kpi_scorecard(
     body: dict[str, Any],
     audit: _AuditContext = Depends(analytics_audit_middleware),
     tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_role("admin")),
+    user: CurrentUser = Depends(require_auth),
 ):
     """Generate KPI scorecard."""
     from modules.analytics.agents.executive_insight import ExecutiveInsightAgent
@@ -626,7 +626,7 @@ async def department_report(
 async def trend_digest(
     audit: _AuditContext = Depends(analytics_audit_middleware),
     tenant_id: str = Depends(get_tenant_id),
-    user: CurrentUser = Depends(require_role("admin")),
+    user: CurrentUser = Depends(require_auth),
 ):
     """Generate executive trend digest."""
     from modules.analytics.agents.executive_insight import ExecutiveInsightAgent

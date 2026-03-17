@@ -44,15 +44,22 @@ async def query_studies(
     tenant_id: str = Depends(get_tenant_id),
     user: CurrentUser = Depends(require_auth),
 ):
-    """Query imaging studies for a patient."""
+    """Query imaging studies for a patient (use 'all' for all studies)."""
     from modules.imaging.agents.imaging_ingestion import ImagingIngestionAgent
 
     agent = ImagingIngestionAgent()
+    parsed_id = None
+    if patient_id.lower() != "all":
+        try:
+            parsed_id = uuid.UUID(patient_id)
+        except ValueError:
+            parsed_id = uuid.uuid5(uuid.NAMESPACE_URL, f"patient:{patient_id}")
+
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(patient_id),
+        patient_id=parsed_id,
         trigger="imaging.study.query",
-        context={"action": "query_studies"},
+        context={"action": "query_studies", "all_patients": patient_id.lower() == "all"},
     ))
     return output.result
 

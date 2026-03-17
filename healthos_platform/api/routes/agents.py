@@ -149,3 +149,104 @@ async def list_routes(ctx: TenantContext = Depends(get_current_user)):
     """List all event-to-agent routing rules."""
     ctx.require_permission(Permission.AGENTS_VIEW)
     return engine.router.list_routes()
+
+
+@router.get("/pipelines")
+async def list_pipelines(
+    status: str | None = None,
+    limit: int = Query(20, ge=1, le=100),
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List pipeline executions."""
+    ctx.require_permission(Permission.AGENTS_VIEW)
+
+    result = await db.execute(
+        select(AgentAuditLog)
+        .where(AgentAuditLog.org_id == ctx.org_id)
+        .order_by(AgentAuditLog.created_at.desc())
+        .limit(limit * 5)  # fetch more to group by trace
+    )
+    entries = result.scalars().all()
+
+    # Group by trace_id to form pipeline executions
+    traces: dict[str, list] = defaultdict(list)
+    for e in entries:
+        traces[str(e.trace_id)].append(e)
+
+    executions = []
+    for trace_id, group in traces.items():
+        pipeline_status = "completed"
+        hitl_required = False
+        for e in group:
+            if e.human_review_required:
+                hitl_required = True
+                pipeline_status = "halted"
+
+        if status and pipeline_status != status:
+            continue
+
+        agents = []
+        for e in group:
+            agents.append({
+                "name": e.agent_name,
+                "tier": "reasoning",
+                "status": "completed",
+                "duration_ms": e.duration_ms or 0,
+                "confidence": e.confidence_score,
+                "output_summary": str(e.output_summary) if e.output_summary else None,
+            })
+
+        executions.append({
+            "trace_id": trace_id,
+            "status": pipeline_status,
+            "agents": agents,
+            "trigger_event": group[0].action if group else "",
+            "patient_id": str(group[0].patient_id) if group and group[0].patient_id else None,
+            "started_at": group[-1].created_at.isoformat() if group else None,
+            "completed_at": group[0].created_at.isoformat() if group else None,
+            "hitl_required": hitl_required,
+        })
+
+        if len(executions) >= limit:
+            break
+
+    return {"executions": executions}
+
+
+@router.get("/hitl/queue")
+async def hitl_queue(
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get the Human-in-the-Loop review queue."""
+    ctx.require_permission(Permission.AGENTS_VIEW)
+
+    result = await db.execute(
+        select(AgentAuditLog)
+        .where(
+            AgentAuditLog.org_id == ctx.org_id,
+            AgentAuditLog.human_review_required.is_(True),
+        )
+        .order_by(AgentAuditLog.created_at.desc())
+        .limit(50)
+    )
+    entries = result.scalars().all()
+
+    items = []
+    for e in entries:
+        summary = e.output_summary if isinstance(e.output_summary, dict) else {}
+        items.append({
+            "id": str(e.id),
+            "trace_id": str(e.trace_id),
+            "agent_name": e.agent_name,
+            "patient_id": str(e.patient_id) if e.patient_id else None,
+            "action": summary.get("proposed_action", e.action),
+            "confidence": e.confidence_score or 0.0,
+            "reason": summary.get("review_reason", "Confidence below threshold"),
+            "context": summary.get("context", {}),
+            "status": "pending",
+            "created_at": e.created_at.isoformat() if e.created_at else None,
+        })
+
+    return {"items": items}

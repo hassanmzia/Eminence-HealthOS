@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from healthos_platform.api.middleware.audit import AuditMiddleware
-from healthos_platform.api.routes import agents, alerts, auth, clinical_assessment, dashboard, ehr_sync, fhir, patient_portal, patients, profile, vitals
+from healthos_platform.api.routes import agents, alerts, auth, clinical_assessment, dashboard, ehr_sync, fhir, knowledge_graph, ml, patient_portal, patients, profile, rag, vitals
 from healthos_platform.config import get_settings
 from healthos_platform.database import close_db, get_db_context, init_db
 
@@ -354,6 +354,9 @@ def create_app() -> FastAPI:
     app.include_router(patient_portal.router, prefix=api_prefix)
     app.include_router(profile.router, prefix=api_prefix)
     app.include_router(clinical_assessment.router, prefix=api_prefix)
+    app.include_router(rag.router, prefix=api_prefix)
+    app.include_router(knowledge_graph.router, prefix=api_prefix)
+    app.include_router(ml.router, prefix=api_prefix)
 
     # Serve uploaded files (avatars)
     from fastapi.staticfiles import StaticFiles
