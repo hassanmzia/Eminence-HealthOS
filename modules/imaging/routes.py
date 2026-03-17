@@ -45,8 +45,6 @@ async def query_studies(
     user: CurrentUser = Depends(require_auth),
 ):
     """Query imaging studies for a patient (use 'all' for all studies)."""
-    from modules.imaging.agents.imaging_ingestion import ImagingIngestionAgent
-
     # For "all" queries, return aggregated study list directly
     if patient_id.lower() == "all":
         return [
@@ -57,6 +55,8 @@ async def query_studies(
             {"study_id": "STD-005", "patient_id": "P-103", "modality": "CT", "body_part": "Abdomen", "description": "CT Abdomen/Pelvis w/ Contrast", "status": "scheduled", "date": "2026-03-17"},
             {"study_id": "STD-006", "patient_id": "P-104", "modality": "PET", "body_part": "Whole Body", "description": "PET/CT Whole Body", "status": "in-progress", "date": "2026-03-16"},
         ]
+
+    from modules.imaging.agents.imaging_ingestion import ImagingIngestionAgent
 
     parsed_id = None
     try:
