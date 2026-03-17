@@ -269,8 +269,8 @@ function OverviewTab({ dashboard, loading }: { dashboard: MSRiskDashboard | null
           </div>
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div><p className="text-gray-500">Candidates Found</p><p className="font-semibold text-gray-900">{dashboard.latest_run.candidates_found}</p></div>
-            <div><p className="text-gray-500">Run ID</p><p className="font-mono text-xs text-gray-600">{dashboard.latest_run.id.slice(0, 8)}</p></div>
-            <div><p className="text-gray-500">Date</p><p className="text-gray-900">{new Date(dashboard.latest_run.created_at).toLocaleDateString()}</p></div>
+            <div><p className="text-gray-500">Run ID</p><p className="font-mono text-xs text-gray-600">{(dashboard.latest_run.id ?? "—").slice(0, 8)}</p></div>
+            <div><p className="text-gray-500">Date</p><p className="text-gray-900">{dashboard.latest_run.created_at ? new Date(dashboard.latest_run.created_at).toLocaleDateString() : "—"}</p></div>
           </div>
         </div>
       )}
