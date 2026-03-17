@@ -258,7 +258,17 @@ export default function AnalyticsPage() {
       ]);
       if (scorecardRes.status === "fulfilled") {
         const d = scorecardRes.value as Record<string, unknown>;
-        if (d.scorecard) setKpiScorecard(d.scorecard as KPICard[]);
+        if (d.scorecard && Array.isArray(d.scorecard)) {
+          // Map backend scorecard shape to frontend KPICard shape
+          const mapped = (d.scorecard as Array<Record<string, unknown>>).map((item) => ({
+            metric: (item.kpi ?? item.metric ?? "") as string,
+            value: String(item.actual ?? item.value ?? ""),
+            change: item.change != null ? String(item.change) : `${((item.variance as number) ?? 0) > 0 ? "+" : ""}${(((item.variance as number) ?? 0) * 100).toFixed(1)}%`,
+            up: item.up != null ? Boolean(item.up) : (item.status === "on_target" || (item.variance as number) >= 0),
+            sparkline: (item.sparkline as number[]) ?? [],
+          }));
+          setKpiScorecard(mapped);
+        }
       }
       if (trendsRes.status === "fulfilled") {
         const d = trendsRes.value as Record<string, unknown>;
@@ -577,14 +587,14 @@ function ExecutiveDashboard({
               </div>
               {/* Sparkline bar representation */}
               <div className="mt-4 flex items-end gap-1 h-8">
-                {kpi.sparkline.map((val, idx) => {
-                  const max = Math.max(...kpi.sparkline);
+                {(kpi.sparkline ?? []).map((val, idx) => {
+                  const max = Math.max(...(kpi.sparkline ?? [1]));
                   const heightPct = max > 0 ? (val / max) * 100 : 0;
                   return (
                     <div
                       key={idx}
                       className={`flex-1 rounded-sm transition-all ${
-                        idx === kpi.sparkline.length - 1 ? "bg-healthos-600" : "bg-healthos-200"
+                        idx === (kpi.sparkline ?? []).length - 1 ? "bg-healthos-600" : "bg-healthos-200"
                       }`}
                       style={{ height: `${heightPct}%` }}
                       title={String(val)}
