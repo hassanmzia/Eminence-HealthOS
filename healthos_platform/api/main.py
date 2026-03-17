@@ -358,6 +358,14 @@ def create_app() -> FastAPI:
     app.include_router(knowledge_graph.router, prefix=api_prefix)
     app.include_router(ml.router, prefix=api_prefix)
 
+    # MCP Bridge routes
+    try:
+        from healthos_platform.interop.mcp_bridge.routes import router as mcp_bridge_router
+        app.include_router(mcp_bridge_router, prefix=api_prefix)
+        logger.info("routes.mcp_bridge.registered")
+    except Exception as exc:
+        logger.warning(f"routes.mcp_bridge.not_available: {exc}")
+
     # Serve uploaded files (avatars)
     from fastapi.staticfiles import StaticFiles
     from pathlib import Path
@@ -396,6 +404,7 @@ def create_app() -> FastAPI:
         "modules.digital_twin.routes",
         "modules.imaging.routes",
         "modules.labs.routes",
+        "modules.marketplace.routes",
         "modules.mental_health.routes",
         "modules.ms_risk_screening.routes",
         "modules.operations.routes",
