@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "108.48.39.238:4090:8000"
+      - "0.0.0.0:4090:8000"
     env_file:
       - path: .env
         required: false
@@ -39,7 +39,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "108.48.39.238:3052:3000"
+      - "0.0.0.0:3052:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://108.48.39.238:4090
       WATCHPACK_POLLING: "true"
