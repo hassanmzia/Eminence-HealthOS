@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { fetchProviderDashboard, type ProviderDashboard } from "@/lib/platform-api";
 import { PatientRiskHeatmap } from "@/components/dashboard/PatientRiskHeatmap";
 import { CriticalAlertsBanner } from "@/components/dashboard/CriticalAlertsBanner";
 import { AgentActivityFeed } from "@/components/dashboard/AgentActivityFeed";
@@ -90,6 +91,14 @@ const PLATFORM_FEATURES = [
 ];
 
 export default function DashboardPage() {
+  const [providerStats, setProviderStats] = useState<ProviderDashboard | null>(null);
+
+  useEffect(() => {
+    fetchProviderDashboard()
+      .then(setProviderStats)
+      .catch(() => { /* API unavailable */ });
+  }, []);
+
   return (
     <div className="space-y-6 bg-mesh min-h-full">
       {/* Header */}
@@ -111,6 +120,28 @@ export default function DashboardPage() {
 
       {/* Critical alerts banner */}
       <CriticalAlertsBanner />
+
+      {/* Provider stats from /providers/dashboard */}
+      {providerStats && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="card !p-3">
+            <p className="text-xs text-gray-400">Role</p>
+            <p className="text-lg font-bold text-gray-900 capitalize">{providerStats.role}</p>
+          </div>
+          <div className="card !p-3">
+            <p className="text-xs text-gray-400">Total Patients</p>
+            <p className="text-lg font-bold text-gray-900">{providerStats.total_patients}</p>
+          </div>
+          <div className="card !p-3">
+            <p className="text-xs text-gray-400">Pending Alerts</p>
+            <p className="text-lg font-bold text-orange-600">{providerStats.pending_alerts}</p>
+          </div>
+          <div className="card !p-3">
+            <p className="text-xs text-gray-400">Encounters Today</p>
+            <p className="text-lg font-bold text-gray-900">{providerStats.scheduled_encounters}</p>
+          </div>
+        </div>
+      )}
 
       {/* KPI Summary cards */}
       <VitalsSummaryCards />

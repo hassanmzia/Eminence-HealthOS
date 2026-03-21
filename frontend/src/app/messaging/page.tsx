@@ -1,6 +1,16 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  fetchInbox,
+  fetchSentMessages,
+  fetchMessageThread,
+  sendSecureMessage,
+  markMessageRead,
+  fetchNotifications,
+  fetchUnreadNotificationCount,
+  type MessageResponse,
+} from "@/lib/platform-api";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -234,6 +244,68 @@ export default function SecureMessagingPage() {
 
   const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
 
+  // ── Load real data from /messaging/* API (falls back to demo data on error) ──
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [inbox, sent] = await Promise.all([fetchInbox(1, 50), fetchSentMessages(1, 50)]);
+        if (cancelled) return;
+
+        // Group messages by thread (using parent_message_id or sender/recipient pair)
+        const threadMap = new Map<string, MessageResponse[]>();
+        for (const msg of [...inbox, ...sent]) {
+          const threadKey = msg.parent_message_id ?? msg.id;
+          const existing = threadMap.get(threadKey) ?? [];
+          existing.push(msg);
+          threadMap.set(threadKey, existing);
+        }
+
+        const convList: Conversation[] = [];
+        const msgMap: Record<string, Message[]> = {};
+
+        threadMap.forEach((threadMsgs, threadId) => {
+          threadMsgs.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+          const last = threadMsgs[threadMsgs.length - 1];
+          const unread = threadMsgs.filter((m) => !m.is_read && m.sender_id !== "me").length;
+          const partnerId = last.sender_id === "me" ? last.recipient_id : last.sender_id;
+
+          convList.push({
+            id: threadId,
+            participantName: partnerId.slice(0, 8),
+            participantInitial: partnerId.slice(0, 2).toUpperCase(),
+            participantRole: "Physician" as Role,
+            participantStatus: "online" as Status,
+            lastMessage: last.body.slice(0, 100),
+            lastMessageAt: new Date(last.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            unreadCount: unread,
+            priority: "normal" as Priority,
+            category: "clinical" as Category,
+            isFlagged: false,
+          });
+
+          msgMap[threadId] = threadMsgs.map((m) => ({
+            id: m.id,
+            senderId: m.sender_id,
+            senderName: m.sender_id === "me" ? "You" : m.sender_id.slice(0, 8),
+            content: m.subject ? `[${m.subject}] ${m.body}` : m.body,
+            timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            isRead: m.is_read,
+          }));
+        });
+
+        if (convList.length > 0) {
+          setConversations(convList);
+          setMessages(msgMap);
+          setSelectedId(convList[0].id);
+        }
+      } catch {
+        // API unavailable — keep demo data
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // Auto-scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -263,7 +335,7 @@ export default function SecureMessagingPage() {
 
   /* ── Send message ── */
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!newMessage.trim() || !selectedId) return;
     const msg: Message = {
       id: `m-${Date.now()}`,
@@ -284,13 +356,36 @@ export default function SecureMessagingPage() {
           : c
       )
     );
+    const body = newMessage;
     setNewMessage("");
+
+    // Fire-and-forget real API send
+    try {
+      const conv = conversations.find((c) => c.id === selectedId);
+      if (conv) {
+        await sendSecureMessage({
+          recipient_id: conv.id,
+          subject: "",
+          body,
+          parent_message_id: selectedId,
+        });
+      }
+    } catch {
+      // Offline/demo mode — message already shown locally
+    }
   };
 
   /* ── New message modal send ── */
 
-  const handleModalSend = () => {
+  const handleModalSend = async () => {
     if (!modalRecipient || !modalBody.trim()) return;
+
+    // Fire-and-forget real API send
+    sendSecureMessage({
+      recipient_id: modalRecipient.id,
+      subject: modalSubject,
+      body: modalBody,
+    }).catch(() => { /* offline/demo */ });
     const newConvId = `c-${Date.now()}`;
     const newConv: Conversation = {
       id: newConvId,

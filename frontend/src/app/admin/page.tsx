@@ -1,6 +1,19 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import {
+  fetchHospitals,
+  fetchProviders,
+  fetchNurses,
+  fetchOfficeAdmins,
+  fetchAuthConfigs,
+  fetchSessions,
+  unlockAccount,
+  type HospitalResponse,
+  type ProviderProfileResponse,
+  type AuthConfigResponse,
+  type SessionResponse,
+} from "@/lib/platform-api";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -141,10 +154,74 @@ type Tab = (typeof TABS)[number];
 /* ================================================================== */
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>("Users");
+  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
+  const [hospitals, setHospitals] = useState<HospitalResponse[]>([]);
+  const [authConfigs, setAuthConfigs] = useState<AuthConfigResponse[]>([]);
+  const [sessions, setSessions] = useState<SessionResponse[]>([]);
 
-  const activeUsers = INITIAL_USERS.filter((u) => u.status === "active").length;
-  const lockedUsers = INITIAL_USERS.filter((u) => u.status === "locked").length;
+  const activeUsers = users.filter((u) => u.status === "active").length;
+  const lockedUsers = users.filter((u) => u.status === "locked").length;
   const totalPermissions = PERMISSION_CATEGORIES.reduce((sum, c) => sum + c.actions.length, 0) * ROLES.length;
+
+  // Load real data from Phase 1-6 APIs
+  useEffect(() => {
+    (async () => {
+      try {
+        const [providerList, nurseList, adminList, hospitalList, configList, sessionList] = await Promise.all([
+          fetchProviders().catch(() => []),
+          fetchNurses().catch(() => []),
+          fetchOfficeAdmins().catch(() => []),
+          fetchHospitals().catch(() => []),
+          fetchAuthConfigs().catch(() => []),
+          fetchSessions().catch(() => []),
+        ]);
+        setHospitals(hospitalList);
+        setAuthConfigs(configList);
+        setSessions(sessionList);
+
+        // Merge provider/nurse/admin data into user list if available
+        const apiUsers: User[] = [];
+        let idx = 100;
+        for (const p of providerList) {
+          apiUsers.push({
+            id: idx++,
+            name: p.user_id.slice(0, 8),
+            email: `${p.user_id.slice(0, 8)}@eminence.health`,
+            role: "Physician",
+            department: p.specialty,
+            status: p.is_active ? "active" : "inactive",
+            lastLogin: p.created_at?.split("T")[0] ?? "",
+          });
+        }
+        for (const n of nurseList) {
+          apiUsers.push({
+            id: idx++,
+            name: n.user_id.slice(0, 8),
+            email: `${n.user_id.slice(0, 8)}@eminence.health`,
+            role: "Nurse",
+            department: n.specialty,
+            status: n.is_active ? "active" : "inactive",
+            lastLogin: n.created_at?.split("T")[0] ?? "",
+          });
+        }
+        for (const a of adminList) {
+          apiUsers.push({
+            id: idx++,
+            name: a.user_id.slice(0, 8),
+            email: `${a.user_id.slice(0, 8)}@eminence.health`,
+            role: "Admin",
+            department: a.position,
+            status: a.is_active ? "active" : "inactive",
+            lastLogin: a.created_at?.split("T")[0] ?? "",
+          });
+        }
+
+        if (apiUsers.length > 0) setUsers(apiUsers);
+      } catch {
+        // Keep demo data
+      }
+    })();
+  }, []);
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6 lg:p-10">
@@ -158,7 +235,7 @@ export default function AdminPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="card p-4">
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Total Users</p>
-          <p className="text-2xl font-bold text-zinc-900 dark:text-white">{INITIAL_USERS.length}</p>
+          <p className="text-2xl font-bold text-zinc-900 dark:text-white">{users.length}</p>
           <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">{activeUsers} active</p>
         </div>
         <div className="card p-4">
@@ -234,6 +311,31 @@ function UserAvatar({ name }: { name: string }) {
 function UsersTab() {
   const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [search, setSearch] = useState("");
+
+  // Load real provider/nurse/admin data
+  useEffect(() => {
+    (async () => {
+      try {
+        const [providerList, nurseList, adminList] = await Promise.all([
+          fetchProviders().catch(() => []),
+          fetchNurses().catch(() => []),
+          fetchOfficeAdmins().catch(() => []),
+        ]);
+        const apiUsers: User[] = [];
+        let idx = 100;
+        for (const p of providerList) {
+          apiUsers.push({ id: idx++, name: p.user_id.slice(0, 8), email: `${p.user_id.slice(0, 8)}@eminence.health`, role: "Physician", department: p.specialty, status: p.is_active ? "active" : "inactive", lastLogin: p.created_at?.split("T")[0] ?? "" });
+        }
+        for (const n of nurseList) {
+          apiUsers.push({ id: idx++, name: n.user_id.slice(0, 8), email: `${n.user_id.slice(0, 8)}@eminence.health`, role: "Nurse", department: n.specialty, status: n.is_active ? "active" : "inactive", lastLogin: n.created_at?.split("T")[0] ?? "" });
+        }
+        for (const a of adminList) {
+          apiUsers.push({ id: idx++, name: a.user_id.slice(0, 8), email: `${a.user_id.slice(0, 8)}@eminence.health`, role: "Admin", department: a.position, status: a.is_active ? "active" : "inactive", lastLogin: a.created_at?.split("T")[0] ?? "" });
+        }
+        if (apiUsers.length > 0) setUsers(apiUsers);
+      } catch { /* keep demo */ }
+    })();
+  }, []);
   const [filterRole, setFilterRole] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterDept, setFilterDept] = useState("All");

@@ -2,6 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { fetchRPMDashboard, ingestRPMData, type RPMDashboard } from "@/lib/api";
+import {
+  fetchDevices,
+  fetchDeviceAlertRules,
+  registerDevice,
+  type DeviceInfoResponse,
+  type DeviceAlertRuleResponse,
+} from "@/lib/platform-api";
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
 
@@ -179,6 +186,9 @@ export default function RPMPage() {
   const [ingesting, setIngesting] = useState(false);
   const [ingestSuccess, setIngestSuccess] = useState(false);
 
+  const [realDevices, setRealDevices] = useState<DeviceInfoResponse[]>([]);
+  const [alertRules, setAlertRules] = useState<DeviceAlertRuleResponse[]>([]);
+
   const loadDashboard = useCallback(async () => {
     try {
       const data = await fetchRPMDashboard();
@@ -190,7 +200,18 @@ export default function RPMPage() {
     }
   }, []);
 
-  useEffect(() => { loadDashboard(); }, [loadDashboard]);
+  useEffect(() => {
+    loadDashboard();
+
+    // Load real device list from Phase 4 /device/manage/list
+    fetchDevices()
+      .then((devices) => setRealDevices(devices))
+      .catch(() => { /* keep demo */ });
+
+    fetchDeviceAlertRules()
+      .then((rules) => setAlertRules(rules))
+      .catch(() => { /* keep demo */ });
+  }, [loadDashboard]);
 
   const handleIngest = async (e: React.FormEvent) => {
     e.preventDefault();
