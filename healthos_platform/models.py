@@ -1196,3 +1196,103 @@ class UserSession(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# ── Treatment Plans (imported from InhealthUSA) ─────────────────────────────
+
+
+class AIProposedTreatmentPlan(Base):
+    """AI-generated treatment proposals requiring doctor review."""
+
+    __tablename__ = "ai_proposed_treatment_plans"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    provider_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+
+    # AI-generated content
+    proposed_treatment: Mapped[str] = mapped_column(Text, nullable=False)
+    medications_suggested: Mapped[str | None] = mapped_column(Text)
+    lifestyle_recommendations: Mapped[str | None] = mapped_column(Text)
+    follow_up_recommendations: Mapped[str | None] = mapped_column(Text)
+    warnings_and_precautions: Mapped[str | None] = mapped_column(Text)
+
+    # Source data snapshots
+    vital_signs_data: Mapped[dict] = mapped_column(JSONB, default=dict)
+    diagnosis_data: Mapped[dict] = mapped_column(JSONB, default=dict)
+    lab_test_data: Mapped[dict] = mapped_column(JSONB, default=dict)
+    medical_history_data: Mapped[dict] = mapped_column(JSONB, default=dict)
+
+    # AI model metadata
+    ai_model_name: Mapped[str | None] = mapped_column(String(100))
+    ai_model_version: Mapped[str | None] = mapped_column(String(50))
+    generation_time_seconds: Mapped[float | None] = mapped_column(Numeric(8, 3))
+    prompt_tokens: Mapped[int | None] = mapped_column(Integer)
+    completion_tokens: Mapped[int | None] = mapped_column(Integer)
+
+    # Doctor review
+    status: Mapped[str] = mapped_column(String(20), default="pending")  # pending, reviewed, approved, rejected, implemented
+    doctor_notes: Mapped[str | None] = mapped_column(Text)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (
+        Index("ix_ai_plan_patient_status", "patient_id", "status"),
+        Index("ix_ai_plan_provider_status", "provider_id", "status"),
+    )
+
+
+class DoctorTreatmentPlan(Base):
+    """Doctor-created treatment plans with optional AI proposal linkage."""
+
+    __tablename__ = "doctor_treatment_plans"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    plan_title: Mapped[str] = mapped_column(String(255), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    provider_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("encounters.id"))
+    ai_proposal_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("ai_proposed_treatment_plans.id"))
+
+    # Treatment plan details
+    chief_complaint: Mapped[str | None] = mapped_column(Text)
+    assessment: Mapped[str | None] = mapped_column(Text)
+    treatment_goals: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Treatment components
+    medications: Mapped[str | None] = mapped_column(Text)
+    procedures: Mapped[str | None] = mapped_column(Text)
+    lifestyle_modifications: Mapped[str | None] = mapped_column(Text)
+    dietary_recommendations: Mapped[str | None] = mapped_column(Text)
+    exercise_recommendations: Mapped[str | None] = mapped_column(Text)
+
+    # Follow-up
+    follow_up_instructions: Mapped[str | None] = mapped_column(Text)
+    warning_signs: Mapped[str | None] = mapped_column(Text)
+    emergency_instructions: Mapped[str | None] = mapped_column(Text)
+
+    # Status & timeline
+    status: Mapped[str] = mapped_column(String(20), default="draft")  # draft, active, completed, cancelled
+    plan_start_date: Mapped[date | None] = mapped_column(Date)
+    plan_end_date: Mapped[date | None] = mapped_column(Date)
+    next_review_date: Mapped[date | None] = mapped_column(Date)
+
+    # Patient visibility
+    is_visible_to_patient: Mapped[bool] = mapped_column(Boolean, default=False)
+    patient_viewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    patient_acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    patient_feedback: Mapped[str | None] = mapped_column(Text)
+
+    additional_notes: Mapped[str | None] = mapped_column(Text)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (
+        Index("ix_doctor_plan_patient_status", "patient_id", "status"),
+        Index("ix_doctor_plan_provider", "provider_id", "status"),
+    )
