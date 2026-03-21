@@ -11,13 +11,16 @@ from datetime import datetime
 from sqlalchemy import (
     ARRAY,
     Boolean,
+    Date,
     DateTime,
     Float,
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
+    Time,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -64,13 +67,28 @@ class User(Base):
     profile: Mapped[dict] = mapped_column(JSONB, default=dict)
     mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     mfa_secret: Mapped[str | None] = mapped_column(String(255))
+    mfa_backup_codes: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # Security fields (imported from InhealthUSA)
+    failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    account_locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_password_change: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    email_verification_token: Mapped[str | None] = mapped_column(String(255))
+    auth_provider: Mapped[str | None] = mapped_column(String(50))
+    external_id: Mapped[str | None] = mapped_column(String(255))
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
     organization: Mapped[Organization] = relationship(back_populates="users")
+    provider_profile: Mapped[ProviderProfile | None] = relationship(back_populates="user", uselist=False)
+    nurse_profile: Mapped[NurseProfile | None] = relationship(back_populates="user", uselist=False)
+    office_admin_profile: Mapped[OfficeAdminProfile | None] = relationship(back_populates="user", uselist=False)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -504,4 +522,677 @@ class PopulationMetric(Base):
     period_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     period_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     breakdown: Mapped[dict] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 1: RBAC — ROLE-SPECIFIC PROFILES
+# (Imported from InhealthUSA Provider/Nurse/OfficeAdministrator models)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class Hospital(Base):
+    __tablename__ = "hospitals"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    address: Mapped[str | None] = mapped_column(Text)
+    city: Mapped[str | None] = mapped_column(String(100))
+    state: Mapped[str | None] = mapped_column(String(50))
+    zip_code: Mapped[str | None] = mapped_column(String(20))
+    phone: Mapped[str | None] = mapped_column(String(20))
+    email: Mapped[str | None] = mapped_column(String(255))
+    website: Mapped[str | None] = mapped_column(String(500))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    departments: Mapped[list[Department]] = relationship(back_populates="hospital")
+
+
+class Department(Base):
+    __tablename__ = "departments"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    hospital_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("hospitals.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    location: Mapped[str | None] = mapped_column(String(255))
+    phone: Mapped[str | None] = mapped_column(String(20))
+    email: Mapped[str | None] = mapped_column(String(255))
+    head_of_department: Mapped[str | None] = mapped_column(String(255))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    hospital: Mapped[Hospital] = relationship(back_populates="departments")
+
+
+class ProviderProfile(Base):
+    __tablename__ = "provider_profiles"
+    __table_args__ = (
+        Index("idx_provider_npi", "npi", unique=True),
+        Index("idx_provider_org", "org_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), unique=True, nullable=False)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    specialty: Mapped[str] = mapped_column(String(100), nullable=False)
+    npi: Mapped[str] = mapped_column(String(20), nullable=False)
+    license_number: Mapped[str | None] = mapped_column(String(100))
+    hospital_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("hospitals.id"))
+    department_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("departments.id"))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    user: Mapped[User] = relationship(back_populates="provider_profile")
+
+
+class NurseProfile(Base):
+    __tablename__ = "nurse_profiles"
+    __table_args__ = (
+        Index("idx_nurse_license", "license_number", unique=True),
+        Index("idx_nurse_org", "org_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), unique=True, nullable=False)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    specialty: Mapped[str] = mapped_column(String(100), default="General")
+    license_number: Mapped[str] = mapped_column(String(100), nullable=False)
+    hospital_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("hospitals.id"))
+    department_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("departments.id"))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    user: Mapped[User] = relationship(back_populates="nurse_profile")
+
+
+class OfficeAdminProfile(Base):
+    __tablename__ = "office_admin_profiles"
+    __table_args__ = (
+        Index("idx_officeadmin_employee", "employee_id", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), unique=True, nullable=False)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    position: Mapped[str] = mapped_column(String(100), default="Office Administrator")
+    employee_id: Mapped[str] = mapped_column(String(50), nullable=False)
+    hospital_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("hospitals.id"))
+    department_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("departments.id"))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    user: Mapped[User] = relationship(back_populates="office_admin_profile")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 2: EHR CLINICAL MODELS
+# (Imported from InhealthUSA — replaces JSONB blobs with normalized schema)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class Diagnosis(Base):
+    __tablename__ = "diagnoses"
+    __table_args__ = (
+        Index("idx_diagnosis_patient", "patient_id", "diagnosed_at"),
+        Index("idx_diagnosis_icd10", "icd10_code"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("encounters.id"))
+    diagnosis_description: Mapped[str] = mapped_column(Text, nullable=False)
+    icd10_code: Mapped[str | None] = mapped_column(String(20))
+    icd11_code: Mapped[str | None] = mapped_column(String(20))
+    diagnosis_type: Mapped[str] = mapped_column(String(20), nullable=False)  # Primary, Secondary, Admitting, Discharge
+    status: Mapped[str] = mapped_column(String(20), nullable=False)  # Active, Resolved, Chronic
+    diagnosed_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    diagnosed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class Prescription(Base):
+    __tablename__ = "prescriptions"
+    __table_args__ = (
+        Index("idx_prescription_patient", "patient_id", "start_date"),
+        Index("idx_prescription_status", "org_id", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    provider_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("encounters.id"))
+    medication_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    dosage: Mapped[str] = mapped_column(String(100), nullable=False)
+    frequency: Mapped[str] = mapped_column(String(100), nullable=False)
+    route: Mapped[str | None] = mapped_column(String(50))
+    start_date: Mapped[datetime] = mapped_column(Date, nullable=False)
+    end_date: Mapped[datetime | None] = mapped_column(Date)
+    refills: Mapped[int] = mapped_column(Integer, default=0)
+    quantity: Mapped[int | None] = mapped_column(Integer)
+    instructions: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="Active")  # Active, Discontinued, Completed
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class Allergy(Base):
+    __tablename__ = "allergies"
+    __table_args__ = (
+        Index("idx_allergy_patient", "patient_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    allergen: Mapped[str] = mapped_column(String(255), nullable=False)
+    allergy_type: Mapped[str] = mapped_column(String(50), nullable=False)  # Medication, Food, Environmental, Other
+    severity: Mapped[str] = mapped_column(String(20), nullable=False)  # Mild, Moderate, Severe, Life-threatening
+    reaction: Mapped[str | None] = mapped_column(Text)
+    onset_date: Mapped[datetime | None] = mapped_column(Date)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class MedicalHistory(Base):
+    __tablename__ = "medical_histories"
+    __table_args__ = (
+        Index("idx_medhist_patient", "patient_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    condition: Mapped[str] = mapped_column(String(255), nullable=False)
+    diagnosis_date: Mapped[datetime | None] = mapped_column(Date)
+    resolution_date: Mapped[datetime | None] = mapped_column(Date)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)  # Active, Resolved, Chronic
+    treatment_notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class SocialHistory(Base):
+    __tablename__ = "social_histories"
+    __table_args__ = (
+        Index("idx_socialhist_patient", "patient_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    smoking_status: Mapped[str] = mapped_column(String(20), default="Never")  # Never, Former, Current
+    alcohol_use: Mapped[str] = mapped_column(String(20), default="Never")  # Never, Occasional, Regular, Heavy
+    drug_use: Mapped[str | None] = mapped_column(Text)
+    occupation: Mapped[str | None] = mapped_column(String(255))
+    marital_status: Mapped[str | None] = mapped_column(String(20))  # Single, Married, Divorced, Widowed, Separated
+    living_situation: Mapped[str | None] = mapped_column(Text)
+    exercise: Mapped[str | None] = mapped_column(Text)
+    diet: Mapped[str | None] = mapped_column(Text)
+    recorded_date: Mapped[datetime] = mapped_column(Date, server_default=func.current_date())
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class FamilyHistory(Base):
+    __tablename__ = "family_histories"
+    __table_args__ = (
+        Index("idx_familyhist_patient", "patient_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    relationship: Mapped[str] = mapped_column(String(50), nullable=False)  # Father, Mother, Brother, etc.
+    condition: Mapped[str] = mapped_column(String(255), nullable=False)
+    age_at_diagnosis: Mapped[int | None] = mapped_column(Integer)
+    is_alive: Mapped[bool] = mapped_column(Boolean, default=True)
+    age_at_death: Mapped[int | None] = mapped_column(Integer)
+    cause_of_death: Mapped[str | None] = mapped_column(String(255))
+    recorded_date: Mapped[datetime] = mapped_column(Date, server_default=func.current_date())
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class LabTest(Base):
+    __tablename__ = "lab_tests"
+    __table_args__ = (
+        Index("idx_labtest_patient", "patient_id", "ordered_date"),
+        Index("idx_labtest_status", "org_id", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    provider_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("encounters.id"))
+    test_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    test_code: Mapped[str | None] = mapped_column(String(50))
+    ordered_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    sample_collected_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    result_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(20), default="Ordered")  # Ordered, In Progress, Completed, Cancelled
+    result_value: Mapped[str | None] = mapped_column(Text)
+    result_unit: Mapped[str | None] = mapped_column(String(50))
+    reference_range: Mapped[str | None] = mapped_column(String(100))
+    abnormal_flag: Mapped[bool] = mapped_column(Boolean, default=False)
+    interpretation: Mapped[str | None] = mapped_column(Text)
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 3: IOT DEVICE API & DATA INGESTION
+# (Imported from InhealthUSA Device/DeviceAPIKey/DeviceDataReading models)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class Device(Base):
+    __tablename__ = "devices"
+    __table_args__ = (
+        Index("idx_device_unique_id", "device_unique_id", unique=True),
+        Index("idx_device_patient", "patient_id"),
+        Index("idx_device_org", "org_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    device_unique_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    device_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    device_type: Mapped[str] = mapped_column(String(50), nullable=False)  # Watch, Ring, EarClip, Adapter, PulseGlucometer
+    manufacturer: Mapped[str | None] = mapped_column(String(255))
+    model_number: Mapped[str | None] = mapped_column(String(100))
+    serial_number: Mapped[str | None] = mapped_column(String(100))
+    firmware_version: Mapped[str | None] = mapped_column(String(50))
+    status: Mapped[str] = mapped_column(String(20), default="Active")  # Active, Inactive, Maintenance, Retired
+    last_sync: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    battery_level: Mapped[int | None] = mapped_column(Integer)
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class DeviceAPIKey(Base):
+    __tablename__ = "device_api_keys"
+    __table_args__ = (
+        Index("idx_apikey_prefix", "key_prefix", unique=True),
+        Index("idx_apikey_device_active", "device_id", "is_active"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    device_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("devices.id"), nullable=False)
+    key_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    key_prefix: Mapped[str] = mapped_column(String(8), nullable=False)
+    hashed_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_used: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    can_write_vitals: Mapped[bool] = mapped_column(Boolean, default=True)
+    can_read_patient: Mapped[bool] = mapped_column(Boolean, default=False)
+    request_count_today: Mapped[int] = mapped_column(Integer, default=0)
+    last_reset_date: Mapped[datetime] = mapped_column(Date, server_default=func.current_date())
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class DeviceDataReading(Base):
+    __tablename__ = "device_data_readings"
+    __table_args__ = (
+        Index("idx_reading_device_time", "device_id", "timestamp"),
+        Index("idx_reading_patient_time", "patient_id", "timestamp"),
+        Index("idx_reading_type_processed", "reading_type", "processed"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    device_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("devices.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    reading_type: Mapped[str] = mapped_column(String(20), nullable=False)  # vital_signs, glucose, ecg, activity, sleep
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    data: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    signal_quality: Mapped[int | None] = mapped_column(Integer)
+    battery_level: Mapped[int | None] = mapped_column(Integer)
+    processed: Mapped[bool] = mapped_column(Boolean, default=False)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    vital_sign_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    device_firmware: Mapped[str | None] = mapped_column(String(50))
+    notes: Mapped[str | None] = mapped_column(Text)
+
+
+class DeviceActivityLog(Base):
+    __tablename__ = "device_activity_logs"
+    __table_args__ = (
+        Index("idx_devlog_device_time", "device_id", "timestamp"),
+        Index("idx_devlog_action_time", "action_type", "timestamp"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    device_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("devices.id"))
+    api_key_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("device_api_keys.id"))
+    action_type: Mapped[str] = mapped_column(String(20), nullable=False)  # auth, data_post, data_get, registration, error
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    ip_address: Mapped[str | None] = mapped_column(String(45))
+    user_agent: Mapped[str | None] = mapped_column(Text)
+    endpoint: Mapped[str | None] = mapped_column(String(255))
+    http_method: Mapped[str | None] = mapped_column(String(10))
+    status_code: Mapped[int | None] = mapped_column(Integer)
+    response_time_ms: Mapped[int | None] = mapped_column(Integer)
+    details: Mapped[dict | None] = mapped_column(JSONB)
+    error_message: Mapped[str | None] = mapped_column(Text)
+
+
+class DeviceAlertRule(Base):
+    __tablename__ = "device_alert_rules"
+    __table_args__ = (
+        Index("idx_alertrule_patient", "patient_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    device_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("devices.id"))
+    patient_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("patients.id"))
+    rule_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    metric_name: Mapped[str] = mapped_column(String(50), nullable=False)  # e.g., heart_rate, blood_pressure_systolic
+    condition: Mapped[str] = mapped_column(String(10), nullable=False)  # gt, lt, eq, gte, lte
+    threshold_value: Mapped[float] = mapped_column(Float, nullable=False)
+    alert_level: Mapped[str] = mapped_column(String(10), nullable=False)  # info, warning, critical
+    alert_message: Mapped[str] = mapped_column(Text, nullable=False)
+    notify_patient: Mapped[bool] = mapped_column(Boolean, default=False)
+    notify_provider: Mapped[bool] = mapped_column(Boolean, default=True)
+    notification_email: Mapped[str | None] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 4: MESSAGING & NOTIFICATIONS
+# (Imported from InhealthUSA Message/Notification/NotificationPreferences)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class Message(Base):
+    __tablename__ = "messages"
+    __table_args__ = (
+        Index("idx_message_sender", "sender_id", "created_at"),
+        Index("idx_message_recipient", "recipient_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    sender_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    recipient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    subject: Mapped[str] = mapped_column(String(255), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    parent_message_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("messages.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    __table_args__ = (
+        Index("idx_notification_user", "user_id", "created_at"),
+        Index("idx_notification_type", "notification_type", "is_read"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    notification_type: Mapped[str] = mapped_column(String(20), nullable=False)  # appointment, lab_result, prescription, message, alert, system
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    link: Mapped[str | None] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class NotificationPreference(Base):
+    __tablename__ = "notification_preferences"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), unique=True, nullable=False)
+    # Email
+    email_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    email_emergency: Mapped[bool] = mapped_column(Boolean, default=True)
+    email_critical: Mapped[bool] = mapped_column(Boolean, default=True)
+    email_warning: Mapped[bool] = mapped_column(Boolean, default=True)
+    # SMS
+    sms_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    sms_emergency: Mapped[bool] = mapped_column(Boolean, default=True)
+    sms_critical: Mapped[bool] = mapped_column(Boolean, default=True)
+    sms_warning: Mapped[bool] = mapped_column(Boolean, default=False)
+    # WhatsApp
+    whatsapp_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    whatsapp_number: Mapped[str | None] = mapped_column(String(20))
+    whatsapp_emergency: Mapped[bool] = mapped_column(Boolean, default=True)
+    whatsapp_critical: Mapped[bool] = mapped_column(Boolean, default=True)
+    whatsapp_warning: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Quiet hours
+    enable_quiet_hours: Mapped[bool] = mapped_column(Boolean, default=False)
+    quiet_start_time: Mapped[datetime | None] = mapped_column(Time)
+    quiet_end_time: Mapped[datetime | None] = mapped_column(Time)
+    # Digest
+    digest_mode: Mapped[bool] = mapped_column(Boolean, default=False)
+    digest_frequency_hours: Mapped[int] = mapped_column(Integer, default=24)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class VitalSignAlertResponse(Base):
+    __tablename__ = "vital_sign_alert_responses"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    vital_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("vitals.id"))
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    alert_type: Mapped[str] = mapped_column(String(20), nullable=False)  # emergency, critical, warning
+    patient_response_status: Mapped[str] = mapped_column(String(20), default="none")  # none, ok, help_needed
+    patient_wants_doctor: Mapped[bool] = mapped_column(Boolean, default=False)
+    patient_wants_nurse: Mapped[bool] = mapped_column(Boolean, default=False)
+    patient_wants_ems: Mapped[bool] = mapped_column(Boolean, default=False)
+    patient_response_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    patient_response_method: Mapped[str | None] = mapped_column(String(20))  # email, sms, whatsapp
+    timeout_minutes: Mapped[int] = mapped_column(Integer, default=15)
+    auto_escalated: Mapped[bool] = mapped_column(Boolean, default=False)
+    auto_escalation_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    doctor_notified: Mapped[bool] = mapped_column(Boolean, default=False)
+    nurse_notified: Mapped[bool] = mapped_column(Boolean, default=False)
+    ems_notified: Mapped[bool] = mapped_column(Boolean, default=False)
+    notifications_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    response_token: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), unique=True, default=uuid.uuid4)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 5: BILLING & INSURANCE ENHANCEMENT
+# (Imported from InhealthUSA Billing/BillingItem/Payment/InsuranceInformation)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class Billing(Base):
+    __tablename__ = "billings"
+    __table_args__ = (
+        Index("idx_billing_patient", "patient_id", "billing_date"),
+        Index("idx_billing_status", "org_id", "status"),
+        Index("idx_billing_invoice", "invoice_number", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("encounters.id"))
+    invoice_number: Mapped[str] = mapped_column(String(100), nullable=False)
+    billing_date: Mapped[datetime] = mapped_column(Date, nullable=False)
+    due_date: Mapped[datetime] = mapped_column(Date, nullable=False)
+    total_amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    amount_paid: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
+    amount_due: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="Pending")  # Pending, Paid, Partially Paid, Overdue, Cancelled
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    items: Mapped[list[BillingItem]] = relationship(back_populates="billing")
+    payments: Mapped[list[Payment]] = relationship(back_populates="billing")
+
+
+class BillingItem(Base):
+    __tablename__ = "billing_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    billing_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("billings.id"), nullable=False)
+    service_code: Mapped[str] = mapped_column(String(50), nullable=False)
+    service_description: Mapped[str] = mapped_column(Text, nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, default=1)
+    unit_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    total_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    billing: Mapped[Billing] = relationship(back_populates="items")
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+    __table_args__ = (
+        Index("idx_payment_patient", "patient_id", "payment_date"),
+        Index("idx_payment_billing", "billing_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    billing_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("billings.id"), nullable=False)
+    payment_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    payment_method: Mapped[str] = mapped_column(String(20), nullable=False)  # Cash, Credit Card, Debit Card, Check, Insurance, Other
+    transaction_id: Mapped[str | None] = mapped_column(String(255))
+    status: Mapped[str] = mapped_column(String(20), default="Completed")  # Completed, Pending, Failed, Refunded
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    billing: Mapped[Billing] = relationship(back_populates="payments")
+
+
+class InsuranceInformation(Base):
+    __tablename__ = "insurance_information"
+    __table_args__ = (
+        Index("idx_insurance_patient", "patient_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    provider_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    policy_number: Mapped[str] = mapped_column(String(100), nullable=False)
+    group_number: Mapped[str | None] = mapped_column(String(100))
+    policyholder_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    policyholder_relationship: Mapped[str] = mapped_column(String(50), nullable=False)
+    effective_date: Mapped[datetime] = mapped_column(Date, nullable=False)
+    termination_date: Mapped[datetime | None] = mapped_column(Date)
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=True)
+    copay_amount: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    deductible_amount: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 6: ENTERPRISE AUTH CONFIGURATION
+# (Imported from InhealthUSA AuthenticationConfig)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class AuthenticationConfig(Base):
+    __tablename__ = "authentication_configs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    auth_method: Mapped[str] = mapped_column(String(50), nullable=False)  # local, ldap, oauth2, openid, azure_ad, cac, saml, sso
+    is_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
+    config: Mapped[dict] = mapped_column(JSONB, default=dict)  # provider-specific config (URLs, client IDs, etc.)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class PasswordHistory(Base):
+    __tablename__ = "password_histories"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+    __table_args__ = (
+        Index("idx_session_user", "user_id"),
+        Index("idx_session_token", "session_token", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    session_token: Mapped[str] = mapped_column(String(255), nullable=False)
+    ip_address: Mapped[str | None] = mapped_column(String(45))
+    user_agent: Mapped[str | None] = mapped_column(Text)
+    last_activity: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

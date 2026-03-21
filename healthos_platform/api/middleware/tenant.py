@@ -64,3 +64,32 @@ async def require_clinician(ctx: TenantContext = Depends(get_current_user)) -> T
     if ctx.role not in ("admin", "clinician", "care_manager"):
         raise HTTPException(status_code=403, detail="Clinician access required")
     return ctx
+
+
+async def require_clinical_staff(ctx: TenantContext = Depends(get_current_user)) -> TenantContext:
+    """Dependency that requires any clinical staff role (doctor/nurse/care_manager)."""
+    if ctx.role not in ("admin", "clinician", "care_manager", "nurse", "office_admin"):
+        raise HTTPException(status_code=403, detail="Clinical staff access required")
+    return ctx
+
+
+async def require_nurse_or_above(ctx: TenantContext = Depends(get_current_user)) -> TenantContext:
+    """Dependency that requires nurse, clinician, or admin role."""
+    if ctx.role not in ("admin", "clinician", "care_manager", "nurse"):
+        raise HTTPException(status_code=403, detail="Nurse or higher access required")
+    return ctx
+
+
+async def require_office_admin_or_above(ctx: TenantContext = Depends(get_current_user)) -> TenantContext:
+    """Dependency that requires office_admin or admin role."""
+    if ctx.role not in ("admin", "office_admin"):
+        raise HTTPException(status_code=403, detail="Office admin access required")
+    return ctx
+
+
+def require_permission(permission: Permission):
+    """Factory for permission-based dependency injection."""
+    async def _check(ctx: TenantContext = Depends(get_current_user)) -> TenantContext:
+        ctx.require_permission(permission)
+        return ctx
+    return _check
