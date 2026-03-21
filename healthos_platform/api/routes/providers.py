@@ -154,24 +154,8 @@ async def create_provider(
     return profile
 
 
-@router.get("/{provider_id}", response_model=ProviderProfileResponse)
-async def get_provider(
-    provider_id: uuid.UUID,
-    ctx: TenantContext = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(
-        select(ProviderProfile).where(
-            ProviderProfile.id == provider_id, ProviderProfile.org_id == ctx.org_id
-        )
-    )
-    profile = result.scalar_one_or_none()
-    if not profile:
-        raise HTTPException(404, "Provider not found")
-    return profile
-
-
 # ── Nurse Endpoints ──────────────────────────────────────────────────────────
+# NOTE: These must be declared BEFORE /{provider_id} to avoid route shadowing.
 
 
 @router.get("/nurses", response_model=list[NurseProfileResponse])
@@ -198,6 +182,7 @@ async def create_nurse(
 
 
 # ── Office Admin Endpoints ───────────────────────────────────────────────────
+# NOTE: These must be declared BEFORE /{provider_id} to avoid route shadowing.
 
 
 @router.get("/office-admins", response_model=list[OfficeAdminProfileResponse])
@@ -222,4 +207,26 @@ async def create_office_admin(
     profile = OfficeAdminProfile(org_id=ctx.org_id, **body.model_dump())
     db.add(profile)
     await db.flush()
+    return profile
+
+
+# ── Single Provider Lookup ─────────────────────────────────────────────────
+# NOTE: This catch-all {provider_id} route must be LAST to avoid shadowing
+# the /nurses, /office-admins, and /dashboard routes above.
+
+
+@router.get("/{provider_id}", response_model=ProviderProfileResponse)
+async def get_provider(
+    provider_id: uuid.UUID,
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(ProviderProfile).where(
+            ProviderProfile.id == provider_id, ProviderProfile.org_id == ctx.org_id
+        )
+    )
+    profile = result.scalar_one_or_none()
+    if not profile:
+        raise HTTPException(404, "Provider not found")
     return profile
