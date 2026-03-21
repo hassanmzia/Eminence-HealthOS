@@ -42,7 +42,7 @@ hpa:
 
 config:
   logLevel: debug
-  corsOrigins: "http://healthos.dev.local,http://localhost:3000,http://localhost:3052"
+  corsOrigins: "http://healthos.dev.local,http://localhost:3000,http://localhost:3052,http://108.48.39.238:3052"
 
 secrets:
   databaseUser: healthos
