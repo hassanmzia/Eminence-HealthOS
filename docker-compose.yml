@@ -42,8 +42,13 @@ services:
       - "3052:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://api:8000
+      WATCHPACK_POLLING: "true"
     depends_on:
       - api
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     volumes:
       - ./frontend/src:/app/src
     networks:
