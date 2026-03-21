@@ -187,7 +187,7 @@ async def create_nurse(
 
 @router.get("/office-admins", response_model=list[OfficeAdminProfileResponse])
 async def list_office_admins(
-    ctx: TenantContext = Depends(require_admin),
+    ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(

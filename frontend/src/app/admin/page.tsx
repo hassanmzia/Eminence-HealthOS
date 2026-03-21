@@ -9,6 +9,7 @@ import {
   fetchAuthConfigs,
   fetchSessions,
   unlockAccount,
+  getUserRole,
   type HospitalResponse,
   type ProviderProfileResponse,
   type AuthConfigResponse,
@@ -167,12 +168,13 @@ export default function AdminPage() {
   useEffect(() => {
     (async () => {
       try {
+        const isAdmin = getUserRole() === "admin";
         const [providerList, nurseList, adminList, hospitalList, configList, sessionList] = await Promise.all([
           fetchProviders().catch(() => []),
           fetchNurses().catch(() => []),
           fetchOfficeAdmins().catch(() => []),
           fetchHospitals().catch(() => []),
-          fetchAuthConfigs().catch(() => []),
+          isAdmin ? fetchAuthConfigs().catch(() => []) : Promise.resolve([]),
           fetchSessions().catch(() => []),
         ]);
         setHospitals(hospitalList);
