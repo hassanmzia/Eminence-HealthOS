@@ -267,6 +267,20 @@ async def create_diagnosis(
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+@router.get("/prescriptions/all", response_model=list[PrescriptionResponse])
+async def list_all_prescriptions(
+    status: str | None = None,
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all prescriptions across all patients for this org."""
+    q = select(Prescription).where(Prescription.org_id == ctx.org_id)
+    if status:
+        q = q.where(Prescription.status == status)
+    result = await db.execute(q.order_by(Prescription.start_date.desc()))
+    return result.scalars().all()
+
+
 @router.get("/prescriptions/{patient_id}", response_model=list[PrescriptionResponse])
 async def list_prescriptions(
     patient_id: uuid.UUID,
@@ -422,6 +436,20 @@ async def create_family_history(
 # ═══════════════════════════════════════════════════════════════════════════════
 # LAB TEST ENDPOINTS
 # ═══════════════════════════════════════════════════════════════════════════════
+
+
+@router.get("/labs/all", response_model=list[LabTestResponse])
+async def list_all_lab_tests(
+    status: str | None = None,
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all lab tests across all patients for this org."""
+    q = select(LabTest).where(LabTest.org_id == ctx.org_id)
+    if status:
+        q = q.where(LabTest.status == status)
+    result = await db.execute(q.order_by(LabTest.ordered_date.desc()))
+    return result.scalars().all()
 
 
 @router.get("/labs/{patient_id}", response_model=list[LabTestResponse])
