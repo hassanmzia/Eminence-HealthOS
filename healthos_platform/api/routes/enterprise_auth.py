@@ -145,7 +145,9 @@ async def delete_auth_config(
     cfg = result.scalar_one_or_none()
     if not cfg:
         raise HTTPException(404, "Config not found")
-    await db.delete(cfg)
+    await db.execute(
+        delete(AuthenticationConfig).where(AuthenticationConfig.id == config_id)
+    )
 
 
 # ── MFA Management ───────────────────────────────────────────────────────────

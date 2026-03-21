@@ -9,6 +9,7 @@ import {
   analyzeLabTrends,
   evaluateCriticalLabValue,
 } from "@/lib/api";
+import { fetchLabTests, createLabTest, updateLabTest, type LabTestResponse } from "@/lib/platform-api";
 
 /* ─── Tabs ─────────────────────────────────────────────────────────────────── */
 const TABS = ["Lab Orders", "Results & Interpretation", "Trend Analysis", "Critical Values"] as const;
@@ -169,6 +170,45 @@ export default function LabsPage() {
   /* ── API calls with fallback ──────────────────────────────────────────────── */
   useEffect(() => {
     fetchLabOrderStatus("all").then(() => {/* use API data if available */}).catch(() => {/* keep demo */});
+
+    // Load real EHR lab tests from /clinical/labs if available
+    (async () => {
+      try {
+        // Try to load labs for a known patient — fallback on error
+        const labs = await fetchLabTests("all");
+        if (labs.length > 0) {
+          setLabResults(
+            labs
+              .filter((l: LabTestResponse) => l.result_value != null)
+              .map((l: LabTestResponse) => ({
+                test: l.test_name,
+                value: parseFloat(l.result_value ?? "0"),
+                unit: l.result_unit ?? "",
+                range: l.reference_range ?? "",
+                flag: (l.abnormal_flag ? "high" : "normal") as "high" | "normal" | "low" | "critical",
+                date: l.result_date?.split("T")[0] ?? l.ordered_date.split("T")[0],
+              })),
+          );
+          setLabOrders(
+            labs.map((l: LabTestResponse) => {
+              const s = l.status === "Completed" ? "completed" as const : l.status === "In Progress" ? "processing" as const : "ordered" as const;
+              return {
+                id: l.id,
+                patient: l.patient_id.slice(0, 8),
+                patient_id: l.patient_id,
+                panels: [l.test_name],
+                priority: "routine" as const,
+                status: s,
+                ordered: l.ordered_date.split("T")[0],
+                provider: l.provider_id?.slice(0, 8) ?? "—",
+              };
+            }),
+          );
+        }
+      } catch {
+        // keep demo data
+      }
+    })();
   }, []);
 
   const handleCreateOrder = useCallback(async () => {

@@ -1,6 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import {
+  fetchInvoices,
+  fetchPayments,
+  type BillingResponse,
+  type PaymentResponse,
+} from "@/lib/platform-api";
 
 interface BillingMetrics {
   total_encounters: number;
@@ -60,8 +66,50 @@ export function BillingDashboard() {
   const [claims, setClaims] = useState<Claim[]>([]);
 
   useEffect(() => {
-    setMetrics(DEMO_METRICS);
-    setClaims(DEMO_CLAIMS);
+    let cancelled = false;
+    (async () => {
+      try {
+        const [invoices, payments] = await Promise.all([
+          fetchInvoices({ page: 1, page_size: 50 }),
+          fetchPayments(),
+        ]);
+        if (cancelled) return;
+
+        const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
+        const totalCharged = invoices.reduce((s, i) => s + i.total_amount, 0);
+        const totalDue = invoices.reduce((s, i) => s + i.amount_due, 0);
+        const billed = invoices.filter((i) => i.status !== "draft").length;
+        const unbilled = invoices.length - billed;
+
+        setMetrics({
+          total_encounters: invoices.length,
+          billed,
+          unbilled,
+          billing_rate: invoices.length > 0 ? Math.round((billed / invoices.length) * 1000) / 10 : 0,
+          coding_issues: 0,
+          documentation_gaps: 0,
+          estimated_revenue_at_risk: totalDue,
+          top_issues: [],
+        });
+
+        setClaims(
+          invoices.slice(0, 10).map((inv) => ({
+            claim_id: inv.invoice_number,
+            patient_name: inv.patient_id.slice(0, 8),
+            payer: "Insurance",
+            total_charges: inv.total_amount,
+            status: inv.status,
+            date_of_service: inv.billing_date,
+            cpt_codes: [],
+          })),
+        );
+      } catch {
+        // API unavailable — use demo data
+        setMetrics(DEMO_METRICS);
+        setClaims(DEMO_CLAIMS);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   if (!metrics) return null;

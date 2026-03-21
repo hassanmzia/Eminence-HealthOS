@@ -35,6 +35,7 @@ from healthos_platform.api.routes import (
     profile,
     providers,
     rag,
+    treatment_plans,
     vitals,
 )
 from healthos_platform.config import get_settings
@@ -398,6 +399,9 @@ def create_app() -> FastAPI:
 
     # Phase 6: Enterprise Auth — MFA, email verification, sessions
     app.include_router(enterprise_auth.router, prefix=api_prefix)
+
+    # Treatment Plans — AI-proposed and doctor-created
+    app.include_router(treatment_plans.router, prefix=api_prefix)
 
     # MCP Bridge routes
     try:

@@ -9,6 +9,7 @@ import {
   trackMedicationAdherence,
   processRefill,
 } from "@/lib/api";
+import { fetchPrescriptions, createPrescriptionRecord, type PrescriptionResponse } from "@/lib/platform-api";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 
@@ -216,11 +217,35 @@ export default function PharmacyPage() {
   /* ── Load data on mount ──────────────────────────────────────────────── */
 
   useEffect(() => {
-    fetchPrescriptionHistory("all")
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) setPrescriptions(data as unknown as Prescription[]);
-      })
-      .catch(() => { /* fall back to demo data */ });
+    // Try real EHR prescriptions from /clinical/prescriptions
+    (async () => {
+      try {
+        const rxList = await fetchPrescriptions("all");
+        if (rxList.length > 0) {
+          setPrescriptions(
+            rxList.map((rx: PrescriptionResponse) => ({
+              id: rx.id,
+              patient_id: rx.patient_id,
+              medication: rx.medication_name,
+              dosage: rx.dosage,
+              frequency: rx.frequency,
+              status: (rx.status.toLowerCase() as Prescription["status"]) || "active",
+              prescriber: rx.provider_id?.slice(0, 8) ?? "—",
+              date: rx.start_date,
+              duration: rx.end_date ? `until ${rx.end_date}` : undefined,
+              notes: rx.instructions ?? undefined,
+            })),
+          );
+        }
+      } catch {
+        // Fall back to agent API
+        fetchPrescriptionHistory("all")
+          .then((data) => {
+            if (Array.isArray(data) && data.length > 0) setPrescriptions(data as unknown as Prescription[]);
+          })
+          .catch(() => { /* keep demo data */ });
+      }
+    })();
 
     trackMedicationAdherence({ patient_id: "all" })
       .then((data) => {
