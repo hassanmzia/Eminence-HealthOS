@@ -21,6 +21,7 @@ from healthos_platform.api.middleware.tenant import (
     get_current_user,
     require_clinician,
 )
+from healthos_platform.security.rbac import Permission
 from healthos_platform.database import get_db
 from healthos_platform.models import (
     Allergy,
@@ -319,9 +320,7 @@ async def create_allergy(
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    ctx.require_permission(
-        __import__("healthos_platform.security.rbac", fromlist=["Permission"]).Permission.ALLERGY_WRITE
-    )
+    ctx.require_permission(Permission.ALLERGY_WRITE)
     allergy = Allergy(org_id=ctx.org_id, **body.model_dump())
     db.add(allergy)
     await db.flush()
