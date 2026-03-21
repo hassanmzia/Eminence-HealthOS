@@ -137,7 +137,7 @@ class ImagingIngestionAgent(BaseAgent):
             trace_id=input_data.trace_id,
             result=result,
             confidence=0.95,
-            rationale=f"DICOM validation: {'all passed' if result['all_passed'] else f'{len(result[\"failed_checks\"])} failed'}",
+            rationale="DICOM validation: " + ("all passed" if result["all_passed"] else f"{len(result['failed_checks'])} failed"),
         )
 
     def _query_studies(self, input_data: AgentInput) -> AgentOutput:
