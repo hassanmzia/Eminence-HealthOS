@@ -6,6 +6,19 @@
 
 const API_PREFIX = "/api/v1";
 
+/** Extract the user role from the JWT stored in localStorage (returns "" if unavailable). */
+export function getUserRole(): string {
+  if (typeof window === "undefined") return "";
+  const token = localStorage.getItem("access_token");
+  if (!token) return "";
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.role ?? "";
+  } catch {
+    return "";
+  }
+}
+
 function getAuthHeaders(): Record<string, string> {
   if (typeof window === "undefined") return {};
   const token = localStorage.getItem("access_token");
