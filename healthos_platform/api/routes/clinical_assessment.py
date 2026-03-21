@@ -21,7 +21,9 @@ logger = structlog.get_logger()
 
 router = APIRouter(prefix="/clinical-assessment", tags=["Clinical Assessment"])
 
-ORCHESTRATOR_URL = "http://clinical-orchestrator:8001"
+_settings = get_settings()
+ORCHESTRATOR_URL = _settings.clinical_orchestrator_url
+IOT_SIMULATOR_URL = _settings.iot_simulator_url
 ORCHESTRATOR_TIMEOUT = 60.0
 
 
@@ -211,7 +213,7 @@ async def get_simulator_status(
 
     try:
         async with httpx.AsyncClient(timeout=10) as client:
-            r = await client.get("http://iot-simulator:8004/status")
+            r = await client.get(f"{IOT_SIMULATOR_URL}/status")
             r.raise_for_status()
             return r.json()
     except httpx.ConnectError:
@@ -231,7 +233,7 @@ async def control_simulator(
 
     try:
         async with httpx.AsyncClient(timeout=10) as client:
-            r = await client.post(f"http://iot-simulator:8004/{action}")
+            r = await client.post(f"{IOT_SIMULATOR_URL}/{action}")
             r.raise_for_status()
             return r.json()
     except httpx.ConnectError:

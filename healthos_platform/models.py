@@ -6,7 +6,7 @@ Complete schema for multi-tenant healthcare platform.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import (
     ARRAY,

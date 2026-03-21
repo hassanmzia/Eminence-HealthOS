@@ -10,7 +10,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from healthos_platform.api.middleware.tenant import (
@@ -91,6 +91,39 @@ class OfficeAdminProfileResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ── Role-Specific Dashboard ─────────────────────────────────────────────────
+
+
+@router.get("/dashboard", tags=["dashboard"])
+async def provider_dashboard(
+    ctx: TenantContext = Depends(require_clinical_staff),
+    db: AsyncSession = Depends(get_db),
+):
+    """Role-specific dashboard data for clinical staff."""
+    from healthos_platform.models import Alert, Encounter, Patient
+
+    patient_count = await db.execute(
+        select(func.count()).select_from(Patient).where(Patient.org_id == ctx.org_id)
+    )
+    alert_count = await db.execute(
+        select(func.count())
+        .select_from(Alert)
+        .where(Alert.org_id == ctx.org_id, Alert.status == "pending")
+    )
+    encounter_count = await db.execute(
+        select(func.count())
+        .select_from(Encounter)
+        .where(Encounter.org_id == ctx.org_id, Encounter.status == "scheduled")
+    )
+
+    return {
+        "role": ctx.role,
+        "total_patients": patient_count.scalar() or 0,
+        "pending_alerts": alert_count.scalar() or 0,
+        "scheduled_encounters": encounter_count.scalar() or 0,
+    }
 
 
 # ── Provider Endpoints ───────────────────────────────────────────────────────
@@ -190,39 +223,3 @@ async def create_office_admin(
     db.add(profile)
     await db.flush()
     return profile
-
-
-# ── Role-Specific Dashboard ─────────────────────────────────────────────────
-
-
-@router.get("/dashboard", tags=["dashboard"])
-async def provider_dashboard(
-    ctx: TenantContext = Depends(require_clinical_staff),
-    db: AsyncSession = Depends(get_db),
-):
-    """Role-specific dashboard data for clinical staff."""
-    from healthos_platform.models import Alert, Encounter, Patient
-
-    patient_count = await db.execute(
-        select(func.count()).select_from(Patient).where(Patient.org_id == ctx.org_id)
-    )
-    alert_count = await db.execute(
-        select(func.count())
-        .select_from(Alert)
-        .where(Alert.org_id == ctx.org_id, Alert.status == "pending")
-    )
-    encounter_count = await db.execute(
-        select(func.count())
-        .select_from(Encounter)
-        .where(Encounter.org_id == ctx.org_id, Encounter.status == "scheduled")
-    )
-
-    return {
-        "role": ctx.role,
-        "total_patients": patient_count.scalar() or 0,
-        "pending_alerts": alert_count.scalar() or 0,
-        "scheduled_encounters": encounter_count.scalar() or 0,
-    }
-
-
-from sqlalchemy import func

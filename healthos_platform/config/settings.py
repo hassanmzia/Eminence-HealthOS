@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     # ── Qdrant ───────────────────────────────────────────────────────
     qdrant_url: str = "http://localhost:6333"
 
+    # ── Microservices ──────────────────────────────────────────────
+    iot_simulator_url: str = "http://localhost:8004"
+    clinical_orchestrator_url: str = "http://localhost:8001"
+
     # ── LLM Providers ────────────────────────────────────────────────
     anthropic_api_key: Optional[str] = None
     openai_api_key: Optional[str] = None
