@@ -88,6 +88,16 @@ _MISSING_COLUMN_MIGRATIONS = [
     'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mfa_enabled" BOOLEAN DEFAULT false',
     'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mfa_secret" VARCHAR(255)',
     'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "updated_at" TIMESTAMPTZ DEFAULT now()',
+    # Phase 1/6: Security & enterprise auth fields on User
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "mfa_backup_codes" TEXT',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "failed_login_attempts" INTEGER DEFAULT 0',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "account_locked_until" TIMESTAMPTZ',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "last_password_change" TIMESTAMPTZ',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "email_verified" BOOLEAN DEFAULT false',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "email_verified_at" TIMESTAMPTZ',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "email_verification_token" VARCHAR(255)',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "auth_provider" VARCHAR(50)',
+    'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "external_id" VARCHAR(255)',
 ]
 
 

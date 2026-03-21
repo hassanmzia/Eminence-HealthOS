@@ -14,7 +14,29 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from healthos_platform.api.middleware.audit import AuditMiddleware
-from healthos_platform.api.routes import agents, alerts, auth, clinical_assessment, dashboard, ehr_sync, fhir, knowledge_graph, ml, patient_portal, patients, profile, rag, vitals
+from healthos_platform.api.routes import (
+    agents,
+    alerts,
+    auth,
+    billing,
+    clinical,
+    clinical_assessment,
+    dashboard,
+    devices,
+    ehr_sync,
+    enterprise_auth,
+    fhir,
+    hospitals,
+    knowledge_graph,
+    messaging,
+    ml,
+    patient_portal,
+    patients,
+    profile,
+    providers,
+    rag,
+    vitals,
+)
 from healthos_platform.config import get_settings
 from healthos_platform.database import close_db, get_db_context, init_db
 
@@ -357,6 +379,25 @@ def create_app() -> FastAPI:
     app.include_router(rag.router, prefix=api_prefix)
     app.include_router(knowledge_graph.router, prefix=api_prefix)
     app.include_router(ml.router, prefix=api_prefix)
+
+    # Phase 1: RBAC — Hospital, Department, Provider/Nurse/OfficeAdmin profiles
+    app.include_router(hospitals.router, prefix=api_prefix)
+    app.include_router(providers.router, prefix=api_prefix)
+
+    # Phase 2: EHR Clinical — Diagnosis, Prescription, Allergy, History, Labs
+    app.include_router(clinical.router, prefix=api_prefix)
+
+    # Phase 3: IoT Device API — Device auth, vitals ingestion, management
+    app.include_router(devices.router, prefix=api_prefix)
+
+    # Phase 4: Messaging & Notifications
+    app.include_router(messaging.router, prefix=api_prefix)
+
+    # Phase 5: Billing & Insurance
+    app.include_router(billing.router, prefix=api_prefix)
+
+    # Phase 6: Enterprise Auth — MFA, email verification, sessions
+    app.include_router(enterprise_auth.router, prefix=api_prefix)
 
     # MCP Bridge routes
     try:
