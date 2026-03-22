@@ -939,7 +939,7 @@ export default function SimulatorPage() {
               {/* Key Metrics */}
               <div className="card card-hover space-y-4">
                 <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Key Population Metrics</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                   <div className="rounded-lg bg-emerald-50 p-4 text-center">
                     <p className="text-xl sm:text-3xl font-bold text-emerald-700">{popResult.nnt}</p>
                     <p className="text-xs text-emerald-600 mt-1">Number Needed to Treat</p>

@@ -1273,7 +1273,7 @@ export default function TelehealthPage() {
                   placeholder="e.g. Maria Garcia"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Visit Type *</label>
                   <select

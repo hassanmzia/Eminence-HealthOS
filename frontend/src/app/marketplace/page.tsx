@@ -777,7 +777,7 @@ function PublishTab({
             </div>
 
             {/* Category + Version row */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
                 <select
