@@ -285,7 +285,12 @@ export default function LabsPage() {
     setTrendInsights(null);
     try {
       const res = await analyzeLabTrends({ patient_id: trendPatient, test: trendTest });
-      setTrendInsights(typeof res === "string" ? res : JSON.stringify(res, null, 2));
+      const text = typeof res === "string"
+        ? res
+        : (res as Record<string, unknown>).trend_narrative
+          ? String((res as Record<string, unknown>).trend_narrative)
+          : JSON.stringify(res, null, 2);
+      setTrendInsights(text);
     } catch {
       const insights: Record<string, string> = {
         "HbA1c": "Trend Analysis: HbA1c has increased from 6.4% to 7.3% over 12 months, representing a 14% worsening. Rate of change: +0.18%/quarter. At this trajectory, the value will reach 7.8% by Sep 2026. Action: Intensify glycemic management. Consider adding second oral agent or initiation of GLP-1 agonist therapy. Schedule endocrinology referral.",
@@ -578,7 +583,7 @@ export default function LabsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filteredResults.map((r) => (
-                    <tr key={`${r.test}-${r.date}`} className={`transition-colors hover:bg-gray-50 ${r.flag === "critical" ? "bg-red-50/50" : ""}`}>
+                    <tr key={`${r.test ?? "unknown"}-${r.date ?? "nodate"}-${filteredResults.indexOf(r)}`} className={`transition-colors hover:bg-gray-50 ${r.flag === "critical" ? "bg-red-50/50" : ""}`}>
                       <td className="px-4 py-3 font-medium text-gray-900">{r.test}</td>
                       <td className={`px-4 py-3 font-mono text-sm ${valueHighlight(r.flag)}`}>{r.value}</td>
                       <td className="px-4 py-3 text-gray-500">{r.unit}</td>
