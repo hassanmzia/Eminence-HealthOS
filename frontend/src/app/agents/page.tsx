@@ -225,7 +225,13 @@ function ConfidenceBar({ value, size = "md" }: { value: number; size?: "sm" | "m
   const color = pct >= 90 ? "bg-emerald-500" : pct >= 70 ? "bg-amber-500" : "bg-red-500";
   const h = size === "sm" ? "h-1.5" : "h-2";
   return (
-    <div className="flex items-center gap-2"> <div className={`flex-1 rounded-full bg-gray-100 dark:bg-gray-800 ${h}`}> className={`${h} ${color} transition-all duration-500`} style={{ width: `${pct}%` }} /> </div> <span className={`text-xs font-semibold tabular-nums ${pct >= 90 ?"text-emerald-600" : pct >= 70 ? "text-amber-600" : "text-red-600"}`}>{pct}%</span>
+    <div className="flex items-center gap-2">
+      <div className={`flex-1 rounded-full bg-gray-100 dark:bg-gray-800 ${h}`}>
+        <div className={`${h} ${color} transition-all duration-500`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className={`text-xs font-semibold tabular-nums ${pct >= 90 ? "text-emerald-600" : pct >= 70 ? "text-amber-600" : "text-red-600"}`}>
+        {pct}%
+      </span>
     </div>
   );
 }
