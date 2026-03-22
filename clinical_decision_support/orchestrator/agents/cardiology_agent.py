@@ -386,7 +386,7 @@ class CardiologyAgent(BaseAgent):
                 description="Initiate ACEi (lisinopril 2.5-5mg daily) - uptitrate to target dose",
                 priority="urgent",
                 rationale="RAAS inhibition reduces mortality in HFrEF",
-                cpt_code=None,
+                cpt_code="99214",
                 contraindications=["hyperkalemia", "bilateral renal artery stenosis", "angioedema"]
             ))
             reasoning.append("  - Adding ACEi for RAAS inhibition")
@@ -399,7 +399,7 @@ class CardiologyAgent(BaseAgent):
                 description="Initiate beta-blocker (carvedilol 3.125mg BID) - uptitrate to target",
                 priority="urgent",
                 rationale="Beta-blockers reduce mortality in HFrEF",
-                cpt_code=None,
+                cpt_code="99214",
                 contraindications=["severe bradycardia", "decompensated HF", "advanced heart block"]
             ))
             reasoning.append("  - Adding beta-blocker")
@@ -412,7 +412,7 @@ class CardiologyAgent(BaseAgent):
                 description="Add SGLT2 inhibitor (dapagliflozin 10mg daily)",
                 priority="routine",
                 rationale="SGLT2i reduces HF hospitalizations regardless of diabetes status",
-                cpt_code=None,
+                cpt_code="99214",
                 contraindications=["eGFR < 20"]
             ))
             reasoning.append("  - Adding SGLT2 inhibitor")
@@ -463,7 +463,7 @@ class CardiologyAgent(BaseAgent):
                         description="IV labetalol or nicardipine for hypertensive emergency",
                         priority="immediate",
                         rationale="Urgent BP reduction needed",
-                        cpt_code=None
+                        cpt_code="99215"
                     ))
 
         return {"diagnoses": diagnoses, "treatments": treatments} if diagnoses else None
@@ -529,7 +529,7 @@ class CardiologyAgent(BaseAgent):
                 description="Consider moderate-intensity statin therapy",
                 priority="routine",
                 rationale=f"10-year ASCVD risk {risk:.1f}% - statin therapy indicated per ACC/AHA guidelines",
-                cpt_code=None
+                cpt_code="99214"
             ))
 
         return {
@@ -567,7 +567,7 @@ class CardiologyAgent(BaseAgent):
                 description="BNP or NT-proBNP",
                 priority="urgent",
                 rationale="Confirm heart failure diagnosis",
-                cpt_code=None
+                cpt_code="83880"
             ))
 
         return diagnostics

@@ -72,11 +72,17 @@ ICD10_CODES = {
 # CPT Code Database (simplified)
 CPT_CODES = {
     # E/M Codes
+    "99212": {"description": "Office visit, established patient, straightforward", "category": "evaluation"},
     "99213": {"description": "Office visit, established patient, low complexity", "category": "evaluation"},
     "99214": {"description": "Office visit, established patient, moderate complexity", "category": "evaluation"},
     "99215": {"description": "Office visit, established patient, high complexity", "category": "evaluation"},
     "99243": {"description": "Office consultation, moderate complexity", "category": "consultation"},
     "99244": {"description": "Office consultation, high complexity", "category": "consultation"},
+
+    # Chronic Care / Remote Monitoring
+    "99457": {"description": "Remote physiologic monitoring treatment mgmt, 20 min", "category": "remote_monitoring"},
+    "99473": {"description": "Self-measured blood pressure using validated device", "category": "remote_monitoring"},
+    "99490": {"description": "Chronic care management, 20 min/month", "category": "care_management"},
 
     # Lab Codes
     "80048": {"description": "Basic metabolic panel", "category": "laboratory"},
@@ -87,12 +93,28 @@ CPT_CODES = {
     "82947": {"description": "Glucose, blood", "category": "laboratory"},
     "84443": {"description": "TSH", "category": "laboratory"},
     "80061": {"description": "Lipid panel", "category": "laboratory"},
+    "83519": {"description": "Immunoassay, analyte, quantitative (IgE)", "category": "laboratory"},
+    "82040": {"description": "Albumin, serum", "category": "laboratory"},
+    "83880": {"description": "Natriuretic peptide (BNP/NT-proBNP)", "category": "laboratory"},
+    "84100": {"description": "Phosphorus, blood", "category": "laboratory"},
+    "82374": {"description": "Carbon dioxide (bicarbonate)", "category": "laboratory"},
+    "81001": {"description": "Urinalysis, automated, with microscopy", "category": "laboratory"},
+    "87040": {"description": "Blood culture", "category": "laboratory"},
 
     # Cardiology
     "93000": {"description": "ECG with interpretation", "category": "cardiology"},
+    "93015": {"description": "Cardiovascular stress test", "category": "cardiology"},
     "93306": {"description": "Echocardiogram, complete", "category": "cardiology"},
     "93350": {"description": "Stress echocardiogram", "category": "cardiology"},
     "93452": {"description": "Left heart catheterization", "category": "cardiology"},
+    "93279": {"description": "Device evaluation, single lead pacemaker", "category": "cardiology"},
+
+    # Pulmonary
+    "94010": {"description": "Spirometry", "category": "pulmonary"},
+    "94060": {"description": "Bronchodilator response spirometry", "category": "pulmonary"},
+    "94150": {"description": "Vital capacity", "category": "pulmonary"},
+    "94664": {"description": "Aerosol/vapor inhalation treatment", "category": "pulmonary"},
+    "94640": {"description": "Pressurized inhalation treatment (nebulizer)", "category": "pulmonary"},
 
     # Imaging
     "71046": {"description": "Chest X-ray, 2 views", "category": "imaging"},
@@ -100,10 +122,17 @@ CPT_CODES = {
     "71260": {"description": "CT chest with contrast", "category": "imaging"},
     "74176": {"description": "CT abdomen/pelvis without contrast", "category": "imaging"},
 
-    # Procedures
+    # Procedures / Counseling
     "99401": {"description": "Preventive counseling, 15 min", "category": "counseling"},
+    "99402": {"description": "Preventive counseling, 30 min", "category": "counseling"},
     "G0108": {"description": "Diabetes self-management training", "category": "education"},
+    "G0109": {"description": "DSMT, group session", "category": "education"},
+    "G0447": {"description": "Behavioral counseling for obesity, 15 min", "category": "counseling"},
     "92004": {"description": "Comprehensive eye exam, new patient", "category": "ophthalmology"},
+    "96127": {"description": "Brief emotional/behavioral assessment", "category": "psychiatry"},
+    "90832": {"description": "Psychotherapy, 30 min", "category": "psychiatry"},
+    "90834": {"description": "Psychotherapy, 45 min", "category": "psychiatry"},
+    "96160": {"description": "Health risk assessment instrument", "category": "preventive"},
 }
 
 
@@ -307,14 +336,14 @@ class CodingAgent(BaseAgent):
         return None
 
     def _suggest_cpt_codes(self, treatments: List) -> List[Dict]:
-        """Suggest CPT codes based on treatments"""
+        """Suggest CPT codes based on treatments and backfill missing codes"""
         codes = []
 
-        for tx in treatments:
+        for i, tx in enumerate(treatments):
             if isinstance(tx, dict):
                 cpt = tx.get("cpt_code")
                 desc = tx.get("description", "")
-                tx_type = tx.get("type", "")
+                tx_type = tx.get("type", tx.get("treatment_type", ""))
             elif hasattr(tx, "cpt_code"):
                 cpt = tx.cpt_code
                 desc = tx.description
@@ -326,44 +355,114 @@ class CodingAgent(BaseAgent):
                 codes.append({
                     "code": cpt,
                     "description": CPT_CODES[cpt]["description"],
-                    "category": CPT_CODES[cpt]["category"]
+                    "category": CPT_CODES[cpt]["category"],
+                    "_treatment_index": i,
                 })
             elif desc:
-                # Try to match by description
+                # Try to match by description and backfill
                 matched = self._match_treatment_to_cpt(desc, tx_type)
-                if matched and matched["code"] not in [c["code"] for c in codes]:
+                if matched:
+                    matched["_treatment_index"] = i
                     codes.append(matched)
+                    # Backfill the CPT code onto the treatment
+                    if isinstance(tx, dict):
+                        tx["cpt_code"] = matched["code"]
+                    elif hasattr(tx, "cpt_code"):
+                        tx.cpt_code = matched["code"]
 
-        return codes
+        # Deduplicate by code for the summary list
+        seen = set()
+        unique_codes = []
+        for c in codes:
+            code = c["code"]
+            if code not in seen:
+                seen.add(code)
+                unique_codes.append({k: v for k, v in c.items() if k != "_treatment_index"})
+
+        return unique_codes
 
     def _match_treatment_to_cpt(self, description: str, tx_type: str) -> Optional[Dict]:
         """Match treatment description to CPT code"""
         desc_lower = description.lower()
 
-        # Procedure matching
+        # Procedure / lab matching
         procedure_map = {
+            "basic metabolic panel": "80048",
             "metabolic panel": "80053",
             "cbc": "85025",
             "hemoglobin a1c": "83036",
             "hba1c": "83036",
+            "a1c": "83036",
             "ecg": "93000",
             "ekg": "93000",
+            "12-lead": "93000",
+            "electrocardiogram": "93000",
             "echocardiogram": "93306",
             "echo": "93306",
+            "stress test": "93015",
+            "stress echo": "93350",
             "chest x-ray": "71046",
             "chest xray": "71046",
             "ct chest": "71250",
             "lipid panel": "80061",
             "tsh": "84443",
+            "spirometry": "94010",
+            "bronchodilator": "94060",
+            "nebulizer": "94640",
+            "inhalation treatment": "94664",
+            "urinalysis": "81001",
+            "blood culture": "87040",
+            "creatinine": "82565",
+            "glucose": "82947",
+            "ige": "83519",
+            "albumin": "82040",
+            "bnp": "83880",
+            "nt-probnp": "83880",
+            "natriuretic": "83880",
         }
 
         for keyword, code in procedure_map.items():
-            if keyword in desc_lower:
+            if keyword in desc_lower and code in CPT_CODES:
                 return {
                     "code": code,
                     "description": CPT_CODES[code]["description"],
                     "category": CPT_CODES[code]["category"]
                 }
+
+        # Type-based fallbacks for treatments without specific procedure codes
+        type_map = {
+            "medication": "99214",      # E&M visit for medication management
+            "referral": "99243",        # Office consultation
+            "counseling": "99401",      # Preventive counseling
+        }
+
+        # Specific pattern matches for monitoring/management
+        if tx_type == "monitoring":
+            if "blood pressure" in desc_lower or "bp monitor" in desc_lower:
+                return {"code": "99473", "description": CPT_CODES["99473"]["description"], "category": CPT_CODES["99473"]["category"]}
+            if "weight" in desc_lower or "remote" in desc_lower:
+                return {"code": "99457", "description": CPT_CODES["99457"]["description"], "category": CPT_CODES["99457"]["category"]}
+            return {"code": "99212", "description": CPT_CODES["99212"]["description"], "category": CPT_CODES["99212"]["category"]}
+
+        # Counseling patterns
+        if "counseling" in desc_lower or "education" in desc_lower:
+            if "diabet" in desc_lower:
+                return {"code": "G0108", "description": CPT_CODES["G0108"]["description"], "category": CPT_CODES["G0108"]["category"]}
+            if "obesity" in desc_lower or "weight" in desc_lower:
+                return {"code": "G0447", "description": CPT_CODES["G0447"]["description"], "category": CPT_CODES["G0447"]["category"]}
+            return {"code": "99401", "description": CPT_CODES["99401"]["description"], "category": CPT_CODES["99401"]["category"]}
+
+        # Psychotherapy
+        if "psychotherapy" in desc_lower or "cognitive behavioral" in desc_lower or "cbt" in desc_lower:
+            return {"code": "90834", "description": CPT_CODES["90834"]["description"], "category": CPT_CODES["90834"]["category"]}
+        if "anxiety" in desc_lower and "assessment" in desc_lower:
+            return {"code": "96127", "description": CPT_CODES["96127"]["description"], "category": CPT_CODES["96127"]["category"]}
+
+        # Fall back to type-based default
+        if tx_type in type_map:
+            code = type_map[tx_type]
+            if code in CPT_CODES:
+                return {"code": code, "description": CPT_CODES[code]["description"], "category": CPT_CODES[code]["category"]}
 
         return None
 
