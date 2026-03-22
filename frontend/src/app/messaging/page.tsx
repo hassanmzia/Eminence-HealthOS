@@ -499,11 +499,7 @@ export default function SecureMessagingPage() {
       </div>
 
       {/* ── Split Layout ── */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* ── Left Sidebar (hidden on mobile when conversation selected) ── */}
-        <div className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 md:max-w-md md:min-w-[280px] border-r border-gray-200 dark:border-gray-700 flex-col bg-white dark:bg-gray-900`}>
-          {/* Search */}
-          <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex-1 flex overflow-hidden"> {/* ── Left Sidebar (hidden on mobile when conversation selected) */} <div className={`${selectedId ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 md:max-w-md md:min-w-[280px] border-r border-gray-200 dark:border-gray-700 flex-col bg-white dark:bg-gray-900`}> Search className="p-3 border-b border-gray-200 dark:border-gray-700">
             <div className="relative">
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -580,22 +576,7 @@ export default function SecureMessagingPage() {
                   </div>
                   {/* Unread badge */}
                   {conv.unreadCount > 0 && (
-                    <span className="flex-shrink-0 w-5 h-5 bg-healthos-600 text-white text-[11px] font-bold rounded-full flex items-center justify-center">
-                      {conv.unreadCount}
-                    </span>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Right Panel (Conversation) — full width on mobile ── */}
-        <div className={`${selectedId ? 'flex' : 'hidden md:flex'} flex-1 flex-col bg-gray-50 dark:bg-gray-800 min-w-0`}
-          {selected ? (
-            <>
-              {/* Conversation Header */}
-              <div className="px-3 sm:px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-between gap-2">
+                    <span className="flex-shrink-0 w-5 h-5 bg-healthos-600 text-white text-[11px] font-bold rounded-full flex items-center justify-center"> {conv.unreadCount} </span> )} </div> </button> ))} {/* ── Right Panel (Conversation) — full width on mobile */} <div className={`${selectedId ? 'flex' : 'hidden md:flex'} flex-1 flex-col bg-gray-50 dark:bg-gray-800 min-w-0`} {selected ( <> Conversation Header className="px-3 sm:px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <div className="w-10 h-10 rounded-full bg-healthos-100 flex items-center justify-center text-sm font-semibold text-healthos-700">

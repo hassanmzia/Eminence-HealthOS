@@ -655,10 +655,7 @@ function ReasoningChain({ steps }: { steps: string[] }) {
           const isLast = idx === sections.length - 1;
 
           return (
-            <div key={section.stepNum} className="relative pl-10">
-              {/* Timeline dot */}
-              <div className={`absolute left-0 top-0 flex h-[30px] w-[30px] items-center justify-center rounded-full bg-gradient-to-br ${stepConfig.gradient} shadow-sm ring-4 ring-white dark:ring-gray-900`}>
-                <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div key={section.stepNum} className="relative pl-10"> {/* Timeline dot */} <div className={`absolute left-0 top-0 flex h-[30px] w-[30px] items-center justify-center rounded-full bg-gradient-to-br ${stepConfig.gradient} shadow-sm ring-4 ring-white dark:ring-gray-900`}> <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d={stepConfig.icon} />
                 </svg>
               </div>

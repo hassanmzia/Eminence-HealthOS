@@ -672,15 +672,7 @@ export default function PatientTimelinePage() {
                     style={{ animationDelay: `${Math.min(idx * 40, 400)}ms` }}
                   >
                     {/* Dot */}
-                    <div className="relative z-10 mt-1.5 flex-shrink-0">
-                      <div
-                        className={`h-[10px] w-[10px] rounded-full ring-4 ring-white dark:ring-gray-950 ${cfg.dot}`}
-                      />
-                    </div>
-
-                    {/* Card */}
-                    <button
-                      type="button"
+                    <div className="relative z-10 mt-1.5 flex-shrink-0"> <div className={`h-[10px] w-[10px] rounded-full ring-4 ring-white dark:ring-gray-950 ${cfg.dot}`} /> </div> {/* Card */} <button type="button"
                       onClick={() => evt.details && toggleExpanded(evt.id)}
                       className={`card card-hover flex-1 rounded-xl border text-left transition-all ${cfg.border} ${
                         expanded ? cfg.bg : "bg-white dark:bg-gray-900"

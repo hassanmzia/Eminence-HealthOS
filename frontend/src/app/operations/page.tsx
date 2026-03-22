@@ -820,12 +820,7 @@ export default function OperationsPage() {
 
             {/* Schedule Grid */}
             <div className="card rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="divide-y divide-gray-100">
-                {schedule.map((slot) => (
-                  <div
-                    key={slot.id}
-                    className={`flex items-center gap-4 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                      slot.conflict ? "bg-red-50/50 border-l-4 border-l-red-400" : ""
+              <div className="divide-y divide-gray-100"> {schedule.map((slot) => ( <div key={slot.id} className={`flex items-center gap-4 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${ slot.conflict ?"bg-red-50/50 border-l-4 border-l-red-400" : ""
                     }`}
                   >
                     {/* Time */}

@@ -225,11 +225,7 @@ function ConfidenceBar({ value, size = "md" }: { value: number; size?: "sm" | "m
   const color = pct >= 90 ? "bg-emerald-500" : pct >= 70 ? "bg-amber-500" : "bg-red-500";
   const h = size === "sm" ? "h-1.5" : "h-2";
   return (
-    <div className="flex items-center gap-2">
-      <div className={`flex-1 rounded-full bg-gray-100 dark:bg-gray-800 ${h}`}>
-        <div className={`${h} rounded-full ${color} transition-all duration-500`} style={{ width: `${pct}%` }} />
-      </div>
-      <span className={`text-xs font-semibold tabular-nums ${pct >= 90 ? "text-emerald-600" : pct >= 70 ? "text-amber-600" : "text-red-600"}`}>{pct}%</span>
+    <div className="flex items-center gap-2"> <div className={`flex-1 rounded-full bg-gray-100 dark:bg-gray-800 ${h}`}> className={`${h} ${color} transition-all duration-500`} style={{ width: `${pct}%` }} /> </div> <span className={`text-xs font-semibold tabular-nums ${pct >= 90 ?"text-emerald-600" : pct >= 70 ? "text-amber-600" : "text-red-600"}`}>{pct}%</span>
     </div>
   );
 }
@@ -266,9 +262,7 @@ function AgentPipelineViz({ agents }: { agents: PipelineExecution["agents"] }) {
               </div>
             )}
             {/* Agent step */}
-            <div className="flex flex-col items-center group">
-              <div
-                className={`relative flex flex-col items-center justify-center rounded-xl border-2 ${borderColor} bg-white dark:bg-gray-900 px-3 py-2 min-w-[100px] transition-all duration-200 hover:shadow-md ${isActive ? "shadow-blue-100 shadow-md" : ""}`}
+            <div className="flex flex-col items-center group"> <div className={`relative flex flex-col items-center justify-center rounded-xl border-2 ${borderColor} bg-white dark:bg-gray-900 px-3 py-2 min-w-[100px] transition-all duration-200 hover:shadow-md ${isActive ?"shadow-blue-100 shadow-md" : ""}`}
               >
                 {isActive && (
                   <div className="absolute -top-1 -right-1">
@@ -531,7 +525,7 @@ export default function AgentsPage() {
                   : "border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:text-gray-300"
               }`}
             >
-              <svg className={`h-4 w-4 ${activeTab === tab.key ? "text-healthos-500" : "text-gray-500 dark:text-gray-400 group-hover:text-gray-500 dark:text-gray-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <svg className={`h-4 w-4 ${activeTab === tab.key ? "text-healthos-500" : "text-gray-500 dark:text-gray-400 group-hover:text-gray-500"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
               </svg>
               {tab.label}

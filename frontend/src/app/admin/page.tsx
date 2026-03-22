@@ -535,15 +535,7 @@ function UsersTab() {
               <th className="text-left p-3 font-semibold cursor-pointer select-none" onClick={() => handleSort("lastLogin")}>
                 Last Login {sortIndicator("lastLogin")}
               </th>
-              <th className="text-right p-3 font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((user) => (
-              <tr
-                key={user.id}
-                className={`table-row border-b border-zinc-100 dark:border-zinc-800 ${
-                  selectedUsers.has(user.id) ? "bg-blue-50 dark:bg-blue-900/10" : ""
+              <th className="text-right p-3 font-semibold">Actions</th> </tr> </thead> <tbody> {filtered.map((user) => ( <tr key={user.id} className={`table-row border-b border-zinc-100 dark:border-zinc-800 ${ selectedUsers.has(user.id) ?"bg-blue-50 dark:bg-blue-900/10" : ""
                 }`}
               >
                 <td className="p-3">
@@ -660,17 +652,7 @@ function RolesTab() {
           </div>
           <div className="mb-4">
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Badge Color</label>
-            <div className="flex gap-3">
-              {Object.keys(dotColors).map((c) => (
-                <button
-                  key={c}
-                  className={`w-7 h-7 rounded-full ${dotColors[c]} ring-2 ring-offset-2 ring-transparent hover:ring-blue-400 dark:ring-offset-zinc-900 transition-all`}
-                  title={c}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="mb-4">
+            <div className="flex gap-3"> {Object.keys(dotColors).map((c) => ( <button key={c} className={`w-7 h-7 rounded-full ${dotColors[c]} ring-2 ring-offset-2 ring-transparent hover:ring-blue-400 dark:ring-offset-zinc-900 transition-all`} title={c} /> ))} </div> <div className="mb-4">
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Base Permissions (clone from existing role)</label>
             <select className="select" defaultValue="">
               <option value="">Start with no permissions</option>
@@ -785,11 +767,7 @@ function PermissionsTab() {
           </thead>
           <tbody>
             {PERMISSION_CATEGORIES.map((cat) => {
-              const key = cat.category.toLowerCase().replace(/ /g, "_");
-              return cat.actions.map((action, ai) => (
-                <tr
-                  key={`${cat.category}-${action}`}
-                  className={`table-row border-b border-zinc-100 dark:border-zinc-800 ${ai === 0 ? "border-t-2 border-t-zinc-200 dark:border-t-zinc-700" : ""}`}
+              const key = cat.category.toLowerCase().replace(/ /g, "_"); return cat.actions.map((action, ai) => ( <tr key={`${cat.category}-${action}`} className={`table-row border-b border-zinc-100 dark:border-zinc-800 ${ai === 0 ?"border-t-2 border-t-zinc-200 dark:border-t-zinc-700" : ""}`}
                 >
                   <td className="p-2 sticky left-0 bg-white dark:bg-zinc-900 z-10">
                     <div className="flex items-center gap-2">
