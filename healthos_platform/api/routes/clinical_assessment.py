@@ -148,8 +148,9 @@ async def get_llm_status(
             r = await client.get(f"{ORCHESTRATOR_URL}/api/v1/llm/status")
             r.raise_for_status()
             return r.json()
-    except Exception:
-        return LLMStatusResponse(status="unavailable", error="Orchestrator not reachable")
+    except Exception as exc:
+        logger.warning("llm_status.orchestrator_unreachable", url=ORCHESTRATOR_URL, error=str(exc))
+        return LLMStatusResponse(status="unavailable", error=f"Orchestrator not reachable at {ORCHESTRATOR_URL}")
 
 
 @router.post("/llm/switch")
@@ -201,7 +202,13 @@ async def get_mcp_status(
             r.raise_for_status()
             return r.json()
     except httpx.ConnectError:
-        return MCPStatusResponse(mcp_servers={})
+        logger.warning("mcp_status.orchestrator_unreachable", url=ORCHESTRATOR_URL)
+        return MCPStatusResponse(mcp_servers={
+            "mcp-fhir-server": {"url": "http://mcp-fhir-server:8005", "status": "unreachable", "error": "Orchestrator not reachable"},
+            "mcp-labs-server": {"url": "http://mcp-labs-server:8006", "status": "unreachable", "error": "Orchestrator not reachable"},
+            "mcp-rag-server": {"url": "http://mcp-rag-server:8007", "status": "unreachable", "error": "Orchestrator not reachable"},
+            "mcp-fhir-adapter": {"url": "http://mcp-fhir-adapter:8002", "status": "unreachable", "error": "Orchestrator not reachable"},
+        })
 
 
 @router.get("/simulator/status")
@@ -217,7 +224,8 @@ async def get_simulator_status(
             r.raise_for_status()
             return r.json()
     except httpx.ConnectError:
-        return {"running": False, "error": "Simulator not reachable"}
+        logger.warning("simulator_status.unreachable", url=IOT_SIMULATOR_URL)
+        return {"running": False, "error": f"Simulator not reachable at {IOT_SIMULATOR_URL}"}
 
 
 @router.post("/simulator/{action}")

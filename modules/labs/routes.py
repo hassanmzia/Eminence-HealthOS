@@ -133,6 +133,24 @@ async def flag_abnormals(
     return output.result
 
 
+@router.post("/results/interpret")
+async def interpret_results(
+    body: dict[str, Any],
+    tenant_id: str = Depends(get_tenant_id),
+    user: CurrentUser = Depends(require_auth),
+):
+    """Interpret lab results with AI-generated clinical narrative."""
+    from modules.labs.agents.lab_results import LabResultsAgent
+
+    agent = LabResultsAgent()
+    output = await agent.run(AgentInput(
+        org_id=DEFAULT_ORG,
+        trigger="labs.results.interpret",
+        context={"action": "interpret_results", **body},
+    ))
+    return output.result
+
+
 @router.get("/results/{patient_id}")
 async def get_results(
     patient_id: str,

@@ -536,35 +536,270 @@ export default function ImagingPage() {
             </div>
           </div>
 
-          {/* Simulated Image Placeholder with Annotations */}
+          {/* Image Viewer with modality-specific rendering */}
           <div className="card rounded-xl p-6">
             <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Image Viewer</h3>
             <div className="relative mx-auto aspect-square max-w-md rounded-lg bg-gray-900 overflow-hidden">
-              {/* Simulated DICOM background */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <svg className="mx-auto h-16 w-16 text-gray-600" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" /></svg>
-                  <p className="mt-2 text-sm text-gray-500">DICOM Image Placeholder</p>
-                  <p className="text-xs text-gray-600">Select a study and run AI analysis to view annotations</p>
-                </div>
-              </div>
-              {/* Annotation overlays */}
-              {selectedStudyForAI && aiFindings.filter((f) => f.studyId === selectedStudyForAI).length > 0 && (
-                <>
-                  <div className="absolute top-4 right-4 rounded bg-black/60 px-2 py-1 text-xs text-green-400 font-mono">
-                    AI Annotations Active
-                  </div>
-                  {/* Simulated annotation boxes */}
-                  <div className="absolute top-[30%] left-[25%] h-[30%] w-[40%] rounded border-2 border-red-500 border-dashed opacity-70" />
-                  <div className="absolute top-[28%] left-[25%] rounded bg-red-500/80 px-1.5 py-0.5 text-[10px] text-white font-semibold">
-                    Finding Detected
-                  </div>
-                  <div className="absolute bottom-[20%] right-[20%] h-[15%] w-[25%] rounded border-2 border-yellow-400 border-dashed opacity-60" />
-                  <div className="absolute bottom-[18%] right-[20%] rounded bg-yellow-500/80 px-1.5 py-0.5 text-[10px] text-white font-semibold">
-                    Region of Interest
-                  </div>
-                </>
-              )}
+              {(() => {
+                const study = worklist.find((s) => s.id === selectedStudyForAI);
+                if (!study) {
+                  return (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <svg className="mx-auto h-16 w-16 text-gray-600" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" /></svg>
+                        <p className="mt-2 text-sm text-gray-500">No Study Selected</p>
+                        <p className="text-xs text-gray-600">Select a study and run AI analysis to view</p>
+                      </div>
+                    </div>
+                  );
+                }
+                const studyFindings = aiFindings.filter((f) => f.studyId === selectedStudyForAI);
+                const hasFindings = studyFindings.length > 0;
+                return (
+                  <>
+                    {/* Modality-specific simulated medical image */}
+                    <svg viewBox="0 0 400 400" className="absolute inset-0 h-full w-full">
+                      <defs>
+                        <radialGradient id="bodyGlow" cx="50%" cy="45%" r="45%">
+                          <stop offset="0%" stopColor="#d4d4d4" stopOpacity="0.9" />
+                          <stop offset="60%" stopColor="#737373" stopOpacity="0.7" />
+                          <stop offset="100%" stopColor="#171717" stopOpacity="1" />
+                        </radialGradient>
+                        <radialGradient id="organGlow" cx="50%" cy="50%" r="50%">
+                          <stop offset="0%" stopColor="#a3a3a3" stopOpacity="0.8" />
+                          <stop offset="100%" stopColor="#525252" stopOpacity="0.3" />
+                        </radialGradient>
+                        <filter id="grain">
+                          <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
+                          <feColorMatrix type="saturate" values="0" />
+                          <feBlend in="SourceGraphic" mode="multiply" />
+                        </filter>
+                        <filter id="softGlow">
+                          <feGaussianBlur stdDeviation="2" />
+                        </filter>
+                      </defs>
+                      <rect width="400" height="400" fill="#0a0a0a" />
+                      {(study.modality === "X-Ray" || study.modality === "CT") && study.bodyPart.toLowerCase().includes("chest") && (
+                        <g>
+                          {/* Chest X-ray / CT simulation */}
+                          <ellipse cx="200" cy="200" rx="130" ry="160" fill="url(#bodyGlow)" opacity="0.9" />
+                          {/* Rib cage */}
+                          {[140, 165, 190, 215, 240, 265].map((y, i) => (
+                            <g key={i}>
+                              <ellipse cx="200" cy={y} rx={95 - i * 3} ry="8" fill="none" stroke="#e5e5e5" strokeWidth="2.5" opacity="0.4" />
+                            </g>
+                          ))}
+                          {/* Spine */}
+                          <rect x="194" y="100" width="12" height="220" rx="3" fill="#d4d4d4" opacity="0.3" />
+                          {/* Heart silhouette */}
+                          <ellipse cx="215" cy="220" rx="45" ry="50" fill="#525252" opacity="0.6" />
+                          {/* Lung fields */}
+                          <ellipse cx="150" cy="195" rx="55" ry="75" fill="#262626" opacity="0.5" />
+                          <ellipse cx="250" cy="195" rx="55" ry="75" fill="#262626" opacity="0.5" />
+                          {/* Clavicles */}
+                          <line x1="100" y1="115" x2="200" y2="105" stroke="#e5e5e5" strokeWidth="3" opacity="0.5" />
+                          <line x1="300" y1="115" x2="200" y2="105" stroke="#e5e5e5" strokeWidth="3" opacity="0.5" />
+                        </g>
+                      )}
+                      {study.modality === "CT" && study.bodyPart.toLowerCase().includes("head") && (
+                        <g>
+                          {/* CT Head axial simulation */}
+                          <ellipse cx="200" cy="200" rx="120" ry="140" fill="url(#bodyGlow)" opacity="0.85" />
+                          {/* Skull outline */}
+                          <ellipse cx="200" cy="195" rx="110" ry="130" fill="none" stroke="#d4d4d4" strokeWidth="8" opacity="0.5" />
+                          {/* Brain parenchyma */}
+                          <ellipse cx="200" cy="190" rx="95" ry="110" fill="#404040" opacity="0.7" />
+                          {/* Midline falx */}
+                          <line x1="200" y1="80" x2="200" y2="300" stroke="#a3a3a3" strokeWidth="1.5" opacity="0.6" />
+                          {/* Ventricles */}
+                          <path d="M175 180 Q185 160 200 175 Q215 160 225 180 L215 200 Q200 210 185 200 Z" fill="#262626" opacity="0.8" />
+                          {/* Basal ganglia */}
+                          <ellipse cx="175" cy="205" rx="18" ry="12" fill="#525252" opacity="0.5" />
+                          <ellipse cx="225" cy="205" rx="18" ry="12" fill="#525252" opacity="0.5" />
+                          {/* Eyes / orbits */}
+                          <ellipse cx="165" cy="290" rx="20" ry="15" fill="#1a1a1a" opacity="0.6" />
+                          <ellipse cx="235" cy="290" rx="20" ry="15" fill="#1a1a1a" opacity="0.6" />
+                        </g>
+                      )}
+                      {study.modality === "MRI" && study.bodyPart.toLowerCase().includes("brain") && (
+                        <g>
+                          {/* MRI Brain sagittal simulation */}
+                          <ellipse cx="200" cy="185" rx="115" ry="135" fill="#2a2a2a" opacity="0.9" />
+                          {/* Skull */}
+                          <ellipse cx="200" cy="185" rx="115" ry="135" fill="none" stroke="#737373" strokeWidth="6" opacity="0.4" />
+                          {/* Brain cortex with gyri */}
+                          <ellipse cx="200" cy="180" rx="100" ry="115" fill="#686868" opacity="0.7" />
+                          {/* Sulci pattern */}
+                          {[150, 170, 190, 210, 230].map((y, i) => (
+                            <path key={i} d={`M${120 + i * 5} ${y} Q${160 + (i % 2) * 20} ${y - 10} ${200} ${y} Q${240 - (i % 2) * 20} ${y + 10} ${280 - i * 5} ${y}`} fill="none" stroke="#404040" strokeWidth="1.5" opacity="0.5" />
+                          ))}
+                          {/* Corpus callosum */}
+                          <path d="M145 190 Q200 165 255 190" fill="none" stroke="#a3a3a3" strokeWidth="4" opacity="0.6" />
+                          {/* Ventricles */}
+                          <ellipse cx="200" cy="200" rx="25" ry="15" fill="#1a1a1a" opacity="0.8" />
+                          {/* Cerebellum */}
+                          <ellipse cx="200" cy="280" rx="60" ry="30" fill="#585858" opacity="0.7" />
+                          <line x1="200" y1="250" x2="200" y2="310" stroke="#404040" strokeWidth="1" opacity="0.5" />
+                          {/* Brain stem */}
+                          <rect x="190" y="290" width="20" height="40" rx="8" fill="#505050" opacity="0.6" />
+                        </g>
+                      )}
+                      {study.modality === "MRI" && study.bodyPart.toLowerCase().includes("spine") && (
+                        <g>
+                          {/* MRI Lumbar Spine sagittal */}
+                          <rect x="50" y="20" width="300" height="360" rx="10" fill="#1a1a1a" opacity="0.8" />
+                          {/* Vertebral bodies */}
+                          {[60, 120, 180, 240, 300].map((y, i) => (
+                            <g key={i}>
+                              <rect x="160" y={y} width="80" height="45" rx="5" fill="#b0b0b0" opacity="0.6" />
+                              {/* Disc */}
+                              <rect x="165" y={y + 45} width="70" height="12" rx="4" fill={i === 3 ? "#808080" : "#606060"} opacity={i === 3 ? "0.9" : "0.5"} />
+                              {/* Spinous process */}
+                              <rect x="245" y={y + 10} width="35" height="25" rx="4" fill="#a0a0a0" opacity="0.4" />
+                              {/* Label */}
+                              <text x="135" y={y + 30} fill="#737373" fontSize="11" fontFamily="monospace" textAnchor="end">L{i + 1}</text>
+                            </g>
+                          ))}
+                          {/* Spinal canal */}
+                          <rect x="242" y="60" width="8" height="290" fill="#262626" opacity="0.7" />
+                        </g>
+                      )}
+                      {study.modality === "US" && (
+                        <g>
+                          {/* Ultrasound simulation */}
+                          <path d="M50 20 L200 5 L350 20 L370 380 L30 380 Z" fill="#0d0d0d" />
+                          {/* Ultrasound cone */}
+                          <path d="M150 30 L200 10 L250 30 L330 370 L70 370 Z" fill="#1a1a1a" opacity="0.9" />
+                          {/* Speckle texture overlay */}
+                          <rect x="70" y="30" width="260" height="340" fill="url(#bodyGlow)" opacity="0.3" filter="url(#grain)" />
+                          {/* Organ structure */}
+                          <ellipse cx="200" cy="180" rx="80" ry="60" fill="#333333" opacity="0.7" />
+                          <ellipse cx="200" cy="180" rx="80" ry="60" fill="none" stroke="#555555" strokeWidth="2" opacity="0.8" />
+                          {/* Internal echoes */}
+                          <ellipse cx="180" cy="170" rx="20" ry="15" fill="#444444" opacity="0.6" />
+                          <ellipse cx="220" cy="190" rx="15" ry="12" fill="#3a3a3a" opacity="0.5" />
+                          {/* Depth markers */}
+                          {[80, 140, 200, 260, 320].map((y, i) => (
+                            <g key={i}>
+                              <line x1="55" y1={y} x2="65" y2={y} stroke="#404040" strokeWidth="1" />
+                              <text x="42" y={y + 4} fill="#404040" fontSize="9" fontFamily="monospace" textAnchor="end">{(i + 1) * 3}cm</text>
+                            </g>
+                          ))}
+                        </g>
+                      )}
+                      {study.modality === "PET" && (
+                        <g>
+                          {/* PET/CT whole body simulation */}
+                          <ellipse cx="200" cy="200" rx="100" ry="170" fill="url(#bodyGlow)" opacity="0.4" />
+                          {/* Body outline */}
+                          <ellipse cx="200" cy="200" rx="80" ry="170" fill="none" stroke="#404040" strokeWidth="1.5" opacity="0.5" />
+                          {/* Head */}
+                          <ellipse cx="200" cy="55" rx="30" ry="35" fill="#404040" opacity="0.5" />
+                          {/* Brain uptake (hot) */}
+                          <ellipse cx="200" cy="50" rx="22" ry="25" fill="#f59e0b" opacity="0.7" />
+                          {/* Heart uptake */}
+                          <ellipse cx="210" cy="145" rx="18" ry="20" fill="#ef4444" opacity="0.6" />
+                          {/* Liver */}
+                          <ellipse cx="175" cy="195" rx="35" ry="25" fill="#f97316" opacity="0.4" />
+                          {/* Kidneys */}
+                          <ellipse cx="160" cy="240" rx="14" ry="20" fill="#eab308" opacity="0.5" />
+                          <ellipse cx="240" cy="240" rx="14" ry="20" fill="#eab308" opacity="0.5" />
+                          {/* Bladder */}
+                          <ellipse cx="200" cy="310" rx="22" ry="18" fill="#f59e0b" opacity="0.8" />
+                          {/* Hot spots / suspicious uptake */}
+                          <circle cx="230" cy="170" r="8" fill="#ef4444" opacity="0.8" />
+                          <circle cx="185" cy="270" r="6" fill="#f97316" opacity="0.7" />
+                          {/* Color scale */}
+                          <defs>
+                            <linearGradient id="petScale" x1="0" y1="1" x2="0" y2="0">
+                              <stop offset="0%" stopColor="#1e3a5f" />
+                              <stop offset="25%" stopColor="#2563eb" />
+                              <stop offset="50%" stopColor="#22c55e" />
+                              <stop offset="75%" stopColor="#f59e0b" />
+                              <stop offset="100%" stopColor="#ef4444" />
+                            </linearGradient>
+                          </defs>
+                          <rect x="360" y="80" width="12" height="240" rx="3" fill="url(#petScale)" />
+                          <text x="356" y="76" fill="#737373" fontSize="8" fontFamily="monospace" textAnchor="end">SUV</text>
+                          <text x="356" y="88" fill="#737373" fontSize="7" fontFamily="monospace" textAnchor="end">max</text>
+                          <text x="356" y="325" fill="#737373" fontSize="7" fontFamily="monospace" textAnchor="end">0</text>
+                        </g>
+                      )}
+                      {study.modality === "CT" && (study.bodyPart.toLowerCase().includes("abdomen") || study.bodyPart.toLowerCase().includes("pelvis")) && (
+                        <g>
+                          {/* CT Abdomen axial slice */}
+                          <ellipse cx="200" cy="200" rx="140" ry="110" fill="url(#bodyGlow)" opacity="0.85" />
+                          {/* Body wall / subcutaneous fat */}
+                          <ellipse cx="200" cy="200" rx="140" ry="110" fill="none" stroke="#a3a3a3" strokeWidth="3" opacity="0.3" />
+                          {/* Spine */}
+                          <circle cx="200" cy="280" r="18" fill="#d4d4d4" opacity="0.5" />
+                          <circle cx="200" cy="280" r="8" fill="#404040" opacity="0.7" />
+                          {/* Liver */}
+                          <path d="M130 150 Q150 130 220 140 Q260 150 260 190 Q250 230 200 230 Q140 220 130 180 Z" fill="#737373" opacity="0.5" />
+                          {/* Spleen */}
+                          <ellipse cx="290" cy="190" rx="30" ry="35" fill="#686868" opacity="0.5" />
+                          {/* Kidneys */}
+                          <ellipse cx="130" cy="230" rx="22" ry="30" fill="#808080" opacity="0.5" />
+                          <ellipse cx="270" cy="230" rx="22" ry="30" fill="#808080" opacity="0.5" />
+                          {/* Aorta */}
+                          <circle cx="210" cy="250" r="10" fill="#525252" opacity="0.7" />
+                          {/* IVC */}
+                          <ellipse cx="225" cy="248" rx="8" ry="10" fill="#404040" opacity="0.6" />
+                          {/* Bowel loops */}
+                          <circle cx="180" cy="200" r="12" fill="#3a3a3a" opacity="0.5" />
+                          <circle cx="210" cy="210" r="10" fill="#333333" opacity="0.5" />
+                          <circle cx="190" cy="225" r="11" fill="#383838" opacity="0.5" />
+                        </g>
+                      )}
+                      {/* Fallback for modalities not covered above */}
+                      {!((study.modality === "X-Ray" || study.modality === "CT") && study.bodyPart.toLowerCase().includes("chest")) &&
+                       !(study.modality === "CT" && study.bodyPart.toLowerCase().includes("head")) &&
+                       !(study.modality === "MRI" && study.bodyPart.toLowerCase().includes("brain")) &&
+                       !(study.modality === "MRI" && study.bodyPart.toLowerCase().includes("spine")) &&
+                       !(study.modality === "US") &&
+                       !(study.modality === "PET") &&
+                       !(study.modality === "CT" && (study.bodyPart.toLowerCase().includes("abdomen") || study.bodyPart.toLowerCase().includes("pelvis"))) && (
+                        <g>
+                          <ellipse cx="200" cy="200" rx="130" ry="150" fill="url(#bodyGlow)" opacity="0.7" />
+                          <ellipse cx="200" cy="200" rx="130" ry="150" fill="none" stroke="#525252" strokeWidth="2" opacity="0.5" />
+                        </g>
+                      )}
+                      {/* DICOM overlay info */}
+                      <text x="10" y="18" fill="#737373" fontSize="10" fontFamily="monospace">{study.patient}</text>
+                      <text x="10" y="32" fill="#737373" fontSize="9" fontFamily="monospace">{study.description}</text>
+                      <text x="10" y="392" fill="#737373" fontSize="9" fontFamily="monospace">{study.modality} — {study.bodyPart}</text>
+                      <text x="390" y="392" fill="#737373" fontSize="9" fontFamily="monospace" textAnchor="end">{study.date}</text>
+                      <text x="390" y="18" fill="#737373" fontSize="9" fontFamily="monospace" textAnchor="end">W:400 L:40</text>
+                    </svg>
+                    {/* AI annotation overlays */}
+                    {hasFindings && (
+                      <>
+                        <div className="absolute top-3 right-3 rounded bg-black/70 px-2 py-1 text-xs text-green-400 font-mono">
+                          AI Annotations Active — {studyFindings.length} finding{studyFindings.length !== 1 ? "s" : ""}
+                        </div>
+                        {studyFindings.map((f, idx) => {
+                          const positions = [
+                            { top: "28%", left: "22%", h: "32%", w: "42%" },
+                            { top: "50%", left: "52%", h: "18%", w: "28%" },
+                            { top: "15%", left: "45%", h: "22%", w: "30%" },
+                          ];
+                          const pos = positions[idx % positions.length];
+                          const borderColor = f.severity === "critical" ? "border-red-500" : f.severity === "moderate" ? "border-yellow-400" : "border-blue-400";
+                          const bgColor = f.severity === "critical" ? "bg-red-500/80" : f.severity === "moderate" ? "bg-yellow-500/80" : "bg-blue-500/80";
+                          return (
+                            <div key={f.id}>
+                              <div className={`absolute rounded border-2 border-dashed ${borderColor} opacity-70`} style={{ top: pos.top, left: pos.left, height: pos.h, width: pos.w }} />
+                              <div className={`absolute rounded ${bgColor} px-1.5 py-0.5 text-[10px] text-white font-semibold`} style={{ top: pos.top, left: pos.left, transform: "translateY(-100%)" }}>
+                                {f.description.length > 40 ? f.description.slice(0, 40) + "…" : f.description}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
 

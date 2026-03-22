@@ -258,7 +258,12 @@ export default function LabsPage() {
     setInterpretation(null);
     try {
       const res = await interpretLabResults({ patient_id: "P-1001", results: labResults });
-      setInterpretation(typeof res === "string" ? res : JSON.stringify(res, null, 2));
+      const text = typeof res === "string"
+        ? res
+        : (res as Record<string, unknown>).interpretation
+          ? String((res as Record<string, unknown>).interpretation)
+          : JSON.stringify(res, null, 2);
+      setInterpretation(text);
     } catch {
       setInterpretation(
         "AI Interpretation Summary:\n\n" +

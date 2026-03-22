@@ -105,6 +105,7 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.CARE_PLANS_READ,
         Permission.CARE_PLANS_WRITE,
         Permission.AGENTS_VIEW,
+        Permission.AGENTS_MANAGE,
         Permission.ANALYTICS_READ,
         Permission.DIAGNOSIS_READ,
         Permission.DIAGNOSIS_WRITE,

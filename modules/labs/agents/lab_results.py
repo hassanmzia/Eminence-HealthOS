@@ -70,6 +70,8 @@ class LabResultsAgent(BaseAgent):
             return await self._ingest_results(input_data)
         elif action == "flag_abnormals":
             return self._flag_abnormals(input_data)
+        elif action == "interpret_results":
+            return await self._interpret_results(input_data)
         elif action == "get_results":
             return self._get_results(input_data)
         elif action == "compare_to_prior":
@@ -235,6 +237,112 @@ class LabResultsAgent(BaseAgent):
             result=result,
             confidence=0.93,
             rationale=f"Flagged {len(flagged)} abnormal results ({result['critical_count']} critical)",
+        )
+
+    async def _interpret_results(self, input_data: AgentInput) -> AgentOutput:
+        """Flag abnormals and generate an LLM clinical interpretation."""
+        ctx = input_data.context
+        results = ctx.get("results", [])
+
+        # Flag abnormals using reference ranges
+        processed: list[dict[str, Any]] = []
+        abnormals = 0
+        criticals = 0
+
+        for r in results:
+            test = r.get("test", "").lower()
+            value = r.get("value", 0)
+            ref = REFERENCE_RANGES.get(test, {})
+
+            flag = "normal"
+            if ref:
+                if ref.get("critical_low") is not None and value <= ref["critical_low"]:
+                    flag = "critical_low"
+                    criticals += 1
+                elif ref.get("critical_high") is not None and value >= ref["critical_high"]:
+                    flag = "critical_high"
+                    criticals += 1
+                elif value < ref.get("low", 0):
+                    flag = "low"
+                    abnormals += 1
+                elif value > ref.get("high", 999999):
+                    flag = "high"
+                    abnormals += 1
+            else:
+                # Use the flag from the input if no reference range is available
+                input_flag = r.get("flag", "normal").lower()
+                if input_flag in ("high", "low"):
+                    flag = input_flag
+                    abnormals += 1
+                elif input_flag == "critical":
+                    flag = "critical_high"
+                    criticals += 1
+
+            processed.append({
+                "test": r.get("test", test),
+                "value": value,
+                "unit": r.get("unit", ref.get("unit", "")),
+                "reference_range": (
+                    f"{ref.get('low', '')}-{ref.get('high', '')}" if ref
+                    else r.get("range", r.get("reference_range", "N/A"))
+                ),
+                "flag": flag,
+                "is_abnormal": flag != "normal",
+                "is_critical": flag.startswith("critical"),
+            })
+
+        # Generate LLM clinical interpretation
+        interpretation = (
+            f"{len(processed)} results reviewed: {abnormals} abnormal, {criticals} critical."
+        )
+        try:
+            interpretation_payload = {
+                "patient_id": ctx.get("patient_id"),
+                "results": processed,
+                "abnormal_count": abnormals,
+                "critical_count": criticals,
+            }
+            llm_response = await llm_router.complete(LLMRequest(
+                messages=[{"role": "user", "content": (
+                    f"Interpret the following lab results and provide a clinical narrative "
+                    f"on their significance. Highlight abnormal and critical values with "
+                    f"possible clinical implications.\n\n"
+                    f"Lab results:\n{json.dumps(interpretation_payload, indent=2)}"
+                )}],
+                system=(
+                    "You are a clinical laboratory medicine AI. Interpret lab results and "
+                    "generate a concise clinical narrative. Explain the clinical significance "
+                    "of abnormal values, potential underlying conditions, and recommended "
+                    "follow-up actions. Prioritize critical values."
+                ),
+                temperature=0.3,
+                max_tokens=1024,
+            ))
+            if llm_response and llm_response.content:
+                interpretation = llm_response.content
+        except Exception:
+            logger.warning(
+                "LLM call failed for results interpretation; using fallback narrative",
+                exc_info=True,
+            )
+
+        result = {
+            "patient_id": ctx.get("patient_id"),
+            "total_reviewed": len(processed),
+            "abnormal_count": abnormals,
+            "critical_count": criticals,
+            "flagged_results": processed,
+            "interpretation": interpretation,
+        }
+
+        return self.build_output(
+            trace_id=input_data.trace_id,
+            result=result,
+            confidence=0.93,
+            rationale=(
+                f"Interpreted {len(processed)} results: "
+                f"{abnormals} abnormal, {criticals} critical"
+            ),
         )
 
     def _get_results(self, input_data: AgentInput) -> AgentOutput:
