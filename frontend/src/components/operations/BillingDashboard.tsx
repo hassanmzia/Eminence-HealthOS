@@ -30,7 +30,7 @@ interface Claim {
 }
 
 const CLAIM_STATUS_COLORS: Record<string, string> = {
-  prepared: "bg-gray-100 text-gray-800",
+  prepared: "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
   submitted: "bg-blue-100 text-blue-800",
   accepted: "bg-indigo-100 text-indigo-800",
   paid: "bg-green-100 text-green-800",
@@ -117,9 +117,9 @@ export function BillingDashboard() {
   return (
     <div className="card">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Billing & Claims</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Billing & Claims</h2>
         <div className="flex gap-2">
-          <button className="rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">
+          <button className="rounded border border-gray-300 dark:border-gray-600 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
             Run Audit
           </button>
           <button className="rounded bg-healthos-600 px-3 py-1 text-xs font-medium text-white hover:bg-healthos-700">
@@ -165,9 +165,9 @@ export function BillingDashboard() {
 
       {/* Claims table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 text-left text-xs text-gray-500">
+            <tr className="border-b border-gray-200 dark:border-gray-700 text-left text-xs text-gray-500 dark:text-gray-400">
               <th className="pb-2 font-medium">Claim</th>
               <th className="pb-2 font-medium">Patient</th>
               <th className="pb-2 font-medium">Payer</th>
@@ -178,21 +178,21 @@ export function BillingDashboard() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {claims.map((claim) => (
-              <tr key={claim.claim_id} className="cursor-pointer transition-colors hover:bg-gray-50">
-                <td className="py-2.5 text-xs text-gray-500">{claim.claim_id}</td>
-                <td className="py-2.5 font-medium text-gray-900">{claim.patient_name}</td>
-                <td className="py-2.5 text-gray-600">{claim.payer}</td>
-                <td className="py-2.5 text-xs text-gray-500">{claim.cpt_codes.join(", ")}</td>
-                <td className="py-2.5 text-gray-900">${claim.total_charges.toLocaleString()}</td>
+              <tr key={claim.claim_id} className="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
+                <td className="py-2.5 text-xs text-gray-500 dark:text-gray-400">{claim.claim_id}</td>
+                <td className="py-2.5 font-medium text-gray-900 dark:text-gray-100">{claim.patient_name}</td>
+                <td className="py-2.5 text-gray-600 dark:text-gray-400">{claim.payer}</td>
+                <td className="py-2.5 text-xs text-gray-500 dark:text-gray-400">{claim.cpt_codes.join(", ")}</td>
+                <td className="py-2.5 text-gray-900 dark:text-gray-100">${claim.total_charges.toLocaleString()}</td>
                 <td className="py-2.5">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CLAIM_STATUS_COLORS[claim.status] || "bg-gray-100"}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CLAIM_STATUS_COLORS[claim.status] || "bg-gray-100 dark:bg-gray-800"}`}>
                     {claim.status}
                   </span>
                 </td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );

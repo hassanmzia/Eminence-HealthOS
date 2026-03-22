@@ -369,7 +369,7 @@ const stateDot = (state: string) =>
 
 const trajectoryArrow = (t: string) =>
   t === "improving" ? { symbol: "\u2191", color: "text-green-600", label: "Improving" } :
-  t === "stable" ? { symbol: "\u2192", color: "text-gray-600", label: "Stable" } :
+  t === "stable" ? { symbol: "\u2192", color: "text-gray-600 dark:text-gray-400", label: "Stable" } :
   { symbol: "\u2193", color: "text-red-600", label: "Declining" };
 
 const scoreColor = (s: number) =>
@@ -385,7 +385,7 @@ const evidenceBadge = (level: string) =>
   level === "A" ? "bg-green-100 text-green-800" :
   level === "B" ? "bg-blue-100 text-blue-800" :
   level === "C" ? "bg-yellow-100 text-yellow-800" :
-  "bg-gray-100 text-gray-800";
+  "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200";
 
 const actionBorder = (action: string) =>
   action === "add" ? "border-l-green-500" : action === "modify" ? "border-l-blue-500" : "border-l-red-500";
@@ -403,7 +403,7 @@ const formatTimestamp = (iso: string) => {
 const changeIcon = (c: string) =>
   c === "improved" ? { symbol: "\u25B2", color: "text-green-500" } :
   c === "worsened" ? { symbol: "\u25BC", color: "text-red-500" } :
-  { symbol: "\u25CF", color: "text-gray-400" };
+  { symbol: "\u25CF", color: "text-gray-500 dark:text-gray-400" };
 
 type TabKey = "overview" | "simulation" | "forecasting" | "optimization";
 
@@ -576,8 +576,8 @@ export default function DigitalTwinPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Digital Twin & Simulation</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Digital Twin & Simulation</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Patient digital twins, what-if scenarios, predictive trajectories & treatment optimization
             </p>
           </div>
@@ -603,20 +603,20 @@ export default function DigitalTwinPage() {
         {stats.map((s, i) => (
           <div key={s.label} className="card card-hover text-center animate-fade-in-up" style={{ animationDelay: `${i * 60}ms` }}>
             <div className="text-lg">{s.icon}</div>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{s.value}</p>
-            <p className="text-xs font-medium text-gray-500">{s.label}</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{s.value}</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{s.label}</p>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
+      <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-              activeTab === tab.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              activeTab === tab.key ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
             }`}
           >
             {tab.label}
@@ -630,7 +630,7 @@ export default function DigitalTwinPage() {
           {/* Patient selector */}
           <div className="card">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-gray-700">Select Patient Twin</h2>
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Select Patient Twin</h2>
               <button
                 onClick={handleBuildTwin}
                 disabled={building}
@@ -647,22 +647,22 @@ export default function DigitalTwinPage() {
                   className={`rounded-lg border-2 p-3 text-left transition-all ${
                     selectedTwin.id === twin.id
                       ? "border-healthos-500 bg-healthos-50 shadow-md"
-                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-gray-900">{twin.patient}</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{twin.patient}</span>
                     <span className={`text-sm font-bold ${scoreColor(twin.healthScore)}`}>
                       {(twin.healthScore * 100).toFixed(0)}%
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs text-gray-500">Age {twin.age} | {twin.id}</p>
+                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Age {twin.age} | {twin.id}</p>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {twin.conditions.slice(0, 2).map((c) => (
-                      <span key={c} className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600">{c}</span>
+                      <span key={c} className="rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-[11px] text-gray-600 dark:text-gray-400">{c}</span>
                     ))}
                     {twin.conditions.length > 2 && (
-                      <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">
+                      <span className="rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-[11px] text-gray-500 dark:text-gray-400">
                         +{twin.conditions.length - 2}
                       </span>
                     )}
@@ -676,8 +676,8 @@ export default function DigitalTwinPage() {
           <div className="card card-hover">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">{selectedTwin.patient}</h2>
-                <p className="text-xs text-gray-500">{selectedTwin.id} | Age {selectedTwin.age} | Updated {formatTimestamp(selectedTwin.lastUpdated)}</p>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{selectedTwin.patient}</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{selectedTwin.id} | Age {selectedTwin.age} | Updated {formatTimestamp(selectedTwin.lastUpdated)}</p>
               </div>
               <div className="flex items-center gap-3">
                 <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${traj.color} bg-opacity-10`}>
@@ -693,7 +693,7 @@ export default function DigitalTwinPage() {
 
           {/* Body System Dashboard */}
           <div>
-            <h3 className="mb-3 text-sm font-semibold text-gray-700">Body System Dashboard</h3>
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Body System Dashboard</h3>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {selectedTwin.bodySystems.map((sys, i) => (
                 <div
@@ -704,7 +704,7 @@ export default function DigitalTwinPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{sys.icon}</span>
-                      <span className="text-sm font-semibold text-gray-900">{sys.name}</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{sys.name}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className={`h-2.5 w-2.5 rounded-full ${stateDot(sys.state)}`} />
@@ -714,12 +714,12 @@ export default function DigitalTwinPage() {
                   <div className="space-y-1">
                     {sys.metrics.map((m) => (
                       <div key={m.label} className="flex justify-between text-xs">
-                        <span className="text-gray-500">{m.label}</span>
-                        <span className="font-medium text-gray-800">{m.value}</span>
+                        <span className="text-gray-500 dark:text-gray-400">{m.label}</span>
+                        <span className="font-medium text-gray-800 dark:text-gray-200">{m.value}</span>
                       </div>
                     ))}
                   </div>
-                  <p className="mt-2 text-[10px] text-gray-400">Updated {formatTimestamp(sys.lastUpdated)}</p>
+                  <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">Updated {formatTimestamp(sys.lastUpdated)}</p>
                 </div>
               ))}
             </div>
@@ -727,7 +727,7 @@ export default function DigitalTwinPage() {
 
           {/* State Change Timeline */}
           <div className="card">
-            <h3 className="mb-4 text-sm font-semibold text-gray-700">Recent State Changes</h3>
+            <h3 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Recent State Changes</h3>
             <div className="space-y-3">
               {selectedTwin.stateTimeline.map((entry, i) => {
                 const ci = changeIcon(entry.change);
@@ -741,16 +741,16 @@ export default function DigitalTwinPage() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">{entry.event}</span>
-                        <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">{entry.system}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{entry.event}</span>
+                        <span className="rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-[11px] text-gray-500 dark:text-gray-400">{entry.system}</span>
                       </div>
-                      <p className="text-xs text-gray-400">{formatTimestamp(entry.date)}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{formatTimestamp(entry.date)}</p>
                     </div>
                   </div>
                 );
               })}
               {selectedTwin.stateTimeline.length === 0 && (
-                <p className="text-sm text-gray-400 text-center py-4">No state changes recorded yet.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No state changes recorded yet.</p>
               )}
             </div>
           </div>
@@ -762,7 +762,7 @@ export default function DigitalTwinPage() {
         <div className="space-y-6 animate-fade-in-up">
           {/* Scenario type selector */}
           <div className="card">
-            <h3 className="mb-3 text-sm font-semibold text-gray-700">Scenario Type</h3>
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Scenario Type</h3>
             <div className="flex gap-2">
               {([
                 { key: "medication", label: "Medication Change", icon: "\u{1F48A}" },
@@ -775,11 +775,11 @@ export default function DigitalTwinPage() {
                   className={`flex-1 rounded-lg border-2 p-3 text-center transition-all ${
                     scenarioType === st.key
                       ? "border-healthos-500 bg-healthos-50"
-                      : "border-gray-200 hover:border-gray-300"
+                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:border-gray-600"
                   }`}
                 >
                   <div className="text-xl">{st.icon}</div>
-                  <div className="mt-1 text-xs font-medium text-gray-700">{st.label}</div>
+                  <div className="mt-1 text-xs font-medium text-gray-700 dark:text-gray-300">{st.label}</div>
                 </button>
               ))}
             </div>
@@ -787,39 +787,39 @@ export default function DigitalTwinPage() {
 
           {/* Dynamic form */}
           <div className="card">
-            <h3 className="mb-4 text-sm font-semibold text-gray-700">Scenario Parameters</h3>
-            <p className="mb-2 text-xs text-gray-500">Patient: <span className="font-medium text-gray-800">{selectedTwin.patient}</span> ({selectedTwin.id})</p>
+            <h3 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Scenario Parameters</h3>
+            <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">Patient: <span className="font-medium text-gray-800 dark:text-gray-200">{selectedTwin.patient}</span> ({selectedTwin.id})</p>
 
             {scenarioType === "medication" && (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Drug Name</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Drug Name</label>
                   <input
                     type="text"
                     placeholder="e.g. Empagliflozin"
                     value={simForm.drug || ""}
                     onChange={(e) => setSimForm((p) => ({ ...p, drug: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Dose</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Dose</label>
                   <input
                     type="text"
                     placeholder="e.g. 10mg"
                     value={simForm.dose || ""}
                     onChange={(e) => setSimForm((p) => ({ ...p, dose: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Duration</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Duration</label>
                   <input
                     type="text"
                     placeholder="e.g. 6 months"
                     value={simForm.duration || ""}
                     onChange={(e) => setSimForm((p) => ({ ...p, duration: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   />
                 </div>
               </div>
@@ -828,11 +828,11 @@ export default function DigitalTwinPage() {
             {scenarioType === "lifestyle" && (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Physical Activity</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Physical Activity</label>
                   <select
                     value={simForm.activity || ""}
                     onChange={(e) => setSimForm((p) => ({ ...p, activity: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   >
                     <option value="">Select...</option>
                     <option value="walking_30min">Walking 30 min/day</option>
@@ -842,11 +842,11 @@ export default function DigitalTwinPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Dietary Change</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Dietary Change</label>
                   <select
                     value={simForm.diet || ""}
                     onChange={(e) => setSimForm((p) => ({ ...p, diet: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   >
                     <option value="">Select...</option>
                     <option value="dash">DASH Diet</option>
@@ -856,11 +856,11 @@ export default function DigitalTwinPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Sleep Target</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Sleep Target</label>
                   <select
                     value={simForm.sleep || ""}
                     onChange={(e) => setSimForm((p) => ({ ...p, sleep: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   >
                     <option value="">Select...</option>
                     <option value="7h">7 hours/night</option>
@@ -875,11 +875,11 @@ export default function DigitalTwinPage() {
             {scenarioType === "treatment_stop" && (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Current Treatment to Stop</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Current Treatment to Stop</label>
                   <select
                     value={simForm.treatment || ""}
                     onChange={(e) => setSimForm((p) => ({ ...p, treatment: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   >
                     <option value="">Select treatment...</option>
                     {selectedTwin.medications.map((m) => (
@@ -888,11 +888,11 @@ export default function DigitalTwinPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Reason for Discontinuation</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Reason for Discontinuation</label>
                   <select
                     value={simForm.reason || ""}
                     onChange={(e) => setSimForm((p) => ({ ...p, reason: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   >
                     <option value="">Select reason...</option>
                     <option value="side_effects">Side effects</option>
@@ -926,7 +926,7 @@ export default function DigitalTwinPage() {
           {/* Simulation Results */}
           {simResults && (
             <div className="space-y-4 animate-fade-in-up">
-              <h3 className="text-sm font-semibold text-gray-700">Predicted Outcomes</h3>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Predicted Outcomes</h3>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {simResults.map((r, i) => (
                   <div
@@ -935,8 +935,8 @@ export default function DigitalTwinPage() {
                     style={{ animationDelay: `${i * 80}ms` }}
                   >
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-semibold text-gray-900">{r.metric}</span>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{r.metric}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
                         r.delta < 0 && r.metric !== "10yr CV Risk" ? "bg-red-100 text-red-700" :
                         r.delta > 0 && r.metric !== "10yr CV Risk" ? "bg-green-100 text-green-700" :
                         r.delta < 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
@@ -945,22 +945,22 @@ export default function DigitalTwinPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 text-center rounded-lg bg-gray-50 p-2">
-                        <p className="text-[10px] text-gray-500 uppercase">Before</p>
-                        <p className="text-lg font-bold text-gray-600">{r.before}</p>
+                      <div className="flex-1 text-center rounded-lg bg-gray-50 dark:bg-gray-800 p-2">
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase">Before</p>
+                        <p className="text-lg font-bold text-gray-600 dark:text-gray-400">{r.before}</p>
                       </div>
-                      <span className="text-gray-400 text-lg">\u2192</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-lg">\u2192</span>
                       <div className="flex-1 text-center rounded-lg bg-healthos-50 p-2">
-                        <p className="text-[10px] text-healthos-600 uppercase">After</p>
+                        <p className="text-[11px] text-healthos-600 uppercase">After</p>
                         <p className="text-lg font-bold text-healthos-700">{r.after}</p>
                       </div>
                     </div>
                     <div className="mt-3">
-                      <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+                      <div className="flex justify-between text-[11px] text-gray-500 dark:text-gray-400 mb-1">
                         <span>Confidence</span>
                         <span>{(r.confidence * 100).toFixed(0)}%</span>
                       </div>
-                      <div className="h-1.5 rounded-full bg-gray-100">
+                      <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800">
                         <div
                           className="h-1.5 rounded-full bg-healthos-500 transition-all duration-700"
                           style={{ width: `${r.confidence * 100}%` }}
@@ -973,14 +973,14 @@ export default function DigitalTwinPage() {
 
               {/* Timeline projection */}
               <div className="card">
-                <h4 className="mb-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">Timeline Projection</h4>
+                <h4 className="mb-3 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Timeline Projection</h4>
                 <div className="flex items-center justify-between">
                   {["Baseline", "1 mo", "3 mo", "6 mo", "12 mo"].map((label, i) => (
                     <div key={label} className="flex flex-col items-center flex-1">
                       <div className={`h-3 w-3 rounded-full ${i === 0 ? "bg-gray-400" : "bg-healthos-500"}`} />
                       {i < 4 && <div className="w-full h-0.5 bg-gray-200 mt-1.5" />}
-                      <span className="mt-2 text-[10px] font-medium text-gray-600">{label}</span>
-                      <span className="text-xs font-bold text-gray-900">
+                      <span className="mt-2 text-[11px] font-medium text-gray-600 dark:text-gray-400">{label}</span>
+                      <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
                         {[62, 64, 67, 70, 71][i]}%
                       </span>
                     </div>
@@ -997,10 +997,10 @@ export default function DigitalTwinPage() {
         <div className="space-y-6 animate-fade-in-up">
           {/* Controls */}
           <div className="card">
-            <h3 className="mb-3 text-sm font-semibold text-gray-700">Forecast Configuration</h3>
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Forecast Configuration</h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Patient</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Patient</label>
                 <select
                   value={selectedTwin.id}
                   onChange={(e) => {
@@ -1008,7 +1008,7 @@ export default function DigitalTwinPage() {
                     if (twin) setSelectedTwin(twin);
                     setForecastResults(null);
                   }}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   {twins.map((t) => (
                     <option key={t.id} value={t.id}>{t.patient} ({t.id})</option>
@@ -1016,11 +1016,11 @@ export default function DigitalTwinPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Condition Focus</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Condition Focus</label>
                 <select
                   value={forecastCondition}
                   onChange={(e) => setForecastCondition(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   <option value="">All conditions</option>
                   {selectedTwin.conditions.map((c) => (
@@ -1052,7 +1052,7 @@ export default function DigitalTwinPage() {
             <>
               {/* Milestone Timeline */}
               <div className="card animate-fade-in-up">
-                <h3 className="mb-6 text-sm font-semibold text-gray-700">Progression Timeline</h3>
+                <h3 className="mb-6 text-sm font-semibold text-gray-700 dark:text-gray-300">Progression Timeline</h3>
                 <div className="relative">
                   {/* Connection line */}
                   <div className="absolute top-6 left-0 right-0 h-0.5 bg-gray-200 mx-8" />
@@ -1064,22 +1064,22 @@ export default function DigitalTwinPage() {
                         style={{ animationDelay: `${i * 100}ms` }}
                       >
                         {/* Node */}
-                        <div className={`relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 bg-white ${
+                        <div className={`relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 bg-white dark:bg-gray-900 ${
                           i === 0 ? "border-gray-400" : ms.riskLevel === "low" ? "border-green-400" : ms.riskLevel === "moderate" ? "border-yellow-400" : "border-red-400"
                         }`}>
-                          <span className="text-sm font-bold text-gray-900">{ms.healthScore}%</span>
+                          <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{ms.healthScore}%</span>
                         </div>
-                        <span className="mt-2 text-xs font-semibold text-gray-700">{ms.label}</span>
+                        <span className="mt-2 text-xs font-semibold text-gray-700 dark:text-gray-300">{ms.label}</span>
                         {/* Confidence range */}
-                        <span className="text-[10px] text-gray-400">{ms.confidence[0]}-{ms.confidence[1]}%</span>
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400">{ms.confidence[0]}-{ms.confidence[1]}%</span>
                         {/* Risk badge */}
-                        <span className={`mt-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${riskColor(ms.riskLevel)}`}>
+                        <span className={`mt-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${riskColor(ms.riskLevel)}`}>
                           {ms.riskLevel}
                         </span>
                         {/* Key predictions */}
                         <div className="mt-2 space-y-0.5">
                           {ms.keyValues.map((kv) => (
-                            <div key={kv.label} className="text-[10px] text-gray-500">
+                            <div key={kv.label} className="text-[11px] text-gray-500 dark:text-gray-400">
                               <span className="font-medium">{kv.label}:</span> {kv.predicted}
                             </div>
                           ))}
@@ -1092,7 +1092,7 @@ export default function DigitalTwinPage() {
 
               {/* Deterioration Alerts */}
               <div className="card animate-fade-in-up" style={{ animationDelay: "200ms" }}>
-                <h3 className="mb-3 text-sm font-semibold text-gray-700">Deterioration Detection & Early Warnings</h3>
+                <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Deterioration Detection & Early Warnings</h3>
                 <div className="space-y-2">
                   {forecastAlerts.map((alert, i) => {
                     const isWarning = !alert.includes("No critical");
@@ -1103,7 +1103,7 @@ export default function DigitalTwinPage() {
                           isWarning ? "border-orange-200 bg-orange-50" : "border-green-200 bg-green-50"
                         }`}
                       >
-                        <span className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                        <span className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-white ${
                           isWarning ? "bg-orange-500" : "bg-green-500"
                         }`}>
                           {isWarning ? "!" : "\u2713"}
@@ -1120,7 +1120,7 @@ export default function DigitalTwinPage() {
           {!forecastResults && !forecasting && (
             <div className="card text-center py-12">
               <div className="text-4xl mb-3 opacity-30">{"\uD83D\uDD2E"}</div>
-              <p className="text-sm text-gray-400">Select a patient and click Forecast to generate trajectory predictions.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Select a patient and click Forecast to generate trajectory predictions.</p>
             </div>
           )}
         </div>
@@ -1133,8 +1133,8 @@ export default function DigitalTwinPage() {
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-sm font-semibold text-gray-700">Current Treatment Plan</h3>
-                <p className="text-xs text-gray-500">{selectedTwin.patient} ({selectedTwin.id})</p>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Current Treatment Plan</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{selectedTwin.patient} ({selectedTwin.id})</p>
               </div>
               <button
                 onClick={handleOptimize}
@@ -1154,18 +1154,18 @@ export default function DigitalTwinPage() {
             {/* Medications */}
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {selectedTwin.medications.map((med) => (
-                <div key={med.name} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <div key={med.name} className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-healthos-100 text-healthos-700 text-xs font-bold">
                     Rx
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{med.name}</p>
-                    <p className="text-xs text-gray-500">{med.dose} | {med.frequency}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{med.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{med.dose} | {med.frequency}</p>
                   </div>
                 </div>
               ))}
               {selectedTwin.medications.length === 0 && (
-                <p className="col-span-full text-sm text-gray-400 text-center py-4">No medications on file.</p>
+                <p className="col-span-full text-sm text-gray-500 dark:text-gray-400 text-center py-4">No medications on file.</p>
               )}
             </div>
             {/* Conditions */}
@@ -1179,7 +1179,7 @@ export default function DigitalTwinPage() {
           {/* Optimization Results */}
           {treatmentRecs && (
             <div className="space-y-4 animate-fade-in-up">
-              <h3 className="text-sm font-semibold text-gray-700">Recommended Changes</h3>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Recommended Changes</h3>
               {treatmentRecs.map((rec, i) => {
                 const al = actionLabel(rec.action);
                 return (
@@ -1190,40 +1190,40 @@ export default function DigitalTwinPage() {
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <span className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase ${al.color}`}>{al.text}</span>
-                        <span className="text-sm font-semibold text-gray-900">{rec.medication}</span>
+                        <span className={`rounded px-2 py-0.5 text-[11px] font-bold uppercase ${al.color}`}>{al.text}</span>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{rec.medication}</span>
                       </div>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${evidenceBadge(rec.evidenceLevel)}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${evidenceBadge(rec.evidenceLevel)}`}>
                         Evidence Level {rec.evidenceLevel}
                       </span>
                     </div>
 
                     {rec.action === "modify" && (
                       <div className="mb-3 flex items-center gap-3 text-sm">
-                        <span className="rounded bg-gray-100 px-2 py-1 text-gray-600">{rec.currentDose}</span>
-                        <span className="text-gray-400">\u2192</span>
+                        <span className="rounded bg-gray-100 dark:bg-gray-800 px-2 py-1 text-gray-600 dark:text-gray-400">{rec.currentDose}</span>
+                        <span className="text-gray-500 dark:text-gray-400">\u2192</span>
                         <span className="rounded bg-blue-100 px-2 py-1 font-medium text-blue-700">{rec.recommendedDose}</span>
                       </div>
                     )}
 
                     <div className="space-y-2">
                       <div>
-                        <p className="text-[10px] font-semibold uppercase text-gray-500 tracking-wide">Rationale</p>
-                        <p className="text-sm text-gray-700">{rec.rationale}</p>
+                        <p className="text-[11px] font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wide">Rationale</p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">{rec.rationale}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-semibold uppercase text-gray-500 tracking-wide">Expected Outcome</p>
-                        <p className="text-sm text-gray-700">{rec.expectedOutcome}</p>
+                        <p className="text-[11px] font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wide">Expected Outcome</p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">{rec.expectedOutcome}</p>
                       </div>
                     </div>
 
-                    <div className="mt-3 flex items-center gap-4 pt-3 border-t border-gray-100">
+                    <div className="mt-3 flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-800">
                       <div className="flex-1">
-                        <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+                        <div className="flex justify-between text-[11px] text-gray-500 dark:text-gray-400 mb-1">
                           <span>Cost-Effectiveness</span>
                           <span>{(rec.costEffectiveness * 100).toFixed(0)}%</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-gray-100">
+                        <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800">
                           <div
                             className={`h-1.5 rounded-full transition-all duration-700 ${
                               rec.costEffectiveness >= 0.8 ? "bg-green-500" : rec.costEffectiveness >= 0.6 ? "bg-yellow-500" : "bg-red-500"
@@ -1242,7 +1242,7 @@ export default function DigitalTwinPage() {
           {!treatmentRecs && !optimizing && (
             <div className="card text-center py-12">
               <div className="text-4xl mb-3 opacity-30">{"\uD83D\uDCCA"}</div>
-              <p className="text-sm text-gray-400">Click Optimize to analyze the current treatment plan and generate AI-powered recommendations.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Click Optimize to analyze the current treatment plan and generate AI-powered recommendations.</p>
             </div>
           )}
         </div>

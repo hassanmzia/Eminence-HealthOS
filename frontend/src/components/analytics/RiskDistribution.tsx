@@ -73,7 +73,7 @@ export function RiskDistribution() {
   if (loading) {
     return (
       <div className="card">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Risk Stratification</h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Risk Stratification</h2>
         <div className="animate-pulse space-y-3">
           {[1, 2, 3, 4].map((i) => (
             <div key={i}>
@@ -81,7 +81,7 @@ export function RiskDistribution() {
                 <div className="h-4 w-20 rounded bg-gray-200" />
                 <div className="h-4 w-16 rounded bg-gray-200" />
               </div>
-              <div className="h-2 rounded-full bg-gray-100" />
+              <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800" />
             </div>
           ))}
         </div>
@@ -92,7 +92,7 @@ export function RiskDistribution() {
   if (error) {
     return (
       <div className="card">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Risk Stratification</h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Risk Stratification</h2>
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
           <p className="text-sm text-red-600">{error}</p>
           <button onClick={loadData} className="mt-2 rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700">
@@ -106,17 +106,17 @@ export function RiskDistribution() {
   return (
     <div className="card">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Risk Stratification</h2>
-        <div className="flex gap-1 rounded-lg bg-gray-100 p-0.5">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Risk Stratification</h2>
+        <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5">
           <button
             onClick={() => setView("chart")}
-            className={`rounded-md px-2.5 py-1 text-xs font-medium ${view === "chart" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium ${view === "chart" ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm" : "text-gray-500 dark:text-gray-400"}`}
           >
             Distribution
           </button>
           <button
             onClick={() => setView("recommendations")}
-            className={`rounded-md px-2.5 py-1 text-xs font-medium ${view === "recommendations" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium ${view === "recommendations" ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm" : "text-gray-500 dark:text-gray-400"}`}
           >
             Actions
           </button>
@@ -130,13 +130,13 @@ export function RiskDistribution() {
               <div className="mb-1 flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <span className={`h-2.5 w-2.5 rounded-full ${d.color}`} />
-                  <span className="font-medium text-gray-900">{d.level}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{d.level}</span>
                 </div>
-                <span className="text-gray-500">
+                <span className="text-gray-500 dark:text-gray-400">
                   {d.count.toLocaleString()} ({d.pct}%)
                 </span>
               </div>
-              <div className="h-2 rounded-full bg-gray-100">
+              <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800">
                 <div
                   className={`h-2 rounded-full ${d.color}`}
                   style={{ width: `${(d.count / total) * 100}%` }}
@@ -144,14 +144,14 @@ export function RiskDistribution() {
               </div>
             </div>
           ))}
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
             Total: {total.toLocaleString()} patients evaluated
           </p>
         </div>
       ) : (
         <div className="space-y-2">
           {recommendations.map((r) => (
-            <div key={r.tier} className="flex items-start gap-3 rounded-lg border border-gray-200 p-3">
+            <div key={r.tier} className="flex items-start gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
               <span className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${
                 r.tier === "Critical" ? "bg-red-500" :
                 r.tier === "High" ? "bg-orange-500" :
@@ -159,10 +159,10 @@ export function RiskDistribution() {
               }`} />
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-900">{r.tier}</span>
-                  <span className="text-xs text-gray-500">{r.patients} patients</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{r.tier}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{r.patients} patients</span>
                 </div>
-                <p className="mt-0.5 text-xs text-gray-600">{r.action}</p>
+                <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400">{r.action}</p>
               </div>
             </div>
           ))}

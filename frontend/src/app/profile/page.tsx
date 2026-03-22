@@ -58,12 +58,12 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Account Settings</h1>
-        <p className="mt-1 text-sm text-gray-500">Manage your profile, security, and account preferences.</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Account Settings</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage your profile, security, and account preferences.</p>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex gap-6">
           {tabs.map((tab) => (
             <button
@@ -72,7 +72,7 @@ export default function ProfilePage() {
               className={`border-b-2 pb-3 text-sm font-medium transition-colors ${
                 activeTab === tab.key
                   ? "border-healthos-600 text-healthos-600"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:text-gray-300"
               }`}
             >
               {tab.label}
@@ -154,8 +154,8 @@ function ProfileTab({ user, onUpdate }: { user: UserProfile; onUpdate: (u: UserP
   return (
     <div className="space-y-6">
       {/* Avatar Section */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900">Profile Picture</h2>
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Profile Picture</h2>
         <div className="mt-4 flex items-center gap-6">
           {user.avatar_url ? (
             <img
@@ -180,13 +180,13 @@ function ProfileTab({ user, onUpdate }: { user: UserProfile; onUpdate: (u: UserP
               {user.avatar_url && (
                 <button
                   onClick={handleRemoveAvatar}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   Remove
                 </button>
               )}
             </div>
-            <p className="text-xs text-gray-500">JPEG, PNG, or WebP. Max 5 MB.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">JPEG, PNG, or WebP. Max 5 MB.</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -199,8 +199,8 @@ function ProfileTab({ user, onUpdate }: { user: UserProfile; onUpdate: (u: UserP
       </div>
 
       {/* Personal Information */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900">Personal Information</h2>
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Personal Information</h2>
 
         {message && (
           <div
@@ -216,59 +216,59 @@ function ProfileTab({ user, onUpdate }: { user: UserProfile; onUpdate: (u: UserP
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Full Name</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email Address</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Phone</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
             <input
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+1 (555) 000-0000"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Specialty</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Specialty</label>
             <input
               type="text"
               value={specialty}
               onChange={(e) => setSpecialty(e.target.value)}
               placeholder="e.g. Cardiology"
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+              className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Role</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
             <input
               type="text"
               value={user.role}
               disabled
-              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm capitalize text-gray-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm capitalize text-gray-500 dark:text-gray-400"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Member Since</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Member Since</label>
             <input
               type="text"
               value={new Date(user.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
               disabled
-              className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500"
+              className="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
             />
           </div>
         </div>
@@ -331,9 +331,9 @@ function ChangePasswordSection() {
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6">
-      <h2 className="text-lg font-semibold text-gray-900">Change Password</h2>
-      <p className="mt-1 text-sm text-gray-500">Update your password to keep your account secure.</p>
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Change Password</h2>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Update your password to keep your account secure.</p>
 
       {message && (
         <div
@@ -347,35 +347,35 @@ function ChangePasswordSection() {
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Current Password</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Current Password</label>
           <input
             type="password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             required
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+            className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">New Password</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">New Password</label>
           <input
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             required
             minLength={8}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+            className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Confirm New Password</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm New Password</label>
           <input
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             minLength={8}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+            className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
           />
         </div>
         <div className="flex justify-end">
@@ -450,11 +450,11 @@ function MFASection({ user, onUpdate }: { user: UserProfile; onUpdate: (u: UserP
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Two-Factor Authentication</h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Two-Factor Authentication</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Add an extra layer of security using a TOTP authenticator app.
           </p>
         </div>
@@ -462,7 +462,7 @@ function MFASection({ user, onUpdate }: { user: UserProfile; onUpdate: (u: UserP
           className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
             user.mfa_enabled
               ? "bg-green-100 text-green-700"
-              : "bg-gray-100 text-gray-600"
+              : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
           }`}
         >
           {user.mfa_enabled ? "Enabled" : "Disabled"}
@@ -493,8 +493,8 @@ function MFASection({ user, onUpdate }: { user: UserProfile; onUpdate: (u: UserP
 
       {mfaSetup && (
         <div className="mt-4 space-y-4">
-          <div className="rounded-lg bg-gray-50 p-4">
-            <p className="text-sm font-medium text-gray-700">1. Scan this QR code with your authenticator app:</p>
+          <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-4">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">1. Scan this QR code with your authenticator app:</p>
             <div className="mt-3 flex justify-center">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(mfaSetup.provisioning_uri)}`}
@@ -502,14 +502,14 @@ function MFASection({ user, onUpdate }: { user: UserProfile; onUpdate: (u: UserP
                 className="h-48 w-48 rounded-lg"
               />
             </div>
-            <p className="mt-3 text-sm text-gray-500">
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
               Or enter this key manually:{" "}
               <code className="rounded bg-gray-200 px-2 py-0.5 font-mono text-xs">{mfaSetup.secret}</code>
             </p>
           </div>
 
           <form onSubmit={handleVerify}>
-            <p className="text-sm font-medium text-gray-700">2. Enter the 6-digit code from your app:</p>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">2. Enter the 6-digit code from your app:</p>
             <div className="mt-2 flex gap-3">
               <input
                 type="text"
@@ -517,7 +517,7 @@ function MFASection({ user, onUpdate }: { user: UserProfile; onUpdate: (u: UserP
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 placeholder="000000"
                 maxLength={6}
-                className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-center font-mono text-lg tracking-widest focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="w-32 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-center font-mono text-lg tracking-widest focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               />
               <button
                 type="submit"
@@ -529,7 +529,7 @@ function MFASection({ user, onUpdate }: { user: UserProfile; onUpdate: (u: UserP
               <button
                 type="button"
                 onClick={() => { setMfaSetup(null); setCode(""); }}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 Cancel
               </button>
@@ -551,7 +551,7 @@ function MFASection({ user, onUpdate }: { user: UserProfile; onUpdate: (u: UserP
 
       {showDisable && (
         <form onSubmit={handleDisable} className="mt-4">
-          <p className="text-sm text-gray-600">Enter a code from your authenticator to confirm:</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Enter a code from your authenticator to confirm:</p>
           <div className="mt-2 flex gap-3">
             <input
               type="text"
@@ -559,7 +559,7 @@ function MFASection({ user, onUpdate }: { user: UserProfile; onUpdate: (u: UserP
               onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               placeholder="000000"
               maxLength={6}
-              className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-center font-mono text-lg tracking-widest focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+              className="w-32 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-center font-mono text-lg tracking-widest focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
             />
             <button
               type="submit"
@@ -571,7 +571,7 @@ function MFASection({ user, onUpdate }: { user: UserProfile; onUpdate: (u: UserP
             <button
               type="button"
               onClick={() => { setShowDisable(false); setDisableCode(""); }}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               Cancel
             </button>
@@ -604,9 +604,9 @@ function DangerTab() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-red-200 bg-white p-6">
+      <div className="rounded-lg border border-red-200 bg-white dark:bg-gray-900 p-6">
         <h2 className="text-lg font-semibold text-red-600">Danger Zone</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Deactivating your account will immediately revoke your access. Contact your organization admin to reactivate.
         </p>
 
@@ -619,7 +619,7 @@ function DangerTab() {
           </button>
         ) : (
           <div className="mt-4 space-y-3">
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
               Type <strong>DEACTIVATE</strong> to confirm:
             </p>
             <input
@@ -627,7 +627,7 @@ function DangerTab() {
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
               placeholder="DEACTIVATE"
-              className="w-64 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              className="w-64 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
             />
             <div className="flex gap-3">
               <button
@@ -639,7 +639,7 @@ function DangerTab() {
               </button>
               <button
                 onClick={() => { setShowConfirm(false); setConfirmText(""); }}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 Cancel
               </button>

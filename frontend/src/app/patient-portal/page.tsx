@@ -44,10 +44,10 @@ export default function PatientPortalHome() {
     <div className="space-y-6">
       {/* Welcome */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           Welcome back, {patientName}
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Here is an overview of your health and upcoming activity.
         </p>
       </div>
@@ -82,15 +82,15 @@ export default function PatientPortalHome() {
 
       {/* Notifications / Alerts */}
       {alerts.length > 0 && (
-        <section className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
             Recent Notifications
           </h2>
           <ul className="space-y-3">
             {alerts.map((alert) => (
               <li
                 key={alert.id}
-                className="flex items-start gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3"
+                className="flex items-start gap-3 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-3"
               >
                 <span
                   className={clsx(
@@ -103,8 +103,8 @@ export default function PatientPortalHome() {
                   )}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-gray-800">{alert.message ?? "Health alert"}</p>
-                  <p className="mt-0.5 text-xs text-gray-500">
+                  <p className="text-sm text-gray-800 dark:text-gray-200">{alert.message ?? "Health alert"}</p>
+                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                     {alert.created_at
                       ? new Date(alert.created_at).toLocaleDateString()
                       : ""}
@@ -117,8 +117,8 @@ export default function PatientPortalHome() {
       )}
 
       {/* Quick actions */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+      <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -142,9 +142,9 @@ export default function PatientPortalHome() {
 
       {/* Recent vitals preview */}
       {upcomingVitals.length > 0 && (
-        <section className="rounded-xl border border-gray-200 bg-white p-6">
+        <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Latest Vitals
             </h2>
             <Link
@@ -158,18 +158,18 @@ export default function PatientPortalHome() {
             {upcomingVitals.map((v, i) => (
               <div
                 key={i}
-                className="rounded-lg border border-gray-100 bg-gray-50 p-4"
+                className="rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-4"
               >
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   {v.type}
                 </p>
-                <p className="mt-1 text-lg font-semibold text-gray-900">
+                <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {typeof v.value === "object" ? JSON.stringify(v.value) : String(v.value)}{" "}
-                  <span className="text-sm font-normal text-gray-500">
+                  <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
                     {v.unit}
                   </span>
                 </p>
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {v.recorded_at
                     ? new Date(v.recorded_at).toLocaleString()
                     : ""}
@@ -229,12 +229,12 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="group rounded-lg border border-gray-200 bg-white p-4 transition-colors hover:border-healthos-300 hover:bg-healthos-50"
+      className="group rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 transition-colors hover:border-healthos-300 hover:bg-healthos-50"
     >
-      <p className="font-medium text-gray-900 group-hover:text-healthos-700">
+      <p className="font-medium text-gray-900 dark:text-gray-100 group-hover:text-healthos-700">
         {label}
       </p>
-      <p className="mt-1 text-xs text-gray-500">{description}</p>
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{description}</p>
     </Link>
   );
 }

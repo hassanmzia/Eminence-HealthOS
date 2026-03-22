@@ -90,7 +90,7 @@ export function VoiceNoteCapture({
         />
         {interimTranscript && (
           <div className="absolute bottom-2 left-3 right-3">
-            <span className="text-xs italic text-gray-400">
+            <span className="text-xs italic text-gray-500 dark:text-gray-400">
               {interimTranscript}
             </span>
           </div>
@@ -138,7 +138,7 @@ export function VoiceNoteCapture({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400">{noteText.split(/\s+/).filter(Boolean).length} words</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">{noteText.split(/\s+/).filter(Boolean).length} words</span>
           <button
             onClick={handleSave}
             disabled={!noteText.trim() || isSaving}
@@ -154,8 +154,8 @@ export function VoiceNoteCapture({
       </div>
 
       {/* Quick templates */}
-      <div className="mt-3 border-t border-gray-100 pt-3 dark:border-gray-800">
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Quick Templates</p>
+      <div className="mt-3 border-t border-gray-100 dark:border-gray-800 pt-3 dark:border-gray-800">
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Quick Templates</p>
         <div className="flex flex-wrap gap-1.5">
           {[
             "Patient presents with...",
@@ -168,7 +168,7 @@ export function VoiceNoteCapture({
             <button
               key={template}
               onClick={() => setNoteText((prev) => prev + (prev ? " " : "") + template)}
-              className="rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+              className="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500 dark:hover:bg-gray-700"
             >
               {template}
             </button>

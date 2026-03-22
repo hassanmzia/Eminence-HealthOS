@@ -292,7 +292,7 @@ export default function AuditLogPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Audit Log</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Centralized system activity monitoring</p>
+          <p className="text-gray-500 dark:text-gray-500 mt-1">Centralized system activity monitoring</p>
         </div>
         <div className="flex items-center gap-3">
           {/* Live indicator */}
@@ -318,7 +318,7 @@ export default function AuditLogPage() {
           { label: "Avg Response Time", value: `${avgResponse}ms`, sub: "Within SLA", color: "text-emerald-600 dark:text-emerald-400" },
         ].map((kpi) => (
           <div key={kpi.label} className="card card-hover p-5">
-            <p className="text-sm text-gray-500 dark:text-gray-400">{kpi.label}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-500">{kpi.label}</p>
             <p className={`text-2xl font-bold mt-1 ${kpi.color}`}>{kpi.value}</p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{kpi.sub}</p>
           </div>
@@ -365,7 +365,7 @@ export default function AuditLogPage() {
           </div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
             {categoryData.map((c) => (
-              <div key={c.name} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+              <div key={c.name} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-500">
                 <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
                 {c.name} ({c.value})
               </div>
@@ -378,7 +378,7 @@ export default function AuditLogPage() {
       <div className="card p-4">
         <div className="flex flex-wrap gap-3 items-end">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Search</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-500 mb-1">Search</label>
             <input
               type="text"
               placeholder="Search actions, resources, users..."
@@ -388,7 +388,7 @@ export default function AuditLogPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Event Type</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-500 mb-1">Event Type</label>
             <select value={filterEventType} onChange={(e) => setFilterEventType(e.target.value)} className="select text-sm px-3 py-2 rounded-lg">
               {["All", "Authentication", "Data Access", "Configuration", "Clinical", "API", "System"].map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -396,7 +396,7 @@ export default function AuditLogPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-500 mb-1">Status</label>
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="select text-sm px-3 py-2 rounded-lg">
               {["All", "Success", "Failure", "Warning"].map((s) => (
                 <option key={s} value={s}>{s}</option>
@@ -404,7 +404,7 @@ export default function AuditLogPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">User</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-500 mb-1">User</label>
             <select value={filterUser} onChange={(e) => setFilterUser(e.target.value)} className="select text-sm px-3 py-2 rounded-lg">
               {uniqueUsers.map((u) => (
                 <option key={u} value={u}>{u}</option>
@@ -412,11 +412,11 @@ export default function AuditLogPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">From</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-500 mb-1">From</label>
             <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="input text-sm px-3 py-2 rounded-lg" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">To</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-500 mb-1">To</label>
             <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="input text-sm px-3 py-2 rounded-lg" />
           </div>
           <div className="flex items-end">
@@ -433,7 +433,7 @@ export default function AuditLogPage() {
       {/* ---- Table ---- */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="w-full text-sm">
             <thead>
               <tr className="table-header text-left">
                 <th className="px-4 py-3 font-medium">Timestamp</th>
@@ -450,7 +450,7 @@ export default function AuditLogPage() {
               {paginatedEntries.map((entry) => (
                 <React.Fragment key={entry.id}>
                   <tr
-                    className="table-row cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    className="table-row cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 dark:hover:bg-gray-800/50 transition-colors"
                     onClick={() => setExpandedRow(expandedRow === entry.id ? null : entry.id)}
                   >
                     <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-300">{formatTimestamp(entry.timestamp)}</td>
@@ -459,12 +459,12 @@ export default function AuditLogPage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300 font-mono text-xs">{entry.user}</td>
                     <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{entry.action}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400 max-w-[200px] truncate">{entry.resource}</td>
-                    <td className="px-4 py-3 whitespace-nowrap font-mono text-xs text-gray-500 dark:text-gray-400">{entry.ipAddress}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-500 max-w-[200px] truncate">{entry.resource}</td>
+                    <td className="px-4 py-3 whitespace-nowrap font-mono text-xs text-gray-500 dark:text-gray-500">{entry.ipAddress}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`${statusBadge(entry.status)} text-xs px-2 py-0.5 rounded-full capitalize`}>{entry.status}</span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400">{formatDuration(entry.duration)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-500">{formatDuration(entry.duration)}</td>
                   </tr>
 
                   {/* Expanded details */}
@@ -475,12 +475,12 @@ export default function AuditLogPage() {
                           <div className="space-y-2">
                             <h4 className="font-semibold text-gray-800 dark:text-gray-200 text-sm">Request Details</h4>
                             {entry.details.requestMethod && (
-                              <p className="text-gray-600 dark:text-gray-400">
+                              <p className="text-gray-600 dark:text-gray-500">
                                 <span className="font-medium text-gray-700 dark:text-gray-300">Method:</span> {entry.details.requestMethod}
                               </p>
                             )}
                             {entry.details.requestPath && (
-                              <p className="text-gray-600 dark:text-gray-400">
+                              <p className="text-gray-600 dark:text-gray-500">
                                 <span className="font-medium text-gray-700 dark:text-gray-300">Path:</span>{" "}
                                 <code className="bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">{entry.details.requestPath}</code>
                               </p>
@@ -494,7 +494,7 @@ export default function AuditLogPage() {
                               </div>
                             )}
                             {entry.details.userAgent && (
-                              <p className="text-gray-600 dark:text-gray-400">
+                              <p className="text-gray-600 dark:text-gray-500">
                                 <span className="font-medium text-gray-700 dark:text-gray-300">User-Agent:</span> {entry.details.userAgent}
                               </p>
                             )}
@@ -502,7 +502,7 @@ export default function AuditLogPage() {
                           <div className="space-y-2">
                             <h4 className="font-semibold text-gray-800 dark:text-gray-200 text-sm">Response Details</h4>
                             {entry.details.responseCode !== undefined && (
-                              <p className="text-gray-600 dark:text-gray-400">
+                              <p className="text-gray-600 dark:text-gray-500">
                                 <span className="font-medium text-gray-700 dark:text-gray-300">Status Code:</span>{" "}
                                 <span className={entry.details.responseCode < 400 ? "text-emerald-600" : "text-red-600"}>
                                   {entry.details.responseCode}
@@ -518,7 +518,7 @@ export default function AuditLogPage() {
                               </div>
                             )}
                             {entry.details.sessionId && (
-                              <p className="text-gray-600 dark:text-gray-400">
+                              <p className="text-gray-600 dark:text-gray-500">
                                 <span className="font-medium text-gray-700 dark:text-gray-300">Session ID:</span>{" "}
                                 <code className="bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">{entry.details.sessionId}</code>
                               </p>
@@ -532,13 +532,13 @@ export default function AuditLogPage() {
                               </div>
                             )}
                             {entry.details.notes && (
-                              <p className="text-gray-600 dark:text-gray-400">
+                              <p className="text-gray-600 dark:text-gray-500">
                                 <span className="font-medium text-gray-700 dark:text-gray-300">Notes:</span> {entry.details.notes}
                               </p>
                             )}
                           </div>
                         </div>
-                        <div className="mt-3 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 pt-3">
+                        <div className="mt-3 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500 border-t border-gray-200 dark:border-gray-700 pt-3">
                           <span>Event ID: <code className="font-mono">{entry.id}</code></span>
                           <span>Full Timestamp: {entry.timestamp}</span>
                           <span>Duration: {formatDuration(entry.duration)}</span>
@@ -549,7 +549,7 @@ export default function AuditLogPage() {
                 </React.Fragment>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
 
         {filteredEntries.length === 0 && (
@@ -560,7 +560,7 @@ export default function AuditLogPage() {
         )}
 
         {/* Table footer with pagination */}
-        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-500 dark:text-gray-400">
+        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-500 dark:text-gray-500">
           <span>
             Showing {Math.min((currentPage - 1) * pageSize + 1, filteredEntries.length)}–
             {Math.min(currentPage * pageSize, filteredEntries.length)} of{" "}
@@ -663,7 +663,7 @@ export default function AuditLogPage() {
                   <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
                     {evt.action}
                   </p>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                  <p className="text-[11px] text-gray-500 dark:text-gray-500 truncate">
                     {evt.user} &middot; {formatTimestamp(evt.timestamp)}
                   </p>
                 </div>

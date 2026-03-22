@@ -115,19 +115,19 @@ const priorityColors: Record<string, { bg: string; text: string }> = {
 
 const deviceStatusColors: Record<string, { dot: string; text: string }> = {
   active: { dot: "bg-green-500", text: "text-green-700" },
-  inactive: { dot: "bg-gray-400", text: "text-gray-500" },
+  inactive: { dot: "bg-gray-400", text: "text-gray-500 dark:text-gray-400" },
   error: { dot: "bg-red-500", text: "text-red-700" },
   charging: { dot: "bg-yellow-500", text: "text-yellow-700" },
 };
 
 function getTrendArrow(history: number[]): { arrow: string; label: string; color: string } {
-  if (history.length < 2) return { arrow: "→", label: "stable", color: "text-gray-500" };
+  if (history.length < 2) return { arrow: "→", label: "stable", color: "text-gray-500 dark:text-gray-400" };
   const last = history[history.length - 1];
   const prev = history[history.length - 2];
   const diff = last - prev;
   if (diff > 0.5) return { arrow: "↑", label: "rising", color: "text-red-500" };
   if (diff < -0.5) return { arrow: "↓", label: "falling", color: "text-blue-500" };
-  return { arrow: "→", label: "stable", color: "text-gray-500" };
+  return { arrow: "→", label: "stable", color: "text-gray-500 dark:text-gray-400" };
 }
 
 function MiniHistoryBars({ data, max, warn }: { data: number[]; max: number; warn: boolean }) {
@@ -151,7 +151,7 @@ function BatteryBar({ level }: { level: number }) {
       <div className="w-16 h-2.5 bg-gray-200 rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${level}%` }} />
       </div>
-      <span className="text-xs text-gray-500">{level}%</span>
+      <span className="text-xs text-gray-500 dark:text-gray-400">{level}%</span>
     </div>
   );
 }
@@ -263,8 +263,8 @@ export default function RPMPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Remote Patient Monitoring</h1>
-            <p className="text-sm text-gray-500">Real-time vitals, anomaly detection, risk scoring & device management</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Remote Patient Monitoring</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Real-time vitals, anomaly detection, risk scoring & device management</p>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
             <span className="relative flex h-2 w-2">
@@ -293,16 +293,16 @@ export default function RPMPage() {
         ].map((kpi) => (
           <div key={kpi.label} className={`card card-hover rounded-xl border p-4 ${kpi.color} animate-fade-in-up`}>
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">{kpi.label}</p>
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">{kpi.label}</p>
               <span className="text-lg">{kpi.icon}</span>
             </div>
-            <p className="mt-2 text-2xl font-bold text-gray-900">{kpi.value}</p>
+            <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{kpi.value}</p>
           </div>
         ))}
       </div>
 
       {/* ── Tab Navigation ──────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex gap-6 overflow-x-auto">
           {TABS.map((t) => (
             <button
@@ -311,7 +311,7 @@ export default function RPMPage() {
               className={`whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
                 tab === t
                   ? "border-healthos-600 text-healthos-600"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:text-gray-300"
               }`}
             >
               {t}
@@ -331,7 +331,7 @@ export default function RPMPage() {
             return (
               <div
                 key={p.id}
-                className={`card card-hover rounded-xl border ${p.risk === "critical" ? "border-red-300 shadow-red-100 shadow-md" : "border-gray-200"} bg-white transition-all`}
+                className={`card card-hover rounded-xl border ${p.risk === "critical" ? "border-red-300 shadow-red-100 shadow-md" : "border-gray-200 dark:border-gray-700"} bg-white dark:bg-gray-900 transition-all`}
               >
                 {/* Patient Header Row */}
                 <div
@@ -347,8 +347,8 @@ export default function RPMPage() {
                         {p.risk}
                       </span>
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">{p.name}</p>
-                        <p className="text-xs text-gray-400">{p.mrn} &middot; {p.device} &middot; Last: {p.lastReading}</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{p.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{p.mrn} &middot; {p.device} &middot; Last: {p.lastReading}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -357,7 +357,7 @@ export default function RPMPage() {
                           {p.alerts} alert{p.alerts > 1 ? "s" : ""}
                         </span>
                       )}
-                      <svg className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
@@ -375,14 +375,14 @@ export default function RPMPage() {
                       return (
                         <div
                           key={v.label}
-                          className={`rounded-lg border p-2.5 ${v.warn ? "border-red-200 bg-red-50" : "border-gray-100 bg-gray-50"}`}
+                          className={`rounded-lg border p-2.5 ${v.warn ? "border-red-200 bg-red-50" : "border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800"}`}
                         >
                           <div className="flex items-center justify-between">
-                            <p className="text-[10px] font-medium text-gray-500 uppercase">{v.label}</p>
+                            <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase">{v.label}</p>
                             <span className={`text-xs font-bold ${trend.color}`}>{trend.arrow}</span>
                           </div>
-                          <p className={`text-lg font-bold ${v.warn ? "text-red-600" : "text-gray-900"}`}>
-                            {v.value} <span className="text-xs font-normal text-gray-400">{v.unit}</span>
+                          <p className={`text-lg font-bold ${v.warn ? "text-red-600" : "text-gray-900 dark:text-gray-100"}`}>
+                            {v.value} <span className="text-xs font-normal text-gray-500 dark:text-gray-400">{v.unit}</span>
                           </p>
                           <MiniHistoryBars data={v.history} max={v.max} warn={v.warn} />
                         </div>
@@ -392,15 +392,15 @@ export default function RPMPage() {
 
                   {/* Adherence Bar */}
                   <div className="mt-3">
-                    <p className="text-[10px] font-medium text-gray-500 uppercase mb-1">Adherence</p>
+                    <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Adherence</p>
                     <AdherenceBar pct={p.adherence} />
                   </div>
                 </div>
 
                 {/* Expanded Detail View */}
                 {isExpanded && (
-                  <div className="border-t border-gray-100 bg-gray-50/50 p-4 animate-fade-in-up">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Vital Trends (Last 6 Readings)</h4>
+                  <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 p-4 animate-fade-in-up">
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Vital Trends (Last 6 Readings)</h4>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                       {[
                         { label: "Heart Rate", data: p.hrHistory, unit: "bpm", range: "60–100 bpm", warn: p.hr > 100 || p.hr < 50 },
@@ -408,8 +408,8 @@ export default function RPMPage() {
                         { label: "SpO2", data: p.spo2History, unit: "%", range: "95–100%", warn: p.spo2 < 95 },
                         { label: "Temperature", data: p.tempHistory, unit: "°F", range: "97.8–99.1°F", warn: p.temp > 99.5 },
                       ].map((trend) => (
-                        <div key={trend.label} className={`rounded-lg border p-3 bg-white ${trend.warn ? "border-red-200" : "border-gray-200"}`}>
-                          <p className="text-xs font-medium text-gray-500 mb-2">{trend.label}</p>
+                        <div key={trend.label} className={`rounded-lg border p-3 bg-white dark:bg-gray-900 ${trend.warn ? "border-red-200" : "border-gray-200 dark:border-gray-700"}`}>
+                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">{trend.label}</p>
                           <div className="flex items-end gap-1 h-12">
                             {trend.data.map((v, i) => {
                               const min = Math.min(...trend.data);
@@ -427,17 +427,17 @@ export default function RPMPage() {
                             })}
                           </div>
                           <div className="flex justify-between mt-2">
-                            <span className="text-[10px] text-gray-400">6 ago</span>
-                            <span className="text-[10px] text-gray-400">now</span>
+                            <span className="text-[11px] text-gray-500 dark:text-gray-400">6 ago</span>
+                            <span className="text-[11px] text-gray-500 dark:text-gray-400">now</span>
                           </div>
-                          <p className="text-[10px] text-gray-400 mt-1">Normal: {trend.range}</p>
-                          <p className={`text-sm font-bold mt-1 ${trend.warn ? "text-red-600" : "text-gray-900"}`}>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Normal: {trend.range}</p>
+                          <p className={`text-sm font-bold mt-1 ${trend.warn ? "text-red-600" : "text-gray-900 dark:text-gray-100"}`}>
                             Current: {trend.data[trend.data.length - 1]} {trend.unit}
                           </p>
                         </div>
                       ))}
                     </div>
-                    <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
+                    <div className="mt-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                       <span>Glucose: {p.glucose} mg/dL</span>
                       <span>&middot;</span>
                       <span>Device: {p.device}</span>
@@ -458,12 +458,12 @@ export default function RPMPage() {
       {tab === "Real-Time Vitals" && (
         <div className="space-y-6 animate-fade-in-up">
           {/* Patient Selector */}
-          <div className="card rounded-xl border border-gray-200 bg-white p-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Select Patient</label>
+          <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Patient</label>
             <select
               value={selectedVitalPatient}
               onChange={(e) => setSelectedVitalPatient(e.target.value)}
-              className="w-full sm:w-80 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+              className="w-full sm:w-80 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
             >
               {DEMO_PATIENTS.map((p) => (
                 <option key={p.id} value={p.id}>{p.name} ({p.mrn}) — {p.risk} risk</option>
@@ -485,21 +485,21 @@ export default function RPMPage() {
               return (
                 <div
                   key={vital.label}
-                  className={`card card-hover rounded-xl border-2 p-5 bg-white transition-all ${
-                    vital.warn ? "border-red-300 shadow-red-100 shadow-md" : "border-gray-200"
+                  className={`card card-hover rounded-xl border-2 p-5 bg-white dark:bg-gray-900 transition-all ${
+                    vital.warn ? "border-red-300 shadow-red-100 shadow-md" : "border-gray-200 dark:border-gray-700"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{vital.label}</p>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{vital.label}</p>
                     <span className={`text-sm font-bold ${trend.color}`}>{trend.arrow} {trend.label}</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <p className={`text-4xl font-bold ${vital.warn ? "text-red-600" : "text-gray-900"}`}>
+                    <p className={`text-4xl font-bold ${vital.warn ? "text-red-600" : "text-gray-900 dark:text-gray-100"}`}>
                       {vital.value}
                     </p>
-                    <span className="text-sm text-gray-400">{vital.unit}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{vital.unit}</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Normal range: {vital.range} {vital.unit}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Normal range: {vital.range} {vital.unit}</p>
                   {/* Mini history bars */}
                   <div className="flex items-end gap-1 h-10 mt-3">
                     {vital.history.map((v, i) => {
@@ -521,16 +521,16 @@ export default function RPMPage() {
           </div>
 
           {/* Manual Data Ingest Form */}
-          <div className="card rounded-xl border border-gray-200 bg-white p-5">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Manual Vital Entry</h3>
+          <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Manual Vital Entry</h3>
             <form onSubmit={handleIngest} className="grid grid-cols-1 gap-4 sm:grid-cols-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Patient</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Patient</label>
                 <select
                   required
                   value={ingestForm.patientId}
                   onChange={(e) => setIngestForm({ ...ingestForm, patientId: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   <option value="">Select patient...</option>
                   {DEMO_PATIENTS.map((p) => (
@@ -539,7 +539,7 @@ export default function RPMPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Vital Type</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Vital Type</label>
                 <select
                   value={ingestForm.vitalType}
                   onChange={(e) => {
@@ -547,7 +547,7 @@ export default function RPMPage() {
                     const unitMap: Record<string, string> = { heart_rate: "bpm", blood_pressure: "mmHg", spo2: "%", temperature: "°F", glucose: "mg/dL" };
                     setIngestForm({ ...ingestForm, vitalType: type, unit: unitMap[type] ?? "unit" });
                   }}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   <option value="heart_rate">Heart Rate</option>
                   <option value="blood_pressure">Blood Pressure</option>
@@ -557,14 +557,14 @@ export default function RPMPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Value ({ingestForm.unit})</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Value ({ingestForm.unit})</label>
                 <input
                   required
                   type="text"
                   value={ingestForm.value}
                   onChange={(e) => setIngestForm({ ...ingestForm, value: e.target.value })}
                   placeholder="e.g. 72"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 />
               </div>
               <div className="flex items-end">
@@ -593,15 +593,15 @@ export default function RPMPage() {
         <div className="space-y-6 animate-fade-in-up">
           {/* Active Alert Cards */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Active Alerts</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Active Alerts</h3>
             <div className="space-y-3">
               {alerts.map((a) => {
                 const pc = priorityColors[a.priority] ?? priorityColors.moderate;
                 return (
                   <div
                     key={a.id}
-                    className={`card card-hover rounded-xl border bg-white p-4 transition-all ${
-                      a.priority === "critical" ? "border-red-300 shadow-red-100 shadow-sm" : "border-gray-200"
+                    className={`card card-hover rounded-xl border bg-white dark:bg-gray-900 p-4 transition-all ${
+                      a.priority === "critical" ? "border-red-300 shadow-red-100 shadow-sm" : "border-gray-200 dark:border-gray-700"
                     } ${a.status === "acknowledged" ? "opacity-70" : ""}`}
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -610,14 +610,14 @@ export default function RPMPage() {
                           {a.priority}
                         </span>
                         <div>
-                          <p className="text-sm font-semibold text-gray-900">{a.patient}</p>
-                          <p className="text-xs text-gray-500">{a.vitalType} &middot; Triggered at {a.time}</p>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{a.patient}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{a.vitalType} &middot; Triggered at {a.time}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
                           <p className="text-sm font-bold text-red-600">{a.currentValue}</p>
-                          <p className="text-[10px] text-gray-400">Threshold: {a.threshold}</p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400">Threshold: {a.threshold}</p>
                         </div>
                         {a.status === "active" ? (
                           <div className="flex gap-2">
@@ -649,19 +649,19 @@ export default function RPMPage() {
 
           {/* Trend Analysis */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Trend Analysis &amp; Risk Predictions</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Trend Analysis &amp; Risk Predictions</h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {DEMO_TRENDS.map((t, i) => (
-                <div key={i} className="card card-hover rounded-xl border border-gray-200 bg-white p-4">
+                <div key={i} className="card card-hover rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-semibold text-gray-900">{t.patient}</p>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t.patient}</p>
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
                       t.confidence >= 90 ? "bg-red-100 text-red-700" : t.confidence >= 80 ? "bg-orange-100 text-orange-700" : "bg-yellow-100 text-yellow-700"
                     }`}>
                       {t.confidence}% confidence
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600 mb-2">{t.pattern}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">{t.pattern}</p>
                   <div className="rounded-lg bg-amber-50 border border-amber-200 p-2.5">
                     <p className="text-xs font-medium text-amber-800">
                       <span className="font-bold">Risk Prediction:</span> {t.riskPrediction}
@@ -690,13 +690,13 @@ export default function RPMPage() {
           </div>
 
           {/* Device Registry Table */}
-          <div className="card rounded-xl border border-gray-200 bg-white overflow-hidden">
+          <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
+              <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
                     {["Device ID", "Type", "Model", "Assigned Patient", "Status", "Last Sync", "Battery", "Firmware"].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -704,27 +704,27 @@ export default function RPMPage() {
                   {DEMO_DEVICES.map((d) => {
                     const sc = deviceStatusColors[d.status] ?? deviceStatusColors.inactive;
                     return (
-                      <tr key={d.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 font-mono text-xs font-medium text-gray-900">{d.id}</td>
+                      <tr key={d.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <td className="px-4 py-3 font-mono text-xs font-medium text-gray-900 dark:text-gray-100">{d.id}</td>
                         <td className="px-4 py-3">
-                          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">{d.type}</span>
+                          <span className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-700 dark:text-gray-300">{d.type}</span>
                         </td>
-                        <td className="px-4 py-3 text-gray-700">{d.model}</td>
-                        <td className="px-4 py-3 text-gray-700">{d.assignedPatient}</td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{d.model}</td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{d.assignedPatient}</td>
                         <td className="px-4 py-3">
                           <span className="inline-flex items-center gap-1.5">
                             <span className={`h-2 w-2 rounded-full ${sc.dot}`} />
                             <span className={`text-xs font-medium capitalize ${sc.text}`}>{d.status}</span>
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{d.lastSync}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">{d.lastSync}</td>
                         <td className="px-4 py-3"><BatteryBar level={d.battery} /></td>
-                        <td className="px-4 py-3 font-mono text-xs text-gray-500">{d.firmware}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">{d.firmware}</td>
                       </tr>
                     );
                   })}
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </div>
         </div>
@@ -734,20 +734,20 @@ export default function RPMPage() {
           Ingest Data Modal
          ══════════════════════════════════════════════════════════════════════ */}
       {showIngestModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowIngestModal(false)}>
-          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4" onClick={() => setShowIngestModal(false)}>
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">Ingest RPM Data</h2>
-              <button onClick={() => setShowIngestModal(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Ingest RPM Data</h2>
+              <button onClick={() => setShowIngestModal(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none">&times;</button>
             </div>
             <form onSubmit={(e) => { handleIngest(e); setShowIngestModal(false); }} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Patient</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Patient</label>
                 <select
                   required
                   value={ingestForm.patientId}
                   onChange={(e) => setIngestForm({ ...ingestForm, patientId: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   <option value="">Select patient...</option>
                   {DEMO_PATIENTS.map((p) => (
@@ -757,7 +757,7 @@ export default function RPMPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Vital Type</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vital Type</label>
                   <select
                     value={ingestForm.vitalType}
                     onChange={(e) => {
@@ -765,7 +765,7 @@ export default function RPMPage() {
                       const unitMap: Record<string, string> = { heart_rate: "bpm", blood_pressure: "mmHg", spo2: "%", temperature: "°F", glucose: "mg/dL" };
                       setIngestForm({ ...ingestForm, vitalType: type, unit: unitMap[type] ?? "unit" });
                     }}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   >
                     <option value="heart_rate">Heart Rate</option>
                     <option value="blood_pressure">Blood Pressure</option>
@@ -775,19 +775,19 @@ export default function RPMPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Value ({ingestForm.unit})</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Value ({ingestForm.unit})</label>
                   <input
                     required
                     type="text"
                     value={ingestForm.value}
                     onChange={(e) => setIngestForm({ ...ingestForm, value: e.target.value })}
                     placeholder="e.g. 72"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   />
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowIngestModal(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="button" onClick={() => setShowIngestModal(false)} className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
                 <button type="submit" disabled={ingesting} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50">
                   {ingesting ? "Ingesting..." : "Ingest Data"}
                 </button>
@@ -801,11 +801,11 @@ export default function RPMPage() {
           Device Provisioning Modal
          ══════════════════════════════════════════════════════════════════════ */}
       {showProvisionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowProvisionModal(false)}>
-          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4" onClick={() => setShowProvisionModal(false)}>
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">Provision New Device</h2>
-              <button onClick={() => setShowProvisionModal(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Provision New Device</h2>
+              <button onClick={() => setShowProvisionModal(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none">&times;</button>
             </div>
             <form
               onSubmit={(e) => {
@@ -817,21 +817,21 @@ export default function RPMPage() {
             >
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Device ID</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Device ID</label>
                   <input
                     required
                     value={provisionForm.deviceId}
                     onChange={(e) => setProvisionForm({ ...provisionForm, deviceId: e.target.value })}
                     placeholder="e.g. DEV-2001"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Device Type</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Device Type</label>
                   <select
                     value={provisionForm.type}
                     onChange={(e) => setProvisionForm({ ...provisionForm, type: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   >
                     <option value="Wearable">Wearable</option>
                     <option value="Glucometer">Glucometer</option>
@@ -842,21 +842,21 @@ export default function RPMPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Model</label>
                 <input
                   required
                   value={provisionForm.model}
                   onChange={(e) => setProvisionForm({ ...provisionForm, model: e.target.value })}
                   placeholder="e.g. Withings BPM Connect"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Patient (optional)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assign to Patient (optional)</label>
                 <select
                   value={provisionForm.assignedPatient}
                   onChange={(e) => setProvisionForm({ ...provisionForm, assignedPatient: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   <option value="">Unassigned</option>
                   {DEMO_PATIENTS.map((p) => (
@@ -865,7 +865,7 @@ export default function RPMPage() {
                 </select>
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowProvisionModal(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="button" onClick={() => setShowProvisionModal(false)} className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
                 <button type="submit" className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">
                   Provision Device
                 </button>

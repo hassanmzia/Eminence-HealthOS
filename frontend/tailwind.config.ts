@@ -5,6 +5,9 @@ const config: Config = {
   darkMode: "class",
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Inter"', "system-ui", "-apple-system", "BlinkMacSystemFont", '"Segoe UI"', "Roboto", '"Helvetica Neue"', "Arial", "sans-serif"],
+      },
       colors: {
         healthos: {
           50: "#eef7ff",
@@ -19,6 +22,12 @@ const config: Config = {
           900: "#143d92",
           950: "#112759",
         },
+      },
+      screens: {
+        "xs": "475px",
+      },
+      fontSize: {
+        "2xs": ["0.625rem", { lineHeight: "0.875rem" }],
       },
       animation: {
         "fade-in": "fadeIn 0.5s ease-out",

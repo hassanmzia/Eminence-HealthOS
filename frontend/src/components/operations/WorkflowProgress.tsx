@@ -27,7 +27,7 @@ const STEP_STATUS_ICON: Record<string, { icon: string; color: string }> = {
   completed: { icon: "\u2713", color: "bg-green-500 text-white" },
   in_progress: { icon: "\u25B6", color: "bg-blue-500 text-white" },
   ready: { icon: "\u25CB", color: "bg-yellow-100 text-yellow-800 border border-yellow-300" },
-  pending: { icon: "\u25CB", color: "bg-gray-100 text-gray-400 border border-gray-300" },
+  pending: { icon: "\u25CB", color: "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-300 dark:border-gray-600" },
   failed: { icon: "\u2717", color: "bg-red-500 text-white" },
   blocked: { icon: "!", color: "bg-orange-500 text-white" },
 };
@@ -107,7 +107,7 @@ export function WorkflowProgress() {
   return (
     <div className="card">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Active Workflows</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Active Workflows</h2>
         <button className="rounded bg-healthos-600 px-3 py-1 text-xs font-medium text-white hover:bg-healthos-700">
           New Workflow
         </button>
@@ -115,7 +115,7 @@ export function WorkflowProgress() {
 
       <div className="space-y-3">
         {workflows.map((wf) => (
-          <div key={wf.workflow_id} className="rounded-lg border border-gray-200 bg-white">
+          <div key={wf.workflow_id} className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
             {/* Workflow header */}
             <div
               className="cursor-pointer p-3"
@@ -123,14 +123,14 @@ export function WorkflowProgress() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900">{wf.name}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${WORKFLOW_STATUS_COLORS[wf.status] || "bg-gray-100"}`}>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{wf.name}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${WORKFLOW_STATUS_COLORS[wf.status] || "bg-gray-100 dark:bg-gray-800"}`}>
                     {wf.status}
                   </span>
                 </div>
-                <span className="text-xs text-gray-400">{wf.workflow_id}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{wf.workflow_id}</span>
               </div>
-              <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
+              <div className="mt-1 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                 <span>{wf.patient_name}</span>
                 <span>&middot;</span>
                 <span>{wf.workflow_type.replace(/_/g, " ")}</span>
@@ -148,7 +148,7 @@ export function WorkflowProgress() {
 
             {/* Expanded step detail */}
             {expandedId === wf.workflow_id && (
-              <div className="border-t border-gray-200 p-3">
+              <div className="border-t border-gray-200 dark:border-gray-700 p-3">
                 <div className="space-y-2">
                   {wf.steps.map((step, i) => {
                     const statusInfo = STEP_STATUS_ICON[step.status] || STEP_STATUS_ICON.pending;
@@ -161,10 +161,10 @@ export function WorkflowProgress() {
                         {/* Connector line */}
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <span className={`text-sm ${step.status === "completed" ? "text-gray-500 line-through" : "text-gray-900"}`}>
+                            <span className={`text-sm ${step.status === "completed" ? "text-gray-500 dark:text-gray-400 line-through" : "text-gray-900 dark:text-gray-100"}`}>
                               {step.name}
                             </span>
-                            <span className="text-xs text-gray-400">{step.agent}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{step.agent}</span>
                           </div>
                         </div>
                       </div>

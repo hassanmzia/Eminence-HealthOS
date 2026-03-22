@@ -75,11 +75,11 @@ const EVENT_CONFIG: Record<
   },
   note: {
     label: "Note",
-    color: "text-gray-600 dark:text-gray-400",
+    color: "text-gray-600 dark:text-gray-500",
     bg: "bg-gray-50 dark:bg-gray-800/50",
     border: "border-gray-300 dark:border-gray-700",
     dot: "bg-gray-500",
-    badge: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+    badge: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 dark:bg-gray-800 dark:text-gray-300",
   },
 };
 
@@ -569,7 +569,7 @@ export default function PatientTimelinePage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -586,14 +586,14 @@ export default function PatientTimelinePage() {
               />
             </div>
             <div className="flex gap-2 items-center text-sm">
-              <label className="text-gray-500 dark:text-gray-400 whitespace-nowrap">From</label>
+              <label className="text-gray-500 dark:text-gray-500 whitespace-nowrap">From</label>
               <input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
                 className="rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
               />
-              <label className="text-gray-500 dark:text-gray-400 whitespace-nowrap">To</label>
+              <label className="text-gray-500 dark:text-gray-500 whitespace-nowrap">To</label>
               <input
                 type="date"
                 value={dateTo}
@@ -631,7 +631,7 @@ export default function PatientTimelinePage() {
           </div>
 
           {/* Results count */}
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-500 dark:text-gray-500">
             Showing {filteredEvents.length} of {events.length} events
           </p>
         </div>
@@ -659,7 +659,7 @@ export default function PatientTimelinePage() {
                   {/* Date separator */}
                   {showDateHeader && (
                     <div className="flex items-center gap-3 pl-10 pt-2 animate-fade-in-up">
-                      <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      <span className="text-xs font-semibold text-gray-500 dark:text-gray-500 uppercase tracking-wider">
                         {fmtDate(evt.date)}
                       </span>
                       <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
@@ -756,7 +756,7 @@ export default function PatientTimelinePage() {
                   className={`rounded-lg p-3 text-center ${cfg.bg} border ${cfg.border}`}
                 >
                   <p className={`text-2xl font-bold ${cfg.color}`}>{count}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{cfg.label}s</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">{cfg.label}s</p>
                 </div>
               );
             })}

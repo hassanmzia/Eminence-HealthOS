@@ -463,11 +463,11 @@ export default function AnalyticsPage() {
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Analytics &amp; Intelligence</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Analytics &amp; Intelligence</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Comprehensive insights across population health, costs, outcomes, and cohorts
           </p>
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Last refreshed: {lastRefreshed ? lastRefreshed.toLocaleTimeString() : "—"} &mdash;{" "}
             <button onClick={refreshData} className="text-healthos-600 hover:underline" disabled={loading}>
               {loading ? "Refreshing..." : "Refresh now"}
@@ -490,10 +490,10 @@ export default function AnalyticsPage() {
         {DEMO_STATS.map((stat, i) => (
           <div key={stat.label} className="card card-hover animate-fade-in-up" style={{ animationDelay: `${i * 60}ms` }}>
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-gray-500 truncate">{stat.label}</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">{stat.label}</p>
               <span className="text-base">{stat.icon}</span>
             </div>
-            <p className="mt-1 text-xl font-bold text-gray-900">{stat.value}</p>
+            <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
             <p className={`mt-1 text-xs font-semibold ${stat.up ? "text-emerald-600" : "text-red-500"}`}>
               {stat.up ? "↑" : "↓"} {stat.change}
             </p>
@@ -502,7 +502,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Tabs ────────────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex gap-1 overflow-x-auto" aria-label="Analytics tabs">
           {TABS.map((tab) => (
             <button
@@ -511,7 +511,7 @@ export default function AnalyticsPage() {
               className={`whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === tab.id
                   ? "border-healthos-600 text-healthos-600"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:text-gray-300"
               }`}
             >
               {tab.label}
@@ -588,14 +588,14 @@ function ExecutiveDashboard({
     <div className="space-y-6">
       {/* KPI Scorecard */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">KPI Scorecard</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">KPI Scorecard</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {kpiScorecard.map((kpi, i) => (
             <div key={kpi.metric} className="card card-hover animate-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">{kpi.metric}</p>
-                  <p className="mt-1 text-3xl font-bold text-gray-900">{kpi.value}</p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{kpi.metric}</p>
+                  <p className="mt-1 text-3xl font-bold text-gray-900 dark:text-gray-100">{kpi.value}</p>
                 </div>
                 <span
                   className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
@@ -629,7 +629,7 @@ function ExecutiveDashboard({
 
       {/* Trend Digest */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">AI Trend Digest</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">AI Trend Digest</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {trendInsights.map((insight, i) => (
             <div
@@ -646,8 +646,8 @@ function ExecutiveDashboard({
               <div className="flex gap-3">
                 <span className="text-xl">{insight.icon}</span>
                 <div>
-                  <p className="font-semibold text-gray-900">{insight.title}</p>
-                  <p className="mt-1 text-sm text-gray-600 leading-relaxed">{insight.description}</p>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">{insight.title}</p>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{insight.description}</p>
                 </div>
               </div>
             </div>
@@ -657,26 +657,26 @@ function ExecutiveDashboard({
 
       {/* Departments */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Department Breakdown</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Department Breakdown</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {departments.map((dept, i) => (
             <div key={dept.name} className="card card-hover animate-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
-              <h3 className="font-semibold text-gray-900">{dept.name}</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">{dept.name}</h3>
               <div className="mt-3 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Patients</span>
-                  <span className="font-medium text-gray-900">{dept.patients.toLocaleString()}</span>
+                  <span className="text-gray-500 dark:text-gray-400">Patients</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{dept.patients.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Satisfaction</span>
-                  <span className="font-medium text-gray-900">{dept.satisfaction}%</span>
+                  <span className="text-gray-500 dark:text-gray-400">Satisfaction</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{dept.satisfaction}%</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Cost/Visit</span>
-                  <span className="font-medium text-gray-900">{dept.costPerVisit}</span>
+                  <span className="text-gray-500 dark:text-gray-400">Cost/Visit</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{dept.costPerVisit}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Trend</span>
+                  <span className="text-gray-500 dark:text-gray-400">Trend</span>
                   <span className={`font-semibold ${dept.trend.startsWith("+") ? "text-emerald-600" : "text-red-500"}`}>
                     {dept.trend}
                   </span>
@@ -712,7 +712,7 @@ function PopulationHealth({
       {/* Risk Stratification */}
       <div className="card animate-fade-in-up">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Risk Stratification</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Risk Stratification</h2>
           <button
             onClick={onStratify}
             disabled={loading}
@@ -746,38 +746,38 @@ function PopulationHealth({
             {riskDist.map((r) => (
               <div key={r.level} className="flex items-center gap-2 text-sm">
                 <span className={`h-3 w-3 rounded-full ${r.color}`} />
-                <span className="text-gray-600">{r.level}:</span>
-                <span className="font-semibold text-gray-900">{r.count.toLocaleString()}</span>
-                <span className="text-gray-400">({r.pct}%)</span>
+                <span className="text-gray-600 dark:text-gray-400">{r.level}:</span>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">{r.count.toLocaleString()}</span>
+                <span className="text-gray-500 dark:text-gray-400">({r.pct}%)</span>
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-400 mt-1">Total population: {totalPatients.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Total population: {totalPatients.toLocaleString()}</p>
         </div>
       </div>
 
       {/* Quality Metrics */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quality Metrics</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Quality Metrics</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {qualityMetrics.map((m, i) => {
             const pct = Math.min(m.value, 100);
             const atTarget = m.value >= m.target;
             return (
               <div key={m.label} className="card card-hover animate-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
-                <p className="text-sm font-medium text-gray-500">{m.label}</p>
-                <p className="mt-1 text-3xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{m.label}</p>
+                <p className="mt-1 text-3xl font-bold text-gray-900 dark:text-gray-100">
                   {m.value}
-                  <span className="text-lg text-gray-400">{m.unit}</span>
+                  <span className="text-lg text-gray-500 dark:text-gray-400">{m.unit}</span>
                 </p>
                 <div className="mt-3">
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-gray-400">Progress</span>
+                    <span className="text-gray-500 dark:text-gray-400">Progress</span>
                     <span className={atTarget ? "text-emerald-600 font-medium" : "text-amber-600 font-medium"}>
                       Target: {m.target}{m.unit}
                     </span>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-gray-100">
+                  <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-gray-800">
                     <div
                       className={`h-2 rounded-full transition-all duration-700 ${atTarget ? "bg-emerald-500" : "bg-amber-500"}`}
                       style={{ width: `${pct}%` }}
@@ -792,12 +792,12 @@ function PopulationHealth({
 
       {/* Population KPI Tiles */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Population KPIs</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Population KPIs</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {kpis.map((kpi, i) => (
             <div key={kpi.label} className="card card-hover animate-fade-in-up" style={{ animationDelay: `${i * 60}ms` }}>
-              <p className="text-xs font-medium text-gray-500 truncate">{kpi.label}</p>
-              <p className="mt-1 text-lg font-bold text-gray-900">{kpi.value}</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">{kpi.label}</p>
+              <p className="mt-1 text-lg font-bold text-gray-900 dark:text-gray-100">{kpi.value}</p>
               <p className={`mt-1 text-xs font-semibold ${kpi.up ? "text-emerald-600" : "text-red-500"}`}>
                 {kpi.up ? "↑" : "↓"} {kpi.change}
               </p>
@@ -832,29 +832,29 @@ function CostRiskAnalysis({
     <div className="space-y-6">
       {/* Cost Drivers Table */}
       <div className="card animate-fade-in-up">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Cost Drivers</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Cost Drivers</h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="pb-3 text-left font-medium text-gray-500">Category</th>
-                <th className="pb-3 text-right font-medium text-gray-500">Amount</th>
-                <th className="pb-3 text-right font-medium text-gray-500">Trend</th>
-                <th className="pb-3 text-right font-medium text-gray-500">% of Total</th>
-                <th className="pb-3 text-left font-medium text-gray-500 pl-4">Distribution</th>
+              <tr className="border-b border-gray-200 dark:border-gray-700">
+                <th className="pb-3 text-left font-medium text-gray-500 dark:text-gray-400">Category</th>
+                <th className="pb-3 text-right font-medium text-gray-500 dark:text-gray-400">Amount</th>
+                <th className="pb-3 text-right font-medium text-gray-500 dark:text-gray-400">Trend</th>
+                <th className="pb-3 text-right font-medium text-gray-500 dark:text-gray-400">% of Total</th>
+                <th className="pb-3 text-left font-medium text-gray-500 dark:text-gray-400 pl-4">Distribution</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {costDrivers.map((d) => (
-                <tr key={d.category} className="hover:bg-gray-50 transition-colors">
-                  <td className="py-3 font-medium text-gray-900">{d.category}</td>
-                  <td className="py-3 text-right font-semibold text-gray-900">{d.amount}</td>
+                <tr key={d.category} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <td className="py-3 font-medium text-gray-900 dark:text-gray-100">{d.category}</td>
+                  <td className="py-3 text-right font-semibold text-gray-900 dark:text-gray-100">{d.amount}</td>
                   <td className={`py-3 text-right font-semibold ${d.trendUp ? "text-red-500" : "text-emerald-600"}`}>
                     {d.trendUp ? "↑" : "↓"} {d.trend}
                   </td>
-                  <td className="py-3 text-right text-gray-600">{d.pctOfTotal}%</td>
+                  <td className="py-3 text-right text-gray-600 dark:text-gray-400">{d.pctOfTotal}%</td>
                   <td className="py-3 pl-4">
-                    <div className="h-2 w-full max-w-[120px] rounded-full bg-gray-100">
+                    <div className="h-2 w-full max-w-[120px] rounded-full bg-gray-100 dark:bg-gray-800">
                       <div
                         className="h-2 rounded-full bg-healthos-500 transition-all duration-500"
                         style={{ width: `${(d.pctOfTotal / 35) * 100}%` }}
@@ -864,26 +864,26 @@ function CostRiskAnalysis({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       </div>
 
       {/* Savings Opportunities */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Savings Opportunities</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Savings Opportunities</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {opportunities.map((opp, i) => (
             <div key={opp.title} className="card card-hover animate-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
               <div className="flex items-start justify-between">
-                <h3 className="font-semibold text-gray-900">{opp.title}</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">{opp.title}</h3>
                 <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700">
                   {opp.savings}
                 </span>
               </div>
-              <p className="mt-2 text-sm text-gray-600">{opp.description}</p>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{opp.description}</p>
               <div className="mt-3 flex items-center gap-2">
-                <span className="text-xs text-gray-400">Confidence:</span>
-                <div className="h-2 w-24 rounded-full bg-gray-100">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Confidence:</span>
+                <div className="h-2 w-24 rounded-full bg-gray-100 dark:bg-gray-800">
                   <div
                     className={`h-2 rounded-full transition-all duration-500 ${
                       opp.confidence >= 85 ? "bg-emerald-500" : opp.confidence >= 70 ? "bg-amber-500" : "bg-red-500"
@@ -891,7 +891,7 @@ function CostRiskAnalysis({
                     style={{ width: `${opp.confidence}%` }}
                   />
                 </div>
-                <span className="text-xs font-medium text-gray-600">{opp.confidence}%</span>
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{opp.confidence}%</span>
               </div>
             </div>
           ))}
@@ -900,22 +900,22 @@ function CostRiskAnalysis({
 
       {/* Risk-Cost Correlation Scatter */}
       <div className="card animate-fade-in-up">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Risk-Cost Correlation</h2>
-        <div className="relative h-64 w-full rounded-lg border border-gray-100 bg-gray-50">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Risk-Cost Correlation</h2>
+        <div className="relative h-64 w-full rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
           {/* Y axis label */}
-          <span className="absolute -left-1 top-1/2 -translate-y-1/2 -rotate-90 text-xs text-gray-400 whitespace-nowrap">
+          <span className="absolute -left-1 top-1/2 -translate-y-1/2 -rotate-90 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
             Cost ($)
           </span>
           {/* X axis label */}
-          <span className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-5 text-xs text-gray-400">
+          <span className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-5 text-xs text-gray-500 dark:text-gray-400">
             Risk Score
           </span>
           {/* Grid lines */}
           {[25, 50, 75].map((pct) => (
-            <div key={`h-${pct}`} className="absolute left-0 right-0 border-t border-dashed border-gray-200" style={{ top: `${100 - pct}%` }} />
+            <div key={`h-${pct}`} className="absolute left-0 right-0 border-t border-dashed border-gray-200 dark:border-gray-700" style={{ top: `${100 - pct}%` }} />
           ))}
           {[25, 50, 75].map((pct) => (
-            <div key={`v-${pct}`} className="absolute top-0 bottom-0 border-l border-dashed border-gray-200" style={{ left: `${pct}%` }} />
+            <div key={`v-${pct}`} className="absolute top-0 bottom-0 border-l border-dashed border-gray-200 dark:border-gray-700" style={{ left: `${pct}%` }} />
           ))}
           {/* Dots */}
           {riskCostPoints.map((pt) => {
@@ -944,45 +944,45 @@ function CostRiskAnalysis({
 
       {/* Readmission Risk Predictor */}
       <div className="card animate-fade-in-up">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Readmission Risk Predictor</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Readmission Risk Predictor</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Patient ID</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Patient ID</label>
             <input
               type="text"
               value={readmissionForm.patientId}
               onChange={(e) => setReadmissionForm({ ...readmissionForm, patientId: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
               placeholder="PAT-001"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Age</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Age</label>
             <input
               type="number"
               value={readmissionForm.age}
               onChange={(e) => setReadmissionForm({ ...readmissionForm, age: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
               placeholder="65"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Diagnosis</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Diagnosis</label>
             <input
               type="text"
               value={readmissionForm.diagnosis}
               onChange={(e) => setReadmissionForm({ ...readmissionForm, diagnosis: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
               placeholder="CHF, Diabetes"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Prior Admissions (12mo)</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Prior Admissions (12mo)</label>
             <input
               type="number"
               value={readmissionForm.priorAdmissions}
               onChange={(e) => setReadmissionForm({ ...readmissionForm, priorAdmissions: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
               placeholder="2"
             />
           </div>
@@ -1009,8 +1009,8 @@ function CostRiskAnalysis({
               >
                 {readmissionResult.level.toUpperCase()}
               </span>
-              <span className="text-sm text-gray-600">
-                Score: <span className="font-bold text-gray-900">{(readmissionResult.risk * 100).toFixed(1)}%</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Score: <span className="font-bold text-gray-900 dark:text-gray-100">{(readmissionResult.risk * 100).toFixed(1)}%</span>
               </span>
             </div>
           )}
@@ -1046,11 +1046,11 @@ function CohortBuilder({
     <div className="space-y-6">
       {/* Template Selector */}
       <div className="card animate-fade-in-up">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Cohort Templates</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Cohort Templates</h2>
         <select
           value={selectedTemplate}
           onChange={(e) => setSelectedTemplate(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
         >
           <option value="">-- Select a template or build custom --</option>
           {templates.map((t) => (
@@ -1063,42 +1063,42 @@ function CohortBuilder({
 
       {/* Custom Filters */}
       <div className="card animate-fade-in-up">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Custom Cohort Filters</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Custom Cohort Filters</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Age Min</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Age Min</label>
             <input
               type="number"
               value={filters.ageMin}
               onChange={(e) => setFilters({ ...filters, ageMin: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Age Max</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Age Max</label>
             <input
               type="number"
               value={filters.ageMax}
               onChange={(e) => setFilters({ ...filters, ageMax: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Diagnosis</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Diagnosis</label>
             <input
               type="text"
               value={filters.diagnosis}
               onChange={(e) => setFilters({ ...filters, diagnosis: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
               placeholder="e.g. Diabetes, CHF"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Risk Level</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Risk Level</label>
             <select
               value={filters.riskLevel}
               onChange={(e) => setFilters({ ...filters, riskLevel: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
             >
               <option value="all">All Levels</option>
               <option value="low">Low</option>
@@ -1108,12 +1108,12 @@ function CohortBuilder({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Medication</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Medication</label>
             <input
               type="text"
               value={filters.medication}
               onChange={(e) => setFilters({ ...filters, medication: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
               placeholder="e.g. Metformin"
             />
           </div>
@@ -1133,10 +1133,10 @@ function CohortBuilder({
         <div className="card animate-fade-in-up border-l-4 border-l-healthos-500">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {(result.name as string) || "Cohort Results"}
               </h2>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 ID: {result.cohort_id as string} | Created: {new Date(result.created_at as string).toLocaleString()}
               </p>
             </div>
@@ -1148,40 +1148,40 @@ function CohortBuilder({
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Demographics */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Demographics</h3>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Demographics</h3>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Average Age</span>
-                  <span className="font-medium text-gray-900">{demographics?.avg_age as number}</span>
+                  <span className="text-gray-500 dark:text-gray-400">Average Age</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{demographics?.avg_age as number}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Male</span>
-                  <span className="font-medium text-gray-900">{demographics?.male_pct as number}%</span>
+                  <span className="text-gray-500 dark:text-gray-400">Male</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{demographics?.male_pct as number}%</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Female</span>
-                  <span className="font-medium text-gray-900">{demographics?.female_pct as number}%</span>
+                  <span className="text-gray-500 dark:text-gray-400">Female</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{demographics?.female_pct as number}%</span>
                 </div>
               </div>
             </div>
 
             {/* Clinical Characteristics */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Clinical Characteristics</h3>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Clinical Characteristics</h3>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Avg Risk Score</span>
-                  <span className="font-medium text-gray-900">{clinical?.avg_risk_score as number}</span>
+                  <span className="text-gray-500 dark:text-gray-400">Avg Risk Score</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{clinical?.avg_risk_score as number}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Avg Medications</span>
-                  <span className="font-medium text-gray-900">{clinical?.avg_medications as number}</span>
+                  <span className="text-gray-500 dark:text-gray-400">Avg Medications</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{clinical?.avg_medications as number}</span>
                 </div>
                 <div className="text-sm">
-                  <span className="text-gray-500">Top Conditions:</span>
+                  <span className="text-gray-500 dark:text-gray-400">Top Conditions:</span>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {((clinical?.top_conditions as string[]) || []).map((c) => (
-                      <span key={c} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                      <span key={c} className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-300">
                         {c}
                       </span>
                     ))}
@@ -1191,7 +1191,7 @@ function CohortBuilder({
             </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
             <button className="rounded-lg border border-healthos-300 px-4 py-2 text-sm font-medium text-healthos-700 hover:bg-healthos-50 transition-all">
               Compare Cohorts
             </button>
@@ -1217,24 +1217,24 @@ function OutcomesTracking({
     <div className="space-y-6">
       {/* Treatment Effectiveness */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Treatment Effectiveness</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Treatment Effectiveness</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {metrics.map((m, i) => (
             <div key={m.metric} className="card card-hover animate-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">{m.metric}</p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{m.metric}</p>
                   <p className="mt-1 text-3xl font-bold text-emerald-600">+{m.improvement}%</p>
                 </div>
                 <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
                   p={m.pValue}
                 </span>
               </div>
-              <p className="mt-2 text-xs text-gray-400">
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                 95% CI: [{m.ciLow}%, {m.ciHigh}%]
               </p>
               {/* Outcome trend bar */}
-              <div className="mt-3 h-2 w-full rounded-full bg-gray-100">
+              <div className="mt-3 h-2 w-full rounded-full bg-gray-100 dark:bg-gray-800">
                 <div
                   className="h-2 rounded-full bg-emerald-500 transition-all duration-700"
                   style={{ width: `${Math.min(m.improvement * 2, 100)}%` }}
@@ -1247,22 +1247,22 @@ function OutcomesTracking({
 
       {/* Adherence Rates */}
       <div className="card animate-fade-in-up">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Adherence Rates by Category</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Adherence Rates by Category</h2>
         <div className="space-y-4">
           {adherence.map((a) => {
             const atTarget = a.rate >= a.target;
             return (
               <div key={a.category}>
                 <div className="flex items-center justify-between text-sm mb-1">
-                  <span className="font-medium text-gray-700">{a.category}</span>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">{a.category}</span>
                   <div className="flex items-center gap-3">
                     <span className={`font-bold ${atTarget ? "text-emerald-600" : "text-amber-600"}`}>
                       {a.rate}%
                     </span>
-                    <span className="text-xs text-gray-400">target: {a.target}%</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">target: {a.target}%</span>
                   </div>
                 </div>
-                <div className="relative h-3 w-full rounded-full bg-gray-100">
+                <div className="relative h-3 w-full rounded-full bg-gray-100 dark:bg-gray-800">
                   <div
                     className={`h-3 rounded-full transition-all duration-700 ${atTarget ? "bg-emerald-500" : "bg-amber-500"}`}
                     style={{ width: `${a.rate}%` }}
@@ -1282,7 +1282,7 @@ function OutcomesTracking({
 
       {/* Cost Comparison Before/After */}
       <div className="card animate-fade-in-up">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Cost Analysis: Before vs After Intervention</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Cost Analysis: Before vs After Intervention</h2>
         <div className="space-y-5">
           {costComparison.map((c) => {
             const maxVal = Math.max(c.before, c.after);
@@ -1291,31 +1291,31 @@ function OutcomesTracking({
             return (
               <div key={c.category}>
                 <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="font-medium text-gray-700">{c.category}</span>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">{c.category}</span>
                   <span className="text-xs font-semibold text-emerald-600">
                     Saved ${savings.toLocaleString()} ({savingsPct}%)
                   </span>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-3">
-                    <span className="w-14 text-xs text-gray-400 text-right">Before</span>
-                    <div className="flex-1 h-3 rounded-full bg-gray-100">
+                    <span className="w-14 text-xs text-gray-500 dark:text-gray-400 text-right">Before</span>
+                    <div className="flex-1 h-3 rounded-full bg-gray-100 dark:bg-gray-800">
                       <div
                         className="h-3 rounded-full bg-red-400 transition-all duration-700"
                         style={{ width: `${(c.before / maxVal) * 100}%` }}
                       />
                     </div>
-                    <span className="w-16 text-xs text-gray-600 text-right">${c.before.toLocaleString()}</span>
+                    <span className="w-16 text-xs text-gray-600 dark:text-gray-400 text-right">${c.before.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="w-14 text-xs text-gray-400 text-right">After</span>
-                    <div className="flex-1 h-3 rounded-full bg-gray-100">
+                    <span className="w-14 text-xs text-gray-500 dark:text-gray-400 text-right">After</span>
+                    <div className="flex-1 h-3 rounded-full bg-gray-100 dark:bg-gray-800">
                       <div
                         className="h-3 rounded-full bg-emerald-500 transition-all duration-700"
                         style={{ width: `${(c.after / maxVal) * 100}%` }}
                       />
                     </div>
-                    <span className="w-16 text-xs text-gray-600 text-right">${c.after.toLocaleString()}</span>
+                    <span className="w-16 text-xs text-gray-600 dark:text-gray-400 text-right">${c.after.toLocaleString()}</span>
                   </div>
                 </div>
               </div>

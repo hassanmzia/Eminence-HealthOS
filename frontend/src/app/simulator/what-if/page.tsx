@@ -137,11 +137,11 @@ export default function WhatIfSimulatorPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <FlaskConical className="w-5 h-5 text-indigo-600" />
             What-If Simulator
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
             Adjust clinical parameters and see projected risk changes
           </p>
           <Link
@@ -153,11 +153,11 @@ export default function WhatIfSimulatorPage() {
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
             <select
               value={selectedPatientId ?? ""}
               onChange={(e) => setSelectedPatientId(e.target.value || null)}
-              className="pl-9 pr-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 appearance-none cursor-pointer"
+              className="pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 appearance-none cursor-pointer"
             >
               <option value="">Select patient...</option>
               {PLACEHOLDER_PATIENTS.map((p) => (
@@ -172,15 +172,15 @@ export default function WhatIfSimulatorPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Parameter sliders */}
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm lg:col-span-2">
-          <h2 className="text-sm font-bold text-gray-900 mb-4">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm lg:col-span-2">
+          <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4">
             Clinical Parameters
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
             {PARAMETERS.map((param) => (
               <div key={param.key}>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-medium text-gray-900">
+                  <label className="text-xs font-medium text-gray-900 dark:text-gray-100">
                     {param.label}
                   </label>
                   <span className="text-xs font-mono font-bold text-indigo-600">
@@ -199,7 +199,7 @@ export default function WhatIfSimulatorPage() {
                   }
                   className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-indigo-500"
                 />
-                <div className="flex items-center justify-between mt-0.5 text-[10px] text-gray-400">
+                <div className="flex items-center justify-between mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
                   <span>
                     {param.min}
                     {param.unit}
@@ -213,7 +213,7 @@ export default function WhatIfSimulatorPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-3 mt-6 pt-4 border-t border-gray-200">
+          <div className="flex items-center gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={handleRun}
               disabled={!selectedPatientId || isSimulating}
@@ -228,7 +228,7 @@ export default function WhatIfSimulatorPage() {
             </button>
             <button
               onClick={handleReset}
-              className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-700 dark:text-gray-300 transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
               Reset
@@ -238,8 +238,8 @@ export default function WhatIfSimulatorPage() {
 
         {/* Risk score display */}
         <div className="space-y-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm text-center">
-            <h2 className="text-sm font-bold text-gray-900 mb-4">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm text-center">
+            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4">
               Risk Score
             </h2>
             {result ? (
@@ -249,14 +249,14 @@ export default function WhatIfSimulatorPage() {
                     <p className="text-3xl font-bold font-mono text-red-500">
                       {result.baselineRisk}%
                     </p>
-                    <p className="text-[10px] text-gray-500 mt-1">Baseline</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Baseline</p>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-gray-400" />
+                  <ArrowRight className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                   <div>
                     <p className="text-3xl font-bold font-mono text-emerald-500">
                       {result.simulatedRisk}%
                     </p>
-                    <p className="text-[10px] text-gray-500 mt-1">Simulated</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Simulated</p>
                   </div>
                 </div>
                 <div
@@ -279,7 +279,7 @@ export default function WhatIfSimulatorPage() {
             ) : (
               <div className="py-8">
                 <FlaskConical className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Adjust parameters and run the simulation to see projected risk
                   changes
                 </p>
@@ -289,8 +289,8 @@ export default function WhatIfSimulatorPage() {
 
           {/* Factor comparison */}
           {result && (
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-bold text-gray-900 mb-3">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-3">
                 Before / After Comparison
               </h2>
               <div className="space-y-2.5">
@@ -299,19 +299,19 @@ export default function WhatIfSimulatorPage() {
                     key={f.label}
                     className="flex items-center justify-between text-xs"
                   >
-                    <span className="font-medium text-gray-900 w-28 flex-shrink-0">
+                    <span className="font-medium text-gray-900 dark:text-gray-100 w-28 flex-shrink-0">
                       {f.label}
                     </span>
-                    <span className="font-mono text-gray-500">
+                    <span className="font-mono text-gray-500 dark:text-gray-400">
                       {f.baseline}
                     </span>
-                    <ArrowRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                    <ArrowRight className="w-3 h-3 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                     <span
                       className={clsx(
                         "font-mono font-bold",
                         f.impact === "positive" && "text-emerald-600",
                         f.impact === "negative" && "text-red-600",
-                        f.impact === "neutral" && "text-gray-900"
+                        f.impact === "neutral" && "text-gray-900 dark:text-gray-100"
                       )}
                     >
                       {f.simulated}

@@ -8,12 +8,12 @@ export default function ExecutiveDashboardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Executive Dashboard</h1>
-          <p className="text-sm text-gray-500">Strategic insights, KPI scorecards, and trend analysis</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Executive Dashboard</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Strategic insights, KPI scorecards, and trend analysis</p>
         </div>
         <Link
           href="/analytics"
-          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
         >
           Back to Analytics
         </Link>

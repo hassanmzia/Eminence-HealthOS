@@ -116,8 +116,8 @@ export function PageLoader() {
   return (
     <div className="flex h-[60vh] items-center justify-center">
       <div className="flex flex-col items-center gap-3">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-healthos-600" />
-        <p className="text-sm text-gray-500">Loading...</p>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700 border-t-healthos-600" />
+        <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
       </div>
     </div>
   );

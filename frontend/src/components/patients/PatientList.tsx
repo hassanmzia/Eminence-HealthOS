@@ -63,25 +63,25 @@ export function PatientList({ search }: { search?: string }) {
 
   return (
     <div className="card overflow-hidden p-0">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+      <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Patient</th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">MRN</th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Conditions</th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Risk</th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Patient</th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">MRN</th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Conditions</th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Risk</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200 bg-white">
+        <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
           {loading ? (
             <tr>
-              <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-400">
+              <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                 Loading patients...
               </td>
             </tr>
           ) : patients.length === 0 ? (
             <tr>
-              <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-400">
+              <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                 No patients found
               </td>
             </tr>
@@ -89,7 +89,7 @@ export function PatientList({ search }: { search?: string }) {
             patients.map((patient) => {
               const conditions = conditionLabels(patient);
               return (
-                <tr key={patient.id} className="transition-colors hover:bg-gray-50">
+                <tr key={patient.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="px-6 py-4">
                     <Link
                       href={`/patients/${patient.id}`}
@@ -97,20 +97,20 @@ export function PatientList({ search }: { search?: string }) {
                     >
                       {patientName(patient)}
                     </Link>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {patientAge(patient)} {patientGender(patient)}
                     </p>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{patient.mrn || "—"}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{patient.mrn || "—"}</td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
                       {conditions.length > 0
                         ? conditions.map((c, i) => (
-                            <span key={i} className="inline-flex rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                            <span key={i} className="inline-flex rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-xs text-gray-600 dark:text-gray-400">
                               {c}
                             </span>
                           ))
-                        : <span className="text-xs text-gray-400">None</span>}
+                        : <span className="text-xs text-gray-500 dark:text-gray-400">None</span>}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -121,12 +121,12 @@ export function PatientList({ search }: { search?: string }) {
             })
           )}
         </tbody>
-      </table>
+      </table></div>
 
       {/* Pagination */}
       {total > 20 && (
-        <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-3">
-          <span className="text-sm text-gray-500">
+        <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-6 py-3">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
             Showing {(page - 1) * 20 + 1}–{Math.min(page * 20, total)} of {total}
           </span>
           <div className="flex gap-2">

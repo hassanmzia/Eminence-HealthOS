@@ -82,7 +82,7 @@ function urgencyStyle(u: Urgency) {
     "semi-urgent": "bg-yellow-100 text-yellow-800 border-yellow-300",
     "non-urgent": "bg-green-100 text-green-800 border-green-300",
   };
-  return map[u] ?? "bg-gray-100 text-gray-800 border-gray-300";
+  return map[u] ?? "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600";
 }
 
 function urgencyDot(u: Urgency) {
@@ -103,7 +103,7 @@ function needBadgeColor(need: string) {
     financial: "bg-amber-100 text-amber-800",
     "mental health": "bg-pink-100 text-pink-800",
   };
-  return map[need] ?? "bg-gray-100 text-gray-800";
+  return map[need] ?? "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200";
 }
 
 function nudgeStatusStyle(s: string) {
@@ -112,7 +112,7 @@ function nudgeStatusStyle(s: string) {
     pending: "bg-yellow-100 text-yellow-800",
     failed: "bg-red-100 text-red-800",
   };
-  return map[s] ?? "bg-gray-100 text-gray-800";
+  return map[s] ?? "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200";
 }
 
 /* ─── Main Component ─────────────────────────────────────────────────────── */
@@ -323,8 +323,8 @@ export default function PatientEngagementPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Patient Engagement Hub</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Patient Engagement Hub</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Symptom triage, care navigation, community resources, and motivational engagement
             </p>
           </div>
@@ -357,8 +357,8 @@ export default function PatientEngagementPage() {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d={kpi.icon} /></svg>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500">{kpi.label}</p>
-                <p className="text-xl font-bold text-gray-900">{kpi.value}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{kpi.label}</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{kpi.value}</p>
               </div>
             </div>
           </div>
@@ -366,7 +366,7 @@ export default function PatientEngagementPage() {
       </div>
 
       {/* ── Tab Bar ─────────────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex gap-6 overflow-x-auto">
           {TABS.map((t) => (
             <button
@@ -375,7 +375,7 @@ export default function PatientEngagementPage() {
               className={`whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
                 tab === t
                   ? "border-healthos-600 text-healthos-600"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:text-gray-300"
               }`}
             >
               {t}
@@ -391,11 +391,11 @@ export default function PatientEngagementPage() {
         <div className="grid gap-6 lg:grid-cols-2 animate-fade-in-up">
           {/* Triage Form */}
           <div className="card p-6 space-y-5">
-            <h2 className="text-lg font-semibold text-gray-900">Symptom Assessment</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Symptom Assessment</h2>
 
             {/* Symptom Chips */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Symptoms</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Symptoms</label>
               <div className="flex flex-wrap gap-2">
                 {SYMPTOM_OPTIONS.map((s) => (
                   <button
@@ -404,7 +404,7 @@ export default function PatientEngagementPage() {
                     className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                       selectedSymptoms.includes(s)
                         ? "bg-healthos-600 text-white shadow-sm"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
                     }`}
                   >
                     {s}
@@ -415,7 +415,7 @@ export default function PatientEngagementPage() {
 
             {/* Severity Slider */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Severity Level: <span className={`font-bold ${severity >= 8 ? "text-red-600" : severity >= 5 ? "text-yellow-600" : "text-green-600"}`}>{severity}/10</span>
               </label>
               <input
@@ -426,7 +426,7 @@ export default function PatientEngagementPage() {
                 onChange={(e) => setSeverity(Number(e.target.value))}
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-healthos-600"
               />
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                 <span>Mild</span>
                 <span>Moderate</span>
                 <span>Severe</span>
@@ -435,27 +435,27 @@ export default function PatientEngagementPage() {
 
             {/* Duration */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration</label>
               <input
                 type="text"
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
                 placeholder="e.g., 3 days, 2 hours, 1 week"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 focus:outline-none"
               />
             </div>
 
             {/* Associated Factors */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Associated Factors</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Associated Factors</label>
               <div className="grid grid-cols-2 gap-2">
                 {ASSOCIATED_FACTORS.map((f) => (
-                  <label key={f} className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                  <label key={f} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={associatedFactors.includes(f)}
                       onChange={() => toggleFactor(f)}
-                      className="h-4 w-4 rounded border-gray-300 text-healthos-600 focus:ring-healthos-500"
+                      className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-healthos-600 focus:ring-healthos-500"
                     />
                     {f}
                   </label>
@@ -507,26 +507,26 @@ export default function PatientEngagementPage() {
 
           {/* Recent Triage History */}
           <div className="card p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Triage History</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Triage History</h2>
             <div className="space-y-3">
               {triageHistory.map((t) => (
-                <div key={t.id} className="card-hover rounded-lg border border-gray-200 p-4 space-y-2">
+                <div key={t.id} className="card-hover rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className={`inline-block h-2.5 w-2.5 rounded-full ${urgencyDot(t.urgency)}`} />
-                      <span className="font-medium text-gray-900">{t.patient}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{t.patient}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${urgencyStyle(t.urgency)}`}>{t.urgency}</span>
-                      <span className="text-xs text-gray-400">{t.date}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{t.date}</span>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {t.symptoms.map((s) => (
-                      <span key={s} className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{s}</span>
+                      <span key={s} className="rounded bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-600 dark:text-gray-400">{s}</span>
                     ))}
                   </div>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                     <span>Severity: {t.severity}/10</span>
                     <span>Venue: {t.venue}</span>
                   </div>
@@ -546,28 +546,28 @@ export default function PatientEngagementPage() {
           {showJourneyForm && (
             <div className="card p-6 space-y-4 border-2 border-healthos-200 animate-fade-in-up">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Create Care Journey</h2>
-                <button onClick={() => setShowJourneyForm(false)} className="text-gray-400 hover:text-gray-600">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Create Care Journey</h2>
+                <button onClick={() => setShowJourneyForm(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Patient ID</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Patient ID</label>
                   <input
                     type="text"
                     value={journeyPatientId}
                     onChange={(e) => setJourneyPatientId(e.target.value)}
                     placeholder="e.g., P-1005"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 focus:outline-none"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Journey Type</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Journey Type</label>
                   <select
                     value={journeyType}
                     onChange={(e) => setJourneyType(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 focus:outline-none"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 focus:outline-none"
                   >
                     <option value="">Select type...</option>
                     <option value="Diabetes Management">Diabetes Management</option>
@@ -580,13 +580,13 @@ export default function PatientEngagementPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Goals (comma-separated)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Goals (comma-separated)</label>
                   <input
                     type="text"
                     value={journeyGoals}
                     onChange={(e) => setJourneyGoals(e.target.value)}
                     placeholder="e.g., Reduce A1C, Daily monitoring"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 focus:outline-none"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -603,7 +603,7 @@ export default function PatientEngagementPage() {
           {!showJourneyForm && (
             <button
               onClick={() => setShowJourneyForm(true)}
-              className="inline-flex items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:border-healthos-400 hover:text-healthos-600"
+              className="inline-flex items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 px-4 py-2.5 text-sm font-medium text-gray-500 dark:text-gray-400 transition-colors hover:border-healthos-400 hover:text-healthos-600"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
               Create Journey
@@ -617,14 +617,14 @@ export default function PatientEngagementPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-gray-900">{j.name}</h3>
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">{j.name}</h3>
                       <span className="rounded bg-healthos-50 px-2 py-0.5 text-xs font-medium text-healthos-700">{j.id}</span>
                     </div>
-                    <p className="text-sm text-gray-500">{j.patient} &middot; Navigator: {j.navigator}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{j.patient} &middot; Navigator: {j.navigator}</p>
                   </div>
                   <div className="text-right">
                     <span className="text-2xl font-bold text-healthos-600">{j.progress}%</span>
-                    <p className="text-xs text-gray-400">complete</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">complete</p>
                   </div>
                 </div>
 
@@ -635,8 +635,8 @@ export default function PatientEngagementPage() {
                       <div className={`h-2.5 w-full rounded-full ${
                         idx < j.currentStep ? "bg-healthos-500" : idx === j.currentStep ? "bg-healthos-400 animate-pulse" : "bg-gray-200"
                       }`} />
-                      <span className={`mt-1 text-[10px] leading-tight text-center ${
-                        idx === j.currentStep ? "font-semibold text-healthos-700" : "text-gray-400"
+                      <span className={`mt-1 text-[11px] leading-tight text-center ${
+                        idx === j.currentStep ? "font-semibold text-healthos-700" : "text-gray-500 dark:text-gray-400"
                       }`}>
                         {step}
                       </span>
@@ -653,12 +653,12 @@ export default function PatientEngagementPage() {
                 </button>
 
                 {selectedJourney === j.id && (
-                  <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-gray-100 animate-fade-in-up">
+                  <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-gray-100 dark:border-gray-800 animate-fade-in-up">
                     <div>
-                      <p className="text-xs font-medium text-gray-500 mb-1">Next Actions</p>
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Next Actions</p>
                       <ul className="space-y-1">
                         {j.nextActions.map((a, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                          <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
                             <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-healthos-500" />
                             {a}
                           </li>
@@ -666,10 +666,10 @@ export default function PatientEngagementPage() {
                       </ul>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-500 mb-1">Goals</p>
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Goals</p>
                       <ul className="space-y-1">
                         {j.goals.map((g, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                          <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
                             <svg xmlns="http://www.w3.org/2000/svg" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-healthos-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                             {g}
                           </li>
@@ -677,7 +677,7 @@ export default function PatientEngagementPage() {
                       </ul>
                     </div>
                     <div className="sm:col-span-2">
-                      <p className="text-xs font-medium text-gray-500 mb-2">Milestone Timeline</p>
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Milestone Timeline</p>
                       <div className="flex items-center gap-3 overflow-x-auto pb-2">
                         {j.steps.map((step, idx) => (
                           <div key={idx} className="flex items-center gap-2">
@@ -686,7 +686,7 @@ export default function PatientEngagementPage() {
                                 ? "bg-healthos-600 text-white"
                                 : idx === j.currentStep
                                 ? "bg-healthos-100 text-healthos-700 ring-2 ring-healthos-400"
-                                : "bg-gray-100 text-gray-400"
+                                : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
                             }`}>
                               {idx < j.currentStep ? (
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -716,11 +716,11 @@ export default function PatientEngagementPage() {
         <div className="space-y-6 animate-fade-in-up">
           {/* Search Controls */}
           <div className="card p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">Resource Finder</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Resource Finder</h2>
 
             {/* Needs Chips */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Needs</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Needs</label>
               <div className="flex flex-wrap gap-2">
                 {NEED_OPTIONS.map((n) => (
                   <button
@@ -729,7 +729,7 @@ export default function PatientEngagementPage() {
                     className={`rounded-full px-4 py-1.5 text-sm font-medium capitalize transition-all ${
                       selectedNeeds.includes(n)
                         ? `${needBadgeColor(n)} ring-2 ring-offset-1 ring-gray-300 shadow-sm`
-                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200"
                     }`}
                   >
                     {n}
@@ -740,17 +740,17 @@ export default function PatientEngagementPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">ZIP Code</label>
                 <input
                   type="text"
                   value={zipCode}
                   onChange={(e) => setZipCode(e.target.value)}
                   placeholder="Enter ZIP code"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Radius: <span className="font-bold text-healthos-600">{radius} miles</span>
                 </label>
                 <input
@@ -761,7 +761,7 @@ export default function PatientEngagementPage() {
                   onChange={(e) => setRadius(Number(e.target.value))}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-healthos-600 mt-2"
                 />
-                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                   <span>1 mi</span>
                   <span>25 mi</span>
                 </div>
@@ -785,27 +785,27 @@ export default function PatientEngagementPage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-900">{r.name}</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">{r.name}</h3>
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${needBadgeColor(r.type)}`}>{r.type}</span>
                       </div>
-                      <p className="text-sm text-gray-500 mt-0.5">{r.address}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{r.address}</p>
                     </div>
-                    <span className="whitespace-nowrap rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">{r.distance}</span>
+                    <span className="whitespace-nowrap rounded bg-gray-100 dark:bg-gray-800 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400">{r.distance}</span>
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                     <span className="flex items-center gap-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                       {r.phone}
                     </span>
-                    <span className="text-xs text-gray-400">{r.hours}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{r.hours}</span>
                   </div>
 
                   <div>
-                    <p className="text-xs font-medium text-gray-500 mb-1.5">Services</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Services</p>
                     <div className="flex flex-wrap gap-1.5">
                       {r.services.map((s) => (
-                        <span key={s} className="rounded bg-gray-50 border border-gray-200 px-2 py-0.5 text-xs text-gray-600">{s}</span>
+                        <span key={s} className="rounded bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2 py-0.5 text-xs text-gray-600 dark:text-gray-400">{s}</span>
                       ))}
                     </div>
                   </div>
@@ -826,10 +826,10 @@ export default function PatientEngagementPage() {
 
             {/* Map Placeholder */}
             <div className="card p-4 space-y-3">
-              <h3 className="text-sm font-semibold text-gray-700">Resource Distribution</h3>
-              <div className="relative h-80 rounded-lg bg-gradient-to-br from-healthos-50 to-blue-50 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-3">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Resource Distribution</h3>
+              <div className="relative h-80 rounded-lg bg-gradient-to-br from-healthos-50 to-blue-50 border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-3">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
-                <p className="text-sm text-gray-400">Map View</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Map View</p>
                 <p className="text-xs text-gray-300">ZIP: {zipCode} | Radius: {radius} mi</p>
                 {/* Pin Markers */}
                 <div className="absolute inset-4">
@@ -846,7 +846,7 @@ export default function PatientEngagementPage() {
                         <div className={`h-4 w-4 rounded-full border-2 border-white shadow-md ${
                           r.type === "food" ? "bg-emerald-500" : r.type === "housing" ? "bg-purple-500" : r.type === "transportation" ? "bg-blue-500" : r.type === "financial" ? "bg-amber-500" : "bg-pink-500"
                         }`} />
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-[10px] text-white">
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-[11px] text-white">
                           {r.name}
                         </div>
                       </div>
@@ -856,7 +856,7 @@ export default function PatientEngagementPage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {["food", "housing", "transportation", "financial", "mental health"].map((type) => (
-                  <span key={type} className="flex items-center gap-1 text-[10px] text-gray-500">
+                  <span key={type} className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
                     <span className={`inline-block h-2 w-2 rounded-full ${
                       type === "food" ? "bg-emerald-500" : type === "housing" ? "bg-purple-500" : type === "transportation" ? "bg-blue-500" : type === "financial" ? "bg-amber-500" : "bg-pink-500"
                     }`} />
@@ -878,11 +878,11 @@ export default function PatientEngagementPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Score Trends */}
             <div className="card p-5 sm:col-span-2 lg:col-span-2 space-y-3">
-              <h2 className="text-lg font-semibold text-gray-900">Engagement Score Trends</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Engagement Score Trends</h2>
               <div className="space-y-3">
                 {engagementScores.map((e) => (
                   <div key={e.patient} className="flex items-center gap-4">
-                    <span className="w-32 truncate text-sm font-medium text-gray-700">{e.patient}</span>
+                    <span className="w-32 truncate text-sm font-medium text-gray-700 dark:text-gray-300">{e.patient}</span>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         {e.weeklyScores.map((s, i) => (
@@ -897,7 +897,7 @@ export default function PatientEngagementPage() {
                         ))}
                       </div>
                     </div>
-                    <span className="w-12 text-right text-sm font-bold text-gray-900">{e.score}%</span>
+                    <span className="w-12 text-right text-sm font-bold text-gray-900 dark:text-gray-100">{e.score}%</span>
                     <span className={`text-xs ${e.trend === "up" ? "text-green-600" : "text-red-600"}`}>
                       {e.trend === "up" ? "+" : "-"}
                     </span>
@@ -908,7 +908,7 @@ export default function PatientEngagementPage() {
 
             {/* Nudge Effectiveness */}
             <div className="card p-5 space-y-3">
-              <h2 className="text-sm font-semibold text-gray-900">Nudge Effectiveness</h2>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Nudge Effectiveness</h2>
               {(() => {
                 const total = nudgeHistory.length;
                 const delivered = nudgeHistory.filter((n) => n.status === "delivered").length;
@@ -918,25 +918,25 @@ export default function PatientEngagementPage() {
                 return (
                   <div className="space-y-3">
                     <div>
-                      <div className="flex justify-between text-xs text-gray-500 mb-1"><span>Delivery Rate</span><span>{total > 0 ? Math.round((delivered / total) * 100) : 0}%</span></div>
-                      <div className="h-2 rounded-full bg-gray-100"><div className="h-2 rounded-full bg-green-500" style={{ width: `${total > 0 ? (delivered / total) * 100 : 0}%` }} /></div>
+                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1"><span>Delivery Rate</span><span>{total > 0 ? Math.round((delivered / total) * 100) : 0}%</span></div>
+                      <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800"><div className="h-2 rounded-full bg-green-500" style={{ width: `${total > 0 ? (delivered / total) * 100 : 0}%` }} /></div>
                     </div>
                     <div>
-                      <div className="flex justify-between text-xs text-gray-500 mb-1"><span>Open Rate</span><span>{delivered > 0 ? Math.round((opened / delivered) * 100) : 0}%</span></div>
-                      <div className="h-2 rounded-full bg-gray-100"><div className="h-2 rounded-full bg-blue-500" style={{ width: `${delivered > 0 ? (opened / delivered) * 100 : 0}%` }} /></div>
+                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1"><span>Open Rate</span><span>{delivered > 0 ? Math.round((opened / delivered) * 100) : 0}%</span></div>
+                      <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800"><div className="h-2 rounded-full bg-blue-500" style={{ width: `${delivered > 0 ? (opened / delivered) * 100 : 0}%` }} /></div>
                     </div>
-                    <div className="grid grid-cols-3 gap-2 pt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
                       <div className="text-center">
                         <p className="text-lg font-bold text-green-600">{delivered}</p>
-                        <p className="text-[10px] text-gray-400">Delivered</p>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400">Delivered</p>
                       </div>
                       <div className="text-center">
                         <p className="text-lg font-bold text-yellow-600">{pending}</p>
-                        <p className="text-[10px] text-gray-400">Pending</p>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400">Pending</p>
                       </div>
                       <div className="text-center">
                         <p className="text-lg font-bold text-red-600">{failed}</p>
-                        <p className="text-[10px] text-gray-400">Failed</p>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400">Failed</p>
                       </div>
                     </div>
                   </div>
@@ -949,14 +949,14 @@ export default function PatientEngagementPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Send Nudge */}
             <div className="card p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900">Send Nudge</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Send Nudge</h2>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Patient</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Patient</label>
                 <select
                   value={nudgePatient}
                   onChange={(e) => setNudgePatient(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 focus:outline-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 focus:outline-none"
                 >
                   <option value="">Select patient...</option>
                   {engagementScores.map((e) => (
@@ -966,7 +966,7 @@ export default function PatientEngagementPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nudge Type</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nudge Type</label>
                 <div className="flex flex-wrap gap-2">
                   {NUDGE_TYPES.map((t) => (
                     <button
@@ -975,7 +975,7 @@ export default function PatientEngagementPage() {
                       className={`rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-all ${
                         nudgeType === t
                           ? "bg-healthos-600 text-white"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
                       }`}
                     >
                       {t}
@@ -985,7 +985,7 @@ export default function PatientEngagementPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Channel</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Channel</label>
                 <div className="flex gap-2">
                   {NUDGE_CHANNELS.map((c) => (
                     <button
@@ -994,7 +994,7 @@ export default function PatientEngagementPage() {
                       className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
                         nudgeChannel === c
                           ? "bg-healthos-100 text-healthos-700 ring-2 ring-healthos-400"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
                       }`}
                     >
                       {c}
@@ -1004,22 +1004,22 @@ export default function PatientEngagementPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Message (optional)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message (optional)</label>
                 <textarea
                   value={nudgeMessage}
                   onChange={(e) => setNudgeMessage(e.target.value)}
                   rows={3}
                   placeholder="Custom message or leave blank for auto-generated..."
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 focus:outline-none resize-none"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 focus:outline-none resize-none"
                 />
               </div>
 
-              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+              <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={nudgePersonalize}
                   onChange={() => setNudgePersonalize(!nudgePersonalize)}
-                  className="h-4 w-4 rounded border-gray-300 text-healthos-600 focus:ring-healthos-500"
+                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-healthos-600 focus:ring-healthos-500"
                 />
                 Personalize with patient data (name, streak, goals)
               </label>
@@ -1035,21 +1035,21 @@ export default function PatientEngagementPage() {
 
             {/* Nudge History */}
             <div className="card p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Nudge History</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Nudge History</h2>
               <div className="space-y-3 max-h-[500px] overflow-y-auto">
                 {nudgeHistory.map((n) => (
-                  <div key={n.id} className="rounded-lg border border-gray-200 p-3 space-y-2 card-hover">
+                  <div key={n.id} className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2 card-hover">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm text-gray-900">{n.patient}</span>
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${nudgeStatusStyle(n.status)}`}>{n.status}</span>
+                        <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{n.patient}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${nudgeStatusStyle(n.status)}`}>{n.status}</span>
                       </div>
-                      <span className="text-[10px] text-gray-400">{n.sentAt}</span>
+                      <span className="text-[11px] text-gray-500 dark:text-gray-400">{n.sentAt}</span>
                     </div>
-                    <p className="text-sm text-gray-600">{n.message}</p>
-                    <div className="flex items-center gap-3 text-[10px] text-gray-400">
-                      <span className="capitalize rounded bg-gray-50 px-1.5 py-0.5">{n.type}</span>
-                      <span className="rounded bg-gray-50 px-1.5 py-0.5">{n.channel}</span>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{n.message}</p>
+                    <div className="flex items-center gap-3 text-[11px] text-gray-500 dark:text-gray-400">
+                      <span className="capitalize rounded bg-gray-50 dark:bg-gray-800 px-1.5 py-0.5">{n.type}</span>
+                      <span className="rounded bg-gray-50 dark:bg-gray-800 px-1.5 py-0.5">{n.channel}</span>
                       {n.openedAt && <span className="text-green-600">Opened: {n.openedAt}</span>}
                     </div>
                   </div>
@@ -1060,8 +1060,8 @@ export default function PatientEngagementPage() {
 
           {/* Patient Interaction Timeline */}
           <div className="card p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">Patient Interaction Timeline</h2>
-            <div className="relative border-l-2 border-gray-200 ml-4 space-y-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Patient Interaction Timeline</h2>
+            <div className="relative border-l-2 border-gray-200 dark:border-gray-700 ml-4 space-y-4">
               {[
                 { time: "Today 08:32", event: "Maria Garcia opened medication reminder", type: "nudge", color: "bg-green-500" },
                 { time: "Today 07:15", event: "James Wilson completed cardiac rehab exercise", type: "journey", color: "bg-blue-500" },
@@ -1075,10 +1075,10 @@ export default function PatientEngagementPage() {
                   <div className={`absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full ${item.color}`} />
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm text-gray-700">{item.event}</p>
-                      <span className="text-[10px] text-gray-400 capitalize">{item.type}</span>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{item.event}</p>
+                      <span className="text-[11px] text-gray-500 dark:text-gray-400 capitalize">{item.type}</span>
                     </div>
-                    <span className="whitespace-nowrap text-xs text-gray-400">{item.time}</span>
+                    <span className="whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">{item.time}</span>
                   </div>
                 </div>
               ))}

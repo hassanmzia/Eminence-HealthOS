@@ -194,7 +194,7 @@ function severityFromScore(tool: string, score: number): { label: string; color:
     if (score >= 15) return { label: "Moderate-Severe", color: "bg-orange-100 text-orange-700" };
     if (score >= 10) return { label: "Moderate", color: "bg-yellow-100 text-yellow-700" };
     if (score >= 5) return { label: "Mild", color: "bg-green-100 text-green-700" };
-    return { label: "Minimal", color: "bg-gray-100 text-gray-600" };
+    return { label: "Minimal", color: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400" };
   }
   if (tool === "GAD-7") {
     if (score >= 15) return { label: "Severe", color: "bg-red-100 text-red-700" };
@@ -230,7 +230,7 @@ function riskBorderColor(level: RiskLevel) {
 function trendArrow(trend: string) {
   if (trend === "down") return <span className="text-green-600">&#9660;</span>;
   if (trend === "up") return <span className="text-red-600">&#9650;</span>;
-  return <span className="text-gray-400">&#9644;</span>;
+  return <span className="text-gray-500 dark:text-gray-400">&#9644;</span>;
 }
 
 function barWidth(score: number, max: number) {
@@ -457,13 +457,13 @@ export default function MentalHealthPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-in-up">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">Mental Health &amp; Behavioral Care</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Mental Health &amp; Behavioral Care</h1>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-healthos-100 px-3 py-1 text-xs font-semibold text-healthos-700">
               <span className="h-2 w-2 rounded-full bg-healthos-500 animate-pulse" />
               {RECENT_SCREENINGS.length} Active Screenings
             </span>
           </div>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Comprehensive screening, crisis intervention, therapeutic engagement, and longitudinal outcome tracking
           </p>
         </div>
@@ -486,8 +486,8 @@ export default function MentalHealthPage() {
             className="card card-hover text-center"
             style={{ animationDelay: `${i * 60}ms` }}
           >
-            <p className="text-xs font-medium text-gray-500">{s.label}</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{s.value}</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{s.label}</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{s.value}</p>
             <p className={`mt-1 text-xs font-semibold ${s.label === "Crisis Alerts" ? (s.up ? "text-red-600" : "text-green-600") : s.up ? "text-green-600" : "text-green-600"}`}>
               {s.delta} vs last week
             </p>
@@ -511,15 +511,15 @@ export default function MentalHealthPage() {
       </div>
 
       {/* ── Tabs ───────────────────────────────────────────────────────────── */}
-      <div className="flex gap-1 rounded-lg bg-gray-100 p-0.5 w-fit animate-fade-in-up">
+      <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5 w-fit animate-fade-in-up">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
               tab === t.key
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
             }`}
           >
             {t.label}
@@ -534,19 +534,19 @@ export default function MentalHealthPage() {
         <div className="space-y-6 animate-fade-in-up">
           {/* New Screening Modal */}
           {showNewScreening && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowNewScreening(false)}>
-              <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4" onClick={() => setShowNewScreening(false)}>
+              <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-gray-900">New Screening</h2>
-                  <button onClick={() => setShowNewScreening(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">New Screening</h2>
+                  <button onClick={() => setShowNewScreening(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none">&times;</button>
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Patient</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Patient</label>
                     <select
                       value={screeningPatient}
                       onChange={(e) => setScreeningPatient(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                     >
                       <option value="">Select patient...</option>
                       {PATIENT_LIST.map((p) => (
@@ -554,19 +554,19 @@ export default function MentalHealthPage() {
                       ))}
                     </select>
                   </div>
-                  <p className="text-xs text-gray-500">Choose a screening tool below to begin:</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Choose a screening tool below to begin:</p>
                   <div className="grid gap-2">
                     {SCREENING_TOOLS.map((tool) => (
                       <button
                         key={tool.id}
                         onClick={() => { setShowNewScreening(false); startScreening(tool.id); }}
                         disabled={!screeningPatient}
-                        className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 text-left hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
                       >
                         <span className={`h-3 w-3 rounded-full ${tool.color}`} />
                         <div>
-                          <span className="text-sm font-medium text-gray-900">{tool.name}</span>
-                          <span className="ml-2 text-xs text-gray-500">({tool.category})</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{tool.name}</span>
+                          <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({tool.category})</span>
                         </div>
                       </button>
                     ))}
@@ -581,28 +581,28 @@ export default function MentalHealthPage() {
             <div className="card border-2 border-healthos-200">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                     {activeScreening === "phq9" ? "PHQ-9" : activeScreening === "gad7" ? "GAD-7" : "AUDIT-C"} Screening
                   </h3>
-                  <p className="text-sm text-gray-500">Patient: {screeningPatient}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Patient: {screeningPatient}</p>
                 </div>
                 <button
                   onClick={() => { setActiveScreening(null); setScreeningAnswers([]); }}
-                  className="text-sm text-gray-400 hover:text-gray-600"
+                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400"
                 >
                   Cancel
                 </button>
               </div>
               {activeScreening !== "auditc" && (
-                <p className="text-xs text-gray-500 mb-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
                   Over the last 2 weeks, how often have you been bothered by the following problems?
                   <br />0 = Not at all &bull; 1 = Several days &bull; 2 = More than half the days &bull; 3 = Nearly every day
                 </p>
               )}
               <div className="space-y-4">
                 {questionsFor(activeScreening).map((q, qi) => (
-                  <div key={qi} className="rounded-lg bg-gray-50 p-3">
-                    <p className="text-sm font-medium text-gray-800 mb-2">
+                  <div key={qi} className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
                       {qi + 1}. {q}
                     </p>
                     <div className="flex gap-2">
@@ -613,7 +613,7 @@ export default function MentalHealthPage() {
                           className={`h-9 w-9 rounded-lg text-sm font-medium transition-colors ${
                             screeningAnswers[qi] === val
                               ? "bg-healthos-600 text-white shadow-sm"
-                              : "bg-white border border-gray-300 text-gray-700 hover:border-healthos-400"
+                              : "bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-healthos-400"
                           }`}
                         >
                           {val}
@@ -624,7 +624,7 @@ export default function MentalHealthPage() {
                 ))}
               </div>
               <div className="mt-6 flex items-center justify-between">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Answered: {screeningAnswers.filter((a) => a >= 0).length} / {screeningAnswers.length}
                 </p>
                 <button
@@ -642,10 +642,10 @@ export default function MentalHealthPage() {
           {screeningResult && (
             <div className="card border-2 border-healthos-200 animate-fade-in-up">
               <div className="text-center py-4">
-                <h3 className="text-lg font-bold text-gray-900">Screening Complete</h3>
-                <p className="mt-1 text-sm text-gray-500">{screeningResult.tool} for {screeningPatient}</p>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Screening Complete</h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{screeningResult.tool} for {screeningPatient}</p>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold text-gray-900">{screeningResult.score}</span>
+                  <span className="text-4xl font-bold text-gray-900 dark:text-gray-100">{screeningResult.score}</span>
                   <span className={`ml-3 inline-block rounded-full px-3 py-1 text-sm font-medium ${severityFromScore(screeningResult.tool, screeningResult.score).color}`}>
                     {severityFromScore(screeningResult.tool, screeningResult.score).label}
                   </span>
@@ -664,20 +664,20 @@ export default function MentalHealthPage() {
           {!activeScreening && !screeningResult && (
             <>
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Screening Tools</h3>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Screening Tools</h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   {SCREENING_TOOLS.map((tool) => (
                     <div key={tool.id} className="card card-hover">
                       <div className="flex items-center gap-2 mb-2">
                         <span className={`h-3 w-3 rounded-full ${tool.color}`} />
-                        <h4 className="text-sm font-bold text-gray-900">{tool.name}</h4>
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${tool.bgLight} ${tool.textColor}`}>
+                        <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">{tool.name}</h4>
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${tool.bgLight} ${tool.textColor}`}>
                           {tool.category}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mb-3">{tool.description}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{tool.description}</p>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400">{tool.questions} questions</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{tool.questions} questions</span>
                         <button
                           onClick={() => startScreening(tool.id)}
                           className="rounded-lg bg-healthos-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-healthos-700 transition-colors"
@@ -692,17 +692,17 @@ export default function MentalHealthPage() {
 
               {/* Recent Results Table */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Recent Screening Results</h3>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Recent Screening Results</h3>
                 <div className="card overflow-hidden p-0">
-                  <table className="w-full text-sm">
+                  <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-100 bg-gray-50/50">
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Patient</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Tool</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Score</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Severity</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Date</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Trend</th>
+                      <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/50">
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Patient</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Tool</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Score</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Severity</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Trend</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -710,21 +710,21 @@ export default function MentalHealthPage() {
                         const sev = severityFromScore(s.tool, s.score);
                         return (
                           <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                            <td className="px-4 py-3 font-medium text-gray-900">{s.patient}</td>
-                            <td className="px-4 py-3 text-gray-600">{s.tool}</td>
-                            <td className="px-4 py-3 font-semibold text-gray-900">{s.score}</td>
+                            <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{s.patient}</td>
+                            <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{s.tool}</td>
+                            <td className="px-4 py-3 font-semibold text-gray-900 dark:text-gray-100">{s.score}</td>
                             <td className="px-4 py-3">
                               <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${sev.color}`}>
                                 {sev.label}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-gray-500">{s.date}</td>
+                            <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{s.date}</td>
                             <td className="px-4 py-3">{trendArrow(s.trend)}</td>
                           </tr>
                         );
                       })}
                     </tbody>
-                  </table>
+                  </table></div>
                 </div>
               </div>
             </>
@@ -739,14 +739,14 @@ export default function MentalHealthPage() {
         <div className="space-y-6 animate-fade-in-up">
           {/* Crisis Assessment Panel */}
           <div className="card">
-            <h3 className="text-sm font-semibold text-gray-700 mb-4">Crisis Assessment</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Crisis Assessment</h3>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-600 mb-1">Patient</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Patient</label>
                 <select
                   value={crisisPatient}
                   onChange={(e) => setCrisisPatient(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   <option value="">Select patient...</option>
                   {PATIENT_LIST.map((p) => (
@@ -760,7 +760,7 @@ export default function MentalHealthPage() {
                   <div className={`h-16 w-16 rounded-full ${riskCircleColor(crisisRisk)} ${crisisRisk === "critical" ? "animate-pulse" : ""} flex items-center justify-center shadow-lg`}>
                     <span className="text-xs font-bold text-white uppercase">{crisisRisk}</span>
                   </div>
-                  <span className="text-[10px] text-gray-500">Risk Level</span>
+                  <span className="text-[11px] text-gray-500 dark:text-gray-400">Risk Level</span>
                 </div>
                 <button
                   onClick={assessCrisis}
@@ -772,7 +772,7 @@ export default function MentalHealthPage() {
                 <button
                   onClick={() => setShowSafetyPlan(true)}
                   disabled={!crisisPatient}
-                  className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  className="rounded-lg border border-gray-300 dark:border-gray-600 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
                 >
                   Create Safety Plan
                 </button>
@@ -782,13 +782,13 @@ export default function MentalHealthPage() {
 
           {/* Safety Plan Form */}
           {showSafetyPlan && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowSafetyPlan(false)}>
-              <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4" onClick={() => setShowSafetyPlan(false)}>
+              <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white dark:bg-gray-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-gray-900">Create Safety Plan</h2>
-                  <button onClick={() => setShowSafetyPlan(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Create Safety Plan</h2>
+                  <button onClick={() => setShowSafetyPlan(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none">&times;</button>
                 </div>
-                <p className="text-sm text-gray-500 mb-4">Patient: {crisisPatient || "Not selected"}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Patient: {crisisPatient || "Not selected"}</p>
                 <div className="space-y-4">
                   {([
                     { key: "warningSigns", label: "Warning Signs", placeholder: "What thoughts, moods, situations, or behaviors indicate a crisis may be developing?" },
@@ -799,19 +799,19 @@ export default function MentalHealthPage() {
                     { key: "reasonsForLiving", label: "Reasons for Living", placeholder: "The most important things to me that are worth living for..." },
                   ] as const).map((field) => (
                     <div key={field.key}>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{field.label}</label>
                       <textarea
                         value={safetyPlanData[field.key]}
                         onChange={(e) => setSafetyPlanData({ ...safetyPlanData, [field.key]: e.target.value })}
                         rows={2}
                         placeholder={field.placeholder}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                       />
                     </div>
                   ))}
                 </div>
                 <div className="mt-6 flex justify-end gap-3">
-                  <button onClick={() => setShowSafetyPlan(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                  <button onClick={() => setShowSafetyPlan(false)} className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
                     Cancel
                   </button>
                   <button
@@ -828,7 +828,7 @@ export default function MentalHealthPage() {
 
           {/* Active Crisis Cases */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Active Crisis Cases</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Active Crisis Cases</h3>
             <div className="space-y-4">
               {CRISIS_CASES.map((c) => (
                 <div
@@ -839,20 +839,20 @@ export default function MentalHealthPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <div className={`h-10 w-10 rounded-full ${riskCircleColor(c.riskLevel)} ${c.riskLevel === "critical" ? "animate-pulse" : ""} flex items-center justify-center shadow-md`}>
-                          <span className="text-[9px] font-bold text-white uppercase">{c.riskLevel}</span>
+                          <span className="text-[11px] font-bold text-white uppercase">{c.riskLevel}</span>
                         </div>
                         <div>
-                          <span className="text-sm font-bold text-gray-900">{c.patient}</span>
-                          <span className="ml-2 text-xs text-gray-500">Age {c.age}</span>
-                          <p className="text-xs text-gray-400">Assigned to: {c.assignedTo}</p>
+                          <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{c.patient}</span>
+                          <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">Age {c.age}</span>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Assigned to: {c.assignedTo}</p>
                         </div>
                       </div>
 
                       <div className="mb-2">
-                        <p className="text-xs font-semibold text-gray-600 mb-1">Risk Factors:</p>
+                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Risk Factors:</p>
                         <div className="flex flex-wrap gap-1">
                           {c.riskFactors.map((f, i) => (
-                            <span key={i} className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700 border border-red-200">
+                            <span key={i} className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700 border border-red-200">
                               {f}
                             </span>
                           ))}
@@ -860,10 +860,10 @@ export default function MentalHealthPage() {
                       </div>
 
                       <div>
-                        <p className="text-xs font-semibold text-gray-600 mb-1">Recommended Actions:</p>
+                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Recommended Actions:</p>
                         <ul className="space-y-0.5">
                           {c.recommendedActions.map((a, i) => (
-                            <li key={i} className="flex items-center gap-1.5 text-xs text-gray-600">
+                            <li key={i} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
                               <span className="h-1 w-1 rounded-full bg-gray-400" />
                               {a}
                             </li>
@@ -871,7 +871,7 @@ export default function MentalHealthPage() {
                         </ul>
                       </div>
 
-                      <p className="mt-2 text-[10px] text-gray-400">Last assessment: {c.lastAssessment}</p>
+                      <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">Last assessment: {c.lastAssessment}</p>
                     </div>
 
                     <div className="flex flex-col gap-2 sm:items-end">
@@ -881,12 +881,12 @@ export default function MentalHealthPage() {
                       >
                         Resolve
                       </button>
-                      <button className="rounded-lg border border-gray-300 px-4 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                      <button className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         Escalate
                       </button>
                       <button
                         onClick={() => { setCrisisPatient(c.patient); setShowSafetyPlan(true); }}
-                        className="rounded-lg border border-gray-300 px-4 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                        className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       >
                         Safety Plan
                       </button>
@@ -907,8 +907,8 @@ export default function MentalHealthPage() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Mood Check-in */}
             <div className="card card-hover">
-              <h4 className="text-sm font-bold text-gray-900 mb-1">Mood Check-in</h4>
-              <p className="text-xs text-gray-500 mb-4">How are you feeling right now?</p>
+              <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">Mood Check-in</h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">How are you feeling right now?</p>
               <div className="flex justify-between mb-4">
                 {MOODS.map((m) => (
                   <button
@@ -917,11 +917,11 @@ export default function MentalHealthPage() {
                     className={`flex flex-col items-center gap-1 rounded-lg p-2 transition-all ${
                       selectedMood === m.value
                         ? "bg-healthos-100 ring-2 ring-healthos-400 scale-110"
-                        : "hover:bg-gray-50"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-800"
                     }`}
                   >
                     <span className="text-2xl">{m.emoji}</span>
-                    <span className="text-[10px] text-gray-500">{m.label}</span>
+                    <span className="text-[11px] text-gray-500 dark:text-gray-400">{m.label}</span>
                   </button>
                 ))}
               </div>
@@ -930,7 +930,7 @@ export default function MentalHealthPage() {
                 onChange={(e) => setMoodNote(e.target.value)}
                 rows={2}
                 placeholder="Optional note about how you are feeling..."
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500 mb-3"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500 mb-3"
               />
               <button
                 onClick={submitMoodCheckin}
@@ -943,43 +943,43 @@ export default function MentalHealthPage() {
 
             {/* CBT Exercise */}
             <div className="card card-hover">
-              <h4 className="text-sm font-bold text-gray-900 mb-1">CBT Thought Record</h4>
-              <p className="text-xs text-gray-500 mb-4">Challenge negative thinking patterns</p>
+              <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">CBT Thought Record</h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Challenge negative thinking patterns</p>
               <div className="space-y-2">
                 <div>
-                  <label className="block text-[10px] font-semibold text-gray-500 uppercase mb-0.5">Situation</label>
+                  <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Situation</label>
                   <input
                     value={cbtSituation}
                     onChange={(e) => setCbtSituation(e.target.value)}
                     placeholder="What happened?"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-gray-500 uppercase mb-0.5">Automatic Thought</label>
+                  <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Automatic Thought</label>
                   <input
                     value={cbtThought}
                     onChange={(e) => setCbtThought(e.target.value)}
                     placeholder="What went through your mind?"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-gray-500 uppercase mb-0.5">Emotion</label>
+                  <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Emotion</label>
                   <input
                     value={cbtEmotion}
                     onChange={(e) => setCbtEmotion(e.target.value)}
                     placeholder="What did you feel? (0-100%)"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-gray-500 uppercase mb-0.5">Alternative Thought</label>
+                  <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Alternative Thought</label>
                   <input
                     value={cbtAlternative}
                     onChange={(e) => setCbtAlternative(e.target.value)}
                     placeholder="A more balanced perspective..."
-                    className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   />
                 </div>
               </div>
@@ -994,19 +994,19 @@ export default function MentalHealthPage() {
 
             {/* Mindfulness */}
             <div className="card card-hover">
-              <h4 className="text-sm font-bold text-gray-900 mb-1">Mindfulness Session</h4>
-              <p className="text-xs text-gray-500 mb-4">5-minute guided breathing exercise</p>
+              <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">Mindfulness Session</h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">5-minute guided breathing exercise</p>
               <div className="flex flex-col items-center py-4">
                 <div className={`h-28 w-28 rounded-full flex items-center justify-center mb-4 transition-all ${
                   mindfulnessRunning
                     ? "bg-healthos-100 ring-4 ring-healthos-300 animate-pulse"
-                    : "bg-gray-100"
+                    : "bg-gray-100 dark:bg-gray-800"
                 }`}>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {Math.floor(mindfulnessTimer / 60)}:{String(mindfulnessTimer % 60).padStart(2, "0")}
                     </p>
-                    <p className="text-[10px] text-gray-500">
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">
                       {mindfulnessRunning ? "Breathe..." : "Ready"}
                     </p>
                   </div>
@@ -1038,7 +1038,7 @@ export default function MentalHealthPage() {
 
           {/* Patient Progress Timeline */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Patient Engagement Timeline</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Patient Engagement Timeline</h3>
             <div className="card p-0 overflow-hidden">
               <div className="divide-y divide-gray-100">
                 {[
@@ -1049,15 +1049,15 @@ export default function MentalHealthPage() {
                   { time: "2:00 PM", patient: "Emily Davis", type: "Mindfulness", activity: "Body Scan scheduled", status: "pending" },
                 ].map((e, i) => (
                   <div key={i} className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50/50 transition-colors">
-                    <span className="text-xs text-gray-400 w-16 shrink-0">{e.time}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 w-16 shrink-0">{e.time}</span>
                     <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${
                       e.status === "completed" ? "bg-green-400" : e.status === "in_progress" ? "bg-yellow-400 animate-pulse" : "bg-gray-300"
                     }`} />
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium text-gray-900">{e.patient}</span>
-                      <span className="ml-2 text-xs text-gray-500">{e.activity}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{e.patient}</span>
+                      <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">{e.activity}</span>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
                       e.type === "CBT" ? "bg-purple-50 text-purple-700"
                         : e.type === "Mood" ? "bg-blue-50 text-blue-700"
                         : "bg-green-50 text-green-700"
@@ -1081,12 +1081,12 @@ export default function MentalHealthPage() {
           <div className="card">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-600 mb-1">Search Patient</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Search Patient</label>
                 <input
                   value={progressSearch}
                   onChange={(e) => setProgressSearch(e.target.value)}
                   placeholder="Type patient name..."
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 />
               </div>
             </div>
@@ -1099,7 +1099,7 @@ export default function MentalHealthPage() {
                     className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                       selectedPatientProgress === p.patient
                         ? "bg-healthos-600 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200"
                     }`}
                   >
                     {p.patient}
@@ -1114,7 +1114,7 @@ export default function MentalHealthPage() {
             <div className="space-y-4">
               {/* Score Trends */}
               <div className="card">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
                   Screening Score Trends &mdash; {currentProgress.patient}
                 </h3>
                 <div className="space-y-3">
@@ -1122,17 +1122,17 @@ export default function MentalHealthPage() {
                     const max = s.tool === "PHQ-9" ? 27 : s.tool === "GAD-7" ? 21 : 12;
                     return (
                       <div key={i} className="flex items-center gap-3">
-                        <span className="w-10 text-xs font-medium text-gray-500">{s.date}</span>
-                        <span className="w-14 text-xs text-gray-400">{s.tool}</span>
-                        <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
+                        <span className="w-10 text-xs font-medium text-gray-500 dark:text-gray-400">{s.date}</span>
+                        <span className="w-14 text-xs text-gray-500 dark:text-gray-400">{s.tool}</span>
+                        <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-5 overflow-hidden">
                           <div
                             className={`h-full rounded-full ${barColor(s.score, max)} flex items-center justify-end pr-2 transition-all`}
                             style={{ width: barWidth(s.score, max) }}
                           >
-                            <span className="text-[10px] font-bold text-white">{s.score}</span>
+                            <span className="text-[11px] font-bold text-white">{s.score}</span>
                           </div>
                         </div>
-                        <span className={`w-20 text-right rounded-full px-2 py-0.5 text-[10px] font-medium ${severityFromScore(s.tool, s.score).color}`}>
+                        <span className={`w-20 text-right rounded-full px-2 py-0.5 text-[11px] font-medium ${severityFromScore(s.tool, s.score).color}`}>
                           {severityFromScore(s.tool, s.score).label}
                         </span>
                       </div>
@@ -1149,9 +1149,9 @@ export default function MentalHealthPage() {
                   { label: "Session Attendance", value: currentProgress.engagement.attendance },
                 ].map((metric) => (
                   <div key={metric.label} className="card card-hover text-center">
-                    <p className="text-xs font-medium text-gray-500">{metric.label}</p>
-                    <p className="mt-1 text-2xl font-bold text-gray-900">{metric.value}%</p>
-                    <div className="mt-2 w-full bg-gray-100 rounded-full h-2">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{metric.label}</p>
+                    <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{metric.value}%</p>
+                    <div className="mt-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2">
                       <div
                         className={`h-full rounded-full ${metric.value >= 80 ? "bg-green-500" : metric.value >= 60 ? "bg-yellow-500" : "bg-red-500"}`}
                         style={{ width: `${metric.value}%` }}
@@ -1164,7 +1164,7 @@ export default function MentalHealthPage() {
               {/* Treatment Plan Adherence */}
               <div className="card">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-700">Treatment Plan Adherence</h3>
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Treatment Plan Adherence</h3>
                   <span className={`rounded-full px-3 py-1 text-xs font-bold ${
                     currentProgress.adherence >= 80 ? "bg-green-100 text-green-700"
                       : currentProgress.adherence >= 60 ? "bg-yellow-100 text-yellow-700"
@@ -1173,7 +1173,7 @@ export default function MentalHealthPage() {
                     {currentProgress.adherence}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
+                <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-4 overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${
                       currentProgress.adherence >= 80 ? "bg-green-500"
@@ -1187,15 +1187,15 @@ export default function MentalHealthPage() {
 
               {/* Therapist Notes */}
               <div className="card">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Therapist Notes</h3>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Therapist Notes</h3>
                 <div className="space-y-3 mb-4">
                   {currentProgress.notes.map((note, i) => (
-                    <div key={i} className="rounded-lg bg-gray-50 p-3">
+                    <div key={i} className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-gray-700">{note.author}</span>
-                        <span className="text-[10px] text-gray-400">{note.date}</span>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{note.author}</span>
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400">{note.date}</span>
                       </div>
-                      <p className="text-sm text-gray-600">{note.text}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{note.text}</p>
                     </div>
                   ))}
                 </div>
@@ -1204,7 +1204,7 @@ export default function MentalHealthPage() {
                     value={newNote}
                     onChange={(e) => setNewNote(e.target.value)}
                     placeholder="Add a note..."
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   />
                   <button
                     onClick={() => setNewNote("")}
@@ -1220,7 +1220,7 @@ export default function MentalHealthPage() {
 
           {!selectedPatientProgress && (
             <div className="card text-center py-12">
-              <p className="text-gray-400 text-sm">Select a patient above to view their longitudinal progress</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Select a patient above to view their longitudinal progress</p>
             </div>
           )}
         </div>

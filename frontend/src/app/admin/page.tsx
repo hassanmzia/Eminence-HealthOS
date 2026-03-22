@@ -506,7 +506,7 @@ function UsersTab() {
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="w-full text-sm">
           <thead>
             <tr className="table-header">
               <th className="p-3 w-10">
@@ -583,7 +583,7 @@ function UsersTab() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
         {filtered.length === 0 && (
           <div className="text-center py-12">
             <p className="text-zinc-400 dark:text-zinc-500 text-lg mb-1">No users found</p>
@@ -770,7 +770,7 @@ function PermissionsTab() {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="w-full text-xs">
           <thead>
             <tr className="table-header">
               <th className="p-2 text-left font-semibold sticky left-0 bg-zinc-100 dark:bg-zinc-800 z-10 min-w-[120px]">
@@ -820,7 +820,7 @@ function PermissionsTab() {
               ));
             })}
           </tbody>
-        </table>
+        </table></div>
       </div>
 
       {/* Legend */}
@@ -920,7 +920,7 @@ function AuditTrailTab() {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="w-full text-sm">
           <thead>
             <tr className="table-header">
               <th className="text-center p-3 font-semibold w-10"></th>
@@ -953,7 +953,7 @@ function AuditTrailTab() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
         {filtered.length === 0 && (
           <div className="text-center py-12">
             <p className="text-zinc-400 dark:text-zinc-500 text-lg mb-1">No audit entries found</p>

@@ -31,7 +31,7 @@ export function RiskScoreGauge({ patientId }: { patientId: string }) {
 
   return (
     <div className="card">
-      <h2 className="mb-4 text-lg font-semibold text-gray-900">Risk Score</h2>
+      <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Risk Score</h2>
 
       {/* Gauge */}
       <div className="flex justify-center">
@@ -74,20 +74,20 @@ export function RiskScoreGauge({ patientId }: { patientId: string }) {
       {/* Contributing factors */}
       {risk.factors.length > 0 && (
         <div className="mt-4">
-          <h3 className="text-xs font-medium uppercase text-gray-400">Contributing Factors</h3>
+          <h3 className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Contributing Factors</h3>
           <div className="mt-2 space-y-2">
             {risk.factors.map((f, i) => {
               const name = (f.name as string) || (f.factor as string) || `Factor ${i + 1}`;
               const contribution = Number(f.contribution || f.weight || 0);
               return (
                 <div key={i} className="flex items-center gap-2">
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                     <div
                       className="h-full rounded-full"
                       style={{ width: `${Math.min(contribution * 100, 100)}%`, backgroundColor: color }}
                     />
                   </div>
-                  <span className="w-24 text-xs text-gray-600 truncate">{name}</span>
+                  <span className="w-24 text-xs text-gray-600 dark:text-gray-400 truncate">{name}</span>
                 </div>
               );
             })}
@@ -98,10 +98,10 @@ export function RiskScoreGauge({ patientId }: { patientId: string }) {
       {/* Recommendations */}
       {risk.recommendations.length > 0 && (
         <div className="mt-4">
-          <h3 className="text-xs font-medium uppercase text-gray-400">Recommendations</h3>
+          <h3 className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Recommendations</h3>
           <ul className="mt-1 space-y-1">
             {risk.recommendations.map((r, i) => (
-              <li key={i} className="flex items-start gap-1 text-xs text-gray-600">
+              <li key={i} className="flex items-start gap-1 text-xs text-gray-600 dark:text-gray-400">
                 <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-gray-400" />
                 {r}
               </li>

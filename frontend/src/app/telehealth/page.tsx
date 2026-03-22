@@ -178,7 +178,7 @@ function visitTypeBadge(type: string) {
     new: "bg-green-100 text-green-700 border-green-200",
     "mental-health": "bg-purple-100 text-purple-700 border-purple-200",
   };
-  return map[type] || "bg-gray-100 text-gray-700 border-gray-200";
+  return map[type] || "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700";
 }
 
 function statusBadge(status: string) {
@@ -187,7 +187,7 @@ function statusBadge(status: string) {
     "in-progress": "bg-blue-100 text-blue-700",
     completed: "bg-green-100 text-green-700",
   };
-  return map[status] || "bg-gray-100 text-gray-700";
+  return map[status] || "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300";
 }
 
 function noteStatusBadge(status: string) {
@@ -196,7 +196,7 @@ function noteStatusBadge(status: string) {
     pending_review: "bg-blue-100 text-blue-700 border-blue-200",
     signed: "bg-green-100 text-green-700 border-green-200",
   };
-  return map[status] || "bg-gray-100 text-gray-700 border-gray-200";
+  return map[status] || "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700";
 }
 
 function urgencyColor(urgency: string) {
@@ -288,7 +288,7 @@ function VideoSessionUI({
         <div className="flex items-center gap-3">
           <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
           <span className="font-semibold">LIVE</span>
-          <span className="text-gray-400">|</span>
+          <span className="text-gray-500 dark:text-gray-400">|</span>
           <span className="text-sm text-gray-300">{session.patient_name}</span>
           <span className="inline-block rounded-full px-2 py-0.5 text-xs font-medium border ${visitTypeBadge(session.visit_type)}">{session.visit_type.replace("-", " ")}</span>
         </div>
@@ -308,8 +308,8 @@ function VideoSessionUI({
                   {session.patient_name?.split(" ").map((n) => n[0]).join("") || "P"}
                 </span>
               </div>
-              <p className="text-gray-400 text-sm">{session.patient_name}</p>
-              <p className="text-gray-500 text-xs mt-1">Patient Camera</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">{session.patient_name}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">Patient Camera</p>
             </div>
             <div className="absolute top-3 left-3 flex items-center gap-2">
               <span className="inline-block rounded-full bg-green-500/20 px-2 py-0.5 text-xs text-green-400 font-medium">Connected</span>
@@ -321,19 +321,19 @@ function VideoSessionUI({
             {cameraOff ? (
               <div className="text-center">
                 <div className="w-20 h-20 rounded-full bg-gray-600 flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-8 h-8 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M12 18.75H4.5a2.25 2.25 0 01-2.25-2.25V7.5A2.25 2.25 0 014.5 5.25h7.5" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3l18 18" />
                   </svg>
                 </div>
-                <p className="text-gray-400 text-sm">Camera Off</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Camera Off</p>
               </div>
             ) : (
               <div className="text-center">
                 <div className="w-20 h-20 rounded-full bg-healthos-700 flex items-center justify-center mx-auto mb-3">
                   <span className="text-3xl font-bold text-white">Dr</span>
                 </div>
-                <p className="text-gray-400 text-sm">You (Provider)</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">You (Provider)</p>
               </div>
             )}
             <div className="absolute top-3 left-3">
@@ -626,7 +626,7 @@ export default function TelehealthPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">Telehealth Command Center</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Telehealth Command Center</h1>
             <span className="relative flex items-center gap-1.5 rounded-full bg-healthos-100 px-3 py-1 text-sm font-semibold text-healthos-700">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-healthos-500 opacity-75" />
@@ -635,7 +635,7 @@ export default function TelehealthPage() {
               {liveCount} Live
             </span>
           </div>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Monitor sessions, manage the waiting room, review clinical notes, and conduct video visits.
           </p>
         </div>
@@ -710,8 +710,8 @@ export default function TelehealthPage() {
                 {stat.icon}
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-xs text-gray-500">{stat.label}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</p>
               </div>
             </div>
           </div>
@@ -719,7 +719,7 @@ export default function TelehealthPage() {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex gap-6" aria-label="Tabs">
           {tabs.map((tab) => (
             <button
@@ -728,7 +728,7 @@ export default function TelehealthPage() {
               className={`relative pb-3 text-sm font-medium transition-colors ${
                 activeTab === tab.key
                   ? "text-healthos-600 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-healthos-600"
-                  : "text-gray-500 hover:text-gray-700"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
               }`}
             >
               {tab.label}
@@ -737,7 +737,7 @@ export default function TelehealthPage() {
                   className={`ml-2 inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-medium ${
                     activeTab === tab.key
                       ? "bg-healthos-100 text-healthos-700"
-                      : "bg-gray-100 text-gray-600"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
                   }`}
                 >
                   {tab.count}
@@ -758,8 +758,8 @@ export default function TelehealthPage() {
                 <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <p className="text-gray-500 font-medium">No active sessions</p>
-                <p className="text-gray-400 text-sm mt-1">Create a new session to get started.</p>
+                <p className="text-gray-500 dark:text-gray-400 font-medium">No active sessions</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Create a new session to get started.</p>
               </div>
             ) : (
               sessions
@@ -776,7 +776,7 @@ export default function TelehealthPage() {
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div className="flex-1 min-w-0 space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-lg font-semibold text-gray-900">{session.patient_name}</h3>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{session.patient_name}</h3>
                           <span
                             className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${visitTypeBadge(session.visit_type)}`}
                           >
@@ -789,10 +789,10 @@ export default function TelehealthPage() {
                           </span>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                           <span className="flex items-center gap-1.5">
                             <span className={`inline-block h-2 w-2 rounded-full ${urgencyDot(session.urgency)}`} />
-                            Urgency: <span className="font-medium text-gray-700 capitalize">{session.urgency}</span>
+                            Urgency: <span className="font-medium text-gray-700 dark:text-gray-300 capitalize">{session.urgency}</span>
                           </span>
                           {session.estimated_wait_minutes !== undefined && session.estimated_wait_minutes > 0 && (
                             <span className="flex items-center gap-1">
@@ -806,8 +806,8 @@ export default function TelehealthPage() {
                         </div>
 
                         {session.chief_complaint && (
-                          <p className="text-sm text-gray-600">
-                            <span className="font-medium text-gray-700">Chief Complaint: </span>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Chief Complaint: </span>
                             {session.chief_complaint}
                           </p>
                         )}
@@ -817,7 +817,7 @@ export default function TelehealthPage() {
                         <button
                           onClick={() => handlePrepareVisit(session.session_id)}
                           disabled={loadingActions[session.session_id] === "prepare"}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
                         >
                           {loadingActions[session.session_id] === "prepare" ? (
                             <LoadingSpinner />
@@ -872,13 +872,13 @@ export default function TelehealthPage() {
                 <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p className="text-gray-500 font-medium">Waiting room is empty</p>
-                <p className="text-gray-400 text-sm mt-1">All patients have been seen. Great work!</p>
+                <p className="text-gray-500 dark:text-gray-400 font-medium">Waiting room is empty</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">All patients have been seen. Great work!</p>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {waitingSessions.length} patient{waitingSessions.length !== 1 ? "s" : ""} waiting
                   </p>
                   <button
@@ -910,21 +910,21 @@ export default function TelehealthPage() {
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-start gap-4">
                           <div className="flex flex-col items-center">
-                            <span className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-lg font-bold text-gray-600">
+                            <span className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 text-lg font-bold text-gray-600 dark:text-gray-400">
                               {index + 1}
                             </span>
-                            <span className="mt-1 text-xs text-gray-400">Position</span>
+                            <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">Position</span>
                           </div>
                           <div className="space-y-1">
                             <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="font-semibold text-gray-900">{session.patient_name}</h3>
+                              <h3 className="font-semibold text-gray-900 dark:text-gray-100">{session.patient_name}</h3>
                               <span
                                 className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${visitTypeBadge(session.visit_type)}`}
                               >
                                 {session.visit_type.replace("-", " ")}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3 text-sm text-gray-500">
+                            <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
                               <span className="flex items-center gap-1.5">
                                 <span className={`inline-block h-2 w-2 rounded-full ${urgencyDot(session.urgency)}`} />
                                 <span className="capitalize">{session.urgency} urgency</span>
@@ -935,7 +935,7 @@ export default function TelehealthPage() {
                               )}
                             </div>
                             {session.chief_complaint && (
-                              <p className="text-sm text-gray-600">{session.chief_complaint}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{session.chief_complaint}</p>
                             )}
                           </div>
                         </div>
@@ -969,8 +969,8 @@ export default function TelehealthPage() {
                 <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <p className="text-gray-500 font-medium">No clinical notes yet</p>
-                <p className="text-gray-400 text-sm mt-1">Generate a note from an active session.</p>
+                <p className="text-gray-500 dark:text-gray-400 font-medium">No clinical notes yet</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Generate a note from an active session.</p>
               </div>
             ) : (
               notes.map((note) => {
@@ -982,7 +982,7 @@ export default function TelehealthPage() {
                       {/* Header */}
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-semibold text-gray-900">
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                             {session?.patient_name || `Session ${note.session_id}`}
                           </h3>
                           <span
@@ -990,7 +990,7 @@ export default function TelehealthPage() {
                           >
                             {note.status.replace("_", " ")}
                           </span>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
                             Generated {formatTimeSince(note.generated_at)} by {note.generated_by}
                           </span>
                         </div>
@@ -1016,7 +1016,7 @@ export default function TelehealthPage() {
                               setAmendingNote(amendingNote === note.note_id ? null : note.note_id);
                               setAmendText("");
                             }}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1025,7 +1025,7 @@ export default function TelehealthPage() {
                           </button>
                           <button
                             onClick={() => setExpandedNote(isExpanded ? null : note.note_id)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="inline-flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                           >
                             {isExpanded ? "Collapse" : "Expand"}
                             <svg
@@ -1043,14 +1043,14 @@ export default function TelehealthPage() {
                       {/* Confidence bar */}
                       {note.overall_confidence !== undefined && (
                         <div className="flex items-center gap-3">
-                          <span className="text-xs text-gray-500 w-32 shrink-0">Overall Confidence</span>
-                          <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 w-32 shrink-0">Overall Confidence</span>
+                          <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                             <div
                               className={`h-full rounded-full transition-all ${confidenceBarColor(note.overall_confidence)}`}
                               style={{ width: `${note.overall_confidence * 100}%` }}
                             />
                           </div>
-                          <span className="text-xs font-medium text-gray-700 w-12 text-right">
+                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300 w-12 text-right">
                             {Math.round(note.overall_confidence * 100)}%
                           </span>
                         </div>
@@ -1059,9 +1059,9 @@ export default function TelehealthPage() {
                       {/* Sections preview (collapsed = first two, expanded = all) */}
                       <div className="space-y-2">
                         {(isExpanded ? note.sections : note.sections.slice(0, 2)).map((section) => (
-                          <div key={section.section} className="rounded-lg bg-gray-50 p-3">
+                          <div key={section.section} className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                                 {section.section}
                               </span>
                               {section.confidence !== undefined && (
@@ -1072,11 +1072,11 @@ export default function TelehealthPage() {
                                       style={{ width: `${section.confidence * 100}%` }}
                                     />
                                   </div>
-                                  <span className="text-[10px] text-gray-500">{Math.round(section.confidence * 100)}%</span>
+                                  <span className="text-[11px] text-gray-500 dark:text-gray-400">{Math.round(section.confidence * 100)}%</span>
                                 </div>
                               )}
                             </div>
-                            <p className="text-sm text-gray-600">{section.content}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{section.content}</p>
                           </div>
                         ))}
                         {!isExpanded && note.sections.length > 2 && (
@@ -1091,13 +1091,13 @@ export default function TelehealthPage() {
 
                       {/* Amendments */}
                       {isExpanded && note.amendments && note.amendments.length > 0 && (
-                        <div className="space-y-2 border-t border-gray-100 pt-3">
-                          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Amendments</span>
+                        <div className="space-y-2 border-t border-gray-100 dark:border-gray-800 pt-3">
+                          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Amendments</span>
                           {note.amendments.map((a, i) => (
                             <div key={i} className="rounded-lg bg-amber-50 border border-amber-100 p-3">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-xs font-medium text-amber-700">{a.section}</span>
-                                <span className="text-[10px] text-amber-500">{formatTimeSince(a.amended_at)}</span>
+                                <span className="text-[11px] text-amber-500">{formatTimeSince(a.amended_at)}</span>
                               </div>
                               <p className="text-sm text-amber-800">{a.content}</p>
                             </div>
@@ -1117,13 +1117,13 @@ export default function TelehealthPage() {
 
                       {/* Amend input */}
                       {amendingNote === note.note_id && (
-                        <div className="border-t border-gray-100 pt-3 space-y-2">
+                        <div className="border-t border-gray-100 dark:border-gray-800 pt-3 space-y-2">
                           <textarea
                             value={amendText}
                             onChange={(e) => setAmendText(e.target.value)}
                             placeholder="Enter amendment text..."
                             rows={3}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                           />
                           <div className="flex justify-end gap-2">
                             <button
@@ -1131,7 +1131,7 @@ export default function TelehealthPage() {
                                 setAmendingNote(null);
                                 setAmendText("");
                               }}
-                              className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                              className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                             >
                               Cancel
                             </button>
@@ -1159,48 +1159,48 @@ export default function TelehealthPage() {
           <div className="space-y-4">
             {/* Date filter */}
             <div className="flex flex-wrap items-center gap-3">
-              <label className="text-sm font-medium text-gray-700">From</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">From</label>
               <input
                 type="date"
                 value={dateFilter.from}
                 onChange={(e) => setDateFilter((f) => ({ ...f, from: e.target.value }))}
-                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               />
-              <label className="text-sm font-medium text-gray-700">To</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">To</label>
               <input
                 type="date"
                 value={dateFilter.to}
                 onChange={(e) => setDateFilter((f) => ({ ...f, to: e.target.value }))}
-                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               />
             </div>
 
             <div className="card overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-600">Patient</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-600">Visit Type</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-600">Duration</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-600">Notes</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-600">Actions</th>
+                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                      <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Date</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Patient</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Visit Type</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Duration</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Status</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Notes</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {filteredHistory.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                        <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                           No sessions found for the selected date range.
                         </td>
                       </tr>
                     ) : (
                       filteredHistory.map((entry, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{entry.date}</td>
-                          <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{entry.patient}</td>
+                        <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{entry.date}</td>
+                          <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{entry.patient}</td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span
                               className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${visitTypeBadge(entry.visitType)}`}
@@ -1208,7 +1208,7 @@ export default function TelehealthPage() {
                               {entry.visitType.replace("-", " ")}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{entry.duration}</td>
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{entry.duration}</td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span
                               className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusBadge(entry.status)}`}
@@ -1218,7 +1218,7 @@ export default function TelehealthPage() {
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             {entry.noteStatus === "—" ? (
-                              <span className="text-gray-400">—</span>
+                              <span className="text-gray-500 dark:text-gray-400">—</span>
                             ) : (
                               <span
                                 className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${noteStatusBadge(entry.noteStatus)}`}
@@ -1236,7 +1236,7 @@ export default function TelehealthPage() {
                       ))
                     )}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             </div>
           </div>
@@ -1246,41 +1246,41 @@ export default function TelehealthPage() {
       {/* ── New Session Modal ── */}
       {showNewSession && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4"
           onClick={() => setShowNewSession(false)}
         >
           <div
-            className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl animate-fade-in-up"
+            className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl animate-fade-in-up"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-900">New Telehealth Session</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">New Telehealth Session</h2>
               <button
                 onClick={() => setShowNewSession(false)}
-                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none"
               >
                 &times;
               </button>
             </div>
             <form onSubmit={handleCreateSession} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Patient Name *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Patient Name *</label>
                 <input
                   required
                   value={sessionForm.patientName}
                   onChange={(e) => setSessionForm({ ...sessionForm, patientName: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   placeholder="e.g. Maria Garcia"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Visit Type *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Visit Type *</label>
                   <select
                     required
                     value={sessionForm.visitType}
                     onChange={(e) => setSessionForm({ ...sessionForm, visitType: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   >
                     <option value="new">New Patient</option>
                     <option value="follow-up">Follow-Up</option>
@@ -1289,12 +1289,12 @@ export default function TelehealthPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Urgency *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Urgency *</label>
                   <select
                     required
                     value={sessionForm.urgency}
                     onChange={(e) => setSessionForm({ ...sessionForm, urgency: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -1303,11 +1303,11 @@ export default function TelehealthPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Session Type</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Session Type</label>
                 <select
                   value={sessionForm.sessionType}
                   onChange={(e) => setSessionForm({ ...sessionForm, sessionType: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   <option value="video">Video Call</option>
                   <option value="audio">Audio Only</option>
@@ -1315,12 +1315,12 @@ export default function TelehealthPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Chief Complaint / Reason</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Chief Complaint / Reason</label>
                 <textarea
                   value={sessionForm.reason}
                   onChange={(e) => setSessionForm({ ...sessionForm, reason: e.target.value })}
                   rows={2}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   placeholder="e.g. Follow-up on blood pressure medication"
                 />
               </div>
@@ -1328,7 +1328,7 @@ export default function TelehealthPage() {
                 <button
                   type="button"
                   onClick={() => setShowNewSession(false)}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   Cancel
                 </button>

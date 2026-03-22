@@ -90,7 +90,7 @@ function collectionBadge(collection: string): string {
     Protocols: "bg-teal-100 text-teal-700",
     Formulary: "bg-orange-100 text-orange-700",
   };
-  return map[collection] || "bg-gray-100 text-gray-600";
+  return map[collection] || "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400";
 }
 
 function healthDot(h?: string) {
@@ -245,7 +245,7 @@ export default function ClinicalIntelligencePage() {
   }, [uploadCollection, uploadContent, uploadTitle, uploadSource]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-800">
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="bg-gradient-to-r from-healthos-700 via-healthos-600 to-healthos-500 px-6 py-8 animate-fade-in-up">
         <div className="mx-auto max-w-7xl">
@@ -271,7 +271,7 @@ export default function ClinicalIntelligencePage() {
           {/* Search bar */}
           <div className="relative">
             <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <svg className="h-5 w-5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
               </svg>
             </div>
@@ -281,7 +281,7 @@ export default function ClinicalIntelligencePage() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Search clinical guidelines, drug interactions, protocols..."
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 py-4 pl-12 pr-32 text-base text-gray-900 placeholder-gray-400 shadow-sm transition-all focus:border-healthos-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-healthos-500/20"
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 py-4 pl-12 pr-32 text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-sm transition-all focus:border-healthos-500 focus:bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-healthos-500/20"
             />
             <button
               onClick={() => handleSearch()}
@@ -304,7 +304,7 @@ export default function ClinicalIntelligencePage() {
 
           {/* Collection filter chips */}
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-gray-500 mr-1">Collections:</span>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mr-1">Collections:</span>
             {COLLECTION_FILTERS.map((f) => (
               <button
                 key={f}
@@ -312,7 +312,7 @@ export default function ClinicalIntelligencePage() {
                 className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
                   activeFilter === f
                     ? "bg-healthos-600 text-white shadow-sm"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
                 }`}
               >
                 {f}
@@ -324,7 +324,7 @@ export default function ClinicalIntelligencePage() {
           <div className="mt-3">
             <button
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-healthos-600 transition-colors"
+              className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-healthos-600 transition-colors"
             >
               <svg
                 className={`h-3.5 w-3.5 transition-transform ${showAdvanced ? "rotate-90" : ""}`}
@@ -338,9 +338,9 @@ export default function ClinicalIntelligencePage() {
               Advanced Options
             </button>
             {showAdvanced && (
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-lg border border-gray-100 bg-gray-50 p-4 animate-fade-in-up">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-4 animate-fade-in-up">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
                     Top K Results: <span className="font-semibold text-healthos-600">{topK}</span>
                   </label>
                   <input
@@ -351,14 +351,14 @@ export default function ClinicalIntelligencePage() {
                     onChange={(e) => setTopK(Number(e.target.value))}
                     className="w-full accent-healthos-600"
                   />
-                  <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+                  <div className="flex justify-between text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
                     <span>1</span>
                     <span>10</span>
                     <span>20</span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
                     Confidence Threshold: <span className="font-semibold text-healthos-600">{Math.round(confidenceThreshold * 100)}%</span>
                   </label>
                   <input
@@ -369,7 +369,7 @@ export default function ClinicalIntelligencePage() {
                     onChange={(e) => setConfidenceThreshold(Number(e.target.value) / 100)}
                     className="w-full accent-healthos-600"
                   />
-                  <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+                  <div className="flex justify-between text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
                     <span>0%</span>
                     <span>50%</span>
                     <span>100%</span>
@@ -391,7 +391,7 @@ export default function ClinicalIntelligencePage() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
-                <p className="text-sm text-gray-500">Searching clinical knowledge base...</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Searching clinical knowledge base...</p>
               </div>
             )}
 
@@ -412,12 +412,12 @@ export default function ClinicalIntelligencePage() {
                       {Math.round(searchResult.confidence * 100)}% confidence
                     </span>
                   </div>
-                  <p className="text-sm text-gray-700 leading-relaxed">{searchResult.answer}</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{searchResult.answer}</p>
                   {searchResult.sources.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-1.5">
-                      <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider self-center mr-1">Sources:</span>
+                      <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider self-center mr-1">Sources:</span>
                       {searchResult.sources.map((s, i) => (
-                        <span key={i} className="inline-flex items-center rounded-md bg-white px-2 py-0.5 text-[11px] font-medium text-healthos-700 ring-1 ring-inset ring-healthos-200">
+                        <span key={i} className="inline-flex items-center rounded-md bg-white dark:bg-gray-900 px-2 py-0.5 text-[11px] font-medium text-healthos-700 ring-1 ring-inset ring-healthos-200">
                           {s}
                         </span>
                       ))}
@@ -427,7 +427,7 @@ export default function ClinicalIntelligencePage() {
 
                 {/* Source documents */}
                 <div className="space-y-3">
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">
+                  <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-1">
                     Source Documents ({searchResult.results.length})
                   </h3>
                   {searchResult.results.map((doc, idx) => (
@@ -439,16 +439,16 @@ export default function ClinicalIntelligencePage() {
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <svg className="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                          <svg className="h-4 w-4 text-gray-500 dark:text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                           </svg>
-                          <span className="text-sm font-semibold text-gray-800 truncate">{doc.source}</span>
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium flex-shrink-0 ${collectionBadge(doc.collection)}`}>
+                          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{doc.source}</span>
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium flex-shrink-0 ${collectionBadge(doc.collection)}`}>
                             {doc.collection}
                           </span>
                         </div>
                         <svg
-                          className={`h-4 w-4 text-gray-400 transition-transform flex-shrink-0 ml-2 ${expandedIdx === idx ? "rotate-180" : ""}`}
+                          className={`h-4 w-4 text-gray-500 dark:text-gray-400 transition-transform flex-shrink-0 ml-2 ${expandedIdx === idx ? "rotate-180" : ""}`}
                           fill="none"
                           viewBox="0 0 24 24"
                           strokeWidth={2}
@@ -460,27 +460,27 @@ export default function ClinicalIntelligencePage() {
 
                       {/* Relevance score bar */}
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[10px] font-medium text-gray-400 w-16">Relevance</span>
-                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 w-16">Relevance</span>
+                        <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full bg-gradient-to-r from-healthos-400 to-healthos-600 transition-all duration-500"
                             style={{ width: `${doc.score * 100}%` }}
                           />
                         </div>
-                        <span className="text-[10px] font-semibold text-gray-500 w-8 text-right">{Math.round(doc.score * 100)}%</span>
+                        <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 w-8 text-right">{Math.round(doc.score * 100)}%</span>
                       </div>
 
                       {/* Content snippet / expanded */}
-                      <p className={`text-xs text-gray-600 leading-relaxed ${expandedIdx === idx ? "" : "line-clamp-2"}`}>
+                      <p className={`text-xs text-gray-600 dark:text-gray-400 leading-relaxed ${expandedIdx === idx ? "" : "line-clamp-2"}`}>
                         {doc.content}
                       </p>
 
                       {/* Metadata when expanded */}
                       {expandedIdx === idx && doc.metadata && Object.keys(doc.metadata).length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2 border-t border-gray-100 pt-3">
+                        <div className="mt-3 flex flex-wrap gap-2 border-t border-gray-100 dark:border-gray-800 pt-3">
                           {Object.entries(doc.metadata).map(([key, value]) => (
-                            <span key={key} className="inline-flex items-center gap-1 rounded bg-gray-50 px-2 py-0.5 text-[10px] text-gray-500">
-                              <span className="font-medium text-gray-600">{key}:</span> {String(value)}
+                            <span key={key} className="inline-flex items-center gap-1 rounded bg-gray-50 dark:bg-gray-800 px-2 py-0.5 text-[11px] text-gray-500 dark:text-gray-400">
+                              <span className="font-medium text-gray-600 dark:text-gray-400">{key}:</span> {String(value)}
                             </span>
                           ))}
                         </div>
@@ -499,8 +499,8 @@ export default function ClinicalIntelligencePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
                   </svg>
                 </div>
-                <h3 className="text-base font-semibold text-gray-800 mb-1">Search Clinical Knowledge</h3>
-                <p className="text-sm text-gray-500 max-w-md mx-auto">
+                <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-1">Search Clinical Knowledge</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
                   Query across clinical guidelines, medical literature, drug interactions, and institutional protocols using AI-powered semantic search.
                 </p>
                 <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -511,7 +511,7 @@ export default function ClinicalIntelligencePage() {
                         setQuery(suggestion);
                         handleSearch(suggestion);
                       }}
-                      className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-600 hover:border-healthos-300 hover:text-healthos-700 transition-colors"
+                      className="rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:border-healthos-300 hover:text-healthos-700 transition-colors"
                     >
                       {suggestion}
                     </button>
@@ -523,7 +523,7 @@ export default function ClinicalIntelligencePage() {
             {/* Recent Searches */}
             {recentSearches.length > 0 && (
               <div className="card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Recent Searches</h3>
+                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Recent Searches</h3>
                 <div className="space-y-1.5">
                   {recentSearches.slice(0, 5).map((s, i) => (
                     <button
@@ -532,17 +532,17 @@ export default function ClinicalIntelligencePage() {
                         setQuery(s.query);
                         handleSearch(s.query);
                       }}
-                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-gray-50 group"
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 group"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <svg className="h-3.5 w-3.5 text-gray-300 flex-shrink-0 group-hover:text-healthos-500 transition-colors" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span className="text-sm text-gray-700 truncate group-hover:text-healthos-700 transition-colors">{s.query}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300 truncate group-hover:text-healthos-700 transition-colors">{s.query}</span>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0 ml-2">
-                        <span className="text-[10px] text-gray-400">{s.resultCount} results</span>
-                        <span className="text-[10px] text-gray-400">{formatTime(s.timestamp)}</span>
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400">{s.resultCount} results</span>
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400">{formatTime(s.timestamp)}</span>
                         <svg className="h-3.5 w-3.5 text-gray-300 group-hover:text-healthos-500 transition-colors" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
                         </svg>
@@ -558,8 +558,8 @@ export default function ClinicalIntelligencePage() {
           <div className="space-y-4">
             <div className="card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Collections</h3>
-                <span className="text-[10px] text-gray-400">{collections.reduce((a, c) => a + c.doc_count, 0).toLocaleString()} docs</span>
+                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Collections</h3>
+                <span className="text-[11px] text-gray-500 dark:text-gray-400">{collections.reduce((a, c) => a + c.doc_count, 0).toLocaleString()} docs</span>
               </div>
               <div className="space-y-2.5">
                 {collections.map((c) => (
@@ -571,17 +571,17 @@ export default function ClinicalIntelligencePage() {
                     className={`w-full rounded-lg border p-3 text-left transition-all ${
                       activeFilter === c.name
                         ? "border-healthos-300 bg-healthos-50 ring-1 ring-healthos-200"
-                        : "border-gray-100 hover:border-gray-200 hover:bg-gray-50"
+                        : "border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1.5">
                         <span className={`h-2 w-2 rounded-full ${healthDot(c.health)}`} />
-                        <span className="text-xs font-semibold text-gray-700 truncate">{c.name}</span>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">{c.name}</span>
                       </div>
-                      <span className="text-[10px] font-medium text-gray-400">{c.doc_count.toLocaleString()}</span>
+                      <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{c.doc_count.toLocaleString()}</span>
                     </div>
-                    <p className="text-[10px] text-gray-400 leading-relaxed line-clamp-2">{c.description}</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">{c.description}</p>
                   </button>
                 ))}
               </div>
@@ -589,7 +589,7 @@ export default function ClinicalIntelligencePage() {
               {/* Upload button */}
               <button
                 onClick={() => setShowUploadModal(true)}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 py-2.5 text-xs font-medium text-gray-500 transition-all hover:border-healthos-400 hover:text-healthos-600 hover:bg-healthos-50"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 py-2.5 text-xs font-medium text-gray-500 dark:text-gray-400 transition-all hover:border-healthos-400 hover:text-healthos-600 hover:bg-healthos-50"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -600,23 +600,23 @@ export default function ClinicalIntelligencePage() {
 
             {/* Quick stats */}
             <div className="card rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Knowledge Base</h3>
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Knowledge Base</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Total Documents</span>
-                  <span className="text-sm font-bold text-gray-800">{collections.reduce((a, c) => a + c.doc_count, 0).toLocaleString()}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Total Documents</span>
+                  <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{collections.reduce((a, c) => a + c.doc_count, 0).toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Collections</span>
-                  <span className="text-sm font-bold text-gray-800">{collections.length}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Collections</span>
+                  <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{collections.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Avg Relevance</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Avg Relevance</span>
                   <span className="text-sm font-bold text-emerald-600">92%</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Last Updated</span>
-                  <span className="text-xs font-medium text-gray-600">2h ago</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Last Updated</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">2h ago</span>
                 </div>
               </div>
             </div>
@@ -627,12 +627,12 @@ export default function ClinicalIntelligencePage() {
       {/* ── Document Upload Modal ───────────────────────────────────────────── */}
       {showUploadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl animate-fade-in-up">
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-              <h2 className="text-base font-semibold text-gray-800">Upload Document</h2>
+          <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-gray-900 shadow-2xl animate-fade-in-up">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 px-6 py-4">
+              <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">Upload Document</h2>
               <button
                 onClick={() => setShowUploadModal(false)}
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                className="rounded-lg p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 hover:text-gray-600 dark:text-gray-400 transition-colors"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -648,18 +648,18 @@ export default function ClinicalIntelligencePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                     </svg>
                   </div>
-                  <p className="text-sm font-semibold text-gray-800">Document Uploaded Successfully</p>
-                  <p className="text-xs text-gray-500 mt-1">The document is being indexed into the knowledge base.</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Document Uploaded Successfully</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">The document is being indexed into the knowledge base.</p>
                 </div>
               ) : (
                 <>
                   {/* Collection selector */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Collection</label>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Collection</label>
                     <select
                       value={uploadCollection}
                       onChange={(e) => setUploadCollection(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 focus:border-healthos-500 focus:outline-none focus:ring-2 focus:ring-healthos-500/20"
+                      className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 focus:border-healthos-500 focus:outline-none focus:ring-2 focus:ring-healthos-500/20"
                     >
                       <option value="">Select a collection...</option>
                       {collections.map((c) => (
@@ -672,37 +672,37 @@ export default function ClinicalIntelligencePage() {
 
                   {/* Title */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Document Title</label>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Document Title</label>
                     <input
                       type="text"
                       value={uploadTitle}
                       onChange={(e) => setUploadTitle(e.target.value)}
                       placeholder="e.g., AHA Hypertension Guideline 2024"
-                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-2 focus:ring-healthos-500/20"
+                      className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-2 focus:ring-healthos-500/20"
                     />
                   </div>
 
                   {/* Source */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Source</label>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Source</label>
                     <input
                       type="text"
                       value={uploadSource}
                       onChange={(e) => setUploadSource(e.target.value)}
                       placeholder="e.g., American Heart Association"
-                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-2 focus:ring-healthos-500/20"
+                      className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-2 focus:ring-healthos-500/20"
                     />
                   </div>
 
                   {/* Content */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">Document Content</label>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Document Content</label>
                     <textarea
                       value={uploadContent}
                       onChange={(e) => setUploadContent(e.target.value)}
                       rows={6}
                       placeholder="Paste or type document content here..."
-                      className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 placeholder-gray-400 resize-none focus:border-healthos-500 focus:outline-none focus:ring-2 focus:ring-healthos-500/20"
+                      className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 resize-none focus:border-healthos-500 focus:outline-none focus:ring-2 focus:ring-healthos-500/20"
                     />
                   </div>
                 </>
@@ -710,10 +710,10 @@ export default function ClinicalIntelligencePage() {
             </div>
 
             {!uploadSuccess && (
-              <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
+              <div className="flex items-center justify-end gap-3 border-t border-gray-100 dark:border-gray-800 px-6 py-4">
                 <button
                   onClick={() => setShowUploadModal(false)}
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 transition-colors"
                 >
                   Cancel
                 </button>

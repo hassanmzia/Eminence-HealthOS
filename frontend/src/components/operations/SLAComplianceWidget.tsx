@@ -36,14 +36,14 @@ export function SLAComplianceWidget() {
 
   return (
     <div className="card">
-      <h2 className="mb-3 text-lg font-semibold text-gray-900">SLA Compliance</h2>
+      <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">SLA Compliance</h2>
 
       {/* Main compliance rate */}
       <div className="mb-4 text-center">
         <div className={`text-4xl font-bold ${complianceColor}`}>
           {metrics.compliance_rate}%
         </div>
-        <div className="text-xs text-gray-500">Overall compliance rate</div>
+        <div className="text-xs text-gray-500 dark:text-gray-400">Overall compliance rate</div>
       </div>
 
       {/* Progress bar */}
@@ -68,7 +68,7 @@ export function SLAComplianceWidget() {
       </div>
 
       {/* Breakdown */}
-      <div className="grid grid-cols-3 gap-2 text-center">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center">
         <div className="rounded-lg bg-green-50 p-2">
           <div className="text-lg font-bold text-green-700">{metrics.on_track}</div>
           <div className="text-xs text-green-600">On Track</div>

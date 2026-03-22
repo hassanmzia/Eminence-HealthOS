@@ -371,8 +371,8 @@ export default function EHRConnectPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">EHR Interoperability Hub</h1>
-          <p className="text-sm text-gray-500">Manage FHIR R4, HL7v2, MCP, and A2A connections</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">EHR Interoperability Hub</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Manage FHIR R4, HL7v2, MCP, and A2A connections</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 ring-1 ring-inset ring-emerald-500/20">
@@ -396,7 +396,7 @@ export default function EHRConnectPage() {
           <div key={label} className="metric-card">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{label}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</p>
                 <p className={`mt-2 text-3xl font-bold tabular-nums ${color}`}>{value}</p>
               </div>
               <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${bg} ring-1 ring-inset ring-gray-200`}>
@@ -410,7 +410,7 @@ export default function EHRConnectPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex gap-6">
           {TABS.map((tab) => (
             <button
@@ -419,7 +419,7 @@ export default function EHRConnectPage() {
               className={`whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors ${
                 activeTab === tab.key
                   ? "border-healthos-500 text-healthos-600"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:text-gray-300"
               }`}
             >
               {tab.label}
@@ -434,7 +434,7 @@ export default function EHRConnectPage() {
         {activeTab === "connectors" && (
           <div className="space-y-6 animate-fade-in-up">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 Connectors ({connectors.length})
               </h2>
               <button
@@ -495,11 +495,11 @@ export default function EHRConnectPage() {
                       <div className="flex items-start justify-between">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-semibold text-gray-900 truncate">{conn.name}</h3>
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{conn.name}</h3>
                           </div>
                           <div className="mt-1.5 flex items-center gap-2">
                             <span
-                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold uppercase ${
                                 isFHIR
                                   ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-500/20"
                                   : "bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-500/20"
@@ -507,7 +507,7 @@ export default function EHRConnectPage() {
                             >
                               {isFHIR ? "FHIR R4" : "HL7v2"}
                             </span>
-                            <span className="flex items-center gap-1 text-xs text-gray-500">
+                            <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                               <span className={`h-2 w-2 rounded-full ${statusColor}`} />
                               {statusLabel}
                             </span>
@@ -516,27 +516,27 @@ export default function EHRConnectPage() {
                       </div>
 
                       {conn.base_url && (
-                        <p className="mt-3 truncate text-xs text-gray-400 font-mono">{conn.base_url}</p>
+                        <p className="mt-3 truncate text-xs text-gray-500 dark:text-gray-400 font-mono">{conn.base_url}</p>
                       )}
 
-                      <div className="mt-4 grid grid-cols-3 gap-3 border-t border-gray-100 pt-4">
+                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-gray-100 dark:border-gray-800 pt-4">
                         <div>
-                          <p className="text-[10px] font-semibold uppercase text-gray-400">Last Sync</p>
-                          <p className="mt-0.5 text-xs font-medium text-gray-700">
+                          <p className="text-[11px] font-semibold uppercase text-gray-500 dark:text-gray-400">Last Sync</p>
+                          <p className="mt-0.5 text-xs font-medium text-gray-700 dark:text-gray-300">
                             {conn.last_sync ? timeAgo(conn.last_sync) : "Never"}
                           </p>
                         </div>
                         <div>
-                          <p className="text-[10px] font-semibold uppercase text-gray-400">Syncs</p>
-                          <p className="mt-0.5 text-xs font-medium text-gray-700 tabular-nums">
+                          <p className="text-[11px] font-semibold uppercase text-gray-500 dark:text-gray-400">Syncs</p>
+                          <p className="mt-0.5 text-xs font-medium text-gray-700 dark:text-gray-300 tabular-nums">
                             {conn.sync_count.toLocaleString()}
                           </p>
                         </div>
                         <div>
-                          <p className="text-[10px] font-semibold uppercase text-gray-400">Errors</p>
+                          <p className="text-[11px] font-semibold uppercase text-gray-500 dark:text-gray-400">Errors</p>
                           <p
                             className={`mt-0.5 text-xs font-medium tabular-nums ${
-                              conn.error_count > 0 ? "text-red-600" : "text-gray-700"
+                              conn.error_count > 0 ? "text-red-600" : "text-gray-700 dark:text-gray-300"
                             }`}
                           >
                             {conn.error_count.toLocaleString()}
@@ -544,7 +544,7 @@ export default function EHRConnectPage() {
                         </div>
                       </div>
 
-                      <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-4">
+                      <div className="mt-4 flex items-center gap-2 border-t border-gray-100 dark:border-gray-800 pt-4">
                         <button
                           onClick={() => handleSyncNow(conn.id)}
                           disabled={syncingConnId === conn.id || conn.status === "inactive"}
@@ -570,7 +570,7 @@ export default function EHRConnectPage() {
                             setSyncConnectorId(conn.id);
                             setActiveTab("connectors");
                           }}
-                          className="inline-flex items-center gap-1 rounded-md bg-gray-50 px-2.5 py-1.5 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-100"
+                          className="inline-flex items-center gap-1 rounded-md bg-gray-50 dark:bg-gray-800 px-2.5 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:bg-gray-800"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
@@ -580,7 +580,7 @@ export default function EHRConnectPage() {
                         </button>
                         <button
                           onClick={() => handleRemoveConnector(conn.id)}
-                          className="ml-auto inline-flex items-center rounded-md p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                          className="ml-auto inline-flex items-center rounded-md p-1.5 text-gray-500 dark:text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
                           title="Remove connector"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -600,7 +600,7 @@ export default function EHRConnectPage() {
         {activeTab === "mcp" && (
           <div className="space-y-6 animate-fade-in-up">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 MCP Servers ({mcpServers.length})
               </h2>
               <button
@@ -639,42 +639,42 @@ export default function EHRConnectPage() {
 
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="text-sm font-semibold text-gray-900">{server.name}</h3>
-                        <p className="mt-1 text-xs font-mono text-gray-400 truncate">{server.url}</p>
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{server.name}</h3>
+                        <p className="mt-1 text-xs font-mono text-gray-500 dark:text-gray-400 truncate">{server.url}</p>
                       </div>
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
+                      <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                         <span className={`h-2 w-2 rounded-full ${statusColor}`} />
                         {statusLabel}
                       </span>
                     </div>
 
                     <div className="mt-4">
-                      <p className="text-[10px] font-semibold uppercase text-gray-400 mb-2">Available Tools</p>
+                      <p className="text-[11px] font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Available Tools</p>
                       <div className="flex flex-wrap gap-1.5">
                         {server.tools.map((tool) => (
                           <span
                             key={tool}
-                            className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-700 ring-1 ring-inset ring-indigo-500/20"
+                            className="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 ring-1 ring-inset ring-indigo-500/20"
                           >
                             {tool}
                           </span>
                         ))}
                         {server.tools.length === 0 && (
-                          <span className="text-xs text-gray-400">No tools discovered</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">No tools discovered</span>
                         )}
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
+                    <div className="mt-4 flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-4">
                       <div>
-                        <p className="text-[10px] font-semibold uppercase text-gray-400">Last Heartbeat</p>
-                        <p className="mt-0.5 text-xs text-gray-600">
+                        <p className="text-[11px] font-semibold uppercase text-gray-500 dark:text-gray-400">Last Heartbeat</p>
+                        <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
                           {server.last_heartbeat ? timeAgo(server.last_heartbeat) : "Never"}
                         </p>
                       </div>
                       <button
                         onClick={() => handleRemoveMCP(server.id)}
-                        className="inline-flex items-center rounded-md p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                        className="inline-flex items-center rounded-md p-1.5 text-gray-500 dark:text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
                         title="Remove server"
                       >
                         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -697,7 +697,7 @@ export default function EHRConnectPage() {
               <select
                 value={filterConnector}
                 onChange={(e) => setFilterConnector(e.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               >
                 <option value="all">All Connectors</option>
                 {[...new Set(syncHistory.map((h) => h.connector))].map((c) => (
@@ -709,7 +709,7 @@ export default function EHRConnectPage() {
               <select
                 value={filterDirection}
                 onChange={(e) => setFilterDirection(e.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               >
                 <option value="all">All Directions</option>
                 <option value="push">Push</option>
@@ -718,7 +718,7 @@ export default function EHRConnectPage() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               >
                 <option value="all">All Statuses</option>
                 <option value="success">Success</option>
@@ -729,41 +729,41 @@ export default function EHRConnectPage() {
             {/* Table */}
             <div className="card overflow-hidden !p-0">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead>
-                    <tr className="bg-gray-50">
-                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                    <tr className="bg-gray-50 dark:bg-gray-800">
+                      <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                         Timestamp
                       </th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                      <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                         Connector
                       </th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                      <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                         Direction
                       </th>
-                      <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                      <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                         Status
                       </th>
-                      <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                      <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                         Records
                       </th>
-                      <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                      <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                         Duration
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 bg-white">
+                  <tbody className="divide-y divide-gray-100 bg-white dark:bg-gray-900">
                     {filteredHistory.map((entry) => (
-                      <tr key={entry.id} className="transition-colors hover:bg-gray-50">
-                        <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-600 tabular-nums">
+                      <tr key={entry.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-600 dark:text-gray-400 tabular-nums">
                           {formatTimestamp(entry.timestamp)}
                         </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-xs font-medium text-gray-900">
+                        <td className="whitespace-nowrap px-4 py-3 text-xs font-medium text-gray-900 dark:text-gray-100">
                           {entry.connector}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3">
                           <span
-                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold uppercase ${
                               entry.direction === "push"
                                 ? "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-500/20"
                                 : "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-500/20"
@@ -783,7 +783,7 @@ export default function EHRConnectPage() {
                         </td>
                         <td className="whitespace-nowrap px-4 py-3">
                           <span
-                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold uppercase ${
                               entry.status === "success"
                                 ? "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-500/20"
                                 : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-500/20"
@@ -797,23 +797,23 @@ export default function EHRConnectPage() {
                             {entry.status}
                           </span>
                         </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-medium text-gray-700 tabular-nums">
+                        <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-300 tabular-nums">
                           {entry.records.toLocaleString()}
                         </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-xs text-gray-500 tabular-nums">
+                        <td className="whitespace-nowrap px-4 py-3 text-right text-xs text-gray-500 dark:text-gray-400 tabular-nums">
                           {entry.duration}
                         </td>
                       </tr>
                     ))}
                     {filteredHistory.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400">
+                        <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                           No sync history matching filters
                         </td>
                       </tr>
                     )}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             </div>
           </div>
@@ -822,14 +822,14 @@ export default function EHRConnectPage() {
 
       {/* ── Sync Panel ──────────────────────────────────────────────────────────── */}
       <div className="card">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Quick Sync</h2>
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Quick Sync</h2>
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[180px]">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Connector</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Connector</label>
             <select
               value={syncConnectorId}
               onChange={(e) => setSyncConnectorId(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+              className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
             >
               <option value="">Select connector...</option>
               {connectors
@@ -842,24 +842,24 @@ export default function EHRConnectPage() {
             </select>
           </div>
           <div className="flex-1 min-w-[180px]">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Patient ID</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Patient ID</label>
             <input
               type="text"
               value={syncPatientId}
               onChange={(e) => setSyncPatientId(e.target.value)}
               placeholder="e.g. PAT-001"
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+              className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 placeholder:text-gray-500 dark:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
             />
           </div>
           <div className="min-w-[120px]">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Direction</label>
-            <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Direction</label>
+            <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
               <button
                 onClick={() => setSyncDirection("pull")}
                 className={`flex-1 px-3 py-2 text-xs font-semibold transition-colors ${
                   syncDirection === "pull"
                     ? "bg-healthos-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
+                    : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                 }`}
               >
                 <span className="flex items-center justify-center gap-1">
@@ -874,7 +874,7 @@ export default function EHRConnectPage() {
                 className={`flex-1 px-3 py-2 text-xs font-semibold transition-colors ${
                   syncDirection === "push"
                     ? "bg-healthos-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
+                    : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                 }`}
               >
                 <span className="flex items-center justify-center gap-1">
@@ -915,10 +915,10 @@ export default function EHRConnectPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="card w-full max-w-lg mx-4 animate-fade-in-up">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-gray-900">Add EHR Connector</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Add EHR Connector</h2>
               <button
                 onClick={() => setShowAddConnector(false)}
-                className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:bg-gray-800 hover:text-gray-600 dark:text-gray-400"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -928,30 +928,30 @@ export default function EHRConnectPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Connector Name</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Connector Name</label>
                 <input
                   type="text"
                   value={newConnName}
                   onChange={(e) => setNewConnName(e.target.value)}
                   placeholder="e.g. Epic Production"
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 placeholder:text-gray-500 dark:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Type</label>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setNewConnType("fhir")}
                     className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-semibold transition-all ${
                       newConnType === "fhir"
                         ? "border-blue-500 bg-blue-50 text-blue-700"
-                        : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                        : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:border-gray-600"
                     }`}
                   >
                     <div className="text-center">
                       <div className="text-lg font-bold">FHIR R4</div>
-                      <div className="text-[10px] mt-0.5 opacity-70">REST API</div>
+                      <div className="text-[11px] mt-0.5 opacity-70">REST API</div>
                     </div>
                   </button>
                   <button
@@ -959,19 +959,19 @@ export default function EHRConnectPage() {
                     className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-semibold transition-all ${
                       newConnType === "hl7v2"
                         ? "border-purple-500 bg-purple-50 text-purple-700"
-                        : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                        : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:border-gray-600"
                     }`}
                   >
                     <div className="text-center">
                       <div className="text-lg font-bold">HL7v2</div>
-                      <div className="text-[10px] mt-0.5 opacity-70">MLLP/TCP</div>
+                      <div className="text-[11px] mt-0.5 opacity-70">MLLP/TCP</div>
                     </div>
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Base URL</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Base URL</label>
                 <input
                   type="text"
                   value={newConnUrl}
@@ -981,16 +981,16 @@ export default function EHRConnectPage() {
                       ? "https://ehr.example.org/fhir/r4"
                       : "mllp://ehr.example.org:2575"
                   }
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-mono text-gray-700 placeholder:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm font-mono text-gray-700 dark:text-gray-300 placeholder:text-gray-500 dark:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Authentication</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Authentication</label>
                 <select
                   value={newConnAuthType}
                   onChange={(e) => setNewConnAuthType(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500 mb-2"
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500 mb-2"
                 >
                   <option value="bearer">Bearer Token</option>
                   <option value="basic">Basic Auth</option>
@@ -1012,7 +1012,7 @@ export default function EHRConnectPage() {
                         ? "client_id:client_secret"
                         : "SMART launch URL"
                     }
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 placeholder:text-gray-500 dark:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   />
                 )}
               </div>
@@ -1021,7 +1021,7 @@ export default function EHRConnectPage() {
             <div className="mt-6 flex items-center justify-end gap-3">
               <button
                 onClick={() => setShowAddConnector(false)}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:bg-gray-800"
               >
                 Cancel
               </button>
@@ -1048,10 +1048,10 @@ export default function EHRConnectPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="card w-full max-w-md mx-4 animate-fade-in-up">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-gray-900">Register MCP Server</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Register MCP Server</h2>
               <button
                 onClick={() => setShowAddMCP(false)}
-                className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:bg-gray-800 hover:text-gray-600 dark:text-gray-400"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -1061,23 +1061,23 @@ export default function EHRConnectPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Server Name</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Server Name</label>
                 <input
                   type="text"
                   value={newMCPName}
                   onChange={(e) => setNewMCPName(e.target.value)}
                   placeholder="e.g. Clinical Decision Support"
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 placeholder:text-gray-500 dark:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Server URL</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Server URL</label>
                 <input
                   type="text"
                   value={newMCPUrl}
                   onChange={(e) => setNewMCPUrl(e.target.value)}
                   placeholder="https://mcp-server.example.org"
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-mono text-gray-700 placeholder:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm font-mono text-gray-700 dark:text-gray-300 placeholder:text-gray-500 dark:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 />
               </div>
             </div>
@@ -1085,7 +1085,7 @@ export default function EHRConnectPage() {
             <div className="mt-6 flex items-center justify-end gap-3">
               <button
                 onClick={() => setShowAddMCP(false)}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:bg-gray-800"
               >
                 Cancel
               </button>

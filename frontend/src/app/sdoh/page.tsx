@@ -152,7 +152,7 @@ const typeBadgeColor = (type: string) => {
   if (t.includes("employ")) return "bg-teal-100 text-teal-700";
   if (t.includes("safety")) return "bg-red-100 text-red-700";
   if (t.includes("social")) return "bg-pink-100 text-pink-700";
-  return "bg-gray-100 text-gray-700";
+  return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300";
 };
 
 const trendIndicator = (risk: string) => {
@@ -284,8 +284,8 @@ export default function SDOHPage() {
     <div className="space-y-6 animate-fade-in-up">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Social Determinants of Health</h1>
-        <p className="text-sm text-gray-500">Assess social risk factors and connect patients to community resources</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Social Determinants of Health</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Assess social risk factors and connect patients to community resources</p>
       </div>
 
       {/* Main Layout: Form + Sidebar */}
@@ -294,17 +294,17 @@ export default function SDOHPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Assessment Form */}
           <form onSubmit={handleSubmitAssessment} className="card card-hover animate-fade-in-up">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">SDOH Screening Questionnaire</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">SDOH Screening Questionnaire</h2>
 
             {/* Patient ID */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Patient ID</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Patient ID</label>
               <input
                 type="text"
                 required
                 value={patientId}
                 onChange={(e) => setPatientId(e.target.value)}
-                className="w-full max-w-xs rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="w-full max-w-xs rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 placeholder="e.g. P-10042"
               />
             </div>
@@ -314,13 +314,13 @@ export default function SDOHPage() {
               {DOMAINS.map((domain, idx) => (
                 <div
                   key={domain.key}
-                  className="rounded-lg border border-gray-200 p-4 hover:border-healthos-200 transition-colors"
+                  className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:border-healthos-200 transition-colors"
                   style={{ animationDelay: `${idx * 50}ms` }}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="min-w-0">
-                      <h3 className="text-sm font-semibold text-gray-900">{domain.label}</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">{domain.description}</p>
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{domain.label}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{domain.description}</p>
                     </div>
                     <div className="flex gap-2 shrink-0">
                       {RISK_OPTIONS.map((opt) => (
@@ -329,7 +329,7 @@ export default function SDOHPage() {
                           className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium cursor-pointer transition-all ${
                             responses[domain.key] === opt.value
                               ? opt.color + " ring-1 ring-offset-1 " + (opt.value === "none" ? "ring-green-400" : opt.value === "some" ? "ring-yellow-400" : "ring-red-400")
-                              : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
+                              : "bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
                           }`}
                         >
                           <input
@@ -375,7 +375,7 @@ export default function SDOHPage() {
           {result && (
             <div className="card animate-fade-in-up space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Assessment Results</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Assessment Results</h2>
                 <span className={`rounded-full px-3 py-1 text-xs font-bold ${overallRiskBadge(result.overall_risk)}`}>
                   {result.overall_risk} Risk
                 </span>
@@ -383,18 +383,18 @@ export default function SDOHPage() {
 
               {/* Domain Risk Visualization */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Risk by Domain</h3>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Risk by Domain</h3>
                 <div className="space-y-3">
                   {result.domains.map((d) => (
                     <div key={d.domain} className="flex items-center gap-3">
-                      <span className="w-28 text-xs font-medium text-gray-600 text-right shrink-0">{d.domain}</span>
-                      <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
+                      <span className="w-28 text-xs font-medium text-gray-600 dark:text-gray-400 text-right shrink-0">{d.domain}</span>
+                      <div className="flex-1 h-5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-700 ${riskBarColor(d.risk_level)}`}
                           style={{ width: `${riskBarWidth(d.score)}%` }}
                         />
                       </div>
-                      <span className="w-10 text-xs font-semibold text-gray-700 text-right">{d.score}%</span>
+                      <span className="w-10 text-xs font-semibold text-gray-700 dark:text-gray-300 text-right">{d.score}%</span>
                     </div>
                   ))}
                 </div>
@@ -402,10 +402,10 @@ export default function SDOHPage() {
 
               {/* AI Recommendations */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">AI-Generated Recommendations</h3>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">AI-Generated Recommendations</h3>
                 <ul className="space-y-2">
                   {result.recommendations.map((rec, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-healthos-100 text-healthos-700 text-xs font-bold">
                         {i + 1}
                       </span>
@@ -418,20 +418,20 @@ export default function SDOHPage() {
               {/* Matched Resources */}
               {result.resources.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Matched Community Resources</h3>
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Matched Community Resources</h3>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {result.resources.map((r) => (
-                      <div key={r.name} className="rounded-lg border border-gray-200 p-3 hover:shadow-md transition-shadow">
+                      <div key={r.name} className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 hover:shadow-md transition-shadow">
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">{r.name}</p>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{r.name}</p>
                             <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${typeBadgeColor(r.type)}`}>
                               {r.type}
                             </span>
                           </div>
                         </div>
                         {(r.phone || r.address) && (
-                          <div className="mt-2 space-y-0.5 text-xs text-gray-500">
+                          <div className="mt-2 space-y-0.5 text-xs text-gray-500 dark:text-gray-400">
                             {r.phone && <p>Tel: {r.phone}</p>}
                             {r.address && <p>{r.address}</p>}
                           </div>
@@ -448,11 +448,11 @@ export default function SDOHPage() {
         {/* Right Sidebar: Community Resources */}
         <div className="space-y-6">
           <div className="card card-hover animate-fade-in-up">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Community Resource Finder</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Community Resource Finder</h2>
 
             {/* Needs Checkboxes */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Needs</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Needs</label>
               <div className="flex flex-wrap gap-2">
                 {NEEDS_OPTIONS.map((need) => (
                   <label
@@ -460,7 +460,7 @@ export default function SDOHPage() {
                     className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium cursor-pointer transition-all ${
                       selectedNeeds.includes(need)
                         ? "bg-healthos-100 text-healthos-700 border-healthos-300"
-                        : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
+                        : "bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
                     }`}
                   >
                     <input
@@ -477,12 +477,12 @@ export default function SDOHPage() {
 
             {/* Zip Code */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Zip Code</label>
               <input
                 type="text"
                 value={zipCode}
                 onChange={(e) => setZipCode(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 placeholder="e.g. 78701"
                 maxLength={5}
               />
@@ -503,12 +503,12 @@ export default function SDOHPage() {
               {resources.map((r) => (
                 <div key={r.name} className="card card-hover">
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="text-sm font-semibold text-gray-900 leading-tight">{r.name}</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-tight">{r.name}</h3>
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${typeBadgeColor(r.type)}`}>
                       {r.type}
                     </span>
                   </div>
-                  <div className="space-y-1 text-xs text-gray-500 mb-3">
+                  <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400 mb-3">
                     <p className="flex items-center gap-1">
                       <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
                       {r.distance} &middot; {r.address}
@@ -520,7 +520,7 @@ export default function SDOHPage() {
                   </div>
                   <div className="flex flex-wrap gap-1 mb-3">
                     {r.services.map((s) => (
-                      <span key={s} className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600">{s}</span>
+                      <span key={s} className="rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-[11px] text-gray-600 dark:text-gray-400">{s}</span>
                     ))}
                   </div>
                   <button
@@ -543,17 +543,17 @@ export default function SDOHPage() {
 
       {/* Assessment History */}
       <div className="card animate-fade-in-up">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Assessment History</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Assessment History</h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="pb-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="pb-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                <th className="pb-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Overall Risk</th>
-                <th className="pb-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key Domains</th>
-                <th className="pb-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trend</th>
-                <th className="pb-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <tr className="border-b border-gray-200 dark:border-gray-700">
+                <th className="pb-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                <th className="pb-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Patient</th>
+                <th className="pb-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Overall Risk</th>
+                <th className="pb-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Key Domains</th>
+                <th className="pb-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Trend</th>
+                <th className="pb-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -561,11 +561,11 @@ export default function SDOHPage() {
                 const keyDomains = h.domains.filter((d) => d.risk_level !== "none" && d.score > 30);
                 const trend = trendIndicator(h.overall_risk);
                 return (
-                  <tr key={h.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="py-3 pr-4 text-gray-700 whitespace-nowrap">
+                  <tr key={h.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <td className="py-3 pr-4 text-gray-700 dark:text-gray-300 whitespace-nowrap">
                       {new Date(h.assessed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                     </td>
-                    <td className="py-3 pr-4 font-medium text-gray-900 whitespace-nowrap">{h.patient_id}</td>
+                    <td className="py-3 pr-4 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{h.patient_id}</td>
                     <td className="py-3 pr-4">
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${overallRiskBadge(h.overall_risk)}`}>
                         {h.overall_risk}
@@ -575,11 +575,11 @@ export default function SDOHPage() {
                       <div className="flex flex-wrap gap-1">
                         {keyDomains.length > 0
                           ? keyDomains.map((d) => (
-                              <span key={d.domain} className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${riskBarColor(d.risk_level) === "bg-red-500" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>
+                              <span key={d.domain} className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${riskBarColor(d.risk_level) === "bg-red-500" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>
                                 {d.domain}
                               </span>
                             ))
-                          : <span className="text-xs text-gray-400">None flagged</span>
+                          : <span className="text-xs text-gray-500 dark:text-gray-400">None flagged</span>
                         }
                       </div>
                     </td>
@@ -589,7 +589,7 @@ export default function SDOHPage() {
                     <td className="py-3">
                       <button
                         onClick={() => setResult(h)}
-                        className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       >
                         View Details
                       </button>
@@ -598,7 +598,7 @@ export default function SDOHPage() {
                 );
               })}
             </tbody>
-          </table>
+          </table></div>
         </div>
       </div>
     </div>

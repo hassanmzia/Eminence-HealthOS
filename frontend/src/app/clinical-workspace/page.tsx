@@ -290,7 +290,7 @@ const riskBadgeClass = (level: string) => {
 const TrendIcon = ({ trend }: { trend: "up" | "down" | "stable" }) => {
   if (trend === "up") return <TrendingUp className="w-3.5 h-3.5 text-red-500" />;
   if (trend === "down") return <TrendingDown className="w-3.5 h-3.5 text-blue-500" />;
-  return <Minus className="w-3.5 h-3.5 text-gray-400" />;
+  return <Minus className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />;
 };
 
 const orderTypeIcon = (type: string) => {
@@ -310,8 +310,8 @@ const noteTypeBadge = (type: string) => {
     "consult": { label: "Consult", cls: "bg-amber-100 text-amber-700" },
     "discharge": { label: "Discharge", cls: "bg-green-100 text-green-700" },
   };
-  const entry = map[type] ?? { label: type, cls: "bg-gray-100 text-gray-700" };
-  return <span className={clsx("text-[10px] font-bold uppercase px-2 py-0.5 rounded-full", entry.cls)}>{entry.label}</span>;
+  const entry = map[type] ?? { label: type, cls: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300" };
+  return <span className={clsx("text-[11px] font-bold uppercase px-2 py-0.5 rounded-full", entry.cls)}>{entry.label}</span>;
 };
 
 const statusBadge = (status: string) => {
@@ -320,11 +320,11 @@ const statusBadge = (status: string) => {
     pending: "bg-amber-100 text-amber-700",
     sent: "bg-indigo-100 text-indigo-700",
     active: "bg-green-100 text-green-700",
-    completed: "bg-gray-100 text-gray-600",
+    completed: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
     cancelled: "bg-red-100 text-red-700",
   };
   return (
-    <span className={clsx("text-[10px] font-bold uppercase px-2 py-0.5 rounded-full", map[status] ?? "bg-gray-100 text-gray-600")}>
+    <span className={clsx("text-[11px] font-bold uppercase px-2 py-0.5 rounded-full", map[status] ?? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400")}>
       {status}
     </span>
   );
@@ -363,11 +363,11 @@ function CollapsibleCard({
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 w-full text-left"
       >
-        {open ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+        {open ? <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
         <Icon className="w-4 h-4 text-healthos-600" />
-        <span className="text-sm font-semibold text-gray-900 flex-1">{title}</span>
+        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex-1">{title}</span>
         {count !== undefined && (
-          <span className="text-xs text-gray-400 font-mono">{count}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">{count}</span>
         )}
       </button>
       {open && <div className="mt-4">{children}</div>}
@@ -385,10 +385,10 @@ function ChartReviewTab({ patient }: { patient: DemoPatient }) {
       {/* Demographics */}
       <CollapsibleCard title="Demographics" icon={User}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-          <div><span className="text-gray-500">Name</span><p className="font-medium">{patient.name}</p></div>
-          <div><span className="text-gray-500">DOB</span><p className="font-medium">{patient.dob}</p></div>
-          <div><span className="text-gray-500">Age / Gender</span><p className="font-medium">{patient.age} / {patient.gender}</p></div>
-          <div><span className="text-gray-500">MRN</span><p className="font-medium font-mono">{patient.mrn}</p></div>
+          <div><span className="text-gray-500 dark:text-gray-400">Name</span><p className="font-medium">{patient.name}</p></div>
+          <div><span className="text-gray-500 dark:text-gray-400">DOB</span><p className="font-medium">{patient.dob}</p></div>
+          <div><span className="text-gray-500 dark:text-gray-400">Age / Gender</span><p className="font-medium">{patient.age} / {patient.gender}</p></div>
+          <div><span className="text-gray-500 dark:text-gray-400">MRN</span><p className="font-medium font-mono">{patient.mrn}</p></div>
         </div>
       </CollapsibleCard>
 
@@ -396,12 +396,12 @@ function ChartReviewTab({ patient }: { patient: DemoPatient }) {
       <CollapsibleCard title="Active Problems" icon={AlertCircle} count={patient.conditions.length}>
         <div className="space-y-2">
           {patient.conditions.map((c, i) => (
-            <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
+            <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-100 dark:border-gray-800 last:border-0">
               <div className="flex items-center gap-2">
                 <span className="status-dot bg-red-400" />
-                <span className="text-sm text-gray-900">{c.name}</span>
+                <span className="text-sm text-gray-900 dark:text-gray-100">{c.name}</span>
               </div>
-              <span className="text-xs font-mono text-gray-500 bg-gray-50 px-2 py-0.5 rounded">{c.icd}</span>
+              <span className="text-xs font-mono text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 px-2 py-0.5 rounded">{c.icd}</span>
             </div>
           ))}
         </div>
@@ -411,12 +411,12 @@ function ChartReviewTab({ patient }: { patient: DemoPatient }) {
       <CollapsibleCard title="Medications" icon={Pill} count={patient.medications.length}>
         <div className="space-y-2">
           {patient.medications.map((m, i) => (
-            <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
+            <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-100 dark:border-gray-800 last:border-0">
               <div>
-                <span className="text-sm font-medium text-gray-900">{m.name}</span>
-                <span className="text-xs text-gray-500 ml-2">{m.dosage} &middot; {m.frequency}</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{m.name}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">{m.dosage} &middot; {m.frequency}</span>
               </div>
-              <span className={clsx("text-[10px] font-bold uppercase px-2 py-0.5 rounded-full", m.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600")}>{m.status}</span>
+              <span className={clsx("text-[11px] font-bold uppercase px-2 py-0.5 rounded-full", m.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400")}>{m.status}</span>
             </div>
           ))}
         </div>
@@ -435,12 +435,12 @@ function ChartReviewTab({ patient }: { patient: DemoPatient }) {
       <CollapsibleCard title="Immunizations" icon={Syringe} count={patient.immunizations.length}>
         <div className="space-y-2">
           {patient.immunizations.map((imm, i) => (
-            <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
+            <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-100 dark:border-gray-800 last:border-0">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-                <span className="text-sm text-gray-900">{imm.name}</span>
+                <span className="text-sm text-gray-900 dark:text-gray-100">{imm.name}</span>
               </div>
-              <span className="text-xs text-gray-500">{imm.date}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{imm.date}</span>
             </div>
           ))}
         </div>
@@ -450,14 +450,14 @@ function ChartReviewTab({ patient }: { patient: DemoPatient }) {
       <CollapsibleCard title="Recent Visits" icon={Calendar} count={patient.recentVisits.length}>
         <div className="space-y-3">
           {patient.recentVisits.map((v, i) => (
-            <div key={i} className="relative pl-6 pb-3 border-l-2 border-gray-200 last:border-0">
+            <div key={i} className="relative pl-6 pb-3 border-l-2 border-gray-200 dark:border-gray-700 last:border-0">
               <div className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-healthos-500" />
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-semibold text-gray-900">{v.date}</span>
-                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-healthos-50 text-healthos-700">{v.type}</span>
-                <span className="text-xs text-gray-500">{v.provider}</span>
+                <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{v.date}</span>
+                <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded-full bg-healthos-50 text-healthos-700">{v.type}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{v.provider}</span>
               </div>
-              <p className="text-xs text-gray-600">{v.summary}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">{v.summary}</p>
             </div>
           ))}
         </div>
@@ -484,7 +484,7 @@ function VitalsLabsTab({ patient }: { patient: DemoPatient }) {
     <div className="space-y-6 animate-fade-in-up">
       {/* Vitals tiles */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Latest Vitals</h3>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Latest Vitals</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {vitalsConfig.map((v) => (
             <div
@@ -494,14 +494,14 @@ function VitalsLabsTab({ patient }: { patient: DemoPatient }) {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
                   <v.icon className={clsx("w-4 h-4", v.isAbnormal ? "text-red-500" : "text-healthos-600")} />
-                  <span className="text-xs text-gray-500">{v.label}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{v.label}</span>
                 </div>
                 <TrendIcon trend={v.trend} />
               </div>
-              <p className={clsx("text-2xl font-bold font-mono tabular-nums", v.isAbnormal ? "text-red-600" : "text-gray-900")}>
+              <p className={clsx("text-2xl font-bold font-mono tabular-nums", v.isAbnormal ? "text-red-600" : "text-gray-900 dark:text-gray-100")}>
                 {v.value}
               </p>
-              <p className="text-[10px] text-gray-400 mt-1">{v.unit} &middot; Normal: {v.normal}</p>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">{v.unit} &middot; Normal: {v.normal}</p>
             </div>
           ))}
         </div>
@@ -510,17 +510,17 @@ function VitalsLabsTab({ patient }: { patient: DemoPatient }) {
       {/* Lab Results */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-900">Lab Results</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Lab Results</h3>
           <div className="flex gap-2">
             {["BMP", "CBC", "Lipid Panel", "A1c"].map((panel) => (
-              <button key={panel} className="text-[10px] font-semibold px-2.5 py-1 rounded-full border border-gray-300 text-gray-600 hover:bg-healthos-50 hover:text-healthos-700 hover:border-healthos-300 transition-colors">
+              <button key={panel} className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-healthos-50 hover:text-healthos-700 hover:border-healthos-300 transition-colors">
                 + {panel}
               </button>
             ))}
           </div>
         </div>
         <div className="card !p-0 overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="w-full text-sm">
             <thead>
               <tr className="table-header">
                 <th className="px-4 py-2.5">Test</th>
@@ -532,29 +532,29 @@ function VitalsLabsTab({ patient }: { patient: DemoPatient }) {
             <tbody>
               {patient.labs.map((lab, i) => (
                 <tr key={i} className="table-row">
-                  <td className="px-4 py-2.5 font-medium text-gray-900">{lab.test}</td>
+                  <td className="px-4 py-2.5 font-medium text-gray-900 dark:text-gray-100">{lab.test}</td>
                   <td className="px-4 py-2.5">
                     <span className={clsx(
                       "font-mono font-semibold",
                       lab.flag === "critical" && "text-red-600 bg-red-50 px-1.5 py-0.5 rounded",
                       lab.flag === "high" && "text-orange-600",
                       lab.flag === "low" && "text-blue-600",
-                      lab.flag === "normal" && "text-gray-900",
+                      lab.flag === "normal" && "text-gray-900 dark:text-gray-100",
                     )}>
                       {lab.value}
                     </span>
                     {lab.flag !== "normal" && (
-                      <span className={clsx("ml-1.5 text-[10px] font-bold uppercase", lab.flag === "critical" ? "text-red-600" : lab.flag === "high" ? "text-orange-600" : "text-blue-600")}>
+                      <span className={clsx("ml-1.5 text-[11px] font-bold uppercase", lab.flag === "critical" ? "text-red-600" : lab.flag === "high" ? "text-orange-600" : "text-blue-600")}>
                         {lab.flag}
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-500 hidden sm:table-cell">{lab.reference}</td>
-                  <td className="px-4 py-2.5 text-gray-500">{lab.date}</td>
+                  <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400 hidden sm:table-cell">{lab.reference}</td>
+                  <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400">{lab.date}</td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       </div>
     </div>
@@ -574,7 +574,7 @@ function OrdersPlansTab({ patient }: { patient: DemoPatient }) {
       {/* Active Orders */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-900">Active Orders</h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Active Orders</h3>
           <button
             onClick={() => setShowNewOrder(!showNewOrder)}
             className="btn-primary !py-1.5 !px-3 !text-xs"
@@ -586,14 +586,14 @@ function OrdersPlansTab({ patient }: { patient: DemoPatient }) {
         {showNewOrder && (
           <div className="card mb-4 border-healthos-200 bg-healthos-50/30 animate-fade-in-up">
             <div className="flex items-center gap-3 mb-3">
-              <span className="text-xs font-semibold text-gray-700">Order Type:</span>
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Order Type:</span>
               {["lab", "imaging", "referral", "medication"].map((t) => (
                 <button
                   key={t}
                   onClick={() => setOrderType(t)}
                   className={clsx(
                     "text-xs font-medium px-3 py-1 rounded-full transition-colors capitalize",
-                    orderType === t ? "bg-healthos-600 text-white" : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"
+                    orderType === t ? "bg-healthos-600 text-white" : "bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                   )}
                 >
                   {t}
@@ -627,8 +627,8 @@ function OrdersPlansTab({ patient }: { patient: DemoPatient }) {
                 {orderTypeIcon(order.type)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{order.description}</p>
-                <p className="text-xs text-gray-500 capitalize">{order.type} &middot; {order.date}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{order.description}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{order.type} &middot; {order.date}</p>
               </div>
               {statusBadge(order.status)}
             </div>
@@ -638,14 +638,14 @@ function OrdersPlansTab({ patient }: { patient: DemoPatient }) {
 
       {/* Care Plan */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Care Plan</h3>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Care Plan</h3>
         <div className="space-y-3">
           {patient.carePlan.map((cp, i) => (
             <div key={i} className="card card-hover !p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Target className="w-4 h-4 text-healthos-600" />
-                  <span className="text-sm font-semibold text-gray-900">{cp.goal}</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{cp.goal}</span>
                 </div>
                 <span className="text-xs font-mono text-healthos-600 font-bold">{cp.progress}%</span>
               </div>
@@ -654,7 +654,7 @@ function OrdersPlansTab({ patient }: { patient: DemoPatient }) {
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {cp.interventions.map((intv, j) => (
-                  <span key={j} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{intv}</span>
+                  <span key={j} className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">{intv}</span>
                 ))}
               </div>
             </div>
@@ -676,7 +676,7 @@ function NotesDocumentsTab({ patient }: { patient: DemoPatient }) {
   return (
     <div className="space-y-4 animate-fade-in-up">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-900">Clinical Notes</h3>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Clinical Notes</h3>
         <div className="flex gap-2">
           <button
             onClick={() => setShowNewNote(!showNewNote)}
@@ -693,12 +693,12 @@ function NotesDocumentsTab({ patient }: { patient: DemoPatient }) {
       {showNewNote && (
         <div className="card border-healthos-200 bg-healthos-50/30 animate-fade-in-up">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-semibold text-gray-700">SOAP Template</span>
+            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">SOAP Template</span>
           </div>
           <div className="space-y-3">
             {["Subjective", "Objective", "Assessment", "Plan"].map((section) => (
               <div key={section}>
-                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">{section}</label>
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">{section}</label>
                 <textarea
                   className="input !text-sm mt-1"
                   rows={2}
@@ -719,11 +719,11 @@ function NotesDocumentsTab({ patient }: { patient: DemoPatient }) {
           <div key={note.id} className="card card-hover !p-4">
             <div className="flex items-center gap-2 mb-2">
               {noteTypeBadge(note.type)}
-              <span className="text-xs font-semibold text-gray-900">{note.author}</span>
-              <span className="text-xs text-gray-400">&middot;</span>
-              <span className="text-xs text-gray-500">{note.date}</span>
+              <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">{note.author}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">&middot;</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{note.date}</span>
             </div>
-            <p className="text-sm text-gray-600 leading-relaxed">
+            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
               {expandedNote === note.id ? note.fullText : note.preview}
             </p>
             <button
@@ -738,10 +738,10 @@ function NotesDocumentsTab({ patient }: { patient: DemoPatient }) {
       </div>
 
       {/* Document Upload Area */}
-      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-healthos-400 hover:bg-healthos-50/20 transition-colors cursor-pointer">
-        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-        <p className="text-sm font-medium text-gray-600">Drop documents here or click to upload</p>
-        <p className="text-xs text-gray-400 mt-1">PDF, DOCX, images — up to 25MB</p>
+      <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center hover:border-healthos-400 hover:bg-healthos-50/20 transition-colors cursor-pointer">
+        <Upload className="w-8 h-8 text-gray-500 dark:text-gray-400 mx-auto mb-2" />
+        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Drop documents here or click to upload</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">PDF, DOCX, images — up to 25MB</p>
       </div>
     </div>
   );
@@ -778,16 +778,16 @@ function AISidebar({ patient }: { patient: DemoPatient }) {
       <div className="card bg-gradient-to-br from-healthos-50 to-indigo-50 border-healthos-200">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="w-4 h-4 text-healthos-600" />
-          <span className="text-sm font-semibold text-gray-900">AI Patient Summary</span>
+          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">AI Patient Summary</span>
         </div>
-        <p className="text-sm text-gray-700 leading-relaxed">{patient.aiSummary}</p>
+        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{patient.aiSummary}</p>
       </div>
 
       {/* Risk Alerts */}
       <div className="card !p-4">
         <div className="flex items-center gap-2 mb-3">
           <BadgeAlert className="w-4 h-4 text-red-500" />
-          <span className="text-sm font-semibold text-gray-900">Risk Alerts</span>
+          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Risk Alerts</span>
         </div>
         <div className="space-y-2">
           {patient.riskAlerts.map((alert, i) => (
@@ -803,7 +803,7 @@ function AISidebar({ patient }: { patient: DemoPatient }) {
                 alert.level === "high" ? "bg-orange-500" :
                 alert.level === "moderate" ? "bg-amber-500" : "bg-green-500"
               )} />
-              <span className="text-gray-700 leading-relaxed">{alert.message}</span>
+              <span className="text-gray-700 dark:text-gray-300 leading-relaxed">{alert.message}</span>
             </div>
           ))}
         </div>
@@ -813,18 +813,18 @@ function AISidebar({ patient }: { patient: DemoPatient }) {
       <div className="card !p-4">
         <div className="flex items-center gap-2 mb-3">
           <CheckCircle2 className="w-4 h-4 text-healthos-600" />
-          <span className="text-sm font-semibold text-gray-900">Recommended Actions</span>
+          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recommended Actions</span>
         </div>
         <div className="space-y-2">
           {patient.recommendedActions.map((action, i) => (
-            <button key={i} className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-healthos-300 hover:bg-healthos-50/30 transition-all group">
+            <button key={i} className="w-full text-left p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-healthos-300 hover:bg-healthos-50/30 transition-all group">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-semibold text-gray-900 group-hover:text-healthos-700">{action.title}</span>
+                <span className="text-xs font-semibold text-gray-900 dark:text-gray-100 group-hover:text-healthos-700">{action.title}</span>
                 {action.priority === "urgent" && (
-                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">Urgent</span>
+                  <span className="text-[11px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">Urgent</span>
                 )}
               </div>
-              <p className="text-[11px] text-gray-500">{action.description}</p>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">{action.description}</p>
             </button>
           ))}
         </div>
@@ -834,7 +834,7 @@ function AISidebar({ patient }: { patient: DemoPatient }) {
       <div className="card !p-4">
         <div className="flex items-center gap-2 mb-3">
           <BrainCircuit className="w-4 h-4 text-purple-600" />
-          <span className="text-sm font-semibold text-gray-900">Clinical RAG Search</span>
+          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Clinical RAG Search</span>
         </div>
         <div className="flex gap-2">
           <input
@@ -853,7 +853,7 @@ function AISidebar({ patient }: { patient: DemoPatient }) {
           </button>
         </div>
         {ragResult && (
-          <div className="mt-3 p-3 rounded-lg bg-purple-50 border border-purple-200 text-xs text-gray-700 leading-relaxed animate-fade-in-up">
+          <div className="mt-3 p-3 rounded-lg bg-purple-50 border border-purple-200 text-xs text-gray-700 dark:text-gray-300 leading-relaxed animate-fade-in-up">
             <div className="flex items-center gap-1.5 mb-1.5">
               <Bot className="w-3 h-3 text-purple-600" />
               <span className="font-semibold text-purple-700">AI Response</span>
@@ -867,21 +867,21 @@ function AISidebar({ patient }: { patient: DemoPatient }) {
       <div className="card !p-4">
         <div className="flex items-center gap-2 mb-3">
           <MessageSquare className="w-4 h-4 text-indigo-500" />
-          <span className="text-sm font-semibold text-gray-900">Agent Decisions</span>
+          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Agent Decisions</span>
         </div>
         <div className="space-y-2">
           {patient.agentDecisions.map((d, i) => (
-            <div key={i} className="p-2 rounded-lg bg-gray-50 border border-gray-100">
+            <div key={i} className="p-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-800">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-bold text-indigo-600 uppercase">{d.agent}</span>
-                <span className="text-[10px] text-gray-400">{d.time}</span>
+                <span className="text-[11px] font-bold text-indigo-600 uppercase">{d.agent}</span>
+                <span className="text-[11px] text-gray-500 dark:text-gray-400">{d.time}</span>
               </div>
-              <p className="text-xs text-gray-700">{d.action}</p>
+              <p className="text-xs text-gray-700 dark:text-gray-300">{d.action}</p>
               <div className="flex items-center gap-1 mt-1">
                 <div className="w-12 h-1 rounded-full bg-gray-200 overflow-hidden">
                   <div className="h-full rounded-full bg-indigo-500" style={{ width: `${d.confidence * 100}%` }} />
                 </div>
-                <span className="text-[9px] text-gray-400 font-mono">{(d.confidence * 100).toFixed(0)}%</span>
+                <span className="text-[11px] text-gray-500 dark:text-gray-400 font-mono">{(d.confidence * 100).toFixed(0)}%</span>
               </div>
             </div>
           ))}
@@ -914,16 +914,16 @@ function PatientSelector({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in-up">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden">
-        <div className="p-4 border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-gray-900">Select Patient</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Select Patient</h2>
+            <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400">
               <XCircle className="w-5 h-5" />
             </button>
           </div>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
             <input
               className="input !pl-9 !text-sm"
               placeholder="Search by name or MRN..."
@@ -944,14 +944,14 @@ function PatientSelector({
                 {p.name.split(" ").map((n) => n[0]).join("")}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900">{p.name}</p>
-                <p className="text-xs text-gray-500">{p.mrn} &middot; {p.age}{p.gender[0]} &middot; {p.conditions.length} conditions</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{p.name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{p.mrn} &middot; {p.age}{p.gender[0]} &middot; {p.conditions.length} conditions</p>
               </div>
               <span className={riskBadgeClass(p.riskLevel)}>{p.riskLevel}</span>
             </button>
           ))}
           {filtered.length === 0 && (
-            <p className="text-center text-sm text-gray-400 py-8">No patients found</p>
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">No patients found</p>
           )}
         </div>
       </div>
@@ -1009,11 +1009,11 @@ export default function ClinicalWorkspacePage() {
       {/* ── HEADER ──────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <Stethoscope className="w-6 h-6 text-healthos-600" />
             Clinical Workspace
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">Unified patient care view</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Unified patient care view</p>
         </div>
         <div className="flex items-center gap-3">
           {activePatient && (
@@ -1033,37 +1033,37 @@ export default function ClinicalWorkspacePage() {
 
       {/* ── PATIENT CONTEXT BAR ────────────────────────────────────── */}
       {activePatient && (
-        <div className="sticky top-0 z-30 mb-6 rounded-xl border border-gray-200 bg-white/95 backdrop-blur-md shadow-sm px-4 py-3 animate-fade-in-up">
+        <div className="sticky top-0 z-30 mb-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/95 backdrop-blur-md shadow-sm px-4 py-3 animate-fade-in-up">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-healthos-100 flex items-center justify-center text-healthos-700 font-bold text-sm">
                 {activePatient.name.split(" ").map((n) => n[0]).join("")}
               </div>
               <div>
-                <p className="text-sm font-bold text-gray-900">{activePatient.name}</p>
-                <p className="text-xs text-gray-500 font-mono">{activePatient.mrn}</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{activePatient.name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{activePatient.mrn}</p>
               </div>
             </div>
             <div className="h-8 w-px bg-gray-200 hidden sm:block" />
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-gray-600 dark:text-gray-400">
               <span className="font-semibold">{activePatient.age}{activePatient.gender[0]}</span>
             </div>
             <span className={riskBadgeClass(activePatient.riskLevel)}>{activePatient.riskLevel}</span>
             <div className="h-8 w-px bg-gray-200 hidden sm:block" />
             <div className="flex flex-wrap gap-1.5">
               {activePatient.conditions.slice(0, 3).map((c, i) => (
-                <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 font-medium">{c.name.split(" ").slice(0, 3).join(" ")}</span>
+                <span key={i} className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium">{c.name.split(" ").slice(0, 3).join(" ")}</span>
               ))}
               {activePatient.conditions.length > 3 && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">+{activePatient.conditions.length - 3} more</span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">+{activePatient.conditions.length - 3} more</span>
               )}
             </div>
             <div className="h-8 w-px bg-gray-200 hidden sm:block" />
-            <div className="flex items-center gap-1 text-xs text-gray-600">
+            <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
               <Pill className="w-3 h-3" />
               <span className="font-semibold">{activePatient.medications.length}</span> meds
             </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500">
+            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
               <Clock className="w-3 h-3" />
               Vitals: {formatTimestamp(activePatient.lastVitalsTimestamp)}
             </div>
@@ -1075,8 +1075,8 @@ export default function ClinicalWorkspacePage() {
       {!activePatient && (
         <div className="card text-center py-20 animate-fade-in-up">
           <Stethoscope className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-gray-600 mb-2">No Patient Selected</h2>
-          <p className="text-sm text-gray-400 mb-6 max-w-md mx-auto">
+          <h2 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">No Patient Selected</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
             Select a patient to access their comprehensive clinical workspace including chart review, vitals, orders, notes, and AI-powered clinical decision support.
           </p>
           <button
@@ -1095,7 +1095,7 @@ export default function ClinicalWorkspacePage() {
           {/* Left Panel — 2/3 */}
           <div className="flex-1 lg:w-2/3 min-w-0">
             {/* Tabs */}
-            <div className="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1 overflow-x-auto">
+            <div className="flex gap-1 mb-4 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 overflow-x-auto">
               {TABS.map((tab) => (
                 <button
                   key={tab.id}
@@ -1103,8 +1103,8 @@ export default function ClinicalWorkspacePage() {
                   className={clsx(
                     "flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap",
                     activeTab === tab.id
-                      ? "bg-white text-healthos-700 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
+                      ? "bg-white dark:bg-gray-900 text-healthos-700 shadow-sm"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
                   )}
                 >
                   <tab.icon className="w-4 h-4" />
@@ -1117,7 +1117,7 @@ export default function ClinicalWorkspacePage() {
             {isLoading && (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-6 h-6 animate-spin text-healthos-500" />
-                <span className="ml-2 text-sm text-gray-500">Loading patient data...</span>
+                <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">Loading patient data...</span>
               </div>
             )}
 

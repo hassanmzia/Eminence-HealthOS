@@ -206,7 +206,7 @@ function StatusBadge({ status }: { status: string }) {
     completed: { classes: "bg-emerald-50 text-emerald-700 ring-emerald-500/20", label: "Completed" },
     failed:    { classes: "bg-red-50 text-red-700 ring-red-500/20",        label: "Failed" },
     halted:    { classes: "bg-yellow-50 text-yellow-700 ring-yellow-500/20", label: "Halted" },
-    pending:   { classes: "bg-gray-50 text-gray-600 ring-gray-500/20",     label: "Pending" },
+    pending:   { classes: "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 ring-gray-500/20",     label: "Pending" },
   };
   const c = config[status] || config.pending;
   return (
@@ -226,7 +226,7 @@ function ConfidenceBar({ value, size = "md" }: { value: number; size?: "sm" | "m
   const h = size === "sm" ? "h-1.5" : "h-2";
   return (
     <div className="flex items-center gap-2">
-      <div className={`flex-1 rounded-full bg-gray-100 ${h}`}>
+      <div className={`flex-1 rounded-full bg-gray-100 dark:bg-gray-800 ${h}`}>
         <div className={`${h} rounded-full ${color} transition-all duration-500`} style={{ width: `${pct}%` }} />
       </div>
       <span className={`text-xs font-semibold tabular-nums ${pct >= 90 ? "text-emerald-600" : pct >= 70 ? "text-amber-600" : "text-red-600"}`}>{pct}%</span>
@@ -251,11 +251,11 @@ function AgentPipelineViz({ agents }: { agents: PipelineExecution["agents"] }) {
           running: "border-blue-500",
           failed: "border-red-500",
           halted: "border-yellow-500",
-          pending: "border-gray-300",
+          pending: "border-gray-300 dark:border-gray-600",
         };
         const isActive = agent.status === "running";
         const dotColor = stepStatusColor[agent.status] || "bg-gray-300";
-        const borderColor = stepBorderColor[agent.status] || "border-gray-300";
+        const borderColor = stepBorderColor[agent.status] || "border-gray-300 dark:border-gray-600";
 
         return (
           <div key={agent.name} className="flex items-start">
@@ -268,7 +268,7 @@ function AgentPipelineViz({ agents }: { agents: PipelineExecution["agents"] }) {
             {/* Agent step */}
             <div className="flex flex-col items-center group">
               <div
-                className={`relative flex flex-col items-center justify-center rounded-xl border-2 ${borderColor} bg-white px-3 py-2 min-w-[100px] transition-all duration-200 hover:shadow-md ${isActive ? "shadow-blue-100 shadow-md" : ""}`}
+                className={`relative flex flex-col items-center justify-center rounded-xl border-2 ${borderColor} bg-white dark:bg-gray-900 px-3 py-2 min-w-[100px] transition-all duration-200 hover:shadow-md ${isActive ? "shadow-blue-100 shadow-md" : ""}`}
               >
                 {isActive && (
                   <div className="absolute -top-1 -right-1">
@@ -280,13 +280,13 @@ function AgentPipelineViz({ agents }: { agents: PipelineExecution["agents"] }) {
                 )}
                 <div className={`flex items-center gap-1.5 mb-1`}>
                   <span className={`h-2 w-2 rounded-full ${dotColor} flex-shrink-0`} />
-                  <span className="text-[11px] font-bold text-gray-800 truncate max-w-[80px]">{agent.name}</span>
+                  <span className="text-[11px] font-bold text-gray-800 dark:text-gray-200 truncate max-w-[80px]">{agent.name}</span>
                 </div>
-                <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase ${tc.bg} ${tc.text} ring-1 ring-inset ${tc.ring}`}>
+                <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[11px] font-bold uppercase ${tc.bg} ${tc.text} ring-1 ring-inset ${tc.ring}`}>
                   {tc.label}
                 </span>
                 {agent.status === "completed" && agent.duration_ms > 0 && (
-                  <span className="mt-1 text-[10px] text-gray-400 tabular-nums">{formatDuration(agent.duration_ms)}</span>
+                  <span className="mt-1 text-[11px] text-gray-500 dark:text-gray-400 tabular-nums">{formatDuration(agent.duration_ms)}</span>
                 )}
                 {agent.confidence != null && agent.status === "completed" && (
                   <div className="mt-1 w-full">
@@ -295,7 +295,7 @@ function AgentPipelineViz({ agents }: { agents: PipelineExecution["agents"] }) {
                 )}
               </div>
               {agent.output_summary && (
-                <span className="mt-1 max-w-[110px] text-center text-[9px] text-gray-400 leading-tight">{agent.output_summary}</span>
+                <span className="mt-1 max-w-[110px] text-center text-[11px] text-gray-500 dark:text-gray-400 leading-tight">{agent.output_summary}</span>
               )}
             </div>
           </div>
@@ -454,8 +454,8 @@ export default function AgentsPage() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-in-up">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">AI Agent Orchestration</h1>
-          <p className="text-sm text-gray-500">Monitor pipelines, agent executions, and human-in-the-loop reviews</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">AI Agent Orchestration</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Monitor pipelines, agent executions, and human-in-the-loop reviews</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 ring-1 ring-inset ring-emerald-500/20">
@@ -467,7 +467,7 @@ export default function AgentsPage() {
           </div>
           <button
             onClick={loadData}
-            className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 transition-colors"
+            className="rounded-lg bg-white dark:bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <svg className="inline h-3.5 w-3.5 mr-1 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
@@ -498,8 +498,8 @@ export default function AgentsPage() {
             <div key={stat.label} className="card card-hover relative overflow-hidden" style={{ animationDelay: `${i * 0.04}s` }}>
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{stat.label}</p>
-                  <p className="mt-1.5 text-2xl font-bold tabular-nums text-gray-900">{stat.value}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{stat.label}</p>
+                  <p className="mt-1.5 text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">{stat.value}</p>
                 </div>
                 <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${c.bg} ring-1 ring-inset ${c.ring}`}>
                   {stat.pulse && (
@@ -519,7 +519,7 @@ export default function AgentsPage() {
       </div>
 
       {/* ── Tabs ───────────────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-200 animate-fade-in-up" style={{ animationDelay: "0.1s", animationFillMode: "both" }}>
+      <div className="border-b border-gray-200 dark:border-gray-700 animate-fade-in-up" style={{ animationDelay: "0.1s", animationFillMode: "both" }}>
         <nav className="-mb-px flex gap-1 overflow-x-auto">
           {tabs.map((tab) => (
             <button
@@ -528,16 +528,16 @@ export default function AgentsPage() {
               className={`group flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === tab.key
                   ? "border-healthos-500 text-healthos-700"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:text-gray-300"
               }`}
             >
-              <svg className={`h-4 w-4 ${activeTab === tab.key ? "text-healthos-500" : "text-gray-400 group-hover:text-gray-500"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <svg className={`h-4 w-4 ${activeTab === tab.key ? "text-healthos-500" : "text-gray-500 dark:text-gray-400 group-hover:text-gray-500 dark:text-gray-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
               </svg>
               {tab.label}
               {tab.count != null && tab.count > 0 && (
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                  activeTab === tab.key ? "bg-healthos-100 text-healthos-700" : "bg-gray-100 text-gray-600"
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                  activeTab === tab.key ? "bg-healthos-100 text-healthos-700" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
                 }`}>
                   {tab.count}
                 </span>
@@ -555,7 +555,7 @@ export default function AgentsPage() {
           <div className="space-y-4">
             {/* Trigger button */}
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Pipeline Executions ({pipelines.length})</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Pipeline Executions ({pipelines.length})</h2>
               <button
                 onClick={() => setShowTriggerForm(!showTriggerForm)}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-healthos-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-healthos-700 transition-colors"
@@ -570,14 +570,14 @@ export default function AgentsPage() {
             {/* Trigger form */}
             {showTriggerForm && (
               <div className="card animate-fade-in-up border-healthos-200 border">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Trigger New Pipeline</h3>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Trigger New Pipeline</h3>
                 <div className="flex flex-wrap gap-3 items-end">
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Event Type</label>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Event Type</label>
                     <select
                       value={triggerEventType}
                       onChange={(e) => setTriggerEventType(e.target.value)}
-                      className="rounded-lg border-gray-300 bg-white px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-healthos-500"
+                      className="rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-healthos-500"
                     >
                       <option value="vital_ingestion">Vital Ingestion</option>
                       <option value="lab_result_received">Lab Result Received</option>
@@ -587,13 +587,13 @@ export default function AgentsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Patient ID (optional)</label>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Patient ID (optional)</label>
                     <input
                       type="text"
                       value={triggerPatientId}
                       onChange={(e) => setTriggerPatientId(e.target.value)}
                       placeholder="PT-00XXX"
-                      className="rounded-lg border-gray-300 bg-white px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-healthos-500"
+                      className="rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-healthos-500"
                     />
                   </div>
                   <button
@@ -605,7 +605,7 @@ export default function AgentsPage() {
                   </button>
                   <button
                     onClick={() => setShowTriggerForm(false)}
-                    className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                    className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 transition-colors"
                   >
                     Cancel
                   </button>
@@ -643,16 +643,16 @@ export default function AgentsPage() {
                     >
                       {/* Header row */}
                       <div className="flex flex-wrap items-center gap-3 mb-1">
-                        <span className="font-mono text-xs text-gray-500 bg-gray-50 rounded px-2 py-0.5 ring-1 ring-inset ring-gray-200">
+                        <span className="font-mono text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded px-2 py-0.5 ring-1 ring-inset ring-gray-200">
                           {truncateId(pipeline.trace_id)}
                         </span>
                         <StatusBadge status={pipeline.status} />
-                        <span className="text-xs text-gray-500">
-                          <span className="font-medium text-gray-700">{pipeline.trigger_event.replace(/_/g, " ")}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="font-medium text-gray-700 dark:text-gray-300">{pipeline.trigger_event.replace(/_/g, " ")}</span>
                         </span>
                         {pipeline.patient_id && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-600 ring-1 ring-inset ring-gray-200">
-                            <svg className="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 dark:bg-gray-800 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:text-gray-400 ring-1 ring-inset ring-gray-200">
+                            <svg className="h-3 w-3 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                             </svg>
                             {pipeline.patient_id}
@@ -666,7 +666,7 @@ export default function AgentsPage() {
                             HITL Required
                           </span>
                         )}
-                        <div className="ml-auto flex items-center gap-3 text-xs text-gray-400">
+                        <div className="ml-auto flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                           {totalDuration > 0 && (
                             <span className="tabular-nums">{formatDuration(totalDuration)}</span>
                           )}
@@ -700,7 +700,7 @@ export default function AgentsPage() {
                     <h3 className={`text-sm font-bold uppercase tracking-wider ${tc.text}`}>
                       {tc.label} Tier
                     </h3>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${tc.bg} ${tc.text} ring-1 ring-inset ${tc.ring}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${tc.bg} ${tc.text} ring-1 ring-inset ${tc.ring}`}>
                       {tierAgents.length} agent{tierAgents.length !== 1 ? "s" : ""}
                     </span>
                   </div>
@@ -731,20 +731,20 @@ export default function AgentsPage() {
 
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
-                                <h4 className="text-sm font-bold text-gray-900">{agent.name}</h4>
+                                <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">{agent.name}</h4>
                               </div>
                               <div className="mt-1 flex items-center gap-2">
-                                <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${tc.bg} ${tc.text} ring-1 ring-inset ${tc.ring}`}>
+                                <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold uppercase ${tc.bg} ${tc.text} ring-1 ring-inset ${tc.ring}`}>
                                   {agent.tier}
                                 </span>
-                                <span className="text-[10px] text-gray-400">v{agent.version}</span>
+                                <span className="text-[11px] text-gray-500 dark:text-gray-400">v{agent.version}</span>
                                 {agent.requires_hitl && (
-                                  <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 ring-1 ring-inset ring-amber-500/20">
+                                  <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold text-amber-700 ring-1 ring-inset ring-amber-500/20">
                                     HITL
                                   </span>
                                 )}
                               </div>
-                              <p className="mt-2 text-xs text-gray-500 leading-relaxed">{agent.description}</p>
+                              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{agent.description}</p>
                             </div>
                           </div>
                         </div>
@@ -760,7 +760,7 @@ export default function AgentsPage() {
         {/* ── HITL Queue ────────────────────────────────────────────────── */}
         {activeTab === "hitl" && (
           <div className="space-y-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Pending Human Reviews ({hitlQueue.filter((h) => h.status === "pending").length})
             </h2>
 
@@ -771,8 +771,8 @@ export default function AgentsPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <p className="mt-4 text-sm font-medium text-gray-700">All clear</p>
-                <p className="mt-1 text-xs text-gray-400">No pending human-in-the-loop reviews at this time</p>
+                <p className="mt-4 text-sm font-medium text-gray-700 dark:text-gray-300">All clear</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">No pending human-in-the-loop reviews at this time</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -796,8 +796,8 @@ export default function AgentsPage() {
                               </svg>
                               {item.agent_name}
                             </span>
-                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-600 ring-1 ring-inset ring-gray-200">
-                              <svg className="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 dark:bg-gray-800 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:text-gray-400 ring-1 ring-inset ring-gray-200">
+                              <svg className="h-3 w-3 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                               </svg>
                               {item.patient_id}
@@ -805,19 +805,19 @@ export default function AgentsPage() {
                             {isResolved && (
                               <StatusBadge status={item.status === "approved" ? "completed" : "failed"} />
                             )}
-                            <span className="text-[11px] text-gray-400">{timeAgo(item.created_at)}</span>
+                            <span className="text-[11px] text-gray-500 dark:text-gray-400">{timeAgo(item.created_at)}</span>
                           </div>
 
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">{item.action}</p>
-                            <p className="mt-1 text-xs text-gray-500">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.action}</p>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                               <span className="font-medium">Reason:</span> {item.reason}
                             </p>
                           </div>
 
                           {/* Confidence bar */}
                           <div className="max-w-xs">
-                            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Confidence</p>
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Confidence</p>
                             <ConfidenceBar value={item.confidence} />
                           </div>
                         </div>
@@ -829,7 +829,7 @@ export default function AgentsPage() {
                               placeholder="Notes (optional)..."
                               value={resolveNotes[item.id] || ""}
                               onChange={(e) => setResolveNotes((prev) => ({ ...prev, [item.id]: e.target.value }))}
-                              className="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-xs shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-healthos-500 resize-none"
+                              className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-xs shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-healthos-500 resize-none"
                               rows={2}
                             />
                             <div className="flex gap-2">
@@ -866,15 +866,15 @@ export default function AgentsPage() {
             {/* Resolved items */}
             {hitlQueue.filter((h) => h.status !== "pending").length > 0 && (
               <div className="mt-6">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Recently Resolved</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Recently Resolved</h3>
                 <div className="space-y-2">
                   {hitlQueue.filter((h) => h.status !== "pending").map((item) => (
                     <div key={item.id} className="card opacity-60">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-gray-600">{item.agent_name}</span>
-                          <span className="text-xs text-gray-400">{item.patient_id}</span>
-                          <span className="text-xs text-gray-400 truncate max-w-xs">{item.action}</span>
+                          <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{item.agent_name}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">{item.patient_id}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">{item.action}</span>
                         </div>
                         <StatusBadge status={item.status === "approved" ? "completed" : "failed"} />
                       </div>
@@ -891,12 +891,12 @@ export default function AgentsPage() {
           <div className="space-y-4">
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Audit Trail</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Audit Trail</h2>
               <div className="ml-auto flex items-center gap-2">
                 <select
                   value={auditAgentFilter}
                   onChange={(e) => setAuditAgentFilter(e.target.value)}
-                  className="rounded-lg border-gray-300 bg-white px-3 py-1.5 text-xs shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-healthos-500"
+                  className="rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-1.5 text-xs shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-healthos-500"
                 >
                   <option value="">All Agents</option>
                   {uniqueAuditAgents.map((a) => (
@@ -909,16 +909,16 @@ export default function AgentsPage() {
             {/* Table */}
             <div className="card overflow-hidden p-0">
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
+                <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50/50">
-                      <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Timestamp</th>
-                      <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Agent</th>
-                      <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Action</th>
-                      <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Patient</th>
-                      <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Confidence</th>
-                      <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Policy Check</th>
-                      <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Trace ID</th>
+                    <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/50">
+                      <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Timestamp</th>
+                      <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Agent</th>
+                      <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Action</th>
+                      <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Patient</th>
+                      <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Confidence</th>
+                      <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Policy Check</th>
+                      <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Trace ID</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -934,28 +934,28 @@ export default function AgentsPage() {
                           className="hover:bg-gray-50/50 transition-colors animate-fade-in"
                           style={{ animationDelay: `${idx * 0.03}s`, animationFillMode: "both" }}
                         >
-                          <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-500 tabular-nums">{formatTimestamp(entry.timestamp)}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-500 dark:text-gray-400 tabular-nums">{formatTimestamp(entry.timestamp)}</td>
                           <td className="whitespace-nowrap px-4 py-3">
-                            <span className="text-xs font-semibold text-gray-800">{entry.agent}</span>
+                            <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{entry.agent}</span>
                           </td>
-                          <td className="px-4 py-3 text-xs text-gray-600 max-w-xs truncate">{entry.action}</td>
-                          <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-500 font-mono">{entry.patient_id}</td>
+                          <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-400 max-w-xs truncate">{entry.action}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-mono">{entry.patient_id}</td>
                           <td className="whitespace-nowrap px-4 py-3">
                             <div className="w-20">
                               <ConfidenceBar value={entry.confidence} size="sm" />
                             </div>
                           </td>
                           <td className="whitespace-nowrap px-4 py-3">
-                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ring-1 ring-inset ${policyColor[entry.policy_check] || policyColor.pass}`}>
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold uppercase ring-1 ring-inset ${policyColor[entry.policy_check] || policyColor.pass}`}>
                               {entry.policy_check}
                             </span>
                           </td>
-                          <td className="whitespace-nowrap px-4 py-3 font-mono text-[11px] text-gray-400">{truncateId(entry.trace_id)}</td>
+                          <td className="whitespace-nowrap px-4 py-3 font-mono text-[11px] text-gray-500 dark:text-gray-400">{truncateId(entry.trace_id)}</td>
                         </tr>
                       );
                     })}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             </div>
           </div>

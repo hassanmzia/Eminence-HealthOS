@@ -60,8 +60,8 @@ export function PatientRiskHeatmap() {
     <div className="card">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Patient Risk Overview</h2>
-          <p className="text-xs text-gray-500">{patients.length} patients monitored</p>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Patient Risk Overview</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{patients.length} patients monitored</p>
         </div>
 
         {/* Risk distribution pills */}
@@ -71,7 +71,7 @@ export function PatientRiskHeatmap() {
             className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
               filter === "all"
                 ? "bg-gray-900 text-white shadow-sm"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
             }`}
           >
             All ({patients.length})
@@ -83,10 +83,10 @@ export function PatientRiskHeatmap() {
               className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all ${
                 filter === level
                   ? `${cfg.bg} text-white shadow-sm`
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
               }`}
             >
-              <span className={`h-1.5 w-1.5 rounded-full ${filter === level ? "bg-white" : cfg.dot}`} />
+              <span className={`h-1.5 w-1.5 rounded-full ${filter === level ? "bg-white dark:bg-gray-900" : cfg.dot}`} />
               {level.charAt(0).toUpperCase() + level.slice(1)} ({distribution[level] || 0})
             </button>
           ))}
@@ -95,7 +95,7 @@ export function PatientRiskHeatmap() {
 
       {/* Risk distribution bar */}
       {patients.length > 0 && (
-        <div className="mb-5 flex h-2 overflow-hidden rounded-full bg-gray-100">
+        <div className="mb-5 flex h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
           {["critical", "high", "moderate", "low"].map((level) => {
             const count = distribution[level] || 0;
             const pct = (count / patients.length) * 100;
@@ -118,12 +118,12 @@ export function PatientRiskHeatmap() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-            <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+            <svg className="h-6 w-6 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
             </svg>
           </div>
-          <p className="mt-3 text-sm text-gray-500">No patients found</p>
+          <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No patients found</p>
         </div>
       ) : (
         <div className="space-y-1">
@@ -134,7 +134,7 @@ export function PatientRiskHeatmap() {
               <a
                 key={patient.id}
                 href={`/patients/${patient.id}`}
-                className="group flex items-center gap-3 rounded-xl p-3 transition-all duration-200 hover:bg-gray-50 hover:shadow-sm animate-fade-in"
+                className="group flex items-center gap-3 rounded-xl p-3 transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-sm animate-fade-in"
                 style={{ animationDelay: `${i * 0.03}s`, animationFillMode: "both" }}
               >
                 {/* Risk indicator */}
@@ -144,19 +144,19 @@ export function PatientRiskHeatmap() {
 
                 {/* Patient info */}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-gray-900 group-hover:text-healthos-700">
+                  <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100 group-hover:text-healthos-700">
                     {patientName(patient)}
                   </p>
-                  <p className="mt-0.5 truncate text-xs text-gray-500">
+                  <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
                     {conditions.length > 0 ? conditions.slice(0, 2).join(", ") : "No active conditions"}
-                    {conditions.length > 2 && <span className="text-gray-400"> +{conditions.length - 2}</span>}
+                    {conditions.length > 2 && <span className="text-gray-500 dark:text-gray-400"> +{conditions.length - 2}</span>}
                   </p>
                 </div>
 
                 {/* Right side */}
                 <div className="flex flex-shrink-0 items-center gap-2">
                   <span className={cfg.badge}>{patient.risk_level}</span>
-                  <svg className="h-4 w-4 text-gray-300 transition-transform group-hover:translate-x-0.5 group-hover:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="h-4 w-4 text-gray-300 transition-transform group-hover:translate-x-0.5 group-hover:text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                   </svg>
                 </div>

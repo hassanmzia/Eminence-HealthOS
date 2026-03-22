@@ -3,8 +3,16 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply bg-gray-50 text-gray-900 antialiased font-sans;
+    font-size: 16px; /* prevent iOS zoom on input focus */
   }
   .dark body,
   html.dark body {
@@ -13,6 +21,15 @@
   * {
     @apply scroll-smooth;
   }
+  /* Better focus outlines for accessibility */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-healthos-500;
+  }
+  /* Tap highlight for mobile */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Scrollbar styling */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -21,10 +38,10 @@
     @apply bg-transparent;
   }
   ::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-gray-200;
+    @apply rounded-full bg-gray-300;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-300;
+    @apply bg-gray-400;
   }
   .dark ::-webkit-scrollbar-thumb {
     @apply bg-gray-700;
@@ -32,30 +49,60 @@
   .dark ::-webkit-scrollbar-thumb:hover {
     @apply bg-gray-600;
   }
+
+  /* ── Mobile-first typography improvements ─────────────────────── */
+  h1 {
+    @apply text-xl font-bold tracking-tight sm:text-2xl;
+  }
+  h2 {
+    @apply text-lg font-semibold tracking-tight sm:text-xl;
+  }
+  h3 {
+    @apply text-base font-semibold sm:text-lg;
+  }
+
+  /* ── Ensure minimum touch target sizes on mobile ──────────────── */
+  @media (pointer: coarse) {
+    button, [role="button"], a, select {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    input, textarea {
+      font-size: 16px !important; /* Prevent iOS zoom on focus */
+    }
+  }
+
+  /* ── Selection style for branding ─────────────────────────────── */
+  ::selection {
+    @apply bg-healthos-100 text-healthos-900;
+  }
+  .dark ::selection {
+    @apply bg-healthos-900 text-healthos-100;
+  }
 }
 
 @layer components {
   /* ── Card System ──────────────────────────────────────────────────── */
   .card {
-    @apply rounded-xl border border-gray-200/80 bg-white p-6 shadow-sm transition-all duration-200;
+    @apply rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm transition-all duration-200 sm:p-6;
   }
   .dark .card {
     @apply border-gray-700/80 bg-gray-900 shadow-none;
   }
   .card-hover:hover {
-    @apply border-gray-300/80 shadow-card-hover;
+    @apply border-gray-300/80 shadow-card-hover -translate-y-0.5;
   }
   .dark .card-hover:hover {
     @apply border-gray-600/80 shadow-none;
   }
   .card-glass {
-    @apply rounded-xl border border-white/20 bg-white/70 p-6 shadow-sm backdrop-blur-xl;
+    @apply rounded-xl border border-white/20 bg-white/70 p-4 shadow-sm backdrop-blur-xl sm:p-6;
   }
   .dark .card-glass {
     @apply border-gray-700/30 bg-gray-900/70;
   }
   .card-gradient {
-    @apply rounded-xl border-0 p-6 shadow-card-elevated;
+    @apply rounded-xl border-0 p-4 shadow-card-elevated sm:p-6;
     background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(238,247,255,0.95) 100%);
   }
   .dark .card-gradient {
@@ -76,7 +123,7 @@
     @apply bg-orange-950/50 text-orange-400 ring-orange-500/30;
   }
   .badge-moderate {
-    @apply inline-flex items-center gap-1 rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs font-semibold text-yellow-700 ring-1 ring-inset ring-yellow-600/20;
+    @apply inline-flex items-center gap-1 rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-600/20;
   }
   .dark .badge-moderate {
     @apply bg-yellow-950/50 text-yellow-400 ring-yellow-500/30;
@@ -94,27 +141,27 @@
     @apply bg-blue-950/50 text-blue-400 ring-blue-500/30;
   }
   .badge-neutral {
-    @apply inline-flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-0.5 text-xs font-semibold text-gray-600 ring-1 ring-inset ring-gray-500/20;
+    @apply inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-500/20;
   }
   .dark .badge-neutral {
-    @apply bg-gray-800 text-gray-400 ring-gray-600/30;
+    @apply bg-gray-800 text-gray-300 ring-gray-600/30;
   }
 
   /* ── Button System ────────────────────────────────────────────────── */
   .btn-primary {
-    @apply inline-flex items-center gap-2 rounded-lg bg-healthos-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-healthos-700 hover:shadow-md active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-healthos-600 to-healthos-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:from-healthos-700 hover:to-healthos-800 hover:shadow-md active:scale-[0.98];
   }
   .btn-secondary {
-    @apply inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 hover:border-gray-400 active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 hover:border-gray-400 active:scale-[0.98];
   }
   .dark .btn-secondary {
     @apply border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:border-gray-500;
   }
   .btn-danger {
-    @apply inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-red-700 hover:shadow-md active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-600 to-red-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:from-red-700 hover:to-red-800 hover:shadow-md active:scale-[0.98];
   }
   .btn-ghost {
-    @apply inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 transition-all duration-200 hover:bg-gray-100 hover:text-gray-900;
   }
   .dark .btn-ghost {
     @apply text-gray-400 hover:bg-gray-800 hover:text-gray-200;
@@ -136,7 +183,7 @@
 
   /* ── Metric Card (KPI) ────────────────────────────────────────────── */
   .metric-card {
-    @apply relative overflow-hidden rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-card-hover;
+    @apply relative overflow-hidden rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-card-hover sm:p-5;
   }
   .dark .metric-card {
     @apply border-gray-700/80 bg-gray-900 hover:shadow-none;
@@ -232,6 +279,30 @@
   .dark .toast-error {
     @apply !bg-red-950 !text-red-300 !border-red-800;
   }
+
+  /* ── Mobile-friendly table wrapper ─────────────────────────────── */
+  .table-responsive {
+    @apply -mx-4 overflow-x-auto sm:mx-0 sm:rounded-xl;
+  }
+  .table-responsive table {
+    @apply min-w-[640px] w-full;
+  }
+
+  /* ── Mobile-friendly modal ─────────────────────────────────────── */
+  .modal-overlay {
+    @apply fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm p-0 sm:items-center sm:p-4;
+  }
+  .modal-content {
+    @apply w-full max-h-[90vh] overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl sm:max-w-lg sm:rounded-2xl sm:p-6;
+  }
+  .dark .modal-content {
+    @apply bg-gray-900 border border-gray-700;
+  }
+
+  /* ── Page section header ───────────────────────────────────────── */
+  .section-header {
+    @apply text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400;
+  }
 }
 
 @layer utilities {
@@ -249,10 +320,38 @@
       radial-gradient(at 80% 0%, rgba(12, 85, 230, 0.03) 0px, transparent 50%),
       radial-gradient(at 0% 50%, rgba(89, 204, 255, 0.03) 0px, transparent 50%);
   }
+  .dark .bg-mesh {
+    background-image:
+      radial-gradient(at 40% 20%, rgba(19, 107, 250, 0.08) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, rgba(12, 85, 230, 0.06) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, rgba(89, 204, 255, 0.04) 0px, transparent 50%);
+  }
   .stagger-1 { animation-delay: 0.05s; }
   .stagger-2 { animation-delay: 0.1s; }
   .stagger-3 { animation-delay: 0.15s; }
   .stagger-4 { animation-delay: 0.2s; }
   .stagger-5 { animation-delay: 0.25s; }
   .stagger-6 { animation-delay: 0.3s; }
+
+  /* ── Safe area padding for notched phones ─────────────────────── */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* ── Improved truncation ──────────────────────────────────────── */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 }

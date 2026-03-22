@@ -110,13 +110,13 @@ export function VitalsSummaryCards() {
 
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{card.label}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{card.label}</p>
               <p className={`mt-2 text-3xl font-bold tabular-nums ${card.color}`}>
                 {card.value.toLocaleString()}
               </p>
               <div className="mt-1.5 flex items-center gap-1.5">
                 <TrendArrow positive={card.trend} />
-                <span className="text-xs text-gray-500">{card.subtitle}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{card.subtitle}</span>
               </div>
             </div>
             <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${card.bgColor} ring-1 ${card.ringColor}`}>

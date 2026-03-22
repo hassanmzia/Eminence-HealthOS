@@ -14,7 +14,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; dotColor: st
   pending: { label: "Pending", color: "text-amber-700 bg-amber-50 ring-amber-600/20", dotColor: "bg-amber-500" },
   acknowledged: { label: "Acknowledged", color: "text-blue-700 bg-blue-50 ring-blue-600/20", dotColor: "bg-blue-500" },
   resolved: { label: "Resolved", color: "text-emerald-700 bg-emerald-50 ring-emerald-600/20", dotColor: "bg-emerald-500" },
-  dismissed: { label: "Dismissed", color: "text-gray-600 bg-gray-50 ring-gray-500/20", dotColor: "bg-gray-400" },
+  dismissed: { label: "Dismissed", color: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 ring-gray-500/20", dotColor: "bg-gray-400" },
 };
 
 function timeAgo(iso: string): string {
@@ -58,8 +58,8 @@ export default function AlertsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Alerts</h1>
-          <p className="text-sm text-gray-500">Monitor and manage clinical alerts across all patients</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Alerts</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Monitor and manage clinical alerts across all patients</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 ring-1 ring-inset ring-emerald-500/20">
@@ -83,8 +83,8 @@ export default function AlertsPage() {
               <div className={`absolute left-0 top-0 h-1 w-full rounded-t-xl ${cfg.bg}`} />
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{level}</p>
-                  <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900">{count}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{level}</p>
+                  <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">{count}</p>
                 </div>
                 <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${level === "critical" ? "bg-red-50" : level === "high" ? "bg-orange-50" : level === "moderate" ? "bg-yellow-50" : "bg-emerald-50"}`}>
                   <svg className={`h-4.5 w-4.5 ${level === "critical" ? "text-red-600" : level === "high" ? "text-orange-600" : level === "moderate" ? "text-yellow-600" : "text-emerald-600"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -100,7 +100,7 @@ export default function AlertsPage() {
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1 max-w-md">
-          <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
           </svg>
           <input
@@ -163,8 +163,8 @@ export default function AlertsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p className="mt-4 text-sm font-medium text-gray-900">All clear</p>
-          <p className="mt-1 text-xs text-gray-500">No alerts match your current filters</p>
+          <p className="mt-4 text-sm font-medium text-gray-900 dark:text-gray-100">All clear</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">No alerts match your current filters</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -199,8 +199,8 @@ export default function AlertsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">{alert.message || `${alert.alert_type} Alert`}</p>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{alert.message || `${alert.alert_type} Alert`}</p>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                           <span className={pcfg.badge}>{alert.priority}</span>
                           <span>&middot;</span>
                           <span className="capitalize">{alert.alert_type.replace(/_/g, " ")}</span>
@@ -220,23 +220,23 @@ export default function AlertsPage() {
 
                     {/* Expanded details */}
                     {isSelected && (
-                      <div className="mt-4 animate-fade-in rounded-lg bg-gray-50 p-4">
+                      <div className="mt-4 animate-fade-in rounded-lg bg-gray-50 dark:bg-gray-800 p-4">
                         <div className="grid grid-cols-2 gap-4 text-xs">
                           <div>
-                            <p className="font-semibold text-gray-400 uppercase tracking-wider">Alert ID</p>
-                            <p className="mt-1 font-mono text-gray-700">{alert.id.slice(0, 8)}...</p>
+                            <p className="font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Alert ID</p>
+                            <p className="mt-1 font-mono text-gray-700 dark:text-gray-300">{alert.id.slice(0, 8)}...</p>
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-400 uppercase tracking-wider">Type</p>
-                            <p className="mt-1 text-gray-700 capitalize">{alert.alert_type.replace(/_/g, " ")}</p>
+                            <p className="font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</p>
+                            <p className="mt-1 text-gray-700 dark:text-gray-300 capitalize">{alert.alert_type.replace(/_/g, " ")}</p>
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-400 uppercase tracking-wider">Created</p>
-                            <p className="mt-1 text-gray-700">{alert.created_at ? new Date(alert.created_at).toLocaleString() : "—"}</p>
+                            <p className="font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</p>
+                            <p className="mt-1 text-gray-700 dark:text-gray-300">{alert.created_at ? new Date(alert.created_at).toLocaleString() : "—"}</p>
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-400 uppercase tracking-wider">Status</p>
-                            <p className="mt-1 text-gray-700 capitalize">{alert.status}</p>
+                            <p className="font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</p>
+                            <p className="mt-1 text-gray-700 dark:text-gray-300 capitalize">{alert.status}</p>
                           </div>
                         </div>
                         <div className="mt-4 flex gap-2">
@@ -269,7 +269,7 @@ export default function AlertsPage() {
 
       {/* Footer stats */}
       {!loading && alerts.length > 0 && (
-        <div className="flex items-center justify-between rounded-xl bg-gray-50 px-6 py-3 text-xs text-gray-500">
+        <div className="flex items-center justify-between rounded-xl bg-gray-50 dark:bg-gray-800 px-6 py-3 text-xs text-gray-500 dark:text-gray-400">
           <span>Showing {alerts.length} alerts</span>
           <div className="flex gap-4">
             <span>{statusCounts.pending || 0} pending</span>
