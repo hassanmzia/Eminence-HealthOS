@@ -277,6 +277,7 @@ async def llm_status():
                 "claude_model": llm.config.claude_model,
                 "ollama_model": llm.config.ollama_model,
                 "ollama_base_url": llm.config.ollama_base_url,
+                "openai_model": llm.config.openai_model,
                 "temperature": llm.config.temperature,
                 "max_tokens": llm.config.max_tokens,
             }

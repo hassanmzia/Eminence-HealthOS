@@ -372,6 +372,19 @@ export default function ClinicalAssessmentPage() {
     }
   }, []);
 
+  const switchProvider = useCallback(async (provider: string) => {
+    try {
+      await apiFetch("/llm/switch?provider=" + encodeURIComponent(provider), { method: "POST" });
+      await loadLLMStatus();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "";
+      if (msg === "AUTH_REQUIRED") {
+        // In demo mode, simulate switching
+        setLlmStatus((prev) => prev ? { ...prev, primary_provider: provider } : prev);
+      }
+    }
+  }, [loadLLMStatus]);
+
   useEffect(() => {
     if (tab === "agents") loadAgents();
     if (tab === "llm") loadLLMStatus();
@@ -423,7 +436,7 @@ export default function ClinicalAssessmentPage() {
         />
       )}
       {tab === "agents" && <AgentsTab agents={agents} />}
-      {tab === "llm" && <LLMTab status={llmStatus} onRefresh={loadLLMStatus} />}
+      {tab === "llm" && <LLMTab status={llmStatus} onRefresh={loadLLMStatus} onSwitch={switchProvider} />}
       {tab === "mcp" && <MCPTab servers={mcpServers} onRefresh={loadMCPStatus} />}
       {tab === "simulator" && <SimulatorTab status={simStatus} onRefresh={loadSimStatus} />}
     </div>
@@ -903,45 +916,232 @@ function AgentsTab({ agents }: { agents: AgentInfo[] }) {
    LLM TAB
    ═══════════════════════════════════════════════════════════════════════════ */
 
-function LLMTab({ status, onRefresh }: { status: LLMStatus | null; onRefresh: () => void }) {
+const LLM_PROVIDERS = [
+  {
+    id: "claude",
+    name: "Anthropic Claude",
+    description: "Best-in-class reasoning and clinical safety. Recommended for production clinical assessments.",
+    icon: (
+      <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none">
+        <path d="M16.5 3.5C14 3.5 12 5.5 12 8V16C12 18.5 14 20.5 16.5 20.5C19 20.5 21 18.5 21 16V8C21 5.5 19 3.5 16.5 3.5Z" fill="#D97706" fillOpacity={0.15} stroke="#D97706" strokeWidth={1.5} />
+        <path d="M7.5 3.5C5 3.5 3 5.5 3 8V16C3 18.5 5 20.5 7.5 20.5C10 20.5 12 18.5 12 16V8C12 5.5 10 3.5 7.5 3.5Z" fill="#D97706" fillOpacity={0.15} stroke="#D97706" strokeWidth={1.5} />
+      </svg>
+    ),
+    models: ["claude-sonnet-4-20250514", "claude-opus-4-20250514", "claude-haiku-4-20250414"],
+    configKey: "claude_model",
+    color: "amber",
+    badge: "Recommended",
+    requiresKey: true,
+    keyName: "ANTHROPIC_API_KEY",
+  },
+  {
+    id: "openai",
+    name: "OpenAI ChatGPT",
+    description: "Versatile general-purpose model. Strong at structured output and medical knowledge extraction.",
+    icon: (
+      <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none">
+        <path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.998 5.998 0 0 0-3.998 2.9 6.05 6.05 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073z" fill="#10A37F" fillOpacity={0.15} stroke="#10A37F" strokeWidth={1} />
+        <circle cx="12" cy="12" r="3" fill="#10A37F" />
+      </svg>
+    ),
+    models: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "o1-preview"],
+    configKey: "openai_model",
+    color: "emerald",
+    badge: "Popular",
+    requiresKey: true,
+    keyName: "OPENAI_API_KEY",
+  },
+  {
+    id: "ollama",
+    name: "Ollama — DeepSeek R1",
+    description: "Local inference with DeepSeek-R1:7b. No data leaves your infrastructure — ideal for PHI-sensitive workflows.",
+    icon: (
+      <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="6" width="18" height="12" rx="3" fill="#7C3AED" fillOpacity={0.15} stroke="#7C3AED" strokeWidth={1.5} />
+        <circle cx="8" cy="12" r="1.5" fill="#7C3AED" />
+        <circle cx="12" cy="12" r="1.5" fill="#7C3AED" />
+        <circle cx="16" cy="12" r="1.5" fill="#7C3AED" />
+        <path d="M3 9h18" stroke="#7C3AED" strokeWidth={0.5} opacity={0.5} />
+        <path d="M3 15h18" stroke="#7C3AED" strokeWidth={0.5} opacity={0.5} />
+      </svg>
+    ),
+    models: ["deepseek-r1:7b", "deepseek-r1:14b", "llama3.2", "mistral", "codellama"],
+    configKey: "ollama_model",
+    color: "violet",
+    badge: "Local / Private",
+    requiresKey: false,
+    keyName: "localhost:12434",
+  },
+];
+
+function LLMTab({ status, onRefresh, onSwitch }: { status: LLMStatus | null; onRefresh: () => void; onSwitch: (provider: string) => void }) {
+  const [switching, setSwitching] = useState<string | null>(null);
+  const [selectedModels, setSelectedModels] = useState<Record<string, string>>({});
+
+  const activeProvider = status?.primary_provider || "claude";
+
+  const handleSwitch = async (providerId: string) => {
+    setSwitching(providerId);
+    await onSwitch(providerId);
+    setSwitching(null);
+  };
+
+  const colorMap: Record<string, { ring: string; bg: string; text: string; badge: string; dot: string }> = {
+    amber: { ring: "ring-amber-500/30", bg: "bg-amber-50 dark:bg-amber-950/30", text: "text-amber-700 dark:text-amber-400", badge: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300", dot: "bg-amber-500" },
+    emerald: { ring: "ring-emerald-500/30", bg: "bg-emerald-50 dark:bg-emerald-950/30", text: "text-emerald-700 dark:text-emerald-400", badge: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300", dot: "bg-emerald-500" },
+    violet: { ring: "ring-violet-500/30", bg: "bg-violet-50 dark:bg-violet-950/30", text: "text-violet-700 dark:text-violet-400", badge: "bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-300", dot: "bg-violet-500" },
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">LLM Provider Configuration</h3>
-        <button onClick={onRefresh} className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-500 dark:hover:bg-gray-700">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">LLM Provider Configuration</h3>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Select your preferred LLM for clinical reasoning. Provider can be switched at any time.</p>
+        </div>
+        <button onClick={onRefresh} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" /></svg>
           Refresh
         </button>
       </div>
 
-      {status ? (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 shadow-sm dark:bg-gray-800">
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-500">Status</p>
-              <p className={`mt-1 text-sm font-semibold ${status.status === "available" ? "text-emerald-600" : "text-red-600"}`}>
-                {status.status}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-500">Primary Provider</p>
-              <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{status.primary_provider || "N/A"}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-500">Available Providers</p>
-              <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{status.available_providers?.join(", ") || "None"}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-500">Model</p>
-              <p className="mt-1 text-sm text-gray-700 dark:text-gray-300 truncate">{String(status.config?.claude_model || status.config?.ollama_model || "N/A")}</p>
-            </div>
+      {/* Status Summary */}
+      {status && (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1.5">
+            <span className={`inline-block h-2 w-2 rounded-full ${status.status === "available" || status.status === "demo" ? "bg-emerald-500" : "bg-red-500"}`} />
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-300 capitalize">{status.status === "demo" ? "Demo Mode" : status.status}</span>
           </div>
-          {status.error && (
-            <p className="mt-4 text-sm text-red-600 dark:text-red-400">{status.error}</p>
-          )}
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            Temperature: <span className="font-mono font-medium text-gray-700 dark:text-gray-300">{String(status.config?.temperature ?? 0.3)}</span>
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            Max Tokens: <span className="font-mono font-medium text-gray-700 dark:text-gray-300">{String(status.config?.max_tokens ?? 2000)}</span>
+          </div>
         </div>
-      ) : (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 sm:p-8 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Loading LLM status...</p>
+      )}
+
+      {/* Provider Cards */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {LLM_PROVIDERS.map((provider) => {
+          const isActive = activeProvider === provider.id || activeProvider === (provider.id === "claude" ? "claude" : provider.id === "openai" ? "openai" : "ollama");
+          const isActiveMatch = activeProvider.includes(provider.id) || (provider.id === "claude" && activeProvider.includes("claude"));
+          const active = isActive || isActiveMatch;
+          const colors = colorMap[provider.color] || colorMap.amber;
+          const currentModel = String(status?.config?.[provider.configKey] || provider.models[0]);
+          const selected = selectedModels[provider.id] || currentModel;
+          const isAvailable = status?.available_providers?.includes(provider.id) ?? false;
+
+          return (
+            <div
+              key={provider.id}
+              className={`relative rounded-2xl border-2 p-5 transition-all duration-200 ${
+                active
+                  ? `border-transparent ring-2 ${colors.ring} ${colors.bg} shadow-md`
+                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm"
+              }`}
+            >
+              {/* Active indicator */}
+              {active && (
+                <div className="absolute -top-2.5 right-4">
+                  <span className={`inline-flex items-center gap-1 rounded-full ${colors.badge} px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider`}>
+                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
+                    Active
+                  </span>
+                </div>
+              )}
+
+              {/* Provider header */}
+              <div className="flex items-start gap-3">
+                <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl ${active ? colors.bg : "bg-gray-100 dark:bg-gray-800"}`}>
+                  {provider.icon}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">{provider.name}</h4>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${colors.badge}`}>{provider.badge}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{provider.description}</p>
+                </div>
+              </div>
+
+              {/* Model selector */}
+              <div className="mt-4">
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">Model</label>
+                <select
+                  value={selected}
+                  onChange={(e) => setSelectedModels((prev) => ({ ...prev, [provider.id]: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-800 dark:text-gray-200 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                >
+                  {provider.models.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Connection info */}
+              <div className="mt-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                {provider.requiresKey ? (
+                  <>
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>
+                    <span>Requires <code className="rounded bg-gray-100 dark:bg-gray-700 px-1 py-0.5 font-mono text-[10px]">{provider.keyName}</code></span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.737 5.1a3.375 3.375 0 012.7-1.35h7.126c1.062 0 2.062.5 2.7 1.35l2.587 3.45a4.5 4.5 0 01.9 2.7m0 0a3 3 0 01-3 3m0 3h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008zm-3 6h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008z" /></svg>
+                    <span>Local — <code className="rounded bg-gray-100 dark:bg-gray-700 px-1 py-0.5 font-mono text-[10px]">{provider.keyName}</code></span>
+                  </>
+                )}
+                {isAvailable && (
+                  <span className="ml-auto flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">Connected</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Action button */}
+              <div className="mt-4">
+                {active ? (
+                  <div className={`flex items-center justify-center gap-2 rounded-lg ${colors.bg} px-4 py-2.5 text-sm font-semibold ${colors.text}`}>
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
+                    Currently Active
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleSwitch(provider.id)}
+                    disabled={switching !== null}
+                    className="w-full rounded-lg bg-gradient-to-r from-gray-800 to-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:from-gray-700 hover:to-gray-800 hover:shadow-md disabled:opacity-50 dark:from-gray-600 dark:to-gray-700 dark:hover:from-gray-500 dark:hover:to-gray-600"
+                  >
+                    {switching === provider.id ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                        Switching...
+                      </span>
+                    ) : (
+                      `Switch to ${provider.name.split(" ")[0]}`
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Error */}
+      {status?.error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+          {status.error}
+        </div>
+      )}
+
+      {/* Loading state */}
+      {!status && (
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4 sm:p-8 text-center">
+          <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-gray-300 dark:border-gray-600 border-t-healthos-600" />
+          <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Loading LLM configuration...</p>
         </div>
       )}
     </div>
