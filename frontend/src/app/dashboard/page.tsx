@@ -10,11 +10,13 @@ import { SystemHealthWidget } from "@/components/dashboard/SystemHealthWidget";
 import { VitalsSummaryCards } from "@/components/dashboard/VitalsSummaryCards";
 
 function LiveClock() {
-  const [time, setTime] = useState(new Date());
+  const [time, setTime] = useState<Date | null>(null);
   useEffect(() => {
+    setTime(new Date());
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
+  if (!time) return <span className="tabular-nums text-sm text-gray-500 dark:text-gray-400">&nbsp;</span>;
   return (
     <span className="tabular-nums text-sm text-gray-500 dark:text-gray-400">
       {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
