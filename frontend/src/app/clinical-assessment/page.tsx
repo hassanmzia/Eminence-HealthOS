@@ -119,6 +119,179 @@ const DEMO_PATIENTS = [
   { id: "4", name: "Emily Davis", mrn: "MRN004", age: 45, sex: "F", conditions: ["Asthma", "Anxiety"] },
 ];
 
+/* ── Realistic clinical data for each demo patient (LOINC-coded vitals, labs, etc.) ── */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const PATIENT_CLINICAL_DATA: Record<string, Record<string, any>> = {
+  "1": {
+    // John Williams — 71M, HTN + T2DM
+    name: "John Williams", age: 71, sex: "male", date_of_birth: "1955-03-14",
+    chief_complaint: "Routine follow-up for hypertension and type 2 diabetes management. Reports occasional dizziness and increased thirst over past 2 weeks.",
+    history_present_illness: "71-year-old male with 15-year history of hypertension and 8-year history of type 2 diabetes mellitus. Current medications include Lisinopril 10mg daily and Metformin 1000mg BID. Reports home BP readings averaging 155/92. Increased polyuria and polydipsia over past 2 weeks. Last HbA1c was 8.2% three months ago. No chest pain, dyspnea, or visual changes.",
+    physician_notes: "Patient appears well-nourished. Fundoscopic exam: no retinopathy. Pedal pulses 2+ bilaterally. Monofilament testing intact. BMI 31.2. Current regimen inadequate for both BP and glycemic targets.",
+    past_medical_history: ["Essential hypertension (15 years)", "Type 2 diabetes mellitus (8 years)", "Hyperlipidemia", "Obesity (BMI 31.2)", "Mild osteoarthritis bilateral knees"],
+    family_history: ["Father: MI at age 62, died at 68", "Mother: Type 2 diabetes, stroke at 75", "Brother: Hypertension"],
+    social_history: { smoking: "Former smoker (quit 10 years ago, 20 pack-year history)", alcohol: "Occasional (1-2 drinks/week)", exercise: "Sedentary", diet: "High sodium, irregular meals" },
+    vitals: [
+      { code: "8867-4", display: "Heart Rate", value: 82, unit: "bpm" },
+      { code: "85354-9", display: "Blood Pressure", components: [{ code: "8480-6", value: 158 }, { code: "8462-4", value: 94 }] },
+      { code: "59408-5", display: "SpO2", value: 97, unit: "%" },
+      { code: "8310-5", display: "Temperature", value: 36.8, unit: "°C" },
+      { code: "9279-1", display: "Respiratory Rate", value: 16, unit: "/min" },
+      { code: "2339-0", display: "Blood Glucose", value: 186, unit: "mg/dL" },
+    ],
+    labs: [
+      { name: "HbA1c", value: 8.2, unit: "%", interpretation: { severity: "abnormal", message: "Above target 7.0% — suboptimal glycemic control over 3 months" } },
+      { name: "Serum Creatinine", value: 1.4, unit: "mg/dL", interpretation: { severity: "abnormal", message: "Mildly elevated — monitor renal function" } },
+      { name: "eGFR", value: 58, unit: "mL/min/1.73m²", interpretation: { severity: "abnormal", message: "CKD Stage 3a — consider renal-protective agents" } },
+      { name: "Potassium", value: 4.2, unit: "mEq/L", interpretation: { severity: "normal", message: "Within normal range" } },
+      { name: "Total Cholesterol", value: 228, unit: "mg/dL", interpretation: { severity: "abnormal", message: "Elevated — above target of 200 mg/dL" } },
+      { name: "LDL Cholesterol", value: 142, unit: "mg/dL", interpretation: { severity: "abnormal", message: "Elevated — target <100 mg/dL for diabetic patients" } },
+      { name: "HDL Cholesterol", value: 38, unit: "mg/dL", interpretation: { severity: "abnormal", message: "Low — target >40 mg/dL for males" } },
+      { name: "Triglycerides", value: 195, unit: "mg/dL", interpretation: { severity: "abnormal", message: "Elevated — above 150 mg/dL target" } },
+      { name: "Microalbumin/Creatinine Ratio", value: 45, unit: "mg/g", interpretation: { severity: "abnormal", message: "Moderately increased albuminuria — early diabetic nephropathy" } },
+      { name: "BUN", value: 28, unit: "mg/dL", interpretation: { severity: "abnormal", message: "Mildly elevated" } },
+    ],
+    conditions: [
+      { code: "I10", display: "Essential hypertension" },
+      { code: "E11.9", display: "Type 2 diabetes mellitus without complications" },
+      { code: "E78.5", display: "Hyperlipidemia, unspecified" },
+      { code: "E66.01", display: "Morbid obesity due to excess calories" },
+    ],
+    medications: [
+      { medication_name: "Lisinopril 10mg", dosage: "10mg daily", route: "oral" },
+      { medication_name: "Metformin 1000mg", dosage: "1000mg BID", route: "oral" },
+      { medication_name: "Aspirin 81mg", dosage: "81mg daily", route: "oral" },
+    ],
+    allergies: [
+      { substance: "Sulfonamides", reaction: "Rash", severity: "moderate" },
+    ],
+  },
+  "2": {
+    // Maria Garcia — 58F, AFib
+    name: "Maria Garcia", age: 58, sex: "female", date_of_birth: "1968-07-22",
+    chief_complaint: "Palpitations and shortness of breath on exertion for 3 days. Intermittent dizziness.",
+    history_present_illness: "58-year-old female presenting with 3-day history of palpitations, exercise intolerance, and intermittent dizziness. Reports feeling her heart 'racing and skipping' especially at night. Mild dyspnea on climbing one flight of stairs (previously able to climb three). No syncope, chest pain, or leg swelling. No recent illness or medication changes.",
+    physician_notes: "Irregular heart rhythm on auscultation. No murmurs or gallops. Lungs clear bilaterally. No peripheral edema. CHA₂DS₂-VASc score = 2 (female, age 58). Recommend anticoagulation and rate control.",
+    past_medical_history: ["Atrial fibrillation (newly diagnosed)", "Hypothyroidism (on Levothyroxine)", "Mild mitral regurgitation"],
+    family_history: ["Mother: Atrial fibrillation at age 65", "Father: Coronary artery disease"],
+    social_history: { smoking: "Never", alcohol: "Social (1-2 glasses wine/week)", exercise: "Walks 30 min daily (now limited)", diet: "Mediterranean diet" },
+    vitals: [
+      { code: "8867-4", display: "Heart Rate", value: 112, unit: "bpm" },
+      { code: "85354-9", display: "Blood Pressure", components: [{ code: "8480-6", value: 128 }, { code: "8462-4", value: 78 }] },
+      { code: "59408-5", display: "SpO2", value: 96, unit: "%" },
+      { code: "8310-5", display: "Temperature", value: 36.6, unit: "°C" },
+      { code: "9279-1", display: "Respiratory Rate", value: 18, unit: "/min" },
+      { code: "93803-1", display: "ECG", ecg_rhythm: "Atrial fibrillation with rapid ventricular response", ecg_findings: ["Absent P waves", "Irregularly irregular rhythm", "Narrow QRS complex", "No ST changes"] },
+    ],
+    labs: [
+      { name: "TSH", value: 2.1, unit: "mIU/L", interpretation: { severity: "normal", message: "Thyroid function normal on replacement therapy" } },
+      { name: "Free T4", value: 1.2, unit: "ng/dL", interpretation: { severity: "normal", message: "Normal" } },
+      { name: "BNP", value: 180, unit: "pg/mL", interpretation: { severity: "abnormal", message: "Mildly elevated — may indicate cardiac strain from rapid AF" } },
+      { name: "Troponin I", value: 0.02, unit: "ng/mL", interpretation: { severity: "normal", message: "Within normal limits — no acute myocardial injury" } },
+      { name: "INR", value: 1.0, unit: "", interpretation: { severity: "normal", message: "Not on anticoagulation currently" } },
+      { name: "Serum Creatinine", value: 0.9, unit: "mg/dL", interpretation: { severity: "normal", message: "Normal renal function" } },
+      { name: "Magnesium", value: 1.6, unit: "mg/dL", interpretation: { severity: "abnormal", message: "Low-normal — consider supplementation (may contribute to arrhythmia)" } },
+      { name: "Potassium", value: 3.8, unit: "mEq/L", interpretation: { severity: "normal", message: "Within normal range" } },
+    ],
+    conditions: [
+      { code: "I48.91", display: "Unspecified atrial fibrillation" },
+      { code: "E03.9", display: "Hypothyroidism, unspecified" },
+      { code: "I34.0", display: "Nonrheumatic mitral valve insufficiency" },
+    ],
+    medications: [
+      { medication_name: "Levothyroxine 75mcg", dosage: "75mcg daily", route: "oral" },
+    ],
+    allergies: [],
+  },
+  "3": {
+    // Robert Johnson — 65M, HF + CKD
+    name: "Robert Johnson", age: 65, sex: "male", date_of_birth: "1961-01-08",
+    chief_complaint: "Progressive dyspnea on exertion and bilateral ankle swelling for 1 week. Weight gain of 4 lbs in 5 days.",
+    history_present_illness: "65-year-old male with known HFrEF (EF 35%) and CKD Stage 3 presenting with worsening dyspnea over 1 week. Now SOB walking to mailbox (50 feet). Orthopnea requiring 3 pillows (baseline: 1). Reports 4 lb weight gain over 5 days despite taking medications. Bilateral 2+ pitting edema. Dietary indiscretion — attended family gathering with high-sodium food. No chest pain, fever, or cough.",
+    physician_notes: "Patient in mild respiratory distress. JVP elevated at 10cm. Bibasilar crackles. S3 gallop present. 2+ pitting edema bilateral lower extremities. Abdominal exam: mild hepatomegaly. NYHA Class III (up from Class II baseline). Acute decompensated heart failure secondary to dietary non-compliance. Current GDMT suboptimal — not on ARNI or MRA.",
+    past_medical_history: ["Heart failure with reduced ejection fraction (EF 35%)", "CKD Stage 3 (eGFR 42)", "Coronary artery disease (PCI with 2 stents, 2019)", "Type 2 diabetes mellitus", "Former smoker"],
+    family_history: ["Father: Heart failure, died at 70", "Mother: Type 2 diabetes, CKD"],
+    social_history: { smoking: "Former (quit 5 years ago, 30 pack-year)", alcohol: "None", exercise: "Limited by dyspnea", diet: "Prescribed 2g sodium restriction — recent non-compliance" },
+    vitals: [
+      { code: "8867-4", display: "Heart Rate", value: 96, unit: "bpm" },
+      { code: "85354-9", display: "Blood Pressure", components: [{ code: "8480-6", value: 108 }, { code: "8462-4", value: 68 }] },
+      { code: "59408-5", display: "SpO2", value: 93, unit: "%" },
+      { code: "8310-5", display: "Temperature", value: 36.9, unit: "°C" },
+      { code: "9279-1", display: "Respiratory Rate", value: 22, unit: "/min" },
+    ],
+    labs: [
+      { name: "BNP", value: 820, unit: "pg/mL", interpretation: { severity: "critical", message: "Significantly elevated — consistent with acute decompensated heart failure" } },
+      { name: "Troponin I", value: 0.04, unit: "ng/mL", interpretation: { severity: "normal", message: "Mildly elevated — demand ischemia from HF exacerbation" } },
+      { name: "Serum Creatinine", value: 1.8, unit: "mg/dL", interpretation: { severity: "abnormal", message: "Elevated — worsening renal function (cardiorenal syndrome)" } },
+      { name: "eGFR", value: 42, unit: "mL/min/1.73m²", interpretation: { severity: "abnormal", message: "CKD Stage 3b — declining from baseline eGFR 48" } },
+      { name: "Potassium", value: 4.8, unit: "mEq/L", interpretation: { severity: "abnormal", message: "Upper-normal — caution with RAAS inhibitors and MRA" } },
+      { name: "Sodium", value: 134, unit: "mEq/L", interpretation: { severity: "abnormal", message: "Mildly low — dilutional hyponatremia from fluid overload" } },
+      { name: "HbA1c", value: 7.4, unit: "%", interpretation: { severity: "abnormal", message: "Slightly above target — reasonable for patient with HF and CKD" } },
+      { name: "Hemoglobin", value: 11.2, unit: "g/dL", interpretation: { severity: "abnormal", message: "Mild anemia — common in CKD and heart failure" } },
+    ],
+    conditions: [
+      { code: "I50.22", display: "Chronic systolic heart failure, NYHA Class III" },
+      { code: "N18.3", display: "Chronic kidney disease, stage 3" },
+      { code: "I25.10", display: "Atherosclerotic heart disease with history of PCI" },
+      { code: "E11.9", display: "Type 2 diabetes mellitus" },
+    ],
+    medications: [
+      { medication_name: "Carvedilol 25mg", dosage: "25mg BID", route: "oral" },
+      { medication_name: "Lisinopril 20mg", dosage: "20mg daily", route: "oral" },
+      { medication_name: "Furosemide 40mg", dosage: "40mg daily", route: "oral" },
+      { medication_name: "Aspirin 81mg", dosage: "81mg daily", route: "oral" },
+      { medication_name: "Atorvastatin 40mg", dosage: "40mg daily", route: "oral" },
+      { medication_name: "Metformin 500mg", dosage: "500mg BID", route: "oral" },
+    ],
+    allergies: [
+      { substance: "ACE inhibitor cough", reaction: "Persistent dry cough with Enalapril (tolerated Lisinopril)", severity: "mild" },
+    ],
+  },
+  "4": {
+    // Emily Davis — 45F, Asthma + Anxiety
+    name: "Emily Davis", age: 45, sex: "female", date_of_birth: "1981-11-03",
+    chief_complaint: "Worsening shortness of breath and wheezing for 5 days. Increased rescue inhaler use to 4-5 times daily. Also reports increased anxiety and difficulty sleeping.",
+    history_present_illness: "45-year-old female with moderate persistent asthma and generalized anxiety disorder. Reports worsening wheezing and dyspnea over 5 days, triggered by seasonal allergens. Using rescue albuterol 4-5 times daily (baseline: 1-2 times/week). Night-time awakenings 3 times this week. Reports increased anxiety about breathing, racing thoughts, and insomnia (sleeping 3-4 hours). No fever, purulent sputum, or chest pain. PEF at home measured 65% of personal best.",
+    physician_notes: "Patient appears anxious and mildly dyspneic at rest. Bilateral expiratory wheezing on auscultation. Good air movement. No accessory muscle use. No nasal polyps. Skin: mild eczema on antecubital fossae. Mental status: anxious affect, rapid speech, appropriate thought content. Asthma exacerbation — step up therapy indicated. Anxiety management needs reassessment.",
+    past_medical_history: ["Moderate persistent asthma (since childhood)", "Generalized anxiety disorder (5 years)", "Allergic rhinitis", "Eczema"],
+    family_history: ["Mother: Asthma, eczema", "Father: Anxiety disorder, GERD"],
+    social_history: { smoking: "Never", alcohol: "Rare", exercise: "Yoga 3x/week (limited currently by breathing)", diet: "Vegetarian" },
+    vitals: [
+      { code: "8867-4", display: "Heart Rate", value: 98, unit: "bpm" },
+      { code: "85354-9", display: "Blood Pressure", components: [{ code: "8480-6", value: 132 }, { code: "8462-4", value: 82 }] },
+      { code: "59408-5", display: "SpO2", value: 95, unit: "%" },
+      { code: "8310-5", display: "Temperature", value: 37.0, unit: "°C" },
+      { code: "9279-1", display: "Respiratory Rate", value: 22, unit: "/min" },
+    ],
+    labs: [
+      { name: "CBC WBC", value: 8.2, unit: "K/uL", interpretation: { severity: "normal", message: "Normal white cell count — no evidence of infection" } },
+      { name: "Eosinophils", value: 6.8, unit: "%", interpretation: { severity: "abnormal", message: "Elevated — consistent with allergic/eosinophilic asthma phenotype" } },
+      { name: "IgE Total", value: 320, unit: "IU/mL", interpretation: { severity: "abnormal", message: "Elevated — atopic phenotype, consider biologic therapy if uncontrolled" } },
+      { name: "Peak Expiratory Flow", value: 285, unit: "L/min", interpretation: { severity: "abnormal", message: "65% of predicted (440 L/min) — moderate obstruction" } },
+      { name: "Cortisol (AM)", value: 15, unit: "mcg/dL", interpretation: { severity: "normal", message: "Normal — no adrenal suppression from inhaled corticosteroids" } },
+      { name: "TSH", value: 2.8, unit: "mIU/L", interpretation: { severity: "normal", message: "Normal thyroid function" } },
+    ],
+    conditions: [
+      { code: "J45.40", display: "Moderate persistent asthma, uncomplicated" },
+      { code: "F41.1", display: "Generalized anxiety disorder" },
+      { code: "J30.1", display: "Allergic rhinitis due to pollen" },
+      { code: "L20.9", display: "Atopic dermatitis, unspecified" },
+    ],
+    medications: [
+      { medication_name: "Fluticasone/Salmeterol 250/50", dosage: "1 puff BID", route: "inhalation" },
+      { medication_name: "Albuterol HFA", dosage: "2 puffs PRN (currently 4-5x daily)", route: "inhalation" },
+      { medication_name: "Montelukast 10mg", dosage: "10mg daily", route: "oral" },
+      { medication_name: "Sertraline 100mg", dosage: "100mg daily", route: "oral" },
+      { medication_name: "Cetirizine 10mg", dosage: "10mg daily", route: "oral" },
+    ],
+    allergies: [
+      { substance: "Dust mites", reaction: "Rhinitis, wheezing", severity: "moderate" },
+      { substance: "Tree pollen", reaction: "Rhinitis, eye irritation", severity: "moderate" },
+      { substance: "NSAIDs", reaction: "Bronchospasm", severity: "severe" },
+    ],
+  },
+};
+
 function buildDemoAssessment(patient: typeof DEMO_PATIENTS[0]): ClinicalAssessment {
   const conditionData: Record<string, { findings: ClinicalAssessment["assessment"] extends { findings?: infer F } ? F : never; diagnoses: ClinicalAssessment["assessment"] extends { diagnoses?: infer D } ? D : never; treatments: ClinicalAssessment["assessment"] extends { treatments?: infer T } ? T : never }> = {
     Hypertension: {
@@ -297,6 +470,7 @@ export default function ClinicalAssessmentPage() {
           include_diagnoses: true,
           include_treatments: true,
           include_codes: true,
+          patient_data: PATIENT_CLINICAL_DATA[selectedPatient.id] || undefined,
         }),
       });
       setAssessment(result);
