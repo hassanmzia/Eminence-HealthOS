@@ -36,6 +36,7 @@ class ClinicalAssessmentRequest(BaseModel):
     include_diagnoses: bool = True
     include_treatments: bool = True
     include_codes: bool = True
+    patient_data: dict[str, Any] | None = None
 
 
 class ClinicalAssessmentResponse(BaseModel):

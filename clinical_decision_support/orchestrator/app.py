@@ -95,6 +95,8 @@ class ClinicalAssessmentRequest(BaseModel):
     include_diagnoses: bool = True
     include_treatments: bool = True
     include_codes: bool = True
+    # Inline patient data — used when FHIR is unavailable
+    patient_data: Optional[Dict[str, Any]] = None
 
 
 class ClinicalAssessmentResponse(BaseModel):
@@ -122,9 +124,48 @@ async def comprehensive_assessment(request: ClinicalAssessmentRequest):
     try:
         logger.info(f"Starting comprehensive assessment for patient: {request.patient_id}")
 
-        # Get patient context from MCP
+        # Get patient context from MCP, fall back to inline data
         fhir_id = request.fhir_id or request.patient_id
-        context = await supervisor.mcp.get_patient_context(fhir_id)
+        context = None
+        try:
+            context = await supervisor.mcp.get_patient_context(fhir_id)
+        except Exception as e:
+            logger.warning(f"MCP/FHIR unavailable: {e}")
+
+        # Check if FHIR returned useful data
+        has_fhir_data = (
+            context is not None
+            and (context.vitals or context.labs or context.conditions)
+        )
+
+        if not has_fhir_data and request.patient_data:
+            # Build PatientContext from inline data
+            pd = request.patient_data
+            context = PatientContext(
+                patient_id=request.patient_id,
+                fhir_id=fhir_id,
+                name=pd.get("name"),
+                age=pd.get("age"),
+                sex=pd.get("sex"),
+                date_of_birth=pd.get("date_of_birth"),
+                vitals=pd.get("vitals", []),
+                labs=pd.get("labs", []),
+                medications=pd.get("medications", []),
+                allergies=pd.get("allergies", []),
+                conditions=pd.get("conditions", []),
+                encounters=pd.get("encounters", []),
+                chief_complaint=pd.get("chief_complaint"),
+                history_present_illness=pd.get("history_present_illness"),
+                past_medical_history=pd.get("past_medical_history"),
+                social_history=pd.get("social_history"),
+                family_history=pd.get("family_history"),
+                physician_notes=pd.get("physician_notes"),
+                review_of_systems=pd.get("review_of_systems"),
+                physical_exam=pd.get("physical_exam"),
+            )
+            logger.info("Using inline patient data (FHIR unavailable or empty)")
+        elif context is None:
+            context = PatientContext(patient_id=request.patient_id, fhir_id=fhir_id)
 
         # Run multi-agent workflow
         output = await supervisor.process(context)
