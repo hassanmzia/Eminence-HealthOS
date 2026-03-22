@@ -28,14 +28,14 @@ TREATMENT_PROTOCOLS = {
             {
                 "type": "medication",
                 "description": "Start lisinopril 10mg daily",
-                "cpt": None,
+                "cpt": "99214",
                 "priority": "routine",
                 "rationale": "ACE inhibitor first-line for hypertension per ACC/AHA guidelines"
             },
             {
                 "type": "monitoring",
                 "description": "Home blood pressure monitoring twice daily",
-                "cpt": None,
+                "cpt": "99473",
                 "priority": "routine",
                 "rationale": "Track response to therapy"
             },
@@ -63,7 +63,7 @@ TREATMENT_PROTOCOLS = {
             {
                 "type": "medication",
                 "description": "Start metformin 500mg twice daily with meals",
-                "cpt": None,
+                "cpt": "99214",
                 "priority": "routine",
                 "rationale": "First-line therapy per ADA guidelines"
             },
@@ -105,21 +105,21 @@ TREATMENT_PROTOCOLS = {
             {
                 "type": "medication",
                 "description": "Start lisinopril 2.5-5mg daily (uptitrate as tolerated)",
-                "cpt": None,
+                "cpt": "99214",
                 "priority": "urgent",
                 "rationale": "GDMT for HFrEF - ACEi/ARB/ARNI"
             },
             {
                 "type": "medication",
                 "description": "Start carvedilol 3.125mg twice daily (uptitrate)",
-                "cpt": None,
+                "cpt": "99214",
                 "priority": "urgent",
                 "rationale": "GDMT for HFrEF - beta blocker"
             },
             {
                 "type": "medication",
                 "description": "Add furosemide 20-40mg daily if volume overloaded",
-                "cpt": None,
+                "cpt": "99214",
                 "priority": "urgent",
                 "rationale": "Diuretic for congestion"
             },
@@ -133,7 +133,7 @@ TREATMENT_PROTOCOLS = {
             {
                 "type": "monitoring",
                 "description": "Daily weights, sodium restriction <2g/day, fluid restriction",
-                "cpt": None,
+                "cpt": "99457",
                 "priority": "routine",
                 "rationale": "Monitor for volume status"
             },
@@ -154,14 +154,14 @@ TREATMENT_PROTOCOLS = {
             {
                 "type": "monitoring",
                 "description": "Monitor temperature every 4 hours",
-                "cpt": None,
+                "cpt": "99212",
                 "priority": "routine",
                 "rationale": "Track fever curve"
             },
             {
                 "type": "medication",
                 "description": "Acetaminophen 650mg every 6 hours as needed for fever >38.5°C",
-                "cpt": None,
+                "cpt": "99214",
                 "priority": "routine",
                 "rationale": "Symptomatic treatment"
             },
@@ -335,7 +335,7 @@ class TreatmentAgent(BaseAgent):
                     treatments.append(TreatmentRecommendation(
                         treatment_type="monitoring",
                         description=f"Follow clinical guidelines for {icd10}",
-                        cpt_code=None,
+                        cpt_code="99214",
                         priority="routine",
                         rationale="Based on clinical guidelines",
                         contraindications=[],
