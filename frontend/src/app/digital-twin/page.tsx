@@ -1060,7 +1060,12 @@ export default function DigitalTwinPage() {
                     {forecastResults.map((ms, i) => (
                       <div
                         key={ms.label}
-                        className="flex flex-col items-center flex-1 animate-fade-in-up"style={{ animationDelay: `${i * 100}ms` }} > {/* Node */} <div className={`relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 bg-white dark:bg-gray-900 ${ i === 0 ?"border-gray-400" : ms.riskLevel === "low" ? "border-green-400" : ms.riskLevel === "moderate" ? "border-yellow-400" : "border-red-400"
+                        className="flex flex-col items-center flex-1 animate-fade-in-up"
+                        style={{ animationDelay: `${i * 100}ms` }}
+                      >
+                        {/* Node */}
+                        <div className={`relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 bg-white dark:bg-gray-900 ${
+                          i === 0 ? "border-gray-400" : ms.riskLevel === "low" ? "border-green-400" : ms.riskLevel === "moderate" ? "border-yellow-400" : "border-red-400"
                         }`}>
                           <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{ms.healthScore}%</span>
                         </div>
