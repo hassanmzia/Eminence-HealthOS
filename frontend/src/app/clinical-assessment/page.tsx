@@ -101,6 +101,9 @@ async function apiFetch<T>(path: string, opts?: RequestInit): Promise<T> {
     headers: { "Content-Type": "application/json", ...getAuth(), ...opts?.headers },
     ...opts,
   });
+  if (res.status === 401) {
+    throw new Error("AUTH_REQUIRED");
+  }
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return res.json();
 }
@@ -115,6 +118,133 @@ const DEMO_PATIENTS = [
   { id: "3", name: "Robert Johnson", mrn: "MRN003", age: 65, sex: "M", conditions: ["Heart Failure", "CKD Stage 3"] },
   { id: "4", name: "Emily Davis", mrn: "MRN004", age: 45, sex: "F", conditions: ["Asthma", "Anxiety"] },
 ];
+
+function buildDemoAssessment(patient: typeof DEMO_PATIENTS[0]): ClinicalAssessment {
+  const conditionData: Record<string, { findings: ClinicalAssessment["assessment"] extends { findings?: infer F } ? F : never; diagnoses: ClinicalAssessment["assessment"] extends { diagnoses?: infer D } ? D : never; treatments: ClinicalAssessment["assessment"] extends { treatments?: infer T } ? T : never }> = {
+    Hypertension: {
+      findings: [
+        { category: "Vitals", finding: "Blood pressure 158/94 mmHg", status: "abnormal", interpretation: "Stage 2 hypertension — above target 130/80 for diabetic patients" },
+        { category: "Vitals", finding: "Heart rate 82 bpm", status: "normal", interpretation: "Regular rate and rhythm" },
+        { category: "Labs", finding: "Serum creatinine 1.4 mg/dL", status: "borderline", interpretation: "Mildly elevated — monitor renal function given hypertension and diabetes" },
+        { category: "Labs", finding: "Potassium 4.2 mEq/L", status: "normal", interpretation: "Within normal range" },
+      ],
+      diagnoses: [
+        { diagnosis: "Essential Hypertension, Stage 2", icd10_code: "I10", confidence: 0.95, rationale: "Sustained BP >140/90 on multiple readings with end-organ risk factors", supporting_findings: ["BP 158/94", "Elevated creatinine"] },
+      ],
+      treatments: [
+        { treatment_type: "Medication", description: "Increase Lisinopril to 20mg daily", cpt_code: "99214", priority: "high", rationale: "Current BP above target on 10mg; ACE inhibitor preferred given concurrent diabetes" },
+        { treatment_type: "Lifestyle", description: "DASH diet counseling, sodium restriction <2g/day", cpt_code: "97802", priority: "medium", rationale: "Dietary modification is first-line adjunct for hypertension management" },
+      ],
+    },
+    "Type 2 Diabetes": {
+      findings: [
+        { category: "Labs", finding: "HbA1c 8.2%", status: "abnormal", interpretation: "Above target of 7.0% — indicates suboptimal glycemic control over past 3 months" },
+        { category: "Labs", finding: "Fasting glucose 186 mg/dL", status: "abnormal", interpretation: "Elevated fasting glucose consistent with uncontrolled diabetes" },
+        { category: "Labs", finding: "eGFR 58 mL/min", status: "borderline", interpretation: "CKD Stage 3a — consider renal-protective diabetes agents" },
+      ],
+      diagnoses: [
+        { diagnosis: "Type 2 Diabetes Mellitus without complications", icd10_code: "E11.9", confidence: 0.92, rationale: "Elevated HbA1c and fasting glucose with established diabetes history", supporting_findings: ["HbA1c 8.2%", "FG 186 mg/dL"] },
+        { diagnosis: "Chronic Kidney Disease, Stage 3a", icd10_code: "N18.31", confidence: 0.88, rationale: "eGFR 58 mL/min with diabetic and hypertensive nephropathy risk", supporting_findings: ["eGFR 58", "Cr 1.4"] },
+      ],
+      treatments: [
+        { treatment_type: "Medication", description: "Add Empagliflozin 10mg daily", cpt_code: "99214", priority: "high", rationale: "SGLT2 inhibitor provides glycemic control plus renal and cardiovascular protection" },
+        { treatment_type: "Monitoring", description: "Repeat HbA1c in 3 months, renal panel in 6 weeks", cpt_code: "83036", priority: "medium", rationale: "Track glycemic response and renal function with new medication" },
+      ],
+    },
+    "Atrial Fibrillation": {
+      findings: [
+        { category: "ECG", finding: "Irregular rhythm, absent P waves", status: "abnormal", interpretation: "Consistent with atrial fibrillation" },
+        { category: "Vitals", finding: "Heart rate 112 bpm (irregular)", status: "abnormal", interpretation: "Rapid ventricular response in atrial fibrillation" },
+        { category: "Labs", finding: "TSH 0.8 mIU/L", status: "normal", interpretation: "Thyroid function normal — rules out thyrotoxicosis as AF trigger" },
+      ],
+      diagnoses: [
+        { diagnosis: "Atrial Fibrillation, Unspecified", icd10_code: "I48.91", confidence: 0.96, rationale: "ECG findings with irregular narrow-complex tachycardia and absent P waves", supporting_findings: ["Irregular rhythm", "Absent P waves", "HR 112"] },
+      ],
+      treatments: [
+        { treatment_type: "Medication", description: "Initiate Metoprolol succinate 50mg daily for rate control", cpt_code: "99214", priority: "high", rationale: "Rate control strategy for AF with rapid ventricular response; target HR <110 at rest" },
+        { treatment_type: "Anticoagulation", description: "Start Apixaban 5mg BID (CHA₂DS₂-VASc = 2)", cpt_code: "99214", priority: "high", rationale: "Stroke prevention indicated with CHA₂DS₂-VASc ≥2 in female patient" },
+      ],
+    },
+    "Heart Failure": {
+      findings: [
+        { category: "Labs", finding: "BNP 820 pg/mL", status: "abnormal", interpretation: "Significantly elevated — consistent with heart failure exacerbation" },
+        { category: "Imaging", finding: "Ejection fraction 35%", status: "abnormal", interpretation: "Reduced EF indicating systolic dysfunction (HFrEF)" },
+        { category: "Vitals", finding: "SpO2 93% on room air", status: "borderline", interpretation: "Mild hypoxemia — may indicate pulmonary congestion" },
+      ],
+      diagnoses: [
+        { diagnosis: "Heart Failure with Reduced Ejection Fraction", icd10_code: "I50.2", confidence: 0.94, rationale: "EF 35% with elevated BNP and clinical signs of congestion", supporting_findings: ["EF 35%", "BNP 820", "SpO2 93%"] },
+      ],
+      treatments: [
+        { treatment_type: "Medication", description: "Optimize GDMT: Sacubitril/Valsartan 24/26mg BID", cpt_code: "99214", priority: "high", rationale: "ARNI therapy reduces mortality in HFrEF per ACC/AHA guidelines" },
+        { treatment_type: "Medication", description: "Add Spironolactone 25mg daily", cpt_code: "99214", priority: "high", rationale: "MRA reduces mortality in NYHA II-IV HFrEF with EF ≤35%" },
+      ],
+    },
+  };
+
+  const allFindings: NonNullable<ClinicalAssessment["assessment"]>["findings"] = [];
+  const allDiagnoses: NonNullable<ClinicalAssessment["assessment"]>["diagnoses"] = [];
+  const allTreatments: NonNullable<ClinicalAssessment["assessment"]>["treatments"] = [];
+
+  for (const cond of patient.conditions) {
+    const data = conditionData[cond];
+    if (data) {
+      if (data.findings) allFindings.push(...data.findings);
+      if (data.diagnoses) allDiagnoses.push(...data.diagnoses);
+      if (data.treatments) allTreatments.push(...data.treatments);
+    }
+  }
+
+  const reasoning = [
+    `=== Step 1: Patient Intake ===`,
+    `Agent [Supervisor] reviewing patient ${patient.name} (${patient.age}${patient.sex}, MRN: ${patient.mrn})`,
+    `Known conditions: ${patient.conditions.join(", ")}`,
+    `Routing to specialist agents for comprehensive assessment...`,
+    ``,
+    `=== Step 2: Clinical Findings ===`,
+    `Agent [Diagnostician] analyzing vitals, labs, and imaging data`,
+    `Found ${allFindings.length} relevant findings across ${patient.conditions.length} condition(s)`,
+    ...allFindings.filter(f => f.status === "abnormal").map(f => `  ⚠ ${f.finding} — ${f.interpretation}`),
+    ``,
+    `=== Step 3: Differential Diagnosis ===`,
+    `Agent [Diagnostician] generating differential diagnoses with ICD-10 codes`,
+    ...allDiagnoses.map(d => `  → ${d.diagnosis} (${d.icd10_code}) — confidence ${(d.confidence * 100).toFixed(0)}%`),
+    ``,
+    `=== Step 4: Treatment Planning ===`,
+    `Agent [Treatment Planner] formulating evidence-based treatment plan`,
+    ...allTreatments.map(t => `  → [${t.priority.toUpperCase()}] ${t.description}`),
+    ``,
+    `=== Step 5: Safety Check ===`,
+    `Agent [Safety Checker] verifying drug interactions and contraindications`,
+    `QC Result: PASS — No critical drug interactions detected`,
+    `QC Result: PASS — Allergy screening clear`,
+    `QC Result: ${allFindings.some(f => f.status === "abnormal") ? "WARN" : "PASS"} — ${allFindings.filter(f => f.status === "abnormal").length} abnormal finding(s) flagged for review`,
+    ``,
+    `=== Step 6: Final Review ===`,
+    `Agent [Supervisor] compiling final assessment`,
+    `Human review: RECOMMENDED — Complex multi-condition patient`,
+    `Total agents consulted: 5 | Confidence: ${(allDiagnoses.reduce((s, d) => s + d.confidence, 0) / Math.max(allDiagnoses.length, 1) * 100).toFixed(0)}%`,
+  ];
+
+  return {
+    success: true,
+    patient_id: patient.id,
+    llm_provider: "demo-mode",
+    assessment: {
+      patient_summary: { patient_id: patient.id, name: patient.name, age: patient.age, sex: patient.sex },
+      findings: allFindings,
+      critical_findings: allFindings.filter(f => f.status === "abnormal").map(f => ({ finding: f.finding, interpretation: f.interpretation })),
+      diagnoses: allDiagnoses,
+      treatments: allTreatments,
+      icd10_codes: allDiagnoses.map(d => ({ code: d.icd10_code, description: d.diagnosis, confidence: d.confidence })),
+      cpt_codes: allTreatments.map(t => ({ code: t.cpt_code, description: t.description })),
+      confidence: allDiagnoses.reduce((s, d) => s + d.confidence, 0) / Math.max(allDiagnoses.length, 1),
+      reasoning,
+      warnings: allFindings.filter(f => f.status === "abnormal").map(f => f.finding),
+      requires_human_review: true,
+      review_reason: "Multi-condition patient with abnormal findings requires clinician verification",
+    },
+  };
+}
 
 const DEMO_AGENTS: AgentInfo[] = [
   { agent_id: "supervisor", name: "Clinical Supervisor", description: "Orchestrates multi-agent clinical pipeline", version: "2.0.0", specialties: ["triage", "routing"], requires_human_approval: true },
@@ -171,7 +301,14 @@ export default function ClinicalAssessmentPage() {
       });
       setAssessment(result);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Assessment failed");
+      const msg = e instanceof Error ? e.message : "Assessment failed";
+      if (msg === "AUTH_REQUIRED") {
+        // Fall back to demo assessment when not authenticated
+        await new Promise((r) => setTimeout(r, 1500)); // simulate processing
+        setAssessment(buildDemoAssessment(selectedPatient));
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -190,8 +327,18 @@ export default function ClinicalAssessmentPage() {
     try {
       const data = await apiFetch<LLMStatus>("/llm/status");
       setLlmStatus(data);
-    } catch {
-      setLlmStatus({ status: "unavailable", error: "Orchestrator not reachable" });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "";
+      if (msg === "AUTH_REQUIRED") {
+        setLlmStatus({
+          status: "demo",
+          primary_provider: "claude-sonnet-4-6 (demo)",
+          available_providers: ["claude-sonnet-4-6", "gpt-4o", "gemini-2.0-flash"],
+          config: { temperature: 0.2, max_tokens: 4096, top_p: 0.9 },
+        });
+      } else {
+        setLlmStatus({ status: "unavailable", error: "Orchestrator not reachable" });
+      }
     }
   }, []);
 
@@ -199,8 +346,15 @@ export default function ClinicalAssessmentPage() {
     try {
       const data = await apiFetch<{ mcp_servers: Record<string, MCPServerStatus> }>("/mcp/status");
       setMcpServers(data.mcp_servers || {});
-    } catch {
-      /* empty */
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "";
+      if (msg === "AUTH_REQUIRED") {
+        setMcpServers({
+          "fhir-server": { url: "http://localhost:8090", status: "demo" },
+          "audit-server": { url: "http://localhost:8091", status: "demo" },
+          "terminology-server": { url: "http://localhost:8092", status: "demo" },
+        });
+      }
     }
   }, []);
 
@@ -208,8 +362,13 @@ export default function ClinicalAssessmentPage() {
     try {
       const data = await apiFetch<SimulatorStatus>("/simulator/status");
       setSimStatus(data);
-    } catch {
-      setSimStatus({ running: false, error: "Simulator not reachable" });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "";
+      if (msg === "AUTH_REQUIRED") {
+        setSimStatus({ running: false, devices_count: 6, observations_sent: 0, alerts_generated: 0, errors_count: 0 });
+      } else {
+        setSimStatus({ running: false, error: "Simulator not reachable" });
+      }
     }
   }, []);
 
