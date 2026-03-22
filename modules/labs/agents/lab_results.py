@@ -291,10 +291,8 @@ class LabResultsAgent(BaseAgent):
                 "is_critical": flag.startswith("critical"),
             })
 
-        # Generate LLM clinical interpretation
-        interpretation = (
-            f"{len(processed)} results reviewed: {abnormals} abnormal, {criticals} critical."
-        )
+        # Generate LLM clinical interpretation (with rule-based fallback)
+        interpretation = self._build_fallback_interpretation(processed, abnormals, criticals)
         try:
             interpretation_payload = {
                 "patient_id": ctx.get("patient_id"),
@@ -344,6 +342,113 @@ class LabResultsAgent(BaseAgent):
                 f"{abnormals} abnormal, {criticals} critical"
             ),
         )
+
+    @staticmethod
+    def _build_fallback_interpretation(
+        processed: list[dict[str, Any]], abnormals: int, criticals: int,
+    ) -> str:
+        """Build a rule-based clinical narrative when LLM is unavailable."""
+        sections: list[str] = []
+        sections.append(
+            f"AI Interpretation Summary ({len(processed)} tests reviewed: "
+            f"{abnormals} abnormal, {criticals} critical)\n"
+        )
+
+        # Clinical interpretation rules keyed by test name
+        interpretations: dict[str, str] = {
+            "glucose": "elevated fasting glucose suggests impaired glucose tolerance or diabetes mellitus",
+            "bun": "elevated BUN may indicate renal impairment, dehydration, or high protein intake",
+            "creatinine": "elevated creatinine indicates reduced renal clearance",
+            "egfr": "decreased eGFR indicates chronic kidney disease staging progression",
+            "potassium": "hyperkalemia requires urgent evaluation — risk of cardiac arrhythmia",
+            "hba1c": "elevated HbA1c indicates suboptimal glycemic control over prior 2-3 months",
+            "sodium": "abnormal sodium requires assessment of fluid balance and ADH function",
+            "hemoglobin": "abnormal hemoglobin warrants evaluation for anemia or polycythemia",
+            "tsh": "abnormal TSH suggests thyroid dysfunction — recommend free T4/T3",
+            "ldl": "elevated LDL cholesterol increases cardiovascular risk — consider statin therapy",
+            "ldl cholesterol": "elevated LDL cholesterol increases cardiovascular risk — consider statin therapy",
+            "hdl": "low HDL is an independent cardiovascular risk factor",
+            "triglycerides": "elevated triglycerides increase pancreatitis and cardiovascular risk",
+            "alt": "elevated ALT suggests hepatocellular injury",
+            "ast": "elevated AST may indicate liver, cardiac, or muscle injury",
+            "inr": "elevated INR indicates anticoagulation effect or coagulopathy",
+            "troponin i": "elevated troponin indicates myocardial injury — rule out acute coronary syndrome",
+            "troponin": "elevated troponin indicates myocardial injury — rule out acute coronary syndrome",
+            "wbc": "abnormal WBC count warrants evaluation for infection or hematologic disorder",
+            "platelets": "abnormal platelet count requires evaluation for bleeding or thrombotic risk",
+            "calcium": "abnormal calcium requires evaluation of parathyroid function and vitamin D",
+        }
+
+        # CKD staging based on eGFR
+        egfr_entry = next((p for p in processed if p["test"].lower() == "egfr"), None)
+        ckd_stage = ""
+        if egfr_entry:
+            val = egfr_entry["value"]
+            if val >= 90:
+                ckd_stage = "Stage 1"
+            elif val >= 60:
+                ckd_stage = "Stage 2"
+            elif val >= 45:
+                ckd_stage = "Stage 3a"
+            elif val >= 30:
+                ckd_stage = "Stage 3b"
+            elif val >= 15:
+                ckd_stage = "Stage 4"
+            else:
+                ckd_stage = "Stage 5 (kidney failure)"
+
+        finding_num = 0
+        # Critical findings first
+        for p in processed:
+            if not p.get("is_critical"):
+                continue
+            finding_num += 1
+            test_key = p["test"].lower()
+            detail = interpretations.get(test_key, "requires immediate clinical evaluation")
+            sections.append(
+                f"{finding_num}. CRITICAL — {p['test'].upper()}: "
+                f"Value {p['value']} {p.get('unit', '')} "
+                f"(ref: {p.get('reference_range', 'N/A')}) — {detail}. "
+                f"Immediate intervention required."
+            )
+
+        # Abnormal (non-critical) findings
+        for p in processed:
+            if not p.get("is_abnormal") or p.get("is_critical"):
+                continue
+            finding_num += 1
+            test_key = p["test"].lower()
+            detail = interpretations.get(test_key, "clinically significant deviation from normal")
+            extra = ""
+            if test_key == "egfr" and ckd_stage:
+                extra = f" Consistent with CKD {ckd_stage}."
+            sections.append(
+                f"{finding_num}. {p['test'].upper()}: "
+                f"Value {p['value']} {p.get('unit', '')} "
+                f"(ref: {p.get('reference_range', 'N/A')}) — {detail}.{extra}"
+            )
+
+        # Recommendations
+        recommendations: list[str] = []
+        if criticals > 0:
+            recommendations.append("Urgent clinical review of critical values")
+        if egfr_entry and egfr_entry["value"] < 60:
+            recommendations.append("Nephrology referral for CKD management")
+        if any(p["test"].lower() in ("troponin", "troponin i") and p.get("is_critical") for p in processed):
+            recommendations.append("Serial troponins and cardiology consultation")
+        if any(p["test"].lower() == "potassium" and p.get("is_critical") for p in processed):
+            recommendations.append("Repeat electrolytes in 2 hours; ECG monitoring")
+        if any(p["test"].lower() == "hba1c" and p.get("is_abnormal") for p in processed):
+            recommendations.append("Endocrinology referral for glycemic management")
+        if any(p["test"].lower() == "tsh" and p.get("is_abnormal") for p in processed):
+            recommendations.append("Thyroid function panel (free T4, T3)")
+        if any(p["test"].lower() in ("ldl", "ldl cholesterol") and p.get("is_abnormal") for p in processed):
+            recommendations.append("Lipid management review; consider statin intensification")
+
+        if recommendations:
+            sections.append("\nRecommendations: " + ". ".join(recommendations) + ".")
+
+        return "\n\n".join(sections)
 
     def _get_results(self, input_data: AgentInput) -> AgentOutput:
         ctx = input_data.context

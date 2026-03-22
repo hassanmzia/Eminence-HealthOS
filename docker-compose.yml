@@ -92,7 +92,7 @@ services:
       PORT: "8005"
       SERVER_NAME: mcp-fhir-server
       FHIR_BASE: http://hapi-fhir:8080/fhir
-    command: python mcp_fhir_server.py
+    command: uvicorn mcp_fhir_server:app --host 0.0.0.0 --port 8005
     networks:
       - healthos
 
@@ -106,7 +106,7 @@ services:
     environment:
       PORT: "8006"
       SERVER_NAME: mcp-labs-server
-    command: python mcp_labs_server.py
+    command: uvicorn mcp_labs_server:app --host 0.0.0.0 --port 8006
     networks:
       - healthos
 
@@ -121,7 +121,7 @@ services:
       PORT: "8007"
       SERVER_NAME: mcp-rag-server
       QDRANT_URL: http://qdrant:6333
-    command: python mcp_rag_server.py
+    command: uvicorn mcp_rag_server:app --host 0.0.0.0 --port 8007
     depends_on:
       - qdrant
     networks:
@@ -137,6 +137,7 @@ services:
     environment:
       PORT: "8002"
       FHIR_BASE: http://hapi-fhir:8080/fhir
+    command: uvicorn app:app --host 0.0.0.0 --port 8002
     networks:
       - healthos
 

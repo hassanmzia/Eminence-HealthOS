@@ -12,6 +12,11 @@ FHIR_BASE = os.getenv("FHIR_BASE", "http://hapi-fhir:8080/fhir")
 FHIR_AUTH_HEADER = os.getenv("FHIR_AUTH_HEADER", "")
 
 
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "server": "mcp-fhir-adapter"}
+
+
 def _get_headers():
     headers = {"Content-Type": "application/fhir+json"}
     if FHIR_AUTH_HEADER:
