@@ -674,12 +674,12 @@ export default function AmbientAIPage() {
 
       {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex gap-6">
+        <nav className="-mb-px flex gap-4 sm:gap-6 overflow-x-auto">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key)}
-              className={`border-b-2 pb-3 text-sm font-medium transition-colors ${
+              className={`whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors ${
                 activeTab === t.key
                   ? "border-healthos-600 text-healthos-600"
                   : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:border-gray-600"

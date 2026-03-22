@@ -400,7 +400,7 @@ export default function SimulatorPage() {
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
               activeTab === t.key
                 ? "bg-white dark:bg-gray-900 text-healthos-700 shadow-sm"
                 : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
