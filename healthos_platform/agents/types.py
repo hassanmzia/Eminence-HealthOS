@@ -82,6 +82,16 @@ class AgentMessage(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+def parse_patient_id(value: Any) -> uuid.UUID | None:
+    """Parse a patient_id as UUID if valid, otherwise return None."""
+    if not value:
+        return None
+    try:
+        return uuid.UUID(str(value))
+    except (ValueError, AttributeError):
+        return None
+
+
 class AgentInput(BaseModel):
     """Standard input for every agent invocation."""
 

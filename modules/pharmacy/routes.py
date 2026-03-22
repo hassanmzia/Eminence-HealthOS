@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from healthos_platform.agents.types import AgentInput
+from healthos_platform.agents.types import AgentInput, parse_patient_id
 from services.api.middleware.auth import CurrentUser, require_auth, require_role
 from services.api.middleware.tenant import get_tenant_id
 
@@ -31,7 +31,7 @@ async def create_prescription(
     agent = PrescriptionAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="pharmacy.prescription.create",
         context={"action": "create_prescription", **body},
     ))
@@ -50,7 +50,7 @@ async def transmit_prescription(
     agent = PrescriptionAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="pharmacy.prescription.transmit",
         context={"action": "sign_and_transmit", **body},
     ))
@@ -96,7 +96,7 @@ async def check_interactions(
     agent = DrugInteractionAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="pharmacy.interactions.check",
         context={"action": "check_interactions", **body},
     ))
@@ -115,7 +115,7 @@ async def full_safety_check(
     agent = DrugInteractionAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="pharmacy.interactions.safety_check",
         context={"action": "full_safety_check", **body},
     ))
@@ -233,7 +233,7 @@ async def check_refills(
     agent = RefillAutomationAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="pharmacy.refills.check",
         context={"action": "check_refills", **body},
     ))
@@ -252,7 +252,7 @@ async def initiate_refill(
     agent = RefillAutomationAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="pharmacy.refills.initiate",
         context={"action": "initiate_refill", **body},
     ))
@@ -300,7 +300,7 @@ async def adherence_report(
     agent = MedicationAdherenceAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="pharmacy.adherence.report",
         context={"action": "adherence_report", **body},
     ))

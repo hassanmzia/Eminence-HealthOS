@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from healthos_platform.agents.types import AgentInput
+from healthos_platform.agents.types import AgentInput, parse_patient_id
 from services.api.middleware.auth import CurrentUser, require_auth, require_role
 from services.api.middleware.tenant import get_tenant_id
 
@@ -31,7 +31,7 @@ async def start_session(
     agent = AmbientListeningAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="ambient.session.start",
         context={"action": "start_session", **body},
     ))
@@ -50,7 +50,7 @@ async def transcribe(
     agent = AmbientListeningAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="ambient.transcribe",
         context={"action": "transcribe", **body},
     ))
@@ -111,7 +111,7 @@ async def generate_soap(
     agent = SOAPNoteGeneratorAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="ambient.soap.generate",
         context={"action": "generate_soap", **body},
     ))
@@ -151,7 +151,7 @@ async def code_encounter(
     agent = AutoCodingAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="ambient.coding.encounter",
         context={"action": "code_encounter", **body},
     ))
@@ -191,7 +191,7 @@ async def submit_attestation(
     agent = ProviderAttestationAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="ambient.attestation.submit",
         context={"action": "submit_for_review", **body},
     ))

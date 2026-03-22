@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from healthos_platform.agents.types import AgentInput
+from healthos_platform.agents.types import AgentInput, parse_patient_id
 from services.api.middleware.auth import CurrentUser, require_auth, require_role
 from services.api.middleware.tenant import get_tenant_id
 
@@ -31,7 +31,7 @@ async def match_trials(
     agent = ClinicalTrialMatchingAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="research.trials.match",
         context={"action": "match_trials", **body},
     ))
@@ -50,7 +50,7 @@ async def check_eligibility(
     agent = ClinicalTrialMatchingAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="research.trials.eligibility",
         context={"action": "check_eligibility", **body},
     ))
@@ -238,7 +238,7 @@ async def check_drug_gene(
     agent = PharmacogenomicsAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="research.pgx.check",
         context={"action": "check_drug_gene", **body},
     ))
@@ -257,7 +257,7 @@ async def patient_pgx_profile(
     agent = PharmacogenomicsAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="research.pgx.profile",
         context={"action": "patient_profile", **body},
     ))
@@ -314,7 +314,7 @@ async def calculate_prs(
     agent = GeneticRiskAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="research.genetic.prs",
         context={"action": "calculate_prs", **body},
     ))
@@ -333,7 +333,7 @@ async def monogenic_screen(
     agent = GeneticRiskAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="research.genetic.monogenic",
         context={"action": "monogenic_screen", **body},
     ))
@@ -352,7 +352,7 @@ async def integrated_risk(
     agent = GeneticRiskAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="research.genetic.integrated_risk",
         context={"action": "integrated_risk", **body},
     ))
@@ -371,7 +371,7 @@ async def risk_report(
     agent = GeneticRiskAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="research.genetic.report",
         context={"action": "risk_report", **body},
     ))

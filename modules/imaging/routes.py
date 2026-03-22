@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from healthos_platform.agents.types import AgentInput
+from healthos_platform.agents.types import AgentInput, parse_patient_id
 from services.api.middleware.auth import CurrentUser, require_auth, require_role
 from services.api.middleware.tenant import get_tenant_id
 
@@ -31,7 +31,7 @@ async def ingest_study(
     agent = ImagingIngestionAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="imaging.study.ingest",
         context={"action": "ingest_study", **body},
     ))
@@ -89,7 +89,7 @@ async def analyze_image(
     agent = ImageAnalysisAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="imaging.analysis.run",
         context={"action": "analyze_image", **body},
     ))
@@ -129,7 +129,7 @@ async def generate_report(
     agent = RadiologyReportAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="imaging.report.generate",
         context={"action": "generate_report", **body},
     ))
@@ -224,7 +224,7 @@ async def evaluate_findings(
     agent = CriticalFindingAlertAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="imaging.critical.evaluate",
         context={"action": "evaluate_findings", **body},
     ))
