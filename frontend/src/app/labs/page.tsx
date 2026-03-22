@@ -371,7 +371,10 @@ export default function LabsPage() {
           { label: "Results Today", value: "47", icon: "📋", color: "border-l-blue-500", sub: "8 abnormal" },
           { label: "Critical Values", value: String(criticalValues.filter((c) => c.status === "new").length), icon: "🚨", color: "border-l-red-500", sub: `${criticalValues.length} total active` },
           { label: "Avg Turnaround", value: "4.2h", icon: "⏱", color: "border-l-green-500", sub: "Target: 6h" },
-          { label: "Abnormal Rate", value: "32%", icon: "📊", color: "border-l-purple-500", sub: "↑ 4% from last week"}, ].map((kpi) => ( <div key={kpi.label} className={`card card-hover rounded-lg border-l-4 ${kpi.color} bg-white dark:bg-gray-900 p-4`}> className="flex items-center justify-between">
+          { label: "Abnormal Rate", value: "32%", icon: "📊", color: "border-l-purple-500", sub: "↑ 4% from last week"},
+        ].map((kpi) => (
+          <div key={kpi.label} className={`card card-hover rounded-lg border-l-4 ${kpi.color} bg-white dark:bg-gray-900 p-4`}>
+            <div className="flex items-center justify-between">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{kpi.label}</p>
               <span className="text-lg">{kpi.icon}</span>
             </div>
