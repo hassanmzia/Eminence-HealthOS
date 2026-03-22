@@ -535,7 +535,13 @@ function UsersTab() {
               <th className="text-left p-3 font-semibold cursor-pointer select-none" onClick={() => handleSort("lastLogin")}>
                 Last Login {sortIndicator("lastLogin")}
               </th>
-              <th className="text-right p-3 font-semibold">Actions</th> </tr> </thead> <tbody> {filtered.map((user) => ( <tr key={user.id} className={`table-row border-b border-zinc-100 dark:border-zinc-800 ${ selectedUsers.has(user.id) ?"bg-blue-50 dark:bg-blue-900/10" : ""
+              <th className="text-right p-3 font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((user) => (
+              <tr key={user.id} className={`table-row border-b border-zinc-100 dark:border-zinc-800 ${
+                selectedUsers.has(user.id) ? "bg-blue-50 dark:bg-blue-900/10" : ""
                 }`}
               >
                 <td className="p-3">
