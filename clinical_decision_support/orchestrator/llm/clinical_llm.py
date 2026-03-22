@@ -396,6 +396,90 @@ class OllamaClient(BaseLLMClient):
 
 
 # ============================================================================
+# OpenAI Client (ChatGPT)
+# ============================================================================
+
+class OpenAIClient(BaseLLMClient):
+    """OpenAI ChatGPT API client"""
+
+    def __init__(self, config: LLMConfig):
+        super().__init__(config)
+        self.api_key = config.openai_api_key
+        self.model = config.openai_model
+        self.base_url = "https://api.openai.com/v1"
+
+    def is_available(self) -> bool:
+        return bool(self.api_key)
+
+    async def generate(
+        self,
+        prompt: str,
+        system_prompt: str = None,
+        task_type: str = None,
+        patient_id: str = None,
+        json_mode: bool = False
+    ) -> dict:
+        if not self.is_available():
+            raise ValueError("OpenAI API key not configured")
+
+        trace = self.tracer.start_trace("openai", self.model, task_type, patient_id)
+        trace.prompt_preview = prompt[:200]
+        start_time = time.time()
+
+        system = self._get_system_prompt(system_prompt)
+        if json_mode:
+            system += "\n\nRespond with valid JSON only."
+
+        messages = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt},
+        ]
+
+        body: Dict[str, Any] = {
+            "model": self.model,
+            "max_tokens": self.config.max_tokens,
+            "temperature": self.config.temperature,
+            "messages": messages,
+        }
+        if json_mode:
+            body["response_format"] = {"type": "json_object"}
+
+        try:
+            async with httpx.AsyncClient(timeout=self.config.timeout) as client:
+                response = await client.post(
+                    f"{self.base_url}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json=body,
+                )
+                response.raise_for_status()
+                data = response.json()
+
+            content = data["choices"][0]["message"]["content"]
+            usage = data.get("usage", {})
+
+            trace.latency_ms = (time.time() - start_time) * 1000
+            trace.prompt_tokens = usage.get("prompt_tokens", 0)
+            trace.completion_tokens = usage.get("completion_tokens", 0)
+            trace.response_preview = content[:200]
+            self.tracer.end_trace(trace, success=True)
+
+            return {
+                "content": content,
+                "usage": usage,
+                "model": self.model,
+                "provider": "openai",
+            }
+
+        except Exception as e:
+            trace.latency_ms = (time.time() - start_time) * 1000
+            self.tracer.end_trace(trace, success=False, error=str(e))
+            raise
+
+
+# ============================================================================
 # Unified LLM Interface
 # ============================================================================
 
@@ -413,6 +497,7 @@ class ClinicalLLM:
 
         self.clients[LLMProvider.CLAUDE] = ClaudeClient(self.config)
         self.clients[LLMProvider.OLLAMA] = OllamaClient(self.config)
+        self.clients[LLMProvider.OPENAI] = OpenAIClient(self.config)
 
         # Set primary provider
         self.primary_provider = self.config.provider

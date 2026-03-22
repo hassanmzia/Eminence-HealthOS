@@ -159,6 +159,63 @@ class OllamaProvider(LLMProvider):
             return False
 
 
+class OpenAIProvider(LLMProvider):
+    """OpenAI ChatGPT provider."""
+
+    provider_name = "openai"
+
+    def __init__(self) -> None:
+        settings = get_settings()
+        self.api_key = settings.openai_api_key
+        self.default_model = os.getenv("OPENAI_MODEL", "gpt-4o")
+
+    async def complete(self, request: LLMRequest) -> LLMResponse:
+        import httpx
+
+        if not self.api_key:
+            raise RuntimeError("OpenAI API key not configured")
+
+        model = request.model or self.default_model
+        messages: list[dict[str, str]] = []
+        if request.system:
+            messages.append({"role": "system", "content": request.system})
+        messages.extend(request.messages)
+
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            resp = await client.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": model,
+                    "messages": messages,
+                    "temperature": request.temperature,
+                    "max_tokens": request.max_tokens,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        choice = data["choices"][0]
+        usage = data.get("usage", {})
+
+        return LLMResponse(
+            content=choice["message"]["content"],
+            model=model,
+            provider=self.provider_name,
+            usage={
+                "input_tokens": usage.get("prompt_tokens", 0),
+                "output_tokens": usage.get("completion_tokens", 0),
+            },
+            finish_reason=choice.get("finish_reason", ""),
+        )
+
+    async def health_check(self) -> bool:
+        return bool(self.api_key)
+
+
 class LLMRouter:
     """
     Routes LLM requests to the appropriate provider.
@@ -176,6 +233,10 @@ class LLMRouter:
         # Register Anthropic if API key is available
         if settings.anthropic_api_key:
             self._providers["anthropic"] = AnthropicProvider()
+
+        # Register OpenAI if API key is available
+        if settings.openai_api_key:
+            self._providers["openai"] = OpenAIProvider()
 
         # Always register Ollama (local, no key needed)
         self._providers["ollama"] = OllamaProvider()
