@@ -535,7 +535,7 @@ export async function receiveLabResults(body: Record<string, unknown>) {
 }
 
 export async function interpretLabResults(body: Record<string, unknown>) {
-  return request<Record<string, unknown>>("/labs/results/flag-abnormals", { method: "POST", body: JSON.stringify(body) });
+  return request<Record<string, unknown>>("/labs/results/interpret", { method: "POST", body: JSON.stringify(body) });
 }
 
 export async function analyzeLabTrends(body: Record<string, unknown>) {
