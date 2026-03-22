@@ -54,7 +54,7 @@ export function PatientHeader({ patientId }: { patientId: string }) {
             {dob && <> &middot; DOB {dob}</>}
           </p>
         </div>
-        <a href="/patients" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400">&larr; Back to patients</a>
+        <a href="/patients" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-600">&larr; Back to patients</a>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">

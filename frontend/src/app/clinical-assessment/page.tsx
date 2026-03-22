@@ -295,7 +295,7 @@ function AssessmentTab({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       {/* Patient Picker */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:bg-gray-800">
         <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">Select Patient</h3>
         <div className="space-y-2">
           {patients.map((p) => (
@@ -334,7 +334,7 @@ function AssessmentTab({
         )}
 
         {loading && (
-          <div className="flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-12 dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 sm:p-12 dark:bg-gray-800">
             <div className="text-center">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-healthos-500 border-t-transparent" />
               <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Running multi-agent clinical assessment...</p>
@@ -380,7 +380,7 @@ function AssessmentTab({
 
             {/* Diagnoses */}
             {(assessment.assessment.diagnoses?.length ?? 0) > 0 && (
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:bg-gray-800">
                 <h4 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">Diagnoses</h4>
                 <div className="space-y-3">
                   {assessment.assessment.diagnoses!.map((d, i) => (
@@ -403,7 +403,7 @@ function AssessmentTab({
 
             {/* Treatments */}
             {(assessment.assessment.treatments?.length ?? 0) > 0 && (
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:bg-gray-800">
                 <h4 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">Treatment Recommendations</h4>
                 <div className="space-y-2">
                   {assessment.assessment.treatments!.map((t, i) => (
@@ -440,7 +440,7 @@ function AssessmentTab({
         )}
 
         {!assessment && !loading && !error && (
-          <div className="flex items-center justify-center rounded-xl border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-16 dark:border-gray-600 dark:bg-gray-800/50">
+          <div className="flex items-center justify-center rounded-xl border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 p-6 sm:p-16">
             <div className="text-center">
               <svg className="mx-auto h-12 w-12 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
@@ -715,7 +715,7 @@ function AgentsTab({ agents }: { agents: AgentInfo[] }) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       {agents.map((agent) => (
-        <div key={agent.agent_id} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div key={agent.agent_id} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:bg-gray-800">
           <div className="flex items-start justify-between">
             <div>
               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{agent.name}</h4>
@@ -758,7 +758,7 @@ function LLMTab({ status, onRefresh }: { status: LLMStatus | null; onRefresh: ()
       </div>
 
       {status ? (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 shadow-sm dark:bg-gray-800">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div>
               <p className="text-xs font-medium text-gray-500 dark:text-gray-500">Status</p>
@@ -784,7 +784,7 @@ function LLMTab({ status, onRefresh }: { status: LLMStatus | null; onRefresh: ()
           )}
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-8 text-center dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 sm:p-8 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">Loading LLM status...</p>
         </div>
       )}
@@ -820,7 +820,7 @@ function MCPTab({ servers, onRefresh }: { servers: Record<string, MCPServerStatu
               const dotColor = s.status === "healthy" ? "bg-emerald-500" : s.status === "unreachable" ? "bg-amber-400" : "bg-red-500";
               const textColor = s.status === "healthy" ? "text-emerald-600" : s.status === "unreachable" ? "text-amber-600" : "text-red-600";
               return (
-                <div key={name} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <div key={name} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:bg-gray-800">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">{name.replace(/-/g, " ")}</h4>
                     <span className={`inline-flex h-2 w-2 rounded-full ${dotColor}`} />
@@ -835,7 +835,7 @@ function MCPTab({ servers, onRefresh }: { servers: Record<string, MCPServerStatu
           </div>
         </>
       ) : (
-        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-8 text-center dark:border-gray-600 dark:bg-gray-800/50">
+        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 p-4 sm:p-8 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">No MCP servers connected. Start the clinical orchestrator to see server status.</p>
         </div>
       )}
@@ -872,7 +872,7 @@ function SimulatorTab({ status, onRefresh }: { status: SimulatorStatus | null; o
         </button>
       </div>
 
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 shadow-sm dark:bg-gray-800">
         {status ? (
           <>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
@@ -915,14 +915,14 @@ function SimulatorTab({ status, onRefresh }: { status: SimulatorStatus | null; o
               <button
                 onClick={() => doAction("trigger")}
                 disabled={!!actionLoading}
-                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               >
                 {actionLoading === "trigger" ? "..." : "Trigger Once"}
               </button>
               <button
                 onClick={() => doAction("reset-stats")}
                 disabled={!!actionLoading}
-                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               >
                 Reset Stats
               </button>

@@ -54,7 +54,7 @@ export function SessionQueue({ selectedSessionId, onSelectSession }: Props) {
               } ${
                 selectedSessionId === session.session_id
                   ? "bg-healthos-50 ring-1 ring-healthos-200"
-                  : "bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:bg-gray-800"
+                  : "bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
             >
               <div className="flex items-center justify-between">

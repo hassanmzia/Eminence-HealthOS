@@ -79,7 +79,7 @@ const EVENT_CONFIG: Record<
     bg: "bg-gray-50 dark:bg-gray-800/50",
     border: "border-gray-300 dark:border-gray-700",
     dot: "bg-gray-500",
-    badge: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 dark:bg-gray-800 dark:text-gray-300",
+    badge: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300",
   },
 };
 
@@ -643,7 +643,7 @@ export default function PatientTimelinePage() {
 
           <div className="space-y-4">
             {filteredEvents.length === 0 && (
-              <div className="card rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-8 text-center text-gray-400 dark:text-gray-500 animate-fade-in-up">
+              <div className="card rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-8 text-center text-gray-400 dark:text-gray-500 animate-fade-in-up">
                 No events match your current filters.
               </div>
             )}

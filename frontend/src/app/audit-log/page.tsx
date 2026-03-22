@@ -291,7 +291,7 @@ export default function AuditLogPage() {
       {/* ---- Header ---- */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Audit Log</h1>
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">Audit Log</h1>
           <p className="text-gray-500 dark:text-gray-500 mt-1">Centralized system activity monitoring</p>
         </div>
         <div className="flex items-center gap-3">
@@ -450,7 +450,7 @@ export default function AuditLogPage() {
               {paginatedEntries.map((entry) => (
                 <React.Fragment key={entry.id}>
                   <tr
-                    className="table-row cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 dark:hover:bg-gray-800/50 transition-colors"
+                    className="table-row cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                     onClick={() => setExpandedRow(expandedRow === entry.id ? null : entry.id)}
                   >
                     <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-300">{formatTimestamp(entry.timestamp)}</td>
@@ -553,7 +553,7 @@ export default function AuditLogPage() {
         </div>
 
         {filteredEntries.length === 0 && (
-          <div className="text-center py-12 text-gray-400 dark:text-gray-500">
+          <div className="text-center py-6 sm:py-12 text-gray-400 dark:text-gray-500">
             <p className="text-lg font-medium">No audit entries match your filters</p>
             <p className="text-sm mt-1">Try adjusting your search criteria</p>
           </div>

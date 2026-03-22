@@ -738,7 +738,7 @@ function NotesDocumentsTab({ patient }: { patient: DemoPatient }) {
       </div>
 
       {/* Document Upload Area */}
-      <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center hover:border-healthos-400 hover:bg-healthos-50/20 transition-colors cursor-pointer">
+      <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 sm:p-8 text-center hover:border-healthos-400 hover:bg-healthos-50/20 transition-colors cursor-pointer">
         <Upload className="w-8 h-8 text-gray-500 dark:text-gray-400 mx-auto mb-2" />
         <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Drop documents here or click to upload</p>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">PDF, DOCX, images — up to 25MB</p>
@@ -918,7 +918,7 @@ function PatientSelector({
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Select Patient</h2>
-            <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400">
+            <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-600">
               <XCircle className="w-5 h-5" />
             </button>
           </div>
@@ -1115,7 +1115,7 @@ export default function ClinicalWorkspacePage() {
 
             {/* Loading overlay */}
             {isLoading && (
-              <div className="flex items-center justify-center py-12">
+              <div className="flex items-center justify-center py-6 sm:py-12">
                 <Loader2 className="w-6 h-6 animate-spin text-healthos-500" />
                 <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">Loading patient data...</span>
               </div>

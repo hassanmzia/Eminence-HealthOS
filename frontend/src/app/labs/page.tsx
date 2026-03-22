@@ -416,7 +416,7 @@ export default function LabsPage() {
             <div className="card rounded-lg border border-healthos-200 bg-healthos-50/30 p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Create Lab Order</h3>
-                <button onClick={() => setShowCreateOrder(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400">
+                <button onClick={() => setShowCreateOrder(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
@@ -684,7 +684,7 @@ export default function LabsPage() {
                       </div>
 
                       {/* Data bars and points */}
-                      <div className="relative flex h-[180px] items-end justify-around px-8">
+                      <div className="relative flex h-[180px] items-end justify-around px-4 sm:px-8">
                         {currentTrend.values.map((v, i) => {
                           const h = ((v - min) / range) * chartH;
                           const isAbnormal = v > currentTrend.refHigh || v < currentTrend.refLow;
@@ -701,7 +701,7 @@ export default function LabsPage() {
                       </div>
 
                       {/* Date labels */}
-                      <div className="flex justify-around px-8 pt-2">
+                      <div className="flex justify-around px-4 sm:px-8 pt-2">
                         {currentTrend.dates.map((d, i) => (
                           <span key={i} className="text-[11px] text-gray-500 dark:text-gray-400" style={{ width: `${barWidth}%`, textAlign: "center" }}>{d}</span>
                         ))}

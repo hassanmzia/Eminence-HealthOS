@@ -798,7 +798,7 @@ export default function PharmacyPage() {
           <div className="card w-full max-w-lg rounded-2xl p-6 shadow-2xl animate-fade-in-up">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">New Prescription</h3>
-              <button onClick={() => setShowNewRxModal(false)} className="rounded-full p-1 text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:bg-gray-800 hover:text-gray-600 dark:text-gray-400">
+              <button onClick={() => setShowNewRxModal(false)} className="rounded-full p-1 text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>

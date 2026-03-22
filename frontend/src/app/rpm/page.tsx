@@ -494,7 +494,7 @@ export default function RPMPage() {
                     <span className={`text-sm font-bold ${trend.color}`}>{trend.arrow} {trend.label}</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <p className={`text-4xl font-bold ${vital.warn ? "text-red-600" : "text-gray-900 dark:text-gray-100"}`}>
+                    <p className={`text-2xl sm:text-4xl font-bold ${vital.warn ? "text-red-600" : "text-gray-900 dark:text-gray-100"}`}>
                       {vital.value}
                     </p>
                     <span className="text-sm text-gray-500 dark:text-gray-400">{vital.unit}</span>
@@ -738,7 +738,7 @@ export default function RPMPage() {
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Ingest RPM Data</h2>
-              <button onClick={() => setShowIngestModal(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none">&times;</button>
+              <button onClick={() => setShowIngestModal(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
             <form onSubmit={(e) => { handleIngest(e); setShowIngestModal(false); }} className="space-y-4">
               <div>
@@ -805,7 +805,7 @@ export default function RPMPage() {
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Provision New Device</h2>
-              <button onClick={() => setShowProvisionModal(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none">&times;</button>
+              <button onClick={() => setShowProvisionModal(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
             <form
               onSubmit={(e) => {

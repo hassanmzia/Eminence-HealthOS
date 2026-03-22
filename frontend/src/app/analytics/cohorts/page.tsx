@@ -154,7 +154,7 @@ export default function CohortBuilderPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/analytics"
-            className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-600"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -207,7 +207,7 @@ export default function CohortBuilderPage() {
 
       {/* Tabs + Search */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5">
+        <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5 overflow-x-auto">
           <button
             onClick={() => setTab("active")}
             className={`rounded-md px-3 py-1.5 text-sm font-medium ${

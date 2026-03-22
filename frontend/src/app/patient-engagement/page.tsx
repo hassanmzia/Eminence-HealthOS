@@ -547,7 +547,7 @@ export default function PatientEngagementPage() {
             <div className="card p-6 space-y-4 border-2 border-healthos-200 animate-fade-in-up">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Create Care Journey</h2>
-                <button onClick={() => setShowJourneyForm(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400">
+                <button onClick={() => setShowJourneyForm(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>

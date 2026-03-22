@@ -511,7 +511,7 @@ export default function MentalHealthPage() {
       </div>
 
       {/* ── Tabs ───────────────────────────────────────────────────────────── */}
-      <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5 w-fit animate-fade-in-up">
+      <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5 overflow-x-auto w-fit animate-fade-in-up">
         {TABS.map((t) => (
           <button
             key={t.key}
@@ -538,7 +538,7 @@ export default function MentalHealthPage() {
               <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">New Screening</h2>
-                  <button onClick={() => setShowNewScreening(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none">&times;</button>
+                  <button onClick={() => setShowNewScreening(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
                 </div>
                 <div className="space-y-3">
                   <div>
@@ -588,7 +588,7 @@ export default function MentalHealthPage() {
                 </div>
                 <button
                   onClick={() => { setActiveScreening(null); setScreeningAnswers([]); }}
-                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400"
+                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-600"
                 >
                   Cancel
                 </button>
@@ -645,7 +645,7 @@ export default function MentalHealthPage() {
                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Screening Complete</h3>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{screeningResult.tool} for {screeningPatient}</p>
                 <div className="mt-4">
-                  <span className="text-4xl font-bold text-gray-900 dark:text-gray-100">{screeningResult.score}</span>
+                  <span className="text-2xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">{screeningResult.score}</span>
                   <span className={`ml-3 inline-block rounded-full px-3 py-1 text-sm font-medium ${severityFromScore(screeningResult.tool, screeningResult.score).color}`}>
                     {severityFromScore(screeningResult.tool, screeningResult.score).label}
                   </span>
@@ -786,7 +786,7 @@ export default function MentalHealthPage() {
               <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white dark:bg-gray-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Create Safety Plan</h2>
-                  <button onClick={() => setShowSafetyPlan(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none">&times;</button>
+                  <button onClick={() => setShowSafetyPlan(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Patient: {crisisPatient || "Not selected"}</p>
                 <div className="space-y-4">
@@ -1219,7 +1219,7 @@ export default function MentalHealthPage() {
           )}
 
           {!selectedPatientProgress && (
-            <div className="card text-center py-12">
+            <div className="card text-center py-6 sm:py-12">
               <p className="text-gray-500 dark:text-gray-400 text-sm">Select a patient above to view their longitudinal progress</p>
             </div>
           )}

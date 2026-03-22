@@ -354,4 +354,16 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ── Prevent horizontal overflow from long words/URLs ─────────── */
+  .break-word {
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
 }

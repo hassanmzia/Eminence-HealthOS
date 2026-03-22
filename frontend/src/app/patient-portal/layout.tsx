@@ -63,9 +63,9 @@ export default function PatientPortalLayout({
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-gray-200 bg-white">
+      <header className="sticky top-0 z-30 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Brand */}
           <Link href="/patient-portal" className="flex items-center gap-2">
@@ -148,13 +148,13 @@ export default function PatientPortalLayout({
       </header>
 
       {/* Content */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-4 sm:px-8">
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+      <footer className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-4 sm:px-8">
           <p className="text-center text-xs text-gray-400">
             Eminence HealthOS Patient Portal &mdash; Your health data is protected under HIPAA.
           </p>

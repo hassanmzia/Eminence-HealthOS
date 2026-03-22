@@ -76,7 +76,7 @@ export function TaskQueue() {
         {tasks.map((task) => (
           <div
             key={task.task_id}
-            className={`cursor-pointer rounded-lg border-l-4 bg-gray-50 dark:bg-gray-800 p-3 transition-colors hover:bg-gray-100 dark:bg-gray-800 ${PRIORITY_COLORS[task.priority] || "border-l-gray-300"}`}
+            className={`cursor-pointer rounded-lg border-l-4 bg-gray-50 dark:bg-gray-800 p-3 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${PRIORITY_COLORS[task.priority] || "border-l-gray-300"}`}
           >
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{task.title}</span>

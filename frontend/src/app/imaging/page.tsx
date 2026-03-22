@@ -952,7 +952,7 @@ export default function ImagingPage() {
           })}
 
           {groupedByPatient.size === 0 && (
-            <div className="card rounded-xl p-12 text-center">
+            <div className="card rounded-xl p-6 sm:p-12 text-center">
               <svg className="mx-auto h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
               <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No patients match your search.</p>
             </div>
@@ -970,7 +970,7 @@ export default function ImagingPage() {
             Active Critical Findings ({activeCritical.length})
           </h3>
           {activeCritical.length === 0 && (
-            <div className="card rounded-xl p-8 text-center">
+            <div className="card rounded-xl p-4 sm:p-8 text-center">
               <svg className="mx-auto h-10 w-10 text-green-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No active critical findings. All clear.</p>
             </div>

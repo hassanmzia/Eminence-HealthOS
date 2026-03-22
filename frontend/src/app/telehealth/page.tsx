@@ -284,27 +284,27 @@ function VideoSessionUI({
   return (
     <div className="fixed inset-0 z-50 bg-gray-900 flex flex-col">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-3 bg-gray-800 text-white">
-        <div className="flex items-center gap-3">
-          <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
-          <span className="font-semibold">LIVE</span>
-          <span className="text-gray-500 dark:text-gray-400">|</span>
-          <span className="text-sm text-gray-300">{session.patient_name}</span>
-          <span className="inline-block rounded-full px-2 py-0.5 text-xs font-medium border ${visitTypeBadge(session.visit_type)}">{session.visit_type.replace("-", " ")}</span>
+      <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 bg-gray-800 text-white">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+          <span className="font-semibold text-sm sm:text-base">LIVE</span>
+          <span className="text-gray-400 hidden sm:inline">|</span>
+          <span className="text-xs sm:text-sm text-gray-300 truncate">{session.patient_name}</span>
+          <span className="hidden sm:inline-block rounded-full px-2 py-0.5 text-xs font-medium border ${visitTypeBadge(session.visit_type)}">{session.visit_type.replace("-", " ")}</span>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="font-mono text-lg tabular-nums">{formatElapsed(elapsed)}</span>
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <span className="font-mono text-sm sm:text-lg tabular-nums">{formatElapsed(elapsed)}</span>
         </div>
       </div>
 
       {/* Video area */}
       <div className="flex-1 flex items-center justify-center relative">
-        <div className="grid grid-cols-2 gap-4 w-full max-w-5xl px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 w-full max-w-5xl px-3 sm:px-8">
           {/* Patient camera */}
           <div className="relative rounded-2xl bg-gray-800 aspect-video flex items-center justify-center overflow-hidden border border-gray-700">
             <div className="text-center">
               <div className="w-20 h-20 rounded-full bg-healthos-600 flex items-center justify-center mx-auto mb-3">
-                <span className="text-3xl font-bold text-white">
+                <span className="text-xl sm:text-3xl font-bold text-white">
                   {session.patient_name?.split(" ").map((n) => n[0]).join("") || "P"}
                 </span>
               </div>
@@ -331,7 +331,7 @@ function VideoSessionUI({
             ) : (
               <div className="text-center">
                 <div className="w-20 h-20 rounded-full bg-healthos-700 flex items-center justify-center mx-auto mb-3">
-                  <span className="text-3xl font-bold text-white">Dr</span>
+                  <span className="text-xl sm:text-3xl font-bold text-white">Dr</span>
                 </div>
                 <p className="text-gray-500 dark:text-gray-400 text-sm">You (Provider)</p>
               </div>
@@ -346,7 +346,7 @@ function VideoSessionUI({
       </div>
 
       {/* Bottom controls */}
-      <div className="flex items-center justify-center gap-4 py-6 bg-gray-800">
+      <div className="flex items-center justify-center gap-3 sm:gap-4 py-4 sm:py-6 bg-gray-800">
         <button
           onClick={() => setMuted(!muted)}
           className={`flex items-center justify-center w-14 h-14 rounded-full transition-colors ${muted ? "bg-red-500 hover:bg-red-600" : "bg-gray-600 hover:bg-gray-500"}`}
@@ -754,7 +754,7 @@ export default function TelehealthPage() {
         {activeTab === "active" && (
           <div className="space-y-4">
             {sessions.filter((s) => s.status !== "completed").length === 0 ? (
-              <div className="card p-12 text-center">
+              <div className="card p-6 sm:p-12 text-center">
                 <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
@@ -868,7 +868,7 @@ export default function TelehealthPage() {
         {activeTab === "waiting" && (
           <div className="space-y-4">
             {waitingSessions.length === 0 ? (
-              <div className="card p-12 text-center">
+              <div className="card p-6 sm:p-12 text-center">
                 <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -965,7 +965,7 @@ export default function TelehealthPage() {
         {activeTab === "notes" && (
           <div className="space-y-4">
             {notes.length === 0 ? (
-              <div className="card p-12 text-center">
+              <div className="card p-6 sm:p-12 text-center">
                 <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -1257,7 +1257,7 @@ export default function TelehealthPage() {
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">New Telehealth Session</h2>
               <button
                 onClick={() => setShowNewSession(false)}
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-600 text-xl leading-none"
               >
                 &times;
               </button>

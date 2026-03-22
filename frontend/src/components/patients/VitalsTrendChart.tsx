@@ -142,7 +142,7 @@ export function VitalsTrendChart({ patientId }: { patientId: string }) {
         <>
           {/* Current value */}
           <div className="mb-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold" style={{ color: tab.color }}>
+            <span className="text-xl sm:text-3xl font-bold" style={{ color: tab.color }}>
               {currentValue}
             </span>
             <span className="text-sm text-gray-500 dark:text-gray-400">{tab.unit}</span>

@@ -183,7 +183,7 @@ export function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload || payload.length === 0) return null;
 
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 shadow-lg dark:bg-gray-800">
       {label && (
         <p className="mb-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100">
           {label}
@@ -243,7 +243,7 @@ export function DrillDownBarChart({
   }, []);
 
   return (
-    <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           {title}
@@ -399,7 +399,7 @@ export function ZoomableLineChart({
   }, []);
 
   return (
-    <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           {title}
@@ -495,7 +495,7 @@ export function InteractivePieChart({
   );
 
   return (
-    <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm">
       <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
         {title}
       </h3>
@@ -547,7 +547,7 @@ export function InteractivePieChart({
         <div className="w-full md:w-1/2">
           {activeItem ? (
             <div
-              className="rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-4 transition-all duration-300 dark:border-gray-700 dark:bg-gray-800"
+              className="rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-4 transition-all duration-300 dark:border-gray-700"
               style={{ opacity: 1 }}
             >
               <div className="mb-3 flex items-center gap-3">
@@ -565,7 +565,7 @@ export function InteractivePieChart({
               </div>
 
               <div className="mb-4">
-                <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                <span className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
                   {activeItem.value}%
                 </span>
                 <span className="ml-2 text-sm text-gray-500 dark:text-gray-500">
@@ -578,7 +578,7 @@ export function InteractivePieChart({
                   {activeItem.details.map((detail, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between rounded-md bg-white dark:bg-gray-900 px-3 py-2 dark:bg-gray-900"
+                      className="flex items-center justify-between rounded-md bg-white dark:bg-gray-900 px-3 py-2"
                     >
                       <span className="text-sm text-gray-500 dark:text-gray-500">
                         {detail.label}
@@ -594,7 +594,7 @@ export function InteractivePieChart({
               )}
             </div>
           ) : (
-            <div className="flex h-full min-h-[200px] items-center justify-center rounded-lg border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex h-full min-h-[200px] items-center justify-center rounded-lg border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
               <p className="text-sm text-gray-400 dark:text-gray-500">
                 Click a segment to view details
               </p>
@@ -612,7 +612,7 @@ export function InteractivePieChart({
                 className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-sm transition ${
                   activeIndex === i
                     ? "bg-indigo-50 dark:bg-indigo-950"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-800 dark:hover:bg-gray-800"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-800"
                 }`}
               >
                 <div className="flex items-center gap-2">

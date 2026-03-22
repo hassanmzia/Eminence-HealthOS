@@ -143,9 +143,9 @@ export function CommandPalette() {
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg animate-slide-up rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl dark:border-gray-700 dark:bg-gray-900">
+      <div className="relative w-full max-w-lg animate-slide-up rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl">
         {/* Search input */}
-        <div className="flex items-center gap-3 border-b border-gray-200 dark:border-gray-700 px-4 dark:border-gray-700">
+        <div className="flex items-center gap-3 border-b border-gray-200 dark:border-gray-700 px-4">
           <svg className="h-5 w-5 flex-shrink-0 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
@@ -156,9 +156,9 @@ export function CommandPalette() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search pages, features, tools..."
-            className="flex-1 bg-transparent py-4 text-sm text-gray-900 dark:text-gray-100 outline-none placeholder:text-gray-400 dark:text-gray-100"
+            className="flex-1 bg-transparent py-4 text-sm text-gray-900 dark:text-gray-100 outline-none placeholder:text-gray-400"
           />
-          <kbd className="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-1.5 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400 dark:border-gray-700 dark:bg-gray-800">
+          <kbd className="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-1.5 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400">
             ESC
           </kbd>
         </div>
@@ -188,7 +188,7 @@ export function CommandPalette() {
                       className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
                         isSelected
                           ? "bg-healthos-50 text-healthos-700 dark:bg-healthos-950/50 dark:text-healthos-400"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 dark:hover:bg-gray-800"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                       }`}
                     >
                       <svg className="h-4 w-4 flex-shrink-0 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -212,17 +212,17 @@ export function CommandPalette() {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-4 border-t border-gray-200 dark:border-gray-700 px-4 py-2 dark:border-gray-700">
+        <div className="flex items-center gap-4 border-t border-gray-200 dark:border-gray-700 px-4 py-2">
           <div className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
-            <kbd className="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-1 py-0.5 dark:border-gray-700 dark:bg-gray-800">↑↓</kbd>
+            <kbd className="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-1 py-0.5">↑↓</kbd>
             <span>Navigate</span>
           </div>
           <div className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
-            <kbd className="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-1 py-0.5 dark:border-gray-700 dark:bg-gray-800">↵</kbd>
+            <kbd className="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-1 py-0.5">↵</kbd>
             <span>Open</span>
           </div>
           <div className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
-            <kbd className="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-1.5 py-0.5 dark:border-gray-700 dark:bg-gray-800">⌘K</kbd>
+            <kbd className="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-1.5 py-0.5">⌘K</kbd>
             <span>Toggle</span>
           </div>
         </div>

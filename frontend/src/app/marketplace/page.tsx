@@ -513,7 +513,7 @@ function BrowseTab({
 
       {/* Grid */}
       {filtered.length === 0 ? (
-        <div className="py-16 text-center">
+        <div className="py-8 sm:py-16 text-center">
           <p className="text-lg text-gray-500 dark:text-gray-400">No agents found matching your criteria.</p>
         </div>
       ) : (
@@ -600,7 +600,7 @@ function MyAgentsTab({ agents }: { agents: InstalledAgent[] }) {
   return (
     <div className="animate-fade-in-up space-y-4">
       {installed.length === 0 ? (
-        <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-16 text-center">
+        <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-8 sm:py-16 text-center">
           <p className="text-lg font-medium text-gray-500 dark:text-gray-400">No agents installed yet</p>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Browse the marketplace to discover and install agents</p>
         </div>
@@ -675,7 +675,7 @@ function MyAgentsTab({ agents }: { agents: InstalledAgent[] }) {
                     Update to v{agent.latestVersion}
                   </button>
                 )}
-                <button className="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:bg-gray-800">
+                <button className="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100">
                   Configure
                 </button>
                 <button
@@ -941,7 +941,7 @@ function PublishTab({
       <div>
         <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Your Published Agents</h3>
         {publishedAgents.length === 0 ? (
-          <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-12 text-center">
+          <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-6 sm:py-12 text-center">
             <p className="text-gray-500 dark:text-gray-400">No agents published yet</p>
           </div>
         ) : (
@@ -1054,7 +1054,7 @@ export default function MarketplacePage() {
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">AI Agent Marketplace</h1>
+            <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">AI Agent Marketplace</h1>
             <span className="inline-flex items-center rounded-full bg-healthos-100 px-3 py-0.5 text-sm font-semibold text-healthos-700">
               {totalAgents} Available
             </span>
@@ -1127,7 +1127,7 @@ export default function MarketplacePage() {
       </div>
 
       {/* Tabs */}
-      <div className="mb-6 flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 w-fit">
+      <div className="mb-6 flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 w-fit overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.key}

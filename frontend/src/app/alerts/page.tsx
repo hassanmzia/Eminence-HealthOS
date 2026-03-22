@@ -157,7 +157,7 @@ export default function AlertsPage() {
           ))}
         </div>
       ) : alerts.length === 0 ? (
-        <div className="card flex flex-col items-center justify-center py-16 text-center">
+        <div className="card flex flex-col items-center justify-center py-8 sm:py-16 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
             <svg className="h-7 w-7 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

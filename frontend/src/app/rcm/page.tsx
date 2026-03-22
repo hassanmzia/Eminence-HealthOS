@@ -433,7 +433,7 @@ export default function RCMPage() {
             <div className="card animate-fade-in-up">
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Capture Charges</h3>
-                <button onClick={() => setShowChargeForm(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none">&times;</button>
+                <button onClick={() => setShowChargeForm(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
               </div>
               <form onSubmit={handleCaptureCharge} className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>

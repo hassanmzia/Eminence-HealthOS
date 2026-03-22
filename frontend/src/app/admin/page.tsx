@@ -226,10 +226,10 @@ export default function AdminPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6 lg:p-10">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6 lg:p-5 sm:p-10">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">Administration</h1>
+        <h1 className="text-xl sm:text-3xl font-bold text-zinc-900 dark:text-white">Administration</h1>
         <p className="mt-1 text-zinc-500 dark:text-zinc-400">Manage roles, permissions, and user access</p>
       </div>
 
@@ -585,7 +585,7 @@ function UsersTab() {
           </tbody>
         </table></div>
         {filtered.length === 0 && (
-          <div className="text-center py-12">
+          <div className="text-center py-6 sm:py-12">
             <p className="text-zinc-400 dark:text-zinc-500 text-lg mb-1">No users found</p>
             <p className="text-zinc-300 dark:text-zinc-600 text-sm">Try adjusting your search or filter criteria.</p>
           </div>
@@ -955,7 +955,7 @@ function AuditTrailTab() {
           </tbody>
         </table></div>
         {filtered.length === 0 && (
-          <div className="text-center py-12">
+          <div className="text-center py-6 sm:py-12">
             <p className="text-zinc-400 dark:text-zinc-500 text-lg mb-1">No audit entries found</p>
             <p className="text-zinc-300 dark:text-zinc-600 text-sm">Try adjusting your filters.</p>
           </div>
