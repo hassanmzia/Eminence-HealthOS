@@ -21,7 +21,7 @@ from modules.telehealth.schemas.session import (
     SymptomCheckRequest,
     SymptomCheckResponse,
 )
-from healthos_platform.agents.types import AgentInput
+from healthos_platform.agents.types import AgentInput, parse_patient_id
 from healthos_platform.api.middleware.tenant import TenantContext, get_current_user
 from healthos_platform.config.database import get_db as get_shared_db
 from healthos_platform.security.rbac import Permission
@@ -313,7 +313,7 @@ async def schedule_appointment(
     agent = SchedulingAgent()
     agent_input = AgentInput(
         org_id=ctx.org_id,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="telehealth.schedule",
         context={
             "action": body.get("action", "schedule"),

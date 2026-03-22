@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from healthos_platform.agents.types import AgentInput
+from healthos_platform.agents.types import AgentInput, parse_patient_id
 from services.api.middleware.auth import CurrentUser, require_auth, require_role
 from services.api.middleware.tenant import get_tenant_id
 
@@ -31,7 +31,7 @@ async def adapt_content(
     agent = HealthLiteracyAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="engagement.literacy.adapt",
         context={"action": "adapt_content", **body},
     ))
@@ -109,7 +109,7 @@ async def triage_symptoms(
     agent = ConversationalTriageAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="engagement.triage.assess",
         context={"action": "triage_symptoms", **body},
     ))
@@ -149,7 +149,7 @@ async def create_journey(
     agent = CareNavigationAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="engagement.navigation.create",
         context={"action": "create_journey", **body},
     ))
@@ -189,7 +189,7 @@ async def screen_patient(
     agent = SDOHScreeningAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="engagement.sdoh.screen",
         context={"action": "screen_patient", **body},
     ))
@@ -228,7 +228,7 @@ async def find_resources(
     agent = CommunityResourceAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="engagement.resources.find",
         context={"action": "find_resources", **body},
     ))
@@ -247,7 +247,7 @@ async def create_referral(
     agent = CommunityResourceAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="engagement.resources.referral",
         context={"action": "create_referral", **body},
     ))
@@ -269,7 +269,7 @@ async def send_nudge(
     agent = MotivationalEngagementAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="engagement.nudge.send",
         context={"action": "send_nudge", **body},
     ))
@@ -288,7 +288,7 @@ async def engagement_score(
     agent = MotivationalEngagementAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="engagement.score",
         context={"action": "engagement_score", **body},
     ))
@@ -327,7 +327,7 @@ async def send_physician_notification(
     agent = PhysicianNotifyAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="engagement.notification.physician",
         context={"action": "notify_physician", **body},
     ))
@@ -367,7 +367,7 @@ async def send_patient_notification(
     agent = PatientNotifyAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="engagement.notification.patient",
         context={"action": "notify_patient", **body},
     ))
@@ -386,7 +386,7 @@ async def send_educational_content(
     agent = PatientNotifyAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="engagement.notification.educational",
         context={"action": "send_educational", **body},
     ))
@@ -405,7 +405,7 @@ async def send_appointment_reminder(
     agent = PatientNotifyAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="engagement.notification.appointment",
         context={"action": "send_appointment_reminder", **body},
     ))

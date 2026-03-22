@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from healthos_platform.agents.types import AgentInput
+from healthos_platform.agents.types import AgentInput, parse_patient_id
 from services.api.middleware.auth import CurrentUser, require_auth, require_role
 from services.api.middleware.tenant import get_tenant_id
 
@@ -149,7 +149,7 @@ async def capture_consent(
     agent = ConsentManagementAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="compliance.consent.capture",
         context={"action": "capture_consent", **body},
     ))
@@ -168,7 +168,7 @@ async def revoke_consent(
     agent = ConsentManagementAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="compliance.consent.revoke",
         context={"action": "revoke_consent", **body},
     ))
@@ -187,7 +187,7 @@ async def get_consent_status(
     agent = ConsentManagementAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="compliance.consent.status",
         context={"action": "consent_status", **body},
     ))

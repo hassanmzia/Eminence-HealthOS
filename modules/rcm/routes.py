@@ -7,7 +7,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from healthos_platform.agents.types import AgentInput
+from healthos_platform.agents.types import AgentInput, parse_patient_id
 from services.api.middleware.auth import CurrentUser, require_auth, require_role
 from services.api.middleware.tenant import get_tenant_id
 
@@ -31,7 +31,7 @@ async def capture_charges(
     agent = ChargeCaptureAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="rcm.charges.capture",
         context={"action": "capture_charges", **body},
     ))
@@ -165,7 +165,7 @@ async def scan_chart(
     agent = RevenueIntegrityAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="rcm.integrity.scan",
         context={"action": "scan_chart", **body},
     ))
@@ -184,7 +184,7 @@ async def hcc_gap_analysis(
     agent = RevenueIntegrityAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="rcm.integrity.hcc_gaps",
         context={"action": "hcc_gap_analysis", **body},
     ))

@@ -8,7 +8,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from healthos_platform.agents.types import AgentInput
+from healthos_platform.agents.types import AgentInput, parse_patient_id
 from services.api.middleware.auth import CurrentUser, require_auth, require_role
 from services.api.middleware.tenant import get_tenant_id
 
@@ -33,7 +33,7 @@ async def evaluate_prior_auth(
     agent = PriorAuthorizationAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="operations.prior_auth.evaluate",
         context={"action": "evaluate", **body},
     ))
@@ -52,7 +52,7 @@ async def submit_prior_auth(
     agent = PriorAuthorizationAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="operations.prior_auth.submit",
         context={"action": "submit", **body},
     ))
@@ -92,7 +92,7 @@ async def verify_insurance(
     agent = InsuranceVerificationAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="operations.insurance.verify",
         context={"action": "verify_eligibility", **body},
     ))
@@ -111,7 +111,7 @@ async def check_benefits(
     agent = InsuranceVerificationAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="operations.insurance.benefits",
         context={"action": "check_benefits", **body},
     ))
@@ -130,7 +130,7 @@ async def estimate_patient_cost(
     agent = InsuranceVerificationAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="operations.insurance.estimate",
         context={"action": "estimate_cost", **body},
     ))
@@ -152,7 +152,7 @@ async def create_referral(
     agent = ReferralCoordinationAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="operations.referral.create",
         context={"action": "create", **body},
     ))
@@ -210,7 +210,7 @@ async def create_task(
     agent = TaskOrchestrationAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="operations.task.create",
         context={"action": "create_task", **body},
     ))
@@ -229,7 +229,7 @@ async def create_workflow(
     agent = TaskOrchestrationAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="operations.workflow.create",
         context={"action": "create_workflow", **body},
     ))
@@ -287,7 +287,7 @@ async def validate_billing(
     agent = BillingReadinessAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="billing.encounter.validate",
         context={"action": "validate", **body},
     ))
@@ -324,7 +324,7 @@ async def prepare_claim(
     agent = BillingReadinessAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="billing.claim.prepare",
         context={"action": "prepare_claim", **body},
     ))
@@ -590,7 +590,7 @@ async def suggest_schedule_slots(
     agent = SchedulerAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="operations.schedule.suggest",
         context={"action": "suggest_slots", **body},
     ))

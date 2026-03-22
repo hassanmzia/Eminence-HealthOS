@@ -8,7 +8,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from healthos_platform.agents.types import AgentInput
+from healthos_platform.agents.types import AgentInput, parse_patient_id
 from services.api.middleware.auth import CurrentUser, require_auth, require_role
 from services.api.middleware.tenant import get_tenant_id
 
@@ -35,7 +35,7 @@ async def phq9_screen(
     agent = MentalHealthScreeningAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.screening.phq9",
         context={"action": "phq9_screen", **body},
     ))
@@ -54,7 +54,7 @@ async def gad7_screen(
     agent = MentalHealthScreeningAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.screening.gad7",
         context={"action": "gad7_screen", **body},
     ))
@@ -73,7 +73,7 @@ async def audit_c_screen(
     agent = MentalHealthScreeningAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.screening.audit_c",
         context={"action": "audit_c_screen", **body},
     ))
@@ -92,7 +92,7 @@ async def comprehensive_screen(
     agent = MentalHealthScreeningAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.screening.comprehensive",
         context={"action": "comprehensive_screen", **body},
     ))
@@ -135,7 +135,7 @@ async def create_referral(
     agent = BehavioralHealthWorkflowAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.workflow.referral",
         context={"action": "create_referral", **body},
     ))
@@ -154,7 +154,7 @@ async def schedule_session(
     agent = BehavioralHealthWorkflowAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.workflow.schedule",
         context={"action": "schedule_session", **body},
     ))
@@ -173,7 +173,7 @@ async def follow_up_check(
     agent = BehavioralHealthWorkflowAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.workflow.follow_up",
         context={"action": "follow_up_check", **body},
     ))
@@ -192,7 +192,7 @@ async def create_treatment_plan(
     agent = BehavioralHealthWorkflowAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.workflow.treatment_plan",
         context={"action": "treatment_plan", **body},
     ))
@@ -216,7 +216,7 @@ async def assess_crisis_risk(
     agent = CrisisDetectionAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.crisis.assess",
         context={"action": "assess_risk", **body},
     ))
@@ -235,7 +235,7 @@ async def screen_text_for_crisis(
     agent = CrisisDetectionAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.crisis.screen_text",
         context={"action": "screen_text", **body},
     ))
@@ -254,7 +254,7 @@ async def generate_safety_plan(
     agent = CrisisDetectionAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.crisis.safety_plan",
         context={"action": "safety_plan", **body},
     ))
@@ -273,7 +273,7 @@ async def trigger_escalation(
     agent = CrisisDetectionAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.crisis.escalate",
         context={"action": "escalation_protocol", **body},
     ))
@@ -297,7 +297,7 @@ async def mood_check_in(
     agent = TherapeuticEngagementAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.engagement.mood_check",
         context={"action": "mood_check_in", **body},
     ))
@@ -316,7 +316,7 @@ async def get_cbt_exercise(
     agent = TherapeuticEngagementAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.engagement.cbt_exercise",
         context={"action": "cbt_exercise", **body},
     ))
@@ -335,7 +335,7 @@ async def get_mindfulness_prompt(
     agent = TherapeuticEngagementAgent()
     output = await agent.run(AgentInput(
         org_id=DEFAULT_ORG,
-        patient_id=uuid.UUID(body["patient_id"]) if body.get("patient_id") else None,
+        patient_id=parse_patient_id(body.get("patient_id")),
         trigger="mental_health.engagement.mindfulness",
         context={"action": "mindfulness_prompt", **body},
     ))
