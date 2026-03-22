@@ -18,6 +18,8 @@ services:
       NEO4J_USER: neo4j
       NEO4J_PASSWORD: healthos
       CORS_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:3052,http://108.48.39.238:3052,http://clinical-orchestrator:8001,http://iot-simulator:8004"
+      CLINICAL_ORCHESTRATOR_URL: http://clinical-orchestrator:8001
+      IOT_SIMULATOR_URL: http://iot-simulator:8004
       KEYCLOAK_URL: http://keycloak:8080
       TEMPORAL_ADDRESS: temporal:7233
     depends_on:
