@@ -197,10 +197,10 @@ export function PullToRefresh({
           style={{ height: refreshing ? 48 : pullDistance * 0.5 }}
         >
           {refreshing ? (
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-healthos-600" />
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 dark:border-gray-600 border-t-healthos-600" />
           ) : (
             <svg
-              className="h-5 w-5 text-gray-400 transition-transform"
+              className="h-5 w-5 text-gray-500 dark:text-gray-400 transition-transform"
               style={{ transform: `rotate(${(pullDistance / threshold) * 180}deg)` }}
               fill="none"
               viewBox="0 0 24 24"
@@ -249,9 +249,9 @@ export function BottomSheet({
           <div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
         </div>
         {title && (
-          <div className="flex items-center justify-between border-b border-gray-200 px-4 pb-3 dark:border-gray-700">
+          <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 pb-3 dark:border-gray-700">
             <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
-            <button onClick={onClose} className="rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <button onClick={onClose} className="rounded-lg p-1 text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>

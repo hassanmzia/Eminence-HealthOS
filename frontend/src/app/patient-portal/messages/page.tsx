@@ -49,8 +49,8 @@ export default function MessagesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Messages</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Secure messaging with your care team.
             {(data?.unread ?? 0) > 0 && (
               <span className="ml-2 inline-flex items-center rounded-full bg-healthos-100 px-2 py-0.5 text-xs font-medium text-healthos-700">
@@ -85,13 +85,13 @@ export default function MessagesPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Inbox list */}
         <div className="lg:col-span-1">
-          <div className="rounded-xl border border-gray-200 bg-white">
-            <div className="border-b border-gray-100 px-4 py-3">
-              <h2 className="text-sm font-semibold text-gray-900">Inbox</h2>
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+            <div className="border-b border-gray-100 dark:border-gray-800 px-4 py-3">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Inbox</h2>
             </div>
             {messages.length === 0 ? (
               <div className="p-4">
-                <p className="text-sm text-gray-500">No messages yet.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">No messages yet.</p>
               </div>
             ) : (
               <ul className="divide-y divide-gray-100">
@@ -102,7 +102,7 @@ export default function MessagesPage() {
                         setSelectedMessage(msg);
                         setShowCompose(false);
                       }}
-                      className={`w-full px-4 py-3 text-left transition-colors hover:bg-gray-50 ${
+                      className={`w-full px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${
                         selectedMessage?.id === msg.id ? "bg-healthos-50" : ""
                       }`}
                     >
@@ -113,14 +113,14 @@ export default function MessagesPage() {
                         <p
                           className={`truncate text-sm ${
                             msg.is_read
-                              ? "font-normal text-gray-700"
-                              : "font-semibold text-gray-900"
+                              ? "font-normal text-gray-700 dark:text-gray-300"
+                              : "font-semibold text-gray-900 dark:text-gray-100"
                           }`}
                         >
                           {msg.subject}
                         </p>
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-gray-500">
+                      <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
                         {msg.sender_type === "provider"
                           ? msg.sender_name
                           : "You"}{" "}
@@ -138,14 +138,14 @@ export default function MessagesPage() {
         {/* Message detail */}
         <div className="lg:col-span-2">
           {selectedMessage ? (
-            <div className="rounded-xl border border-gray-200 bg-white p-6">
-              <div className="mb-4 border-b border-gray-100 pb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+              <div className="mb-4 border-b border-gray-100 dark:border-gray-800 pb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {selectedMessage.subject}
                 </h3>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   From:{" "}
-                  <span className="font-medium text-gray-700">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">
                     {selectedMessage.sender_type === "provider"
                       ? selectedMessage.sender_name
                       : "You"}
@@ -154,21 +154,21 @@ export default function MessagesPage() {
                   {new Date(selectedMessage.created_at).toLocaleString()}
                 </p>
               </div>
-              <div className="prose prose-sm max-w-none text-gray-700">
+              <div className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300">
                 <p className="whitespace-pre-wrap">{selectedMessage.body}</p>
               </div>
-              <div className="mt-6 border-t border-gray-100 pt-4">
+              <div className="mt-6 border-t border-gray-100 dark:border-gray-800 pt-4">
                 <button
                   onClick={() => setShowCompose(true)}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   Reply
                 </button>
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 py-20">
-              <p className="text-sm text-gray-400">
+            <div className="flex items-center justify-center rounded-xl border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 py-20">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Select a message to read, or compose a new one.
               </p>
             </div>
@@ -211,30 +211,30 @@ function ComposeForm({
   return (
     <div className="rounded-xl border border-healthos-200 bg-healthos-50 p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Compose Message
         </h3>
         <button
           onClick={onClose}
-          className="text-sm text-gray-500 hover:text-gray-700"
+          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
         >
           Cancel
         </button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             To
           </label>
           <input
             type="text"
             value="Care Team"
             disabled
-            className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-500"
+            className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Subject
           </label>
           <input
@@ -242,12 +242,12 @@ function ComposeForm({
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="Message subject..."
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+            className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Message
           </label>
           <textarea
@@ -255,7 +255,7 @@ function ComposeForm({
             onChange={(e) => setBody(e.target.value)}
             rows={5}
             placeholder="Type your message..."
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+            className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
             required
           />
         </div>
@@ -264,7 +264,7 @@ function ComposeForm({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             Discard
           </button>

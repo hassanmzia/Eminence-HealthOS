@@ -68,15 +68,15 @@ export default function MyHealthPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">My Health</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Health</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Your health summary, vitals, medications, and care plans.
         </p>
       </div>
 
       {/* Latest Vitals */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+      <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
           Latest Vitals
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -85,34 +85,34 @@ export default function MyHealthPage() {
             return (
               <div
                 key={type}
-                className="rounded-lg border border-gray-100 bg-gray-50 p-4"
+                className="rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-4"
               >
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   {vitalLabels[type] ?? type}
                 </p>
                 {v ? (
                   <>
-                    <p className="mt-1 text-xl font-bold text-gray-900">
+                    <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">
                       {typeof v.value === "object"
                         ? JSON.stringify(v.value)
                         : String(v.value)}
                     </p>
-                    <p className="text-xs text-gray-500">{v.unit}</p>
-                    <p className="mt-1 text-xs text-gray-400">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{v.unit}</p>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       {v.recorded_at
                         ? new Date(v.recorded_at).toLocaleDateString()
                         : ""}
                     </p>
                   </>
                 ) : (
-                  <p className="mt-2 text-sm text-gray-400">No data</p>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No data</p>
                 )}
               </div>
             );
           })}
         </div>
         {(vitals?.total ?? 0) > 5 && (
-          <p className="mt-4 text-xs text-gray-500">
+          <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
             Showing latest readings from the past {vitals?.period_days ?? 30} days.{" "}
             {vitals?.total} total readings on file.
           </p>
@@ -120,22 +120,22 @@ export default function MyHealthPage() {
       </section>
 
       {/* Active Medications */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+      <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
           Active Medications
         </h2>
         {(profile?.medications?.length ?? 0) === 0 ? (
-          <p className="text-sm text-gray-500">No active medications on record.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No active medications on record.</p>
         ) : (
           <ul className="divide-y divide-gray-100">
             {profile?.medications?.map((med, i) => (
               <li key={i} className="flex items-center justify-between py-3">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     {(med as Record<string, string>).name ?? `Medication ${i + 1}`}
                   </p>
                   {(med as Record<string, string>).dosage && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {(med as Record<string, string>).dosage}
                     </p>
                   )}
@@ -150,21 +150,21 @@ export default function MyHealthPage() {
       </section>
 
       {/* Active Conditions */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+      <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
           Active Conditions
         </h2>
         {(profile?.conditions?.length ?? 0) === 0 ? (
-          <p className="text-sm text-gray-500">No conditions on record.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No conditions on record.</p>
         ) : (
           <ul className="divide-y divide-gray-100">
             {profile?.conditions?.map((cond, i) => (
               <li key={i} className="py-3">
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {(cond as Record<string, string>).name ?? `Condition ${i + 1}`}
                 </p>
                 {(cond as Record<string, string>).onset && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Since {(cond as Record<string, string>).onset}
                   </p>
                 )}
@@ -175,21 +175,21 @@ export default function MyHealthPage() {
       </section>
 
       {/* Care Plans */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+      <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
           Care Plan Summary
         </h2>
         {carePlans.length === 0 ? (
-          <p className="text-sm text-gray-500">No active care plans.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No active care plans.</p>
         ) : (
           <div className="space-y-4">
             {carePlans.map((plan) => (
               <div
                 key={plan.id}
-                className="rounded-lg border border-gray-100 bg-gray-50 p-4"
+                className="rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-4"
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-gray-900 capitalize">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">
                     {plan.type} plan
                   </p>
                   <span className="rounded-full bg-healthos-100 px-2 py-0.5 text-xs font-medium text-healthos-700">
@@ -198,8 +198,8 @@ export default function MyHealthPage() {
                 </div>
                 {plan.goals.length > 0 && (
                   <div className="mt-2">
-                    <p className="text-xs font-medium text-gray-500">Goals</p>
-                    <ul className="mt-1 list-inside list-disc text-sm text-gray-700">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Goals</p>
+                    <ul className="mt-1 list-inside list-disc text-sm text-gray-700 dark:text-gray-300">
                       {plan.goals.map((g, i) => (
                         <li key={i}>{g}</li>
                       ))}
@@ -208,10 +208,10 @@ export default function MyHealthPage() {
                 )}
                 {plan.interventions.length > 0 && (
                   <div className="mt-2">
-                    <p className="text-xs font-medium text-gray-500">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
                       Interventions
                     </p>
-                    <ul className="mt-1 list-inside list-disc text-sm text-gray-700">
+                    <ul className="mt-1 list-inside list-disc text-sm text-gray-700 dark:text-gray-300">
                       {plan.interventions.map((item, i) => (
                         <li key={i}>{item}</li>
                       ))}

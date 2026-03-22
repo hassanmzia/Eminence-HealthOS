@@ -200,13 +200,13 @@ const demoMessages: Record<string, Message[]> = {
 const roleBadgeColor: Record<Role, string> = {
   Physician: "bg-blue-100 text-blue-700",
   Nurse: "bg-green-100 text-green-700",
-  Admin: "bg-gray-100 text-gray-700",
+  Admin: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300",
   Patient: "bg-orange-100 text-orange-700",
 };
 
 const categoryBadge: Record<Category, { label: string; cls: string }> = {
   clinical: { label: "Clinical", cls: "bg-blue-100 text-blue-700" },
-  admin: { label: "Admin", cls: "bg-gray-100 text-gray-600" },
+  admin: { label: "Admin", cls: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400" },
   referral: { label: "Referral", cls: "bg-green-100 text-green-700" },
 };
 
@@ -448,7 +448,7 @@ export default function SecureMessagingPage() {
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col animate-fade-in-up">
       {/* ── Header ── */}
-      <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-healthos-100">
             <svg className="w-5 h-5 text-healthos-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -457,7 +457,7 @@ export default function SecureMessagingPage() {
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-gray-900">Secure Messaging</h1>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Secure Messaging</h1>
               {totalUnread > 0 && (
                 <span className="relative flex h-6 min-w-[24px] items-center justify-center rounded-full bg-red-500 px-2 text-xs font-bold text-white">
                   {totalUnread}
@@ -465,7 +465,7 @@ export default function SecureMessagingPage() {
                 </span>
               )}
             </div>
-            <p className="text-sm text-gray-500">HIPAA-compliant clinical communications</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">HIPAA-compliant clinical communications</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -490,11 +490,11 @@ export default function SecureMessagingPage() {
       {/* ── Split Layout ── */}
       <div className="flex-1 flex overflow-hidden">
         {/* ── Left Sidebar ── */}
-        <div className="w-1/3 max-w-md min-w-[320px] border-r border-gray-200 flex flex-col bg-white">
+        <div className="w-1/3 max-w-md min-w-[320px] border-r border-gray-200 dark:border-gray-700 flex flex-col bg-white dark:bg-gray-900">
           {/* Search */}
-          <div className="p-3 border-b border-gray-200">
+          <div className="p-3 border-b border-gray-200 dark:border-gray-700">
             <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -502,13 +502,13 @@ export default function SecureMessagingPage() {
                 placeholder="Search conversations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 text-sm bg-gray-50 rounded-lg border border-gray-200 focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+                className="w-full pl-10 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
               />
             </div>
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex border-b border-gray-200 px-3">
+          <div className="flex border-b border-gray-200 dark:border-gray-700 px-3">
             {filterTabs.map((tab) => (
               <button
                 key={tab.key}
@@ -516,7 +516,7 @@ export default function SecureMessagingPage() {
                 className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
                   filterTab === tab.key
                     ? "border-healthos-600 text-healthos-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
+                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
                 }`}
               >
                 {tab.label}
@@ -527,13 +527,13 @@ export default function SecureMessagingPage() {
           {/* Conversation List */}
           <div className="flex-1 overflow-y-auto">
             {filteredConversations.length === 0 && (
-              <div className="p-6 text-center text-sm text-gray-400">No conversations found.</div>
+              <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">No conversations found.</div>
             )}
             {filteredConversations.map((conv) => (
               <button
                 key={conv.id}
                 onClick={() => setSelectedId(conv.id)}
-                className={`w-full text-left p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                className={`w-full text-left p-4 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
                   selectedId === conv.id ? "bg-healthos-50 border-l-[3px] border-l-healthos-500" : ""
                 }`}
               >
@@ -550,13 +550,13 @@ export default function SecureMessagingPage() {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className={`text-sm truncate ${conv.unreadCount > 0 ? "font-bold text-gray-900" : "font-medium text-gray-700"}`}>
+                      <p className={`text-sm truncate ${conv.unreadCount > 0 ? "font-bold text-gray-900 dark:text-gray-100" : "font-medium text-gray-700 dark:text-gray-300"}`}>
                         {conv.participantName}
                       </p>
-                      <span className="text-[10px] text-gray-400 whitespace-nowrap">{conv.lastMessageAt}</span>
+                      <span className="text-[11px] text-gray-500 dark:text-gray-400 whitespace-nowrap">{conv.lastMessageAt}</span>
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${categoryBadge[conv.category].cls}`}>
+                      <span className={`inline-block rounded px-1.5 py-0.5 text-[11px] font-medium ${categoryBadge[conv.category].cls}`}>
                         {categoryBadge[conv.category].label}
                       </span>
                       {conv.isFlagged && (
@@ -565,11 +565,11 @@ export default function SecureMessagingPage() {
                         </svg>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 truncate mt-1">{conv.lastMessage}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-1">{conv.lastMessage}</p>
                   </div>
                   {/* Unread badge */}
                   {conv.unreadCount > 0 && (
-                    <span className="flex-shrink-0 w-5 h-5 bg-healthos-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    <span className="flex-shrink-0 w-5 h-5 bg-healthos-600 text-white text-[11px] font-bold rounded-full flex items-center justify-center">
                       {conv.unreadCount}
                     </span>
                   )}
@@ -580,11 +580,11 @@ export default function SecureMessagingPage() {
         </div>
 
         {/* ── Right Panel (Conversation) ── */}
-        <div className="flex-1 flex flex-col bg-gray-50 min-w-0">
+        <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-800 min-w-0">
           {selected ? (
             <>
               {/* Conversation Header */}
-              <div className="px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
+              <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <div className="w-10 h-10 rounded-full bg-healthos-100 flex items-center justify-center text-sm font-semibold text-healthos-700">
@@ -594,14 +594,14 @@ export default function SecureMessagingPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold text-sm text-gray-900">{selected.participantName}</p>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${roleBadgeColor[selected.participantRole]}`}>
+                      <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">{selected.participantName}</p>
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${roleBadgeColor[selected.participantRole]}`}>
                         {selected.participantRole}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <div className={`w-2 h-2 rounded-full ${statusDot[selected.participantStatus]}`} />
-                      <span className="text-xs text-gray-500 capitalize">{selected.participantStatus}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{selected.participantStatus}</span>
                     </div>
                   </div>
                 </div>
@@ -611,7 +611,7 @@ export default function SecureMessagingPage() {
                     className={`rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors ${
                       selected.priority === "urgent"
                         ? "bg-red-50 border-red-200 text-red-700"
-                        : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                        : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                     }`}
                   >
                     <span className="flex items-center gap-1">
@@ -626,7 +626,7 @@ export default function SecureMessagingPage() {
                     className={`rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors ${
                       selected.isFlagged
                         ? "bg-yellow-50 border-yellow-200 text-yellow-700"
-                        : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                        : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                     }`}
                   >
                     <span className="flex items-center gap-1">
@@ -649,8 +649,8 @@ export default function SecureMessagingPage() {
                         <div
                           className={`rounded-2xl px-4 py-3 ${
                             isSelf
-                              ? "bg-healthos-100 text-gray-900 rounded-br-md"
-                              : "bg-gray-50 border border-gray-200 rounded-bl-md"
+                              ? "bg-healthos-100 text-gray-900 dark:text-gray-100 rounded-br-md"
+                              : "bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-bl-md"
                           }`}
                         >
                           {!isSelf && (
@@ -664,14 +664,14 @@ export default function SecureMessagingPage() {
                                 <span
                                   key={i}
                                   className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium ${
-                                    isSelf ? "bg-healthos-200/60 text-healthos-800" : "bg-white border border-gray-200 text-gray-700"
+                                    isSelf ? "bg-healthos-200/60 text-healthos-800" : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
                                   }`}
                                 >
                                   <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d={attachmentIcon[att.type]} />
                                   </svg>
                                   <span className="truncate max-w-[120px]">{att.name}</span>
-                                  <span className="text-[10px] opacity-60">{att.size}</span>
+                                  <span className="text-[11px] opacity-60">{att.size}</span>
                                   <button className="ml-1 opacity-60 hover:opacity-100">
                                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -684,7 +684,7 @@ export default function SecureMessagingPage() {
                         </div>
                         {/* Timestamp + read receipt */}
                         <div className={`flex items-center gap-1.5 mt-1 px-1 ${isSelf ? "justify-end" : "justify-start"}`}>
-                          <span className="text-[10px] text-gray-400">{msg.timestamp}</span>
+                          <span className="text-[11px] text-gray-500 dark:text-gray-400">{msg.timestamp}</span>
                           {isSelf && (
                             <svg className={`w-3 h-3 ${msg.isRead ? "text-healthos-500" : "text-gray-300"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d={msg.isRead ? "M5 13l4 4L19 7" : "M5 13l4 4L19 7"} />
@@ -699,9 +699,9 @@ export default function SecureMessagingPage() {
               </div>
 
               {/* Message Input */}
-              <div className="px-6 py-4 border-t border-gray-200 bg-white">
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
                 <div className="flex items-end gap-3">
-                  <button className="p-2 text-gray-400 hover:text-gray-700 transition-colors rounded-lg hover:bg-gray-100 flex-shrink-0">
+                  <button className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 transition-colors rounded-lg hover:bg-gray-100 dark:bg-gray-800 flex-shrink-0">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                     </svg>
@@ -719,9 +719,9 @@ export default function SecureMessagingPage() {
                       placeholder="Type a secure message..."
                       rows={2}
                       maxLength={2000}
-                      className="w-full px-4 py-2.5 text-sm bg-gray-50 rounded-xl border border-gray-200 focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none resize-none"
+                      className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none resize-none"
                     />
-                    <span className="absolute bottom-2 right-3 text-[10px] text-gray-300">
+                    <span className="absolute bottom-2 right-3 text-[11px] text-gray-300">
                       {newMessage.length}/2000
                     </span>
                   </div>
@@ -739,18 +739,18 @@ export default function SecureMessagingPage() {
                   <svg className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
-                  <span className="text-[10px] text-gray-400">End-to-end encrypted &middot; HIPAA-compliant &middot; Audit logged</span>
+                  <span className="text-[11px] text-gray-500 dark:text-gray-400">End-to-end encrypted &middot; HIPAA-compliant &middot; Audit logged</span>
                 </div>
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-400">
+            <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
               <div className="text-center">
                 <svg className="w-16 h-16 mx-auto mb-4 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-                <p className="text-sm font-medium text-gray-500">Select a conversation to start messaging</p>
-                <p className="text-xs text-gray-400 mt-1">Or create a new message using the button above</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Select a conversation to start messaging</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Or create a new message using the button above</p>
               </div>
             </div>
           )}
@@ -763,10 +763,10 @@ export default function SecureMessagingPage() {
           <div className="card w-full max-w-lg mx-4 animate-fade-in-up">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold text-gray-900">New Message</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">New Message</h2>
                 <button
                   onClick={() => setShowNewModal(false)}
-                  className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                  className="p-1 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -776,15 +776,15 @@ export default function SecureMessagingPage() {
 
               {/* Recipient Search */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To</label>
                 {modalRecipient ? (
-                  <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${roleBadgeColor[modalRecipient.role]}`}>
+                  <div className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2">
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${roleBadgeColor[modalRecipient.role]}`}>
                       {modalRecipient.role}
                     </span>
-                    <span className="text-sm font-medium text-gray-900">{modalRecipient.name}</span>
-                    <span className="text-xs text-gray-400">{modalRecipient.department}</span>
-                    <button onClick={() => setModalRecipient(null)} className="ml-auto text-gray-400 hover:text-gray-600">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{modalRecipient.name}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{modalRecipient.department}</span>
+                    <button onClick={() => setModalRecipient(null)} className="ml-auto text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                       </svg>
@@ -797,10 +797,10 @@ export default function SecureMessagingPage() {
                       placeholder="Search by name, role, or department..."
                       value={recipientSearch}
                       onChange={(e) => setRecipientSearch(e.target.value)}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+                      className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
                     />
                     {filteredRecipients.length > 0 && (
-                      <div className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-48 overflow-y-auto">
+                      <div className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg max-h-48 overflow-y-auto">
                         {filteredRecipients.map((r) => (
                           <button
                             key={r.id}
@@ -808,13 +808,13 @@ export default function SecureMessagingPage() {
                               setModalRecipient(r);
                               setRecipientSearch("");
                             }}
-                            className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 text-sm"
+                            className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 text-sm"
                           >
-                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${roleBadgeColor[r.role]}`}>
+                            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${roleBadgeColor[r.role]}`}>
                               {r.role}
                             </span>
                             <span className="font-medium">{r.name}</span>
-                            <span className="text-xs text-gray-400 ml-auto">{r.department}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto">{r.department}</span>
                           </button>
                         ))}
                       </div>
@@ -825,26 +825,26 @@ export default function SecureMessagingPage() {
 
               {/* Subject */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
                 <input
                   type="text"
                   placeholder="Message subject (optional)"
                   value={modalSubject}
                   onChange={(e) => setModalSubject(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
                 />
               </div>
 
               {/* Priority */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setModalPriority("normal")}
                     className={`rounded-lg px-4 py-2 text-sm font-medium border transition-colors ${
                       modalPriority === "normal"
                         ? "bg-healthos-50 border-healthos-300 text-healthos-700"
-                        : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                        : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                     }`}
                   >
                     Normal
@@ -854,7 +854,7 @@ export default function SecureMessagingPage() {
                     className={`rounded-lg px-4 py-2 text-sm font-medium border transition-colors ${
                       modalPriority === "urgent"
                         ? "bg-red-50 border-red-300 text-red-700"
-                        : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                        : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                     }`}
                   >
                     Urgent
@@ -864,21 +864,21 @@ export default function SecureMessagingPage() {
 
               {/* Message Body */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message</label>
                 <textarea
                   placeholder="Type your message..."
                   rows={5}
                   maxLength={2000}
                   value={modalBody}
                   onChange={(e) => setModalBody(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none resize-none"
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none resize-none"
                 />
-                <p className="text-[10px] text-gray-400 text-right mt-1">{modalBody.length}/2000</p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 text-right mt-1">{modalBody.length}/2000</p>
               </div>
 
               {/* Actions */}
               <div className="flex items-center justify-between">
-                <button className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                <button className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                   </svg>
@@ -887,7 +887,7 @@ export default function SecureMessagingPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowNewModal(false)}
-                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
                     Cancel
                   </button>

@@ -88,16 +88,16 @@ export function CostOverview() {
   if (loading) {
     return (
       <div className="card">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Cost Analysis</h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Cost Analysis</h2>
         <div className="animate-pulse space-y-4">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 rounded-lg bg-gray-100" />
+              <div key={i} className="h-16 rounded-lg bg-gray-100 dark:bg-gray-800" />
             ))}
           </div>
           <div className="space-y-2">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-6 rounded bg-gray-100" />
+              <div key={i} className="h-6 rounded bg-gray-100 dark:bg-gray-800" />
             ))}
           </div>
         </div>
@@ -108,7 +108,7 @@ export function CostOverview() {
   if (error) {
     return (
       <div className="card">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Cost Analysis</h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Cost Analysis</h2>
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
           <p className="text-sm text-red-600">{error}</p>
           <button onClick={loadData} className="mt-2 rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700">
@@ -122,30 +122,30 @@ export function CostOverview() {
   return (
     <div className="card">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Cost Analysis</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Cost Analysis</h2>
         <span className="rounded bg-green-50 px-2 py-0.5 text-xs font-medium text-green-600">
           {costData.rpm_roi.roi_percent}% RPM ROI
         </span>
       </div>
 
       {/* RPM ROI summary */}
-      <div className="mb-4 grid grid-cols-3 gap-3">
-        <div className="rounded-lg bg-gray-50 p-3 text-center">
-          <p className="text-xs text-gray-500">Annual RPM Cost</p>
-          <p className="mt-1 text-sm font-bold text-gray-900">${(costData.rpm_roi.annual_cost / 1000).toFixed(0)}K</p>
+      <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400">Annual RPM Cost</p>
+          <p className="mt-1 text-sm font-bold text-gray-900 dark:text-gray-100">${(costData.rpm_roi.annual_cost / 1000).toFixed(0)}K</p>
         </div>
         <div className="rounded-lg bg-green-50 p-3 text-center">
-          <p className="text-xs text-gray-500">Annual Savings</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Annual Savings</p>
           <p className="mt-1 text-sm font-bold text-green-700">${(costData.rpm_roi.annual_savings / 1000).toFixed(0)}K</p>
         </div>
         <div className="rounded-lg bg-healthos-50 p-3 text-center">
-          <p className="text-xs text-gray-500">Net Benefit</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Net Benefit</p>
           <p className="mt-1 text-sm font-bold text-healthos-700">${(costData.rpm_roi.net_benefit / 1000).toFixed(0)}K</p>
         </div>
       </div>
 
       {/* Cost by risk level */}
-      <h3 className="mb-2 text-sm font-medium text-gray-700">Monthly Cost by Risk Level</h3>
+      <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Monthly Cost by Risk Level</h3>
       <div className="space-y-2">
         {costData.cost_by_risk.map((d) => {
           const total = d.monthly * d.patients;
@@ -153,13 +153,13 @@ export function CostOverview() {
           return (
             <div key={d.level} className="flex items-center gap-3 text-sm">
               <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${d.color}`} />
-              <span className="w-20 font-medium text-gray-900">{d.level}</span>
+              <span className="w-20 font-medium text-gray-900 dark:text-gray-100">{d.level}</span>
               <div className="flex-1">
-                <div className="h-2 rounded-full bg-gray-100">
+                <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800">
                   <div className={`h-2 rounded-full ${d.color}`} style={{ width: `${pct}%` }} />
                 </div>
               </div>
-              <span className="w-16 text-right text-xs text-gray-500">
+              <span className="w-16 text-right text-xs text-gray-500 dark:text-gray-400">
                 ${(total / 1000).toFixed(0)}K
               </span>
             </div>
@@ -168,12 +168,12 @@ export function CostOverview() {
       </div>
 
       {/* Savings forecast */}
-      <div className="mt-4 rounded-lg border border-gray-200 p-3">
-        <h3 className="mb-2 text-sm font-medium text-gray-700">3-Year Savings Forecast</h3>
+      <div className="mt-4 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+        <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">3-Year Savings Forecast</h3>
         <div className="flex gap-4">
           {costData.forecast.map((f) => (
             <div key={f.year} className="flex-1 text-center">
-              <p className="text-xs text-gray-500">Year {f.year}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Year {f.year}</p>
               <p className="text-sm font-bold text-green-600">${(f.savings / 1000).toFixed(0)}K</p>
             </div>
           ))}

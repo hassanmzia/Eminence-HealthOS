@@ -80,7 +80,7 @@ const trendColor = (trend: string) =>
   trend === "improving"
     ? "bg-green-50 text-green-700"
     : trend === "stable"
-    ? "bg-gray-100 text-gray-600"
+    ? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
     : "bg-red-50 text-red-700";
 
 export default function CohortBuilderPage() {
@@ -154,15 +154,15 @@ export default function CohortBuilderPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/analytics"
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
             </svg>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Cohort Builder</h1>
-            <p className="text-sm text-gray-500">Create, manage, and analyze patient cohorts</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Cohort Builder</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Create, manage, and analyze patient cohorts</p>
           </div>
         </div>
         <button
@@ -199,19 +199,19 @@ export default function CohortBuilderPage() {
               { label: "Templates", value: templates.length.toString() },
             ].map((s) => (
               <div key={s.label} className="card text-center">
-                <p className="text-xs font-medium text-gray-500">{s.label}</p>
-                <p className="mt-1 text-2xl font-bold text-gray-900">{s.value}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{s.label}</p>
+                <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{s.value}</p>
               </div>
             ))}
       </div>
 
       {/* Tabs + Search */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-1 rounded-lg bg-gray-100 p-0.5">
+        <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5">
           <button
             onClick={() => setTab("active")}
             className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              tab === "active" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
+              tab === "active" ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm" : "text-gray-500 dark:text-gray-400"
             }`}
           >
             Active Cohorts ({activeCohorts.length})
@@ -219,7 +219,7 @@ export default function CohortBuilderPage() {
           <button
             onClick={() => setTab("templates")}
             className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              tab === "templates" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
+              tab === "templates" ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm" : "text-gray-500 dark:text-gray-400"
             }`}
           >
             Templates ({templates.length})
@@ -230,7 +230,7 @@ export default function CohortBuilderPage() {
           placeholder="Search cohorts..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+          className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
         />
       </div>
 
@@ -251,21 +251,21 @@ export default function CohortBuilderPage() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-semibold text-gray-900">{c.name}</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{c.name}</h3>
                     <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${trendColor(c.trend)}`}>
                       {c.trend}
                     </span>
-                    <span className="text-xs text-gray-400">{c.id}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{c.id}</span>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-500">
-                    <span><span className="font-medium text-gray-700">{c.patients}</span> patients</span>
-                    <span>Avg risk: <span className="font-medium text-gray-700">{(c.avgRisk * 100).toFixed(0)}%</span></span>
+                  <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+                    <span><span className="font-medium text-gray-700 dark:text-gray-300">{c.patients}</span> patients</span>
+                    <span>Avg risk: <span className="font-medium text-gray-700 dark:text-gray-300">{(c.avgRisk * 100).toFixed(0)}%</span></span>
                     <span>Created: {c.created}</span>
                     <span>Updated: {c.lastUpdated}</span>
                   </div>
                   {/* Outcome bar */}
                   <div className="mt-3">
-                    <div className="mb-1 flex flex-wrap items-center justify-between gap-1 text-xs text-gray-500">
+                    <div className="mb-1 flex flex-wrap items-center justify-between gap-1 text-xs text-gray-500 dark:text-gray-400">
                       <span>Patient outcomes</span>
                       <span>{c.outcomes.improved} improved / {c.outcomes.stable} stable / {c.outcomes.declined} declined</span>
                     </div>
@@ -277,10 +277,10 @@ export default function CohortBuilderPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50">
+                  <button className="rounded border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800">
                     Analyze
                   </button>
-                  <button className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50">
+                  <button className="rounded border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800">
                     Export
                   </button>
                 </div>
@@ -288,7 +288,7 @@ export default function CohortBuilderPage() {
             </div>
           ))}
           {filteredCohorts.length === 0 && (
-            <p className="py-8 text-center text-sm text-gray-400">No cohorts match your search.</p>
+            <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">No cohorts match your search.</p>
           )}
         </div>
       )}
@@ -300,8 +300,8 @@ export default function CohortBuilderPage() {
             <div key={t.key} className="card">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-900">{t.name}</h3>
-                  <p className="mt-1 text-xs text-gray-500">{t.description}</p>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t.name}</h3>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t.description}</p>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {t.criteria.map((c) => (
                       <span key={c} className="rounded bg-healthos-50 px-2 py-0.5 text-xs text-healthos-700">
@@ -309,7 +309,7 @@ export default function CohortBuilderPage() {
                       </span>
                     ))}
                   </div>
-                  <p className="mt-2 text-xs text-gray-400">{t.patients} patients currently match</p>
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{t.patients} patients currently match</p>
                 </div>
                 <button className="ml-3 rounded bg-healthos-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-healthos-700">
                   Create
@@ -318,7 +318,7 @@ export default function CohortBuilderPage() {
             </div>
           ))}
           {filteredTemplates.length === 0 && (
-            <p className="col-span-2 py-8 text-center text-sm text-gray-400">No templates match your search.</p>
+            <p className="col-span-2 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No templates match your search.</p>
           )}
         </div>
       )}

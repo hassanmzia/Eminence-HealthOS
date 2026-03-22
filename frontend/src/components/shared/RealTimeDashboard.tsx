@@ -195,7 +195,7 @@ function bedStatusStyle(status: BedStatus): string {
     case "available":
       return "bg-green-500 dark:bg-green-600 text-white";
     case "cleaning":
-      return "bg-yellow-400 dark:bg-yellow-500 text-gray-900";
+      return "bg-yellow-400 dark:bg-yellow-500 text-gray-900 dark:text-gray-100";
     case "maintenance":
       return "bg-gray-400 dark:bg-gray-600 text-white";
   }
@@ -243,11 +243,11 @@ function VitalChart({
           </span>
         </div>
         <span className={`text-lg font-bold tabular-nums ${colorClass}`}>
-          {latest} <span className="text-xs font-normal text-gray-500">{config.unit}</span>
+          {latest} <span className="text-xs font-normal text-gray-500 dark:text-gray-400">{config.unit}</span>
         </span>
       </div>
 
-      <div className="text-[10px] text-gray-400 dark:text-gray-500 flex gap-3">
+      <div className="text-[11px] text-gray-400 dark:text-gray-500 flex gap-3">
         <span>Normal: {config.warningLow}&ndash;{config.warningHigh}</span>
         <span>Critical: &lt;{config.criticalLow} / &gt;{config.criticalHigh}</span>
       </div>
@@ -286,13 +286,13 @@ function AlertCard({ alert }: { alert: Alert }) {
       className={`border-l-4 rounded-md px-3 py-2 mb-2 animate-[slideIn_0.3s_ease-out] ${severityStyles(alert.severity)}`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-500">
           {alert.severity}
         </span>
-        <span className="text-[10px] text-gray-400">{timeStr}</span>
+        <span className="text-[11px] text-gray-500 dark:text-gray-400">{timeStr}</span>
       </div>
       <p className="text-sm text-gray-800 dark:text-gray-100 mt-0.5">{alert.message}</p>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Patient: {alert.patient}</p>
+      <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">Patient: {alert.patient}</p>
     </div>
   );
 }
@@ -327,7 +327,7 @@ function AnimatedCounter({ value, unit }: { value: number; unit: string }) {
   return (
     <span className="text-2xl font-bold tabular-nums text-gray-900 dark:text-white">
       {display.toLocaleString()}
-      <span className="text-xs font-normal text-gray-500 ml-1">{unit}</span>
+      <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1">{unit}</span>
     </span>
   );
 }
@@ -512,7 +512,7 @@ export default function RealTimeDashboard({
 
       {/* 1. Live Vitals Monitor */}
       <section>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-500 mb-3">
           Live Vitals Monitor
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -524,12 +524,12 @@ export default function RealTimeDashboard({
 
       {/* 2. Active Alerts Feed */}
       <section>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-500 mb-3">
           Active Alerts Feed
         </h3>
         <div className="card dark:bg-gray-800 p-4 h-64 overflow-y-auto">
           {alerts.length === 0 && (
-            <p className="text-sm text-gray-400 italic">Waiting for alerts&hellip;</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 italic">Waiting for alerts&hellip;</p>
           )}
           {alerts.map((a) => (
             <AlertCard key={a.id} alert={a} />
@@ -540,7 +540,7 @@ export default function RealTimeDashboard({
 
       {/* 3. Bed Occupancy Board */}
       <section>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-500 mb-3">
           Bed Occupancy Board
         </h3>
         <div className="card dark:bg-gray-800 p-4">
@@ -573,7 +573,7 @@ export default function RealTimeDashboard({
               >
                 <span className="font-bold">{bed.id.toString().padStart(2, "0")}</span>
                 {bed.patientInitials && (
-                  <span className="text-[10px] mt-0.5 opacity-80">{bed.patientInitials}</span>
+                  <span className="text-[11px] mt-0.5 opacity-80">{bed.patientInitials}</span>
                 )}
               </div>
             ))}
@@ -583,7 +583,7 @@ export default function RealTimeDashboard({
 
       {/* 4. System Metrics */}
       <section>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-500 mb-3">
           System Metrics
         </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -594,7 +594,7 @@ export default function RealTimeDashboard({
                 ? "text-green-500"
                 : delta < 0
                   ? "text-red-500"
-                  : "text-gray-400";
+                  : "text-gray-500 dark:text-gray-400";
             const arrow = delta > 0 ? "\u25B2" : delta < 0 ? "\u25BC" : "\u2014";
 
             return (
@@ -602,7 +602,7 @@ export default function RealTimeDashboard({
                 key={m.label}
                 className="card dark:bg-gray-800 p-4 flex flex-col gap-1"
               >
-                <span className="text-xs text-gray-500 dark:text-gray-400">{m.label}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-500">{m.label}</span>
                 <AnimatedCounter value={m.value} unit={m.unit} />
                 <span className={`text-xs ${deltaColor}`}>
                   {arrow} {Math.abs(delta)}

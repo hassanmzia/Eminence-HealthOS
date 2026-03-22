@@ -69,27 +69,27 @@ export function TaskQueue() {
   return (
     <div className="card">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Task Queue</h2>
-        <span className="text-xs text-gray-400">{tasks.length} tasks</span>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Task Queue</h2>
+        <span className="text-xs text-gray-500 dark:text-gray-400">{tasks.length} tasks</span>
       </div>
       <div className="space-y-2">
         {tasks.map((task) => (
           <div
             key={task.task_id}
-            className={`cursor-pointer rounded-lg border-l-4 bg-gray-50 p-3 transition-colors hover:bg-gray-100 ${PRIORITY_COLORS[task.priority] || "border-l-gray-300"}`}
+            className={`cursor-pointer rounded-lg border-l-4 bg-gray-50 dark:bg-gray-800 p-3 transition-colors hover:bg-gray-100 dark:bg-gray-800 ${PRIORITY_COLORS[task.priority] || "border-l-gray-300"}`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-900">{task.title}</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{task.title}</span>
               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[task.status] || STATUS_BADGE.pending}`}>
                 {task.status.replace("_", " ")}
               </span>
             </div>
-            <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+            <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
               <span className="rounded bg-gray-200 px-1.5 py-0.5 font-medium">{TYPE_LABEL[task.task_type] || task.task_type}</span>
               {task.assignee && <span>&middot; {task.assignee}</span>}
             </div>
             <div className="mt-1 flex items-center gap-2 text-xs">
-              <span className={isOverdue(task.sla_deadline) ? "font-semibold text-red-600" : "text-gray-400"}>
+              <span className={isOverdue(task.sla_deadline) ? "font-semibold text-red-600" : "text-gray-500 dark:text-gray-400"}>
                 {timeRemaining(task.sla_deadline)}
               </span>
             </div>

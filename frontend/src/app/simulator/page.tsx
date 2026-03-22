@@ -345,13 +345,13 @@ export default function SimulatorPage() {
       {/* ── Header ──────────────────────────────────────────────────── */}
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between animate-fade-in-up">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight flex items-center gap-3">
             <div className="p-2 rounded-xl bg-gradient-to-br from-healthos-500 to-healthos-700 text-white shadow-glow-blue">
               <Brain className="h-7 w-7" />
             </div>
             Clinical Simulator
           </h1>
-          <p className="mt-1 text-gray-500 text-sm">What-if analysis, treatment modeling &amp; population-level outcome simulation</p>
+          <p className="mt-1 text-gray-500 dark:text-gray-400 text-sm">What-if analysis, treatment modeling &amp; population-level outcome simulation</p>
         </div>
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-healthos-100 px-3.5 py-1.5 text-xs font-semibold text-healthos-700">
@@ -387,23 +387,23 @@ export default function SimulatorPage() {
               <kpi.icon className={`h-5 w-5 ${kpi.color}`} />
             </div>
             <div className="min-w-0">
-              <p className="text-xl font-bold text-gray-900">{kpi.value}</p>
-              <p className="text-[11px] text-gray-500 truncate">{kpi.label}</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{kpi.value}</p>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{kpi.label}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* ── Tabs ────────────────────────────────────────────────────── */}
-      <nav className="flex gap-1 rounded-xl bg-gray-100 p-1 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+      <nav className="flex gap-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
             className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
               activeTab === t.key
-                ? "bg-white text-healthos-700 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white dark:bg-gray-900 text-healthos-700 shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
             }`}
           >
             <t.icon className="h-4 w-4" />
@@ -419,7 +419,7 @@ export default function SimulatorPage() {
         <div className="space-y-6 animate-fade-in-up">
           {/* Builder */}
           <div className="card card-hover space-y-5">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-healthos-600" />
               Scenario Builder
             </h2>
@@ -427,11 +427,11 @@ export default function SimulatorPage() {
             <div className="grid md:grid-cols-2 gap-4">
               {/* Patient Selector */}
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Patient</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Patient</label>
                 <select
                   value={selectedPatient}
                   onChange={(e) => setSelectedPatient(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                 >
                   {DEMO_PATIENTS.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -443,13 +443,13 @@ export default function SimulatorPage() {
 
               {/* Base Scenario Description */}
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Base Scenario Description</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Base Scenario Description</label>
                 <input
                   type="text"
                   value={baseScenario}
                   onChange={(e) => setBaseScenario(e.target.value)}
                   placeholder="e.g., Evaluate aggressive glucose management plan"
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                 />
               </div>
             </div>
@@ -457,7 +457,7 @@ export default function SimulatorPage() {
             {/* Variable Editor */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-medium text-gray-600">Variables</label>
+                <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Variables</label>
                 <button
                   onClick={addVariable}
                   className="inline-flex items-center gap-1 rounded-md bg-healthos-50 px-2.5 py-1 text-xs font-medium text-healthos-700 hover:bg-healthos-100 transition"
@@ -471,7 +471,7 @@ export default function SimulatorPage() {
                     <select
                       value={v.category}
                       onChange={(e) => updateVariable(v.id, "category", e.target.value)}
-                      className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm w-40 focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                      className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm w-40 focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                     >
                       {VARIABLE_OPTIONS.map((opt) => (
                         <option key={opt} value={opt}>{opt}</option>
@@ -482,18 +482,18 @@ export default function SimulatorPage() {
                       placeholder="Variable name"
                       value={v.name}
                       onChange={(e) => updateVariable(v.id, "name", e.target.value)}
-                      className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                      className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                     />
                     <input
                       type="text"
                       placeholder="Value"
                       value={v.value}
                       onChange={(e) => updateVariable(v.id, "value", e.target.value)}
-                      className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                      className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                     />
                     <button
                       onClick={() => removeVariable(v.id)}
-                      className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition"
+                      className="rounded-md p-1.5 text-gray-500 dark:text-gray-400 hover:bg-red-50 hover:text-red-500 transition"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -519,11 +519,11 @@ export default function SimulatorPage() {
           {/* Results */}
           {whatIfResults && (
             <div className="space-y-6 animate-fade-in-up">
-              <h3 className="text-lg font-semibold text-gray-900">Scenario Comparison</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Scenario Comparison</h3>
               <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {whatIfResults.map((scenario) => (
                   <div key={scenario.id} className="card card-hover space-y-4">
-                    <h4 className="font-semibold text-sm text-gray-900">{scenario.name}</h4>
+                    <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">{scenario.name}</h4>
 
                     {/* Outcome Metrics */}
                     <div className="grid grid-cols-2 gap-3">
@@ -534,11 +534,11 @@ export default function SimulatorPage() {
                             ? d < 0
                             : d > 0;
                         return (
-                          <div key={o.label} className="rounded-lg bg-gray-50 p-3">
-                            <p className="text-[10px] uppercase font-semibold text-gray-500 tracking-wide">{o.label}</p>
+                          <div key={o.label} className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
+                            <p className="text-[11px] uppercase font-semibold text-gray-500 dark:text-gray-400 tracking-wide">{o.label}</p>
                             <div className="flex items-end gap-2 mt-1">
-                              <span className="text-lg font-bold text-gray-900">{o.after}</span>
-                              <span className="text-xs text-gray-400">{o.unit}</span>
+                              <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{o.after}</span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">{o.unit}</span>
                               <span
                                 className={`ml-auto inline-flex items-center gap-0.5 text-xs font-semibold ${
                                   improving ? "text-emerald-600" : "text-red-500"
@@ -553,8 +553,8 @@ export default function SimulatorPage() {
                               </span>
                             </div>
                             <div className="flex items-center justify-between mt-1">
-                              <span className="text-[10px] text-gray-400">Before: {o.before}</span>
-                              <span className="text-[10px] text-healthos-600">{o.confidence}% conf.</span>
+                              <span className="text-[11px] text-gray-500 dark:text-gray-400">Before: {o.before}</span>
+                              <span className="text-[11px] text-healthos-600">{o.confidence}% conf.</span>
                             </div>
                           </div>
                         );
@@ -563,7 +563,7 @@ export default function SimulatorPage() {
 
                     {/* Timeline Preview */}
                     <div>
-                      <p className="text-[10px] uppercase font-semibold text-gray-500 tracking-wide mb-2">Timeline Preview</p>
+                      <p className="text-[11px] uppercase font-semibold text-gray-500 dark:text-gray-400 tracking-wide mb-2">Timeline Preview</p>
                       <div className="flex items-end gap-1 h-16">
                         {scenario.timeline.map((pt, i) => {
                           const min = Math.min(...scenario.timeline.map((t) => t.value));
@@ -576,7 +576,7 @@ export default function SimulatorPage() {
                                 className="w-full rounded-t bg-gradient-to-t from-healthos-600 to-healthos-400 transition-all"
                                 style={{ height: `${Math.max(height, 8)}%` }}
                               />
-                              <span className="text-[8px] text-gray-400">W{pt.week}</span>
+                              <span className="text-[8px] text-gray-500 dark:text-gray-400">W{pt.week}</span>
                             </div>
                           );
                         })}
@@ -587,13 +587,13 @@ export default function SimulatorPage() {
 
                 {/* Placeholder for 3rd comparison slot */}
                 {whatIfResults.length < 3 && (
-                  <div className="card border-dashed border-2 border-gray-200 flex flex-col items-center justify-center text-center py-12 hover:border-healthos-300 transition cursor-pointer group"
+                  <div className="card border-dashed border-2 border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-center py-12 hover:border-healthos-300 transition cursor-pointer group"
                     onClick={() => {
                       setWhatIfResults(null);
                     }}
                   >
                     <Plus className="h-8 w-8 text-gray-300 group-hover:text-healthos-400 transition" />
-                    <p className="mt-2 text-sm font-medium text-gray-400 group-hover:text-healthos-600 transition">Add Scenario</p>
+                    <p className="mt-2 text-sm font-medium text-gray-500 dark:text-gray-400 group-hover:text-healthos-600 transition">Add Scenario</p>
                     <p className="text-xs text-gray-300">Compare up to 3 scenarios</p>
                   </div>
                 )}
@@ -607,18 +607,18 @@ export default function SimulatorPage() {
       {activeTab === "medication" && (
         <div className="space-y-6 animate-fade-in-up">
           <div className="card card-hover space-y-5">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <Pill className="h-5 w-5 text-purple-600" />
               Medication Simulation
             </h2>
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Patient</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Patient</label>
                 <select
                   value={medPatient}
                   onChange={(e) => setMedPatient(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                 >
                   {DEMO_PATIENTS.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -629,10 +629,10 @@ export default function SimulatorPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Current Medications</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Current Medications</label>
                 <div className="flex flex-wrap gap-1.5 py-2">
                   {["Lisinopril 10mg", "Metformin 1000mg", "Atorvastatin 20mg"].map((m) => (
-                    <span key={m} className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600">{m}</span>
+                    <span key={m} className="rounded-full bg-gray-100 dark:bg-gray-800 px-2.5 py-1 text-xs text-gray-600 dark:text-gray-400">{m}</span>
                   ))}
                 </div>
               </div>
@@ -640,11 +640,11 @@ export default function SimulatorPage() {
 
             <div className="grid md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Change Type</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Change Type</label>
                 <select
                   value={medChangeType}
                   onChange={(e) => setMedChangeType(e.target.value as "add" | "modify" | "remove")}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                 >
                   <option value="add">Add Medication</option>
                   <option value="modify">Modify Dosage</option>
@@ -652,31 +652,31 @@ export default function SimulatorPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Drug</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Drug</label>
                 <input
                   type="text"
                   value={medDrug}
                   onChange={(e) => setMedDrug(e.target.value)}
                   placeholder="e.g., Empagliflozin"
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Dose</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Dose</label>
                 <input
                   type="text"
                   value={medDose}
                   onChange={(e) => setMedDose(e.target.value)}
                   placeholder="e.g., 25mg"
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Frequency</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Frequency</label>
                 <select
                   value={medFrequency}
                   onChange={(e) => setMedFrequency(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                 >
                   <option value="once daily">Once daily</option>
                   <option value="twice daily">Twice daily</option>
@@ -706,18 +706,18 @@ export default function SimulatorPage() {
             <div className="grid lg:grid-cols-2 gap-6 animate-fade-in-up">
               {/* Effectiveness Curve */}
               <div className="card card-hover space-y-4">
-                <h3 className="font-semibold text-sm text-gray-900">Predicted Response Curve</h3>
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Predicted Response Curve</h3>
                 <div className="space-y-3">
                   {medResult.effectiveness.map((e) => (
                     <div key={e.week} className="flex items-center gap-3">
-                      <span className="text-xs text-gray-500 w-16 flex-shrink-0">{e.week}</span>
-                      <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 w-16 flex-shrink-0">{e.week}</span>
+                      <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full ${e.color} transition-all duration-700`}
                           style={{ width: `${e.score}%` }}
                         />
                       </div>
-                      <span className="text-xs font-semibold text-gray-700 w-10 text-right">{e.score}%</span>
+                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 w-10 text-right">{e.score}%</span>
                     </div>
                   ))}
                 </div>
@@ -725,7 +725,7 @@ export default function SimulatorPage() {
 
               {/* Side Effect Probability */}
               <div className="card card-hover space-y-4">
-                <h3 className="font-semibold text-sm text-gray-900">Side Effect Probability</h3>
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Side Effect Probability</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {medResult.sideEffects.map((se) => (
                     <div
@@ -735,19 +735,19 @@ export default function SimulatorPage() {
                           ? "bg-red-50 border border-red-200"
                           : se.severity === "moderate"
                           ? "bg-amber-50 border border-amber-200"
-                          : "bg-gray-50 border border-gray-200"
+                          : "bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
                       }`}
                     >
-                      <p className="text-sm font-medium text-gray-900">{se.name}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{se.name}</p>
                       <div className="flex items-center justify-between mt-1">
-                        <span className="text-lg font-bold text-gray-900">{se.probability}%</span>
+                        <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{se.probability}%</span>
                         <span
-                          className={`text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded ${
+                          className={`text-[11px] uppercase font-semibold px-1.5 py-0.5 rounded ${
                             se.severity === "severe"
                               ? "bg-red-100 text-red-700"
                               : se.severity === "moderate"
                               ? "bg-amber-100 text-amber-700"
-                              : "bg-gray-100 text-gray-600"
+                              : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
                           }`}
                         >
                           {se.severity}
@@ -760,7 +760,7 @@ export default function SimulatorPage() {
 
               {/* Drug Interactions */}
               <div className="card card-hover space-y-4">
-                <h3 className="font-semibold text-sm text-gray-900 flex items-center gap-2">
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 flex items-center gap-2">
                   <TriangleAlert className="h-4 w-4 text-amber-500" />
                   Drug Interaction Warnings
                 </h3>
@@ -775,11 +775,11 @@ export default function SimulatorPage() {
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                           {inter.drug1} + {inter.drug2}
                         </span>
                         <span
-                          className={`text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded ${
+                          className={`text-[11px] uppercase font-semibold px-1.5 py-0.5 rounded ${
                             inter.severity === "moderate"
                               ? "bg-amber-100 text-amber-700"
                               : "bg-yellow-100 text-yellow-700"
@@ -788,7 +788,7 @@ export default function SimulatorPage() {
                           {inter.severity}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-600 mt-1">{inter.description}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{inter.description}</p>
                     </div>
                   ))}
                 </div>
@@ -796,7 +796,7 @@ export default function SimulatorPage() {
 
               {/* Adherence Impact */}
               <div className="card card-hover space-y-4">
-                <h3 className="font-semibold text-sm text-gray-900">Adherence Impact Prediction</h3>
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Adherence Impact Prediction</h3>
                 <div className="flex items-center justify-center py-4">
                   <div className="relative w-32 h-32">
                     <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
@@ -813,12 +813,12 @@ export default function SimulatorPage() {
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-2xl font-bold text-gray-900">{medResult.adherenceImpact}%</span>
-                      <span className="text-[10px] text-gray-500">predicted</span>
+                      <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{medResult.adherenceImpact}%</span>
+                      <span className="text-[11px] text-gray-500 dark:text-gray-400">predicted</span>
                     </div>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                   Estimated patient adherence based on regimen complexity, side-effect profile, and dosing frequency.
                 </p>
               </div>
@@ -831,7 +831,7 @@ export default function SimulatorPage() {
       {activeTab === "population" && (
         <div className="space-y-6 animate-fade-in-up">
           <div className="card card-hover space-y-5">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <Globe className="h-5 w-5 text-emerald-600" />
               Population Simulation
             </h2>
@@ -839,63 +839,63 @@ export default function SimulatorPage() {
             <div className="grid md:grid-cols-3 gap-4">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Age Min</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Age Min</label>
                   <input
                     type="number"
                     value={popAgeMin}
                     onChange={(e) => setPopAgeMin(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Age Max</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Age Max</label>
                   <input
                     type="number"
                     value={popAgeMax}
                     onChange={(e) => setPopAgeMax(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Conditions</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Conditions</label>
                 <input
                   type="text"
                   value={popConditions}
                   onChange={(e) => setPopConditions(e.target.value)}
                   placeholder="e.g., Type 2 Diabetes, Hypertension"
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Cohort Size</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Cohort Size</label>
                 <input
                   type="number"
                   value={popSize}
                   onChange={(e) => setPopSize(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                 />
               </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Intervention</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Intervention</label>
                 <input
                   type="text"
                   value={popIntervention}
                   onChange={(e) => setPopIntervention(e.target.value)}
                   placeholder="e.g., Add SGLT2 inhibitor to standard therapy"
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Simulation Duration (weeks)</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Simulation Duration (weeks)</label>
                 <input
                   type="number"
                   value={popDuration}
                   onChange={(e) => setPopDuration(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm focus:border-healthos-500 focus:ring-2 focus:ring-healthos-200 outline-none transition"
                 />
               </div>
             </div>
@@ -919,18 +919,18 @@ export default function SimulatorPage() {
             <div className="grid lg:grid-cols-2 gap-6 animate-fade-in-up">
               {/* Outcome Distribution */}
               <div className="card card-hover space-y-4">
-                <h3 className="font-semibold text-sm text-gray-900">Population Outcome Distribution</h3>
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Population Outcome Distribution</h3>
                 <div className="space-y-3">
                   {popResult.outcomes.map((o) => (
                     <div key={o.label} className="flex items-center gap-3">
-                      <span className="text-xs text-gray-500 w-44 flex-shrink-0">{o.label}</span>
-                      <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 w-44 flex-shrink-0">{o.label}</span>
+                      <div className="flex-1 h-5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full ${o.color} transition-all duration-700`}
                           style={{ width: `${o.percentage}%` }}
                         />
                       </div>
-                      <span className="text-xs font-semibold text-gray-700 w-10 text-right">{o.percentage}%</span>
+                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 w-10 text-right">{o.percentage}%</span>
                     </div>
                   ))}
                 </div>
@@ -938,7 +938,7 @@ export default function SimulatorPage() {
 
               {/* Key Metrics */}
               <div className="card card-hover space-y-4">
-                <h3 className="font-semibold text-sm text-gray-900">Key Population Metrics</h3>
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Key Population Metrics</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-lg bg-emerald-50 p-4 text-center">
                     <p className="text-3xl font-bold text-emerald-700">{popResult.nnt}</p>
@@ -953,12 +953,12 @@ export default function SimulatorPage() {
 
               {/* Subgroup Response Variation */}
               <div className="card card-hover space-y-4 lg:col-span-2">
-                <h3 className="font-semibold text-sm text-gray-900">Subgroup Response Variation</h3>
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Subgroup Response Variation</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                   {popResult.subgroups.map((sg) => (
-                    <div key={sg.name} className="rounded-lg bg-gray-50 p-3 text-center">
-                      <p className="text-2xl font-bold text-gray-900">{sg.responseRate}%</p>
-                      <p className="text-xs text-gray-500 mt-1">{sg.name}</p>
+                    <div key={sg.name} className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{sg.responseRate}%</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{sg.name}</p>
                       <div className="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-700 ${
@@ -988,7 +988,7 @@ export default function SimulatorPage() {
                 className={`rounded-lg px-3.5 py-2 text-sm font-medium transition-all ${
                   libraryCategory === cat
                     ? "bg-healthos-600 text-white shadow-sm"
-                    : "bg-white text-gray-600 border border-gray-200 hover:border-healthos-300 hover:text-healthos-700"
+                    : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-healthos-300 hover:text-healthos-700"
                 }`}
               >
                 {cat}
@@ -1004,15 +1004,15 @@ export default function SimulatorPage() {
                 <div key={scenario.id} className="card card-hover space-y-3 animate-fade-in-up">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h4 className="font-semibold text-sm text-gray-900">{scenario.name}</h4>
-                      <span className={`inline-block mt-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge.cls}`}>
+                      <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">{scenario.name}</h4>
+                      <span className={`inline-block mt-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${badge.cls}`}>
                         {badge.label}
                       </span>
                     </div>
                     <button
                       onClick={() => toggleShare(scenario.id)}
                       className={`rounded-md p-1.5 transition ${
-                        scenario.shared ? "text-healthos-600 bg-healthos-50" : "text-gray-400 hover:bg-gray-100"
+                        scenario.shared ? "text-healthos-600 bg-healthos-50" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800"
                       }`}
                       title={scenario.shared ? "Shared with organization" : "Share with organization"}
                     >
@@ -1020,20 +1020,20 @@ export default function SimulatorPage() {
                     </button>
                   </div>
 
-                  <p className="text-xs text-gray-500 leading-relaxed">{scenario.description}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{scenario.description}</p>
 
-                  <div className="rounded-lg bg-gray-50 p-2.5">
-                    <p className="text-[10px] uppercase font-semibold text-gray-400 tracking-wide">Outcome Summary</p>
-                    <p className="text-xs font-medium text-gray-700 mt-0.5">{scenario.outcomeSummary}</p>
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-2.5">
+                    <p className="text-[11px] uppercase font-semibold text-gray-500 dark:text-gray-400 tracking-wide">Outcome Summary</p>
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mt-0.5">{scenario.outcomeSummary}</p>
                   </div>
 
-                  <div className="flex items-center justify-between text-[10px] text-gray-400">
+                  <div className="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
                     <span>Created {scenario.createdAt}</span>
                     <span>Last run {scenario.lastRun}</span>
                   </div>
 
                   <div className="flex gap-2 pt-1">
-                    <button className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition">
+                    <button className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
                       <Copy className="h-3 w-3" /> Clone
                     </button>
                     <button className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-healthos-600 px-3 py-2 text-xs font-medium text-white hover:bg-healthos-700 transition">

@@ -191,7 +191,7 @@ const statusBadge = (status: string) => {
     case "revoked":
       return "bg-red-50 text-red-700 border border-red-200";
     default:
-      return "bg-gray-50 text-gray-700 border border-gray-200";
+      return "bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700";
   }
 };
 
@@ -206,7 +206,7 @@ const severityBadge = (severity: string) => {
     case "low":
       return "bg-blue-100 text-blue-800 border border-blue-300";
     default:
-      return "bg-gray-100 text-gray-800 border border-gray-300";
+      return "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600";
   }
 };
 
@@ -425,7 +425,7 @@ export default function CompliancePage() {
         </svg>
         <div className="absolute flex flex-col items-center">
           <span className={`text-4xl font-bold ${score > 90 ? "text-green-600" : score >= 70 ? "text-yellow-600" : "text-red-600"}`}>{score}%</span>
-          <span className="text-xs text-gray-500 font-medium">HIPAA Score</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">HIPAA Score</span>
         </div>
       </div>
     );
@@ -446,8 +446,8 @@ export default function CompliancePage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Compliance &amp; Governance</h1>
-            <p className="text-sm text-gray-500 mt-1">HIPAA monitoring, AI governance, consent management, and regulatory reporting</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Compliance &amp; Governance</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">HIPAA monitoring, AI governance, consent management, and regulatory reporting</p>
           </div>
           <span className={`ml-2 rounded-full px-3 py-1 text-sm font-bold border ${scoreBadgeColor(overallScore)}`}>
             {overallScore}%
@@ -486,9 +486,9 @@ export default function CompliancePage() {
         ].map((kpi) => (
           <div key={kpi.label} className="card card-hover">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-gray-50 p-2">{kpi.icon}</div>
+              <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-2">{kpi.icon}</div>
               <div>
-                <p className="text-xs font-medium text-gray-500">{kpi.label}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{kpi.label}</p>
                 <p className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</p>
               </div>
             </div>
@@ -497,11 +497,11 @@ export default function CompliancePage() {
       </div>
 
       {/* ── Tabs ────────────────────────────────────────────────────────────── */}
-      <div className="flex gap-1 rounded-lg bg-gray-100 p-1 w-fit">
+      <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 w-fit">
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
             className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === t.key ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              activeTab === t.key ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
             }`}>
             {t.label}
           </button>
@@ -515,9 +515,9 @@ export default function CompliancePage() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="card card-hover flex flex-col items-center justify-center py-8">
               <CircularScore score={overallScore} />
-              <p className="mt-4 text-sm text-gray-500">Overall HIPAA Compliance</p>
+              <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">Overall HIPAA Compliance</p>
               {scanResult && (
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {scanResult.summary.passed} of {scanResult.summary.total_controls} controls passing
                 </p>
               )}
@@ -534,17 +534,17 @@ export default function CompliancePage() {
             </div>
 
             <div className="lg:col-span-2 space-y-3">
-              <h3 className="text-sm font-semibold text-gray-700">Compliance Categories</h3>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Compliance Categories</h3>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {hipaaCategories.map((cat) => (
                   <div key={cat.id} className="card card-hover">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-sm font-semibold text-gray-900">{cat.name}</h4>
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{cat.name}</h4>
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge(cat.status)}`}>
                         {cat.status}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-600 leading-relaxed mb-2">{cat.description}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-2">{cat.description}</p>
                     {cat.status !== "compliant" && (
                       <div className="rounded-lg bg-amber-50 border border-amber-200 p-2 mt-2">
                         <p className="text-xs font-medium text-amber-800">Remediation</p>
@@ -559,26 +559,26 @@ export default function CompliancePage() {
 
           {/* Recent Audit Log Table */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Recent Audit Log</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Recent Audit Log</h3>
             <div className="card overflow-hidden p-0">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Timestamp</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Action</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">User</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Resource</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Outcome</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Timestamp</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Action</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">User</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Resource</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Outcome</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
                     {auditLog.map((entry) => (
-                      <tr key={entry.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{entry.timestamp}</td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{entry.action}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{entry.user}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{entry.resource}</td>
+                      <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{entry.timestamp}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{entry.action}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{entry.user}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{entry.resource}</td>
                         <td className="px-4 py-3">
                           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                             entry.outcome.includes("Passed") || entry.outcome.includes("No Incidents") || entry.outcome.includes("Approved")
@@ -593,7 +593,7 @@ export default function CompliancePage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             </div>
           </div>
@@ -605,35 +605,35 @@ export default function CompliancePage() {
         <div className="space-y-6 animate-fade-in-up">
           {/* Model Registry */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">AI Model Registry</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">AI Model Registry</h3>
             <div className="card overflow-hidden p-0">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Model Name</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Type</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Last Audit</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Fairness Score</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Bias Indicators</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Actions</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Model Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Type</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Last Audit</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Fairness Score</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Bias Indicators</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
                     {aiModels.map((model) => (
-                      <tr key={model.name} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{model.name}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{model.type}</td>
+                      <tr key={model.name} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{model.name}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{model.type}</td>
                         <td className="px-4 py-3">
                           <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge(model.status)}`}>
                             {model.status.replace(/-/g, " ")}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{model.lastAudit}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{model.lastAudit}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <div className="h-2 w-16 rounded-full bg-gray-100 overflow-hidden">
+                            <div className="h-2 w-16 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                               <div className={`h-full rounded-full ${model.fairnessScore >= 0.85 ? "bg-green-400" : model.fairnessScore >= 0.7 ? "bg-yellow-400" : "bg-red-400"}`}
                                 style={{ width: `${model.fairnessScore * 100}%` }} />
                             </div>
@@ -645,7 +645,7 @@ export default function CompliancePage() {
                         <td className="px-4 py-3">
                           <div className="flex gap-1">
                             {model.biasIndicators.map((bi) => (
-                              <span key={bi.metric} className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${bi.pass ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
+                              <span key={bi.metric} className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${bi.pass ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
                                 title={`${bi.metric}: ${bi.value.toFixed(2)} (threshold: ${bi.threshold})`}>
                                 {bi.metric.split(" ").map((w) => w[0]).join("")} {bi.pass ? "OK" : "FAIL"}
                               </span>
@@ -654,7 +654,7 @@ export default function CompliancePage() {
                         </td>
                         <td className="px-4 py-3">
                           <button onClick={() => handleAuditModel(model.name)} disabled={auditingModel === model.name}
-                            className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 flex items-center gap-1.5">
+                            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 flex items-center gap-1.5">
                             {auditingModel === model.name && (
                               <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -667,20 +667,20 @@ export default function CompliancePage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             </div>
           </div>
 
           {/* Drift Check Results */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Drift Check Results</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Drift Check Results</h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {driftResults.map((drift) => (
                 <div key={drift.modelName} className="card card-hover">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-semibold text-gray-900 truncate">{drift.modelName}</h4>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{drift.modelName}</h4>
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                       drift.status === "stable" ? "bg-green-50 text-green-700 border border-green-200" :
                       drift.status === "warning" ? "bg-yellow-50 text-yellow-700 border border-yellow-200" :
                       "bg-red-50 text-red-700 border border-red-200"
@@ -694,14 +694,14 @@ export default function CompliancePage() {
                     ].map((m) => (
                       <div key={m.label}>
                         <div className="flex items-center justify-between text-xs mb-0.5">
-                          <span className="text-gray-500">{m.label}</span>
+                          <span className="text-gray-500 dark:text-gray-400">{m.label}</span>
                           <span className={`font-medium ${
                             m.invert
                               ? (m.value >= m.threshold ? "text-green-600" : "text-red-600")
                               : (m.value <= m.threshold ? "text-green-600" : m.value <= m.threshold * 1.5 ? "text-yellow-600" : "text-red-600")
                           }`}>{m.invert ? `${(m.value * 100).toFixed(0)}%` : m.value.toFixed(3)}</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                        <div className="h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                           <div className={`h-full rounded-full transition-all ${
                             m.invert
                               ? (m.value >= m.threshold ? "bg-green-400" : "bg-red-400")
@@ -736,17 +736,17 @@ export default function CompliancePage() {
           {/* Capture Consent Form */}
           {showCaptureForm && (
             <div className="card animate-fade-in-up border-2 border-healthos-200">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Capture New Consent</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Capture New Consent</h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Patient</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Patient</label>
                   <input type="text" value={consentForm.patient} onChange={(e) => setConsentForm((p) => ({ ...p, patient: e.target.value }))}
-                    placeholder="Patient name or ID" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none" />
+                    placeholder="Patient name or ID" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Consent Type</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Consent Type</label>
                   <select value={consentForm.consentType} onChange={(e) => setConsentForm((p) => ({ ...p, consentType: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none">
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none">
                     <option>Treatment</option>
                     <option>AI Processing</option>
                     <option>Research</option>
@@ -754,14 +754,14 @@ export default function CompliancePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Scope</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Scope</label>
                   <input type="text" value={consentForm.scope} onChange={(e) => setConsentForm((p) => ({ ...p, scope: e.target.value }))}
-                    placeholder="Scope description" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none" />
+                    placeholder="Scope description" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none" />
                 </div>
               </div>
               <div className="mt-4 flex gap-2">
                 <button onClick={handleCaptureConsent} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">Submit</button>
-                <button onClick={() => setShowCaptureForm(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button onClick={() => setShowCaptureForm(false)} className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
               </div>
             </div>
           )}
@@ -769,12 +769,12 @@ export default function CompliancePage() {
           {/* Revoke Consent Form */}
           {showRevokeForm && (
             <div className="card animate-fade-in-up border-2 border-red-200">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Revoke Consent</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Revoke Consent</h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Consent ID</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Consent ID</label>
                   <select value={revokeForm.consentId} onChange={(e) => setRevokeForm((p) => ({ ...p, consentId: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none">
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none">
                     <option value="">Select consent...</option>
                     {consents.filter((c) => c.status === "active").map((c) => (
                       <option key={c.id} value={c.id}>{c.patient} - {c.consentType}</option>
@@ -782,58 +782,58 @@ export default function CompliancePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Reason</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Reason</label>
                   <input type="text" value={revokeForm.reason} onChange={(e) => setRevokeForm((p) => ({ ...p, reason: e.target.value }))}
-                    placeholder="Reason for revocation" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none" />
+                    placeholder="Reason for revocation" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none" />
                 </div>
               </div>
               <div className="mt-4 flex gap-2">
                 <button onClick={handleRevokeConsent} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">Revoke</button>
-                <button onClick={() => setShowRevokeForm(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button onClick={() => setShowRevokeForm(false)} className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
               </div>
             </div>
           )}
 
           {/* Active Consents Table */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Active Consents</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Active Consents</h3>
             <div className="card overflow-hidden p-0">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Patient</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Consent Type</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Scope</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Date Granted</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Date Revoked</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Patient</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Consent Type</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Scope</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Date Granted</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Date Revoked</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
                     {consents.map((consent) => (
-                      <tr key={consent.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{consent.patient}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{consent.consentType}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600 max-w-[200px] truncate">{consent.scope}</td>
+                      <tr key={consent.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{consent.patient}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{consent.consentType}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 max-w-[200px] truncate">{consent.scope}</td>
                         <td className="px-4 py-3">
                           <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge(consent.status)}`}>
                             {consent.status}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{consent.dateGranted}</td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{consent.dateRevoked || "—"}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{consent.dateGranted}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{consent.dateRevoked || "—"}</td>
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             </div>
           </div>
 
           {/* Consent Audit Trail Timeline */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Consent Audit Trail</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Consent Audit Trail</h3>
             <div className="card">
               <div className="relative">
                 <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200" />
@@ -848,16 +848,16 @@ export default function CompliancePage() {
                       }`} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium text-gray-900">{event.action}</span>
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{event.action}</span>
+                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                             event.action.includes("revoked") ? "bg-red-50 text-red-700" :
-                            event.action.includes("expired") ? "bg-gray-100 text-gray-600" :
+                            event.action.includes("expired") ? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400" :
                             event.action.includes("captured") || event.action.includes("renewed") ? "bg-green-50 text-green-700" :
                             "bg-blue-50 text-blue-700"
                           }`}>{event.consentType}</span>
                         </div>
-                        <p className="text-xs text-gray-600 mt-0.5">{event.patient}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{event.timestamp} &middot; {event.actor}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{event.patient}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{event.timestamp} &middot; {event.actor}</p>
                       </div>
                     </div>
                   ))}
@@ -873,12 +873,12 @@ export default function CompliancePage() {
         <div className="space-y-6 animate-fade-in-up">
           {/* Compliance Frameworks */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Compliance Frameworks</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Compliance Frameworks</h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {frameworks.map((fw) => (
                 <div key={fw.key} className="card card-hover">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-semibold text-gray-900">{fw.name}</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fw.name}</h4>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       fw.status === "Certified" ? "bg-green-50 text-green-700 border border-green-200" :
                       fw.status === "Compliant" ? "bg-blue-50 text-blue-700 border border-blue-200" :
@@ -887,18 +887,18 @@ export default function CompliancePage() {
                   </div>
                   <div className="flex items-center gap-3 mb-2">
                     <span className={`text-2xl font-bold ${fw.score > 90 ? "text-green-600" : fw.score >= 70 ? "text-yellow-600" : "text-red-600"}`}>{fw.score}%</span>
-                    <span className="text-xs text-gray-400">coverage</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">coverage</span>
                   </div>
-                  <div className="h-2 rounded-full bg-gray-100 overflow-hidden mb-2">
+                  <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden mb-2">
                     <div className={`h-full rounded-full ${fw.score > 90 ? "bg-green-400" : fw.score >= 70 ? "bg-yellow-400" : "bg-red-400"}`}
                       style={{ width: `${fw.score}%` }} />
                   </div>
-                  <div className="grid grid-cols-3 gap-1 text-[10px] text-gray-500">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 text-[11px] text-gray-500 dark:text-gray-400">
                     <span>{fw.passing} passing</span>
                     <span>{fw.failing} failing</span>
                     <span>{fw.pending} pending</span>
                   </div>
-                  <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-400 flex justify-between">
+                  <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400 flex justify-between">
                     <span>Last: {fw.lastAudit}</span>
                     <span>Next: {fw.nextReview}</span>
                   </div>
@@ -909,31 +909,31 @@ export default function CompliancePage() {
 
           {/* Generate Report Form */}
           <div className="card">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Generate Compliance Report</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Generate Compliance Report</h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Framework</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Framework</label>
                 <select value={reportForm.framework} onChange={(e) => setReportForm((p) => ({ ...p, framework: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none">
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none">
                   {frameworks.map((fw) => (
                     <option key={fw.key} value={fw.key}>{fw.name}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Start Date</label>
                 <input type="date" value={reportForm.startDate} onChange={(e) => setReportForm((p) => ({ ...p, startDate: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none" />
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">End Date</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">End Date</label>
                 <input type="date" value={reportForm.endDate} onChange={(e) => setReportForm((p) => ({ ...p, endDate: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none" />
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Scope</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Scope</label>
                 <select value={reportForm.scope} onChange={(e) => setReportForm((p) => ({ ...p, scope: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none">
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none">
                   <option value="full">Full Organization</option>
                   <option value="clinical">Clinical Systems</option>
                   <option value="it">IT Infrastructure</option>
@@ -953,9 +953,9 @@ export default function CompliancePage() {
                 {generatingReport ? "Generating..." : "Generate Report"}
               </button>
               <button onClick={handleGapAnalysis} disabled={runningGapAnalysis}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2">
+                className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 flex items-center gap-2">
                 {runningGapAnalysis && (
-                  <svg className="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-4 w-4 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
@@ -967,7 +967,7 @@ export default function CompliancePage() {
 
           {/* Gap Analysis Results */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Gap Analysis Results</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Gap Analysis Results</h3>
             <div className="space-y-3">
               {gaps.map((gap) => (
                 <div key={gap.id} className="card card-hover">
@@ -979,11 +979,11 @@ export default function CompliancePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-gray-400">{gap.framework}</span>
+                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{gap.framework}</span>
                         <span className="text-xs text-gray-300">&middot;</span>
-                        <span className="text-xs text-gray-400">Deadline: {gap.deadline}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Deadline: {gap.deadline}</span>
                       </div>
-                      <p className="text-sm text-gray-900 leading-relaxed">{gap.description}</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed">{gap.description}</p>
                       <div className="mt-2 rounded-lg bg-blue-50 border border-blue-200 p-2">
                         <p className="text-xs font-medium text-blue-800">Recommended Action</p>
                         <p className="text-xs text-blue-700 mt-0.5">{gap.recommendedAction}</p>

@@ -39,21 +39,21 @@ export function PatientAlerts({ patientId }: { patientId: string }) {
 
   return (
     <div className="card">
-      <h2 className="mb-4 text-lg font-semibold text-gray-900">Active Alerts</h2>
+      <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Active Alerts</h2>
       <div className="space-y-3">
         {loading ? (
-          <p className="text-center text-sm text-gray-400">Loading alerts...</p>
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400">Loading alerts...</p>
         ) : alerts.length === 0 ? (
-          <p className="text-center text-sm text-gray-400">No active alerts</p>
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400">No active alerts</p>
         ) : (
           alerts.map((alert) => (
-            <div key={alert.id} className="flex items-start gap-3 rounded-lg border border-gray-100 p-3">
+            <div key={alert.id} className="flex items-start gap-3 rounded-lg border border-gray-100 dark:border-gray-800 p-3">
               <div className="mt-0.5">
                 <span className={PRIORITY_BADGE[alert.priority]}>{alert.priority}</span>
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-800">{alert.message || "No message"}</p>
-                <p className="mt-0.5 text-xs text-gray-400">
+                <p className="text-sm text-gray-800 dark:text-gray-200">{alert.message || "No message"}</p>
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                   {alert.alert_type.replace(/_/g, " ")}
                   {alert.created_at && <> &middot; {timeAgo(alert.created_at)}</>}
                 </p>

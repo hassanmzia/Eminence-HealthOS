@@ -144,11 +144,11 @@ const referralStatusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
   scheduled: "bg-blue-100 text-blue-800",
   completed: "bg-green-100 text-green-800",
-  cancelled: "bg-gray-100 text-gray-600",
+  cancelled: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
 };
 
 const priorityColors: Record<string, string> = {
-  low: "text-gray-500",
+  low: "text-gray-500 dark:text-gray-400",
   normal: "text-blue-600",
   high: "text-orange-600",
   urgent: "text-red-600",
@@ -166,7 +166,7 @@ const appointmentStatusColors: Record<string, string> = {
   confirmed: "text-blue-600",
   "checked-in": "text-green-600",
   "in-progress": "text-healthos-600",
-  completed: "text-gray-500",
+  completed: "text-gray-500 dark:text-gray-400",
   "no-show": "text-red-500",
 };
 
@@ -356,8 +356,8 @@ export default function OperationsPage() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Operations Command Center</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Operations Command Center</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Manage authorizations, insurance, referrals, scheduling, and workflows in one place.
           </p>
         </div>
@@ -385,13 +385,13 @@ export default function OperationsPage() {
               <span className="text-xl">{kpi.icon}</span>
             </div>
             <p className={`mt-2 text-2xl font-bold ${kpi.color}`}>{kpi.value}</p>
-            <p className="text-xs font-medium text-gray-600 mt-1">{kpi.label}</p>
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mt-1">{kpi.label}</p>
           </div>
         ))}
       </div>
 
       {/* ── Tabs ───────────────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex space-x-1 overflow-x-auto" aria-label="Operations tabs">
           {tabs.map((tab) => (
             <button
@@ -400,13 +400,13 @@ export default function OperationsPage() {
               className={`whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === tab.key
                   ? "border-healthos-600 text-healthos-600"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:text-gray-300"
               }`}
             >
               {tab.label}
               {tab.count !== undefined && (
                 <span className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                  activeTab === tab.key ? "bg-healthos-100 text-healthos-700" : "bg-gray-100 text-gray-600"
+                  activeTab === tab.key ? "bg-healthos-100 text-healthos-700" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
                 }`}>
                   {tab.count}
                 </span>
@@ -423,7 +423,7 @@ export default function OperationsPage() {
         {activeTab === "prior-auth" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Prior Authorization Requests</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Prior Authorization Requests</h2>
               <button
                 onClick={() => setShowNewAuth(!showNewAuth)}
                 className="rounded-lg border border-healthos-300 bg-healthos-50 px-4 py-2 text-sm font-medium text-healthos-700 hover:bg-healthos-100 transition-colors"
@@ -435,7 +435,7 @@ export default function OperationsPage() {
             {/* New Prior Auth Form */}
             {showNewAuth && (
               <div className="card rounded-xl border border-healthos-200 bg-healthos-50/30 p-5 animate-fade-in-up">
-                <h3 className="text-sm font-semibold text-gray-800 mb-4">Submit New Prior Authorization</h3>
+                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Submit New Prior Authorization</h3>
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -457,24 +457,24 @@ export default function OperationsPage() {
                   className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
                 >
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Patient Name *</label>
-                    <input required value={authForm.patient} onChange={(e) => setAuthForm({ ...authForm, patient: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="Full name" />
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Patient Name *</label>
+                    <input required value={authForm.patient} onChange={(e) => setAuthForm({ ...authForm, patient: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="Full name" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Procedure *</label>
-                    <input required value={authForm.procedure} onChange={(e) => setAuthForm({ ...authForm, procedure: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. MRI Lumbar Spine" />
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Procedure *</label>
+                    <input required value={authForm.procedure} onChange={(e) => setAuthForm({ ...authForm, procedure: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. MRI Lumbar Spine" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">CPT Code</label>
-                    <input value={authForm.cptCode} onChange={(e) => setAuthForm({ ...authForm, cptCode: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. 72148" />
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">CPT Code</label>
+                    <input value={authForm.cptCode} onChange={(e) => setAuthForm({ ...authForm, cptCode: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. 72148" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Insurance *</label>
-                    <input required value={authForm.insurance} onChange={(e) => setAuthForm({ ...authForm, insurance: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. Blue Cross PPO" />
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Insurance *</label>
+                    <input required value={authForm.insurance} onChange={(e) => setAuthForm({ ...authForm, insurance: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. Blue Cross PPO" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Urgency</label>
-                    <select value={authForm.urgency} onChange={(e) => setAuthForm({ ...authForm, urgency: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Urgency</label>
+                    <select value={authForm.urgency} onChange={(e) => setAuthForm({ ...authForm, urgency: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
                       <option value="routine">Routine</option>
                       <option value="urgent">Urgent</option>
                       <option value="emergent">Emergent</option>
@@ -490,31 +490,31 @@ export default function OperationsPage() {
             )}
 
             {/* Prior Auth Table */}
-            <div className="card rounded-xl border border-gray-200 overflow-hidden">
+            <div className="card rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Patient</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Procedure</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Insurance</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Urgency</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Submitted</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">ID</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Patient</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Procedure</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Insurance</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Urgency</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Submitted</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 bg-white">
+                  <tbody className="divide-y divide-gray-100 bg-white dark:bg-gray-900">
                     {priorAuths.map((pa) => (
-                      <tr key={pa.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 text-sm font-mono text-gray-500">{pa.id}</td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{pa.patient}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
+                      <tr key={pa.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <td className="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">{pa.id}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{pa.patient}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                           {pa.procedure}
-                          {pa.cptCode && <span className="ml-1 text-xs text-gray-400">({pa.cptCode})</span>}
+                          {pa.cptCode && <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">({pa.cptCode})</span>}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{pa.insurance}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{pa.insurance}</td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${authStatusColors[pa.status]}`}>
                             {pa.status}
@@ -522,12 +522,12 @@ export default function OperationsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <span className={`text-xs font-semibold uppercase ${
-                            pa.urgency === "emergent" ? "text-red-600" : pa.urgency === "urgent" ? "text-orange-600" : "text-gray-500"
+                            pa.urgency === "emergent" ? "text-red-600" : pa.urgency === "urgent" ? "text-orange-600" : "text-gray-500 dark:text-gray-400"
                           }`}>
                             {pa.urgency}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{pa.submittedDate}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{pa.submittedDate}</td>
                         <td className="px-4 py-3">
                           {(pa.status === "pending" || pa.status === "in-review") && (
                             <button
@@ -542,7 +542,7 @@ export default function OperationsPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             </div>
           </div>
@@ -552,28 +552,28 @@ export default function OperationsPage() {
         {activeTab === "insurance" && (
           <div className="space-y-6">
             {/* Verification Form */}
-            <div className="card card-hover rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Verify Insurance Eligibility</h2>
+            <div className="card card-hover rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Verify Insurance Eligibility</h2>
               <form onSubmit={handleVerifyInsurance} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Patient ID *</label>
-                  <input required value={insuranceForm.patientId} onChange={(e) => setInsuranceForm({ ...insuranceForm, patientId: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="Patient ID or MRN" />
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Patient ID *</label>
+                  <input required value={insuranceForm.patientId} onChange={(e) => setInsuranceForm({ ...insuranceForm, patientId: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="Patient ID or MRN" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Insurance Company *</label>
-                  <input required value={insuranceForm.insurerName} onChange={(e) => setInsuranceForm({ ...insuranceForm, insurerName: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. Blue Cross" />
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Insurance Company *</label>
+                  <input required value={insuranceForm.insurerName} onChange={(e) => setInsuranceForm({ ...insuranceForm, insurerName: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. Blue Cross" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Member ID *</label>
-                  <input required value={insuranceForm.memberId} onChange={(e) => setInsuranceForm({ ...insuranceForm, memberId: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="Member ID" />
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Member ID *</label>
+                  <input required value={insuranceForm.memberId} onChange={(e) => setInsuranceForm({ ...insuranceForm, memberId: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="Member ID" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Group Number</label>
-                  <input value={insuranceForm.groupNumber} onChange={(e) => setInsuranceForm({ ...insuranceForm, groupNumber: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="Group #" />
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Group Number</label>
+                  <input value={insuranceForm.groupNumber} onChange={(e) => setInsuranceForm({ ...insuranceForm, groupNumber: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="Group #" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Date of Birth</label>
-                  <input type="date" value={insuranceForm.dob} onChange={(e) => setInsuranceForm({ ...insuranceForm, dob: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Date of Birth</label>
+                  <input type="date" value={insuranceForm.dob} onChange={(e) => setInsuranceForm({ ...insuranceForm, dob: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
                 </div>
                 <div className="flex items-end">
                   <button type="submit" disabled={verifyingInsurance} className="w-full rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50 disabled:cursor-wait transition-colors">
@@ -588,22 +588,22 @@ export default function OperationsPage() {
               <div className="card rounded-xl border border-green-200 bg-green-50/30 p-6 animate-fade-in-up">
                 <div className="flex items-center gap-2 mb-4">
                   <span className="h-3 w-3 rounded-full bg-green-500" />
-                  <h3 className="text-sm font-semibold text-gray-900">Verification Result</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Verification Result</h3>
                 </div>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                   {Object.entries(verificationResult).filter(([k]) => k !== "benefits").map(([key, value]) => (
                     <div key={key}>
-                      <p className="text-xs text-gray-500 capitalize">{key.replace(/_/g, " ")}</p>
-                      <p className="text-sm font-medium text-gray-900">{String(value)}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{key.replace(/_/g, " ")}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{String(value)}</p>
                     </div>
                   ))}
                 </div>
                 {verificationResult.benefits && Array.isArray(verificationResult.benefits) && (
                   <div className="mt-4 border-t border-green-200 pt-4">
-                    <p className="text-xs font-semibold text-gray-700 mb-2">Benefits Summary</p>
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Benefits Summary</p>
                     <ul className="grid grid-cols-1 gap-1 sm:grid-cols-2">
                       {(verificationResult.benefits as string[]).map((b, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                        <li key={i} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                           <span className="h-1.5 w-1.5 rounded-full bg-green-500 flex-shrink-0" />
                           {b}
                         </li>
@@ -615,29 +615,29 @@ export default function OperationsPage() {
             )}
 
             {/* Recent Verifications Table */}
-            <div className="card rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100">
-                <h3 className="text-sm font-semibold text-gray-900">Recent Verifications</h3>
+            <div className="card rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent Verifications</h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Patient</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Insurer</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Member ID</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Eligibility</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Copay</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Deductible</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Verified</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Patient</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Insurer</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Member ID</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Eligibility</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Copay</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Deductible</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Verified</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 bg-white">
+                  <tbody className="divide-y divide-gray-100 bg-white dark:bg-gray-900">
                     {verifications.map((v) => (
-                      <tr key={v.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{v.patient}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{v.insurerName}</td>
-                        <td className="px-4 py-3 text-sm font-mono text-gray-500">{v.memberId}</td>
+                      <tr key={v.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{v.patient}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{v.insurerName}</td>
+                        <td className="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">{v.memberId}</td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                             v.eligibility === "active" ? "bg-green-100 text-green-800" : v.eligibility === "inactive" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
@@ -645,15 +645,15 @@ export default function OperationsPage() {
                             {v.eligibility}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{v.copay}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{v.copay}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                           {v.deductibleMet} / {v.deductible}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{v.verifiedDate}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{v.verifiedDate}</td>
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             </div>
           </div>
@@ -663,7 +663,7 @@ export default function OperationsPage() {
         {activeTab === "referrals" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Referral Management</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Referral Management</h2>
               <button
                 onClick={() => setShowNewReferral(!showNewReferral)}
                 className="rounded-lg border border-healthos-300 bg-healthos-50 px-4 py-2 text-sm font-medium text-healthos-700 hover:bg-healthos-100 transition-colors"
@@ -675,19 +675,19 @@ export default function OperationsPage() {
             {/* Create Referral Form */}
             {showNewReferral && (
               <div className="card rounded-xl border border-healthos-200 bg-healthos-50/30 p-5 animate-fade-in-up">
-                <h3 className="text-sm font-semibold text-gray-800 mb-4">Create New Referral</h3>
+                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Create New Referral</h3>
                 <form onSubmit={handleCreateReferral} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Patient Name *</label>
-                    <input required value={referralForm.patient} onChange={(e) => setReferralForm({ ...referralForm, patient: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="Full name" />
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Patient Name *</label>
+                    <input required value={referralForm.patient} onChange={(e) => setReferralForm({ ...referralForm, patient: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="Full name" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Referring Provider *</label>
-                    <input required value={referralForm.referringProvider} onChange={(e) => setReferralForm({ ...referralForm, referringProvider: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. Dr. Chen" />
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Referring Provider *</label>
+                    <input required value={referralForm.referringProvider} onChange={(e) => setReferralForm({ ...referralForm, referringProvider: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. Dr. Chen" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Specialist Type *</label>
-                    <select required value={referralForm.specialistType} onChange={(e) => setReferralForm({ ...referralForm, specialistType: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Specialist Type *</label>
+                    <select required value={referralForm.specialistType} onChange={(e) => setReferralForm({ ...referralForm, specialistType: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
                       <option value="">Select specialist...</option>
                       <option value="Cardiology">Cardiology</option>
                       <option value="Orthopedics">Orthopedics</option>
@@ -701,12 +701,12 @@ export default function OperationsPage() {
                     </select>
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Reason *</label>
-                    <input required value={referralForm.reason} onChange={(e) => setReferralForm({ ...referralForm, reason: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="Clinical reason for referral" />
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Reason *</label>
+                    <input required value={referralForm.reason} onChange={(e) => setReferralForm({ ...referralForm, reason: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="Clinical reason for referral" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Priority</label>
-                    <select value={referralForm.priority} onChange={(e) => setReferralForm({ ...referralForm, priority: e.target.value })} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+                    <select value={referralForm.priority} onChange={(e) => setReferralForm({ ...referralForm, priority: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
                       <option value="low">Low</option>
                       <option value="normal">Normal</option>
                       <option value="high">High</option>
@@ -725,16 +725,16 @@ export default function OperationsPage() {
             {/* Referral Cards */}
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {referrals.map((ref) => (
-                <div key={ref.id} className="card card-hover rounded-xl border border-gray-200 p-5 animate-fade-in-up">
+                <div key={ref.id} className="card card-hover rounded-xl border border-gray-200 dark:border-gray-700 p-5 animate-fade-in-up">
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-semibold text-gray-900">{ref.patient}</h3>
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{ref.patient}</h3>
                         <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${referralStatusColors[ref.status]}`}>
                           {ref.status}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">{ref.id} &middot; {ref.createdDate}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{ref.id} &middot; {ref.createdDate}</p>
                     </div>
                     <span className={`text-xs font-bold uppercase ${priorityColors[ref.priority]}`}>
                       {ref.priority}
@@ -742,22 +742,22 @@ export default function OperationsPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm mb-4">
                     <div>
-                      <p className="text-xs text-gray-500">Referring Provider</p>
-                      <p className="font-medium text-gray-800">{ref.referringProvider}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Referring Provider</p>
+                      <p className="font-medium text-gray-800 dark:text-gray-200">{ref.referringProvider}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Specialist Type</p>
-                      <p className="font-medium text-gray-800">{ref.specialistType}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Specialist Type</p>
+                      <p className="font-medium text-gray-800 dark:text-gray-200">{ref.specialistType}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-xs text-gray-500">Reason</p>
-                      <p className="text-gray-700">{ref.reason}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Reason</p>
+                      <p className="text-gray-700 dark:text-gray-300">{ref.reason}</p>
                     </div>
                   </div>
 
                   {/* Timeline */}
-                  <div className="border-t border-gray-100 pt-3">
-                    <p className="text-xs font-semibold text-gray-600 mb-2">Tracking Timeline</p>
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-3">
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Tracking Timeline</p>
                     <div className="flex items-center gap-1">
                       {ref.timeline.map((step, i) => (
                         <div key={i} className="flex items-center flex-1 min-w-0">
@@ -774,7 +774,7 @@ export default function OperationsPage() {
                     </div>
                     <div className="flex gap-1 mt-1">
                       {ref.timeline.map((step, i) => (
-                        <p key={i} className="flex-1 text-[10px] text-gray-500 truncate min-w-0">{step.event}</p>
+                        <p key={i} className="flex-1 text-[11px] text-gray-500 dark:text-gray-400 truncate min-w-0">{step.event}</p>
                       ))}
                     </div>
                   </div>
@@ -789,8 +789,8 @@ export default function OperationsPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Today&apos;s Schedule</h2>
-                <p className="text-sm text-gray-500">March 15, 2026 &middot; Day View</p>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Today&apos;s Schedule</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">March 15, 2026 &middot; Day View</p>
               </div>
               <button
                 onClick={handleSuggestSlot}
@@ -810,8 +810,8 @@ export default function OperationsPage() {
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 text-sm">
                   {Object.entries(suggestedSlot).map(([key, value]) => (
                     <div key={key}>
-                      <p className="text-xs text-gray-500 capitalize">{key.replace(/_/g, " ")}</p>
-                      <p className="font-medium text-gray-900">{typeof value === "number" && key === "confidence" ? `${(value * 100).toFixed(0)}%` : String(value)}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{key.replace(/_/g, " ")}</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{typeof value === "number" && key === "confidence" ? `${(value * 100).toFixed(0)}%` : String(value)}</p>
                     </div>
                   ))}
                 </div>
@@ -819,19 +819,19 @@ export default function OperationsPage() {
             )}
 
             {/* Schedule Grid */}
-            <div className="card rounded-xl border border-gray-200 overflow-hidden">
+            <div className="card rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="divide-y divide-gray-100">
                 {schedule.map((slot) => (
                   <div
                     key={slot.id}
-                    className={`flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition-colors ${
+                    className={`flex items-center gap-4 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
                       slot.conflict ? "bg-red-50/50 border-l-4 border-l-red-400" : ""
                     }`}
                   >
                     {/* Time */}
                     <div className="w-20 flex-shrink-0">
-                      <p className="text-sm font-semibold text-gray-900">{slot.time}</p>
-                      <p className="text-xs text-gray-500">{slot.duration} min</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{slot.time}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{slot.duration} min</p>
                     </div>
 
                     {/* Divider */}
@@ -842,17 +842,17 @@ export default function OperationsPage() {
                     {/* Details */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-gray-900 truncate">{slot.patient}</p>
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${appointmentTypeColors[slot.type]}`}>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{slot.patient}</p>
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${appointmentTypeColors[slot.type]}`}>
                           {slot.type}
                         </span>
                         {slot.conflict && (
-                          <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
+                          <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700">
                             CONFLICT
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500">{slot.provider}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{slot.provider}</p>
                     </div>
 
                     {/* Status */}
@@ -872,7 +872,7 @@ export default function OperationsPage() {
         {activeTab === "workflows" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Active Workflows</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Active Workflows</h2>
               <button
                 onClick={() => setShowNewWorkflow(!showNewWorkflow)}
                 className="rounded-lg border border-healthos-300 bg-healthos-50 px-4 py-2 text-sm font-medium text-healthos-700 hover:bg-healthos-100 transition-colors"
@@ -884,14 +884,14 @@ export default function OperationsPage() {
             {/* New Workflow Form */}
             {showNewWorkflow && (
               <div className="card rounded-xl border border-healthos-200 bg-healthos-50/30 p-5 animate-fade-in-up">
-                <h3 className="text-sm font-semibold text-gray-800 mb-4">Start New Workflow</h3>
+                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Start New Workflow</h3>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
                   <div className="flex-1">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Workflow Template</label>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Workflow Template</label>
                     <select
                       value={selectedTemplate}
                       onChange={(e) => setSelectedTemplate(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                     >
                       {workflowTemplates.map((t) => (
                         <option key={t} value={t}>{t}</option>
@@ -919,18 +919,18 @@ export default function OperationsPage() {
 
                 return (
                   <div key={wf.id} className={`card card-hover rounded-xl border p-5 animate-fade-in-up ${
-                    isComplete ? "border-green-200 bg-green-50/20" : slaUrgent ? "border-orange-200" : "border-gray-200"
+                    isComplete ? "border-green-200 bg-green-50/20" : slaUrgent ? "border-orange-200" : "border-gray-200 dark:border-gray-700"
                   }`}>
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h3 className="text-sm font-semibold text-gray-900">{wf.name}</h3>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{wf.name}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                           {wf.assignedTeam} &middot; {wf.id}
                         </p>
                       </div>
                       {!isComplete && wf.slaMinutesRemaining > 0 && (
                         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          slaUrgent ? "bg-orange-100 text-orange-700" : "bg-gray-100 text-gray-600"
+                          slaUrgent ? "bg-orange-100 text-orange-700" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
                         }`}>
                           {slaUrgent && <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" />}
                           {slaHours}h {slaMins}m remaining
@@ -946,8 +946,8 @@ export default function OperationsPage() {
                     {/* Progress Bar */}
                     <div className="mb-3">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-gray-500">Step {wf.completedSteps} of {wf.totalSteps}</span>
-                        <span className="text-xs font-semibold text-gray-700">{progressPct}%</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Step {wf.completedSteps} of {wf.totalSteps}</span>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{progressPct}%</span>
                       </div>
                       <div className="h-2 w-full rounded-full bg-gray-200">
                         <div
@@ -963,19 +963,19 @@ export default function OperationsPage() {
                     <div className="space-y-1.5">
                       {wf.steps.map((step, i) => (
                         <div key={i} className={`flex items-center gap-2 rounded-md px-2 py-1 text-xs ${
-                          step.active ? "bg-healthos-50 text-healthos-700 font-semibold" : step.completed ? "text-gray-500" : "text-gray-400"
+                          step.active ? "bg-healthos-50 text-healthos-700 font-semibold" : step.completed ? "text-gray-500 dark:text-gray-400" : "text-gray-500 dark:text-gray-400"
                         }`}>
-                          <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold flex-shrink-0 ${
+                          <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[11px] font-bold flex-shrink-0 ${
                             step.completed
                               ? "bg-green-500 text-white"
                               : step.active
                               ? "bg-healthos-500 text-white"
-                              : "bg-gray-200 text-gray-500"
+                              : "bg-gray-200 text-gray-500 dark:text-gray-400"
                           }`}>
                             {step.completed ? "\u2713" : i + 1}
                           </span>
                           <span className={step.completed ? "line-through" : ""}>{step.name}</span>
-                          {step.active && <span className="ml-auto text-[10px] font-medium text-healthos-500">Current</span>}
+                          {step.active && <span className="ml-auto text-[11px] font-medium text-healthos-500">Current</span>}
                         </div>
                       ))}
                     </div>
@@ -989,25 +989,25 @@ export default function OperationsPage() {
 
       {/* ── New Task Modal ──────────────────────────────────────────────────── */}
       {showNewTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowNewTask(false)}>
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4" onClick={() => setShowNewTask(false)}>
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">New Task</h2>
-              <button onClick={() => setShowNewTask(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">New Task</h2>
+              <button onClick={() => setShowNewTask(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none">&times;</button>
             </div>
             <form onSubmit={handleCreateTask} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Task Title *</label>
-                <input required value={taskForm.title} onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. Review prior auth for Patient X" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Task Title *</label>
+                <input required value={taskForm.title} onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. Review prior auth for Patient X" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Assignee</label>
-                  <input value={taskForm.assignee} onChange={(e) => setTaskForm({ ...taskForm, assignee: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. Dr. Smith" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assignee</label>
+                  <input value={taskForm.assignee} onChange={(e) => setTaskForm({ ...taskForm, assignee: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. Dr. Smith" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                  <select value={taskForm.priority} onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+                  <select value={taskForm.priority} onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
@@ -1016,11 +1016,11 @@ export default function OperationsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
-                <input type="date" value={taskForm.dueDate} onChange={(e) => setTaskForm({ ...taskForm, dueDate: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Due Date</label>
+                <input type="date" value={taskForm.dueDate} onChange={(e) => setTaskForm({ ...taskForm, dueDate: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowNewTask(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="button" onClick={() => setShowNewTask(false)} className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
                 <button type="submit" className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">Create Task</button>
               </div>
             </form>

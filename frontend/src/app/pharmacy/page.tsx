@@ -140,10 +140,10 @@ function rxStatusClasses(status: Prescription["status"]) {
   const m: Record<string, string> = {
     active: "bg-green-100 text-green-800",
     pending: "bg-yellow-100 text-yellow-800",
-    discontinued: "bg-gray-200 text-gray-600",
+    discontinued: "bg-gray-200 text-gray-600 dark:text-gray-400",
     expired: "bg-red-100 text-red-800",
   };
-  return m[status] ?? "bg-gray-100 text-gray-800";
+  return m[status] ?? "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200";
 }
 
 function severityClasses(severity: InteractionResult["severity"]) {
@@ -153,7 +153,7 @@ function severityClasses(severity: InteractionResult["severity"]) {
     moderate: "border-yellow-400 bg-yellow-50",
     minor: "border-blue-400 bg-blue-50",
   };
-  return m[severity] ?? "border-gray-300 bg-gray-50";
+  return m[severity] ?? "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800";
 }
 
 function severityBadge(severity: InteractionResult["severity"]) {
@@ -389,12 +389,12 @@ export default function PharmacyPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">Pharmacy Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Pharmacy Management</h1>
             <span className="inline-flex items-center rounded-full bg-healthos-100 px-3 py-0.5 text-sm font-semibold text-healthos-700">
               {activeRxCount} active
             </span>
           </div>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Prescriptions, drug interaction checking, formulary management, adherence tracking, and refill processing
           </p>
         </div>
@@ -418,7 +418,7 @@ export default function PharmacyPage() {
         ].map((kpi) => (
           <div key={kpi.label} className="card card-hover rounded-xl p-4 animate-fade-in-up">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{kpi.label}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{kpi.label}</p>
               <span className="text-lg">{kpi.icon}</span>
             </div>
             <p className={`mt-2 text-2xl font-bold ${kpi.accent}`}>{kpi.value}</p>
@@ -427,7 +427,7 @@ export default function PharmacyPage() {
       </div>
 
       {/* ── Tab Navigation ─────────────────────────────────────────────── */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex gap-6 overflow-x-auto">
           {TABS.map((t) => (
             <button
@@ -436,7 +436,7 @@ export default function PharmacyPage() {
               className={`whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
                 activeTab === t
                   ? "border-healthos-600 text-healthos-600"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:text-gray-300"
               }`}
             >
               {t}
@@ -451,33 +451,33 @@ export default function PharmacyPage() {
       {activeTab === "Prescriptions" && (
         <div className="card rounded-xl overflow-hidden animate-fade-in-up">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
+            <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
                   {["Rx ID", "Medication", "Dosage", "Frequency", "Patient ID", "Status", "Prescriber", "Date"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{h}</th>
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
+              <tbody className="divide-y divide-gray-100 bg-white dark:bg-gray-900">
                 {prescriptions.map((rx) => (
-                  <tr key={rx.id} className="transition hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{rx.id}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{rx.medication}</td>
-                    <td className="px-4 py-3 text-gray-700">{rx.dosage}</td>
-                    <td className="px-4 py-3 text-gray-500">{rx.frequency}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{rx.patient_id}</td>
+                  <tr key={rx.id} className="transition hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="px-4 py-3 font-mono text-xs text-gray-600 dark:text-gray-400">{rx.id}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{rx.medication}</td>
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{rx.dosage}</td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{rx.frequency}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-600 dark:text-gray-400">{rx.patient_id}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${rxStatusClasses(rx.status)}`}>
                         {rx.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-700">{rx.prescriber}</td>
-                    <td className="px-4 py-3 text-gray-500">{rx.date}</td>
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{rx.prescriber}</td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{rx.date}</td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
         </div>
       )}
@@ -489,30 +489,30 @@ export default function PharmacyPage() {
         <div className="space-y-6 animate-fade-in-up">
           {/* Checker */}
           <div className="card card-hover rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900">Drug Interaction Checker</h3>
-            <p className="mt-1 text-sm text-gray-500">Enter two medications to check for potential interactions</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Drug Interaction Checker</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Enter two medications to check for potential interactions</p>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="flex-1">
-                <label className="mb-1 block text-xs font-medium text-gray-600">Medication A</label>
+                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Medication A</label>
                 <input
                   type="text"
                   value={drugA}
                   onChange={(e) => setDrugA(e.target.value)}
                   placeholder="e.g., Warfarin"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 />
               </div>
               <div className="flex items-center justify-center">
                 <span className="text-xl font-bold text-gray-300">+</span>
               </div>
               <div className="flex-1">
-                <label className="mb-1 block text-xs font-medium text-gray-600">Medication B</label>
+                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Medication B</label>
                 <input
                   type="text"
                   value={drugB}
                   onChange={(e) => setDrugB(e.target.value)}
                   placeholder="e.g., Aspirin"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 />
               </div>
               <button
@@ -528,24 +528,24 @@ export default function PharmacyPage() {
           {/* Results */}
           {interactionResults && (
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-gray-700">Results</h4>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Results</h4>
               {interactionResults.length === 0 ? (
-                <div className="card rounded-xl p-6 text-center text-sm text-gray-500">No interactions found between these medications.</div>
+                <div className="card rounded-xl p-6 text-center text-sm text-gray-500 dark:text-gray-400">No interactions found between these medications.</div>
               ) : (
                 interactionResults.map((r, i) => (
                   <div key={i} className={`card rounded-xl border-l-4 p-5 ${severityClasses(r.severity)} animate-fade-in-up`}>
                     <div className="flex items-center gap-3">
                       <span className={`rounded-full px-3 py-0.5 text-xs font-bold uppercase ${severityBadge(r.severity)}`}>{r.severity}</span>
-                      <span className="text-sm font-semibold text-gray-900">{r.drug_pair}</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{r.drug_pair}</span>
                     </div>
-                    <p className="mt-3 text-sm text-gray-800">{r.description}</p>
+                    <p className="mt-3 text-sm text-gray-800 dark:text-gray-200">{r.description}</p>
                     <div className="mt-3 rounded-lg bg-white/60 p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Mechanism</p>
-                      <p className="mt-1 text-sm text-gray-700">{r.mechanism}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Mechanism</p>
+                      <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{r.mechanism}</p>
                     </div>
                     <div className="mt-3 rounded-lg bg-white/60 p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Recommendation</p>
-                      <p className="mt-1 text-sm font-medium text-gray-900">{r.recommendation}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Recommendation</p>
+                      <p className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{r.recommendation}</p>
                     </div>
                   </div>
                 ))
@@ -555,19 +555,19 @@ export default function PharmacyPage() {
 
           {/* History */}
           <div className="card rounded-xl p-6">
-            <h4 className="text-sm font-semibold text-gray-700">Recent Interaction Checks</h4>
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Recent Interaction Checks</h4>
             <div className="mt-4 space-y-2">
               {interactionHistory.map((check) => (
-                <div key={check.id} className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm">
+                <div key={check.id} className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm">
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-xs text-gray-400">{check.id}</span>
-                    <span className="font-medium text-gray-900">{check.drug_a} + {check.drug_b}</span>
+                    <span className="font-mono text-xs text-gray-500 dark:text-gray-400">{check.id}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{check.drug_a} + {check.drug_b}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     {check.results.map((r, i) => (
                       <span key={i} className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase ${severityBadge(r.severity)}`}>{r.severity}</span>
                     ))}
-                    <span className="text-xs text-gray-400">{new Date(check.timestamp).toLocaleDateString()}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{new Date(check.timestamp).toLocaleDateString()}</span>
                   </div>
                 </div>
               ))}
@@ -585,15 +585,15 @@ export default function PharmacyPage() {
           {/* Left: Formulary Check */}
           <div className="space-y-4">
             <div className="card card-hover rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900">Formulary Check</h3>
-              <p className="mt-1 text-sm text-gray-500">Look up drug coverage, tier, and copay information</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Formulary Check</h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Look up drug coverage, tier, and copay information</p>
               <div className="mt-4 flex gap-2">
                 <input
                   type="text"
                   value={formularyDrug}
                   onChange={(e) => setFormularyDrug(e.target.value)}
                   placeholder="Enter drug name..."
-                  className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   onKeyDown={(e) => e.key === "Enter" && handleCheckFormulary()}
                 />
                 <button
@@ -609,32 +609,32 @@ export default function PharmacyPage() {
             {formularyResult && (
               <div className="card rounded-xl p-6 animate-fade-in-up">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-base font-semibold text-gray-900">{formularyResult.drug}</h4>
+                  <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">{formularyResult.drug}</h4>
                   <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${formularyResult.covered ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
                     {formularyResult.covered ? "Covered" : "Not Covered"}
                   </span>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-lg bg-gray-50 p-3">
-                    <p className="text-xs font-medium text-gray-500">Tier</p>
-                    <p className="mt-1 text-sm font-semibold text-gray-900">{formularyResult.tier}</p>
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Tier</p>
+                    <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{formularyResult.tier}</p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 p-3">
-                    <p className="text-xs font-medium text-gray-500">Copay</p>
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Copay</p>
                     <p className="mt-1 text-sm font-semibold text-healthos-600">{formularyResult.copay}</p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 p-3">
-                    <p className="text-xs font-medium text-gray-500">Prior Auth</p>
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Prior Auth</p>
                     <p className="mt-1 text-sm font-semibold">{formularyResult.prior_auth_required ? "Required" : "Not Required"}</p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 p-3">
-                    <p className="text-xs font-medium text-gray-500">Quantity Limit</p>
-                    <p className="mt-1 text-sm font-semibold text-gray-900">{formularyResult.quantity_limit}</p>
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Quantity Limit</p>
+                    <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{formularyResult.quantity_limit}</p>
                   </div>
                 </div>
                 {formularyResult.alternatives.length > 0 && (
                   <div className="mt-4">
-                    <p className="text-xs font-medium text-gray-500">Lower-Cost Alternatives</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Lower-Cost Alternatives</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {formularyResult.alternatives.map((alt) => (
                         <span key={alt} className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">{alt}</span>
@@ -649,15 +649,15 @@ export default function PharmacyPage() {
           {/* Right: Adherence Tracking */}
           <div className="space-y-4">
             <div className="card card-hover rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900">Adherence Tracking</h3>
-              <p className="mt-1 text-sm text-gray-500">Monitor patient medication adherence and interventions</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Adherence Tracking</h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Monitor patient medication adherence and interventions</p>
               <div className="mt-4">
                 <input
                   type="text"
                   value={adherenceSearch}
                   onChange={(e) => setAdherenceSearch(e.target.value)}
                   placeholder="Search by patient name, ID, or medication..."
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 />
               </div>
             </div>
@@ -667,21 +667,21 @@ export default function PharmacyPage() {
                 <div key={`${a.patient_id}-${a.medication}`} className="card card-hover rounded-xl p-5 animate-fade-in-up">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{a.patient_name}</p>
-                      <p className="text-xs text-gray-500">{a.patient_id} &middot; {a.medication}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{a.patient_name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{a.patient_id} &middot; {a.medication}</p>
                     </div>
                     <div className="text-right">
                       <p className={`text-lg font-bold ${a.adherence_pct >= 80 ? "text-green-600" : a.adherence_pct >= 70 ? "text-yellow-600" : "text-red-600"}`}>
                         {a.adherence_pct}%
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {a.trend === "improving" ? "↑ Improving" : a.trend === "declining" ? "↓ Declining" : "→ Stable"}
                       </p>
                     </div>
                   </div>
                   {/* Bar chart */}
                   <div className="mt-3">
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                       <span>{a.filled_count} of {a.expected_count} fills</span>
                       <span>{a.adherence_pct}%</span>
                     </div>
@@ -695,10 +695,10 @@ export default function PharmacyPage() {
                   {/* Interventions */}
                   {a.interventions.length > 0 && (
                     <div className="mt-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Recommendations</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Recommendations</p>
                       <ul className="mt-1 space-y-1">
                         {a.interventions.map((intr, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
+                          <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
                             <span className="mt-0.5 text-healthos-500">&#8226;</span>
                             {intr}
                           </li>
@@ -709,7 +709,7 @@ export default function PharmacyPage() {
                 </div>
               ))}
               {filteredAdherence.length === 0 && (
-                <div className="card rounded-xl p-6 text-center text-sm text-gray-500">No adherence records match your search.</div>
+                <div className="card rounded-xl p-6 text-center text-sm text-gray-500 dark:text-gray-400">No adherence records match your search.</div>
               )}
             </div>
           </div>
@@ -728,7 +728,7 @@ export default function PharmacyPage() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
-                      <p className="text-base font-semibold text-gray-900">{r.medication}</p>
+                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{r.medication}</p>
                       {r.auto_refill && (
                         <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">Auto-Refill</span>
                       )}
@@ -741,17 +741,17 @@ export default function PharmacyPage() {
                         {r.status}
                       </span>
                     </div>
-                    <p className="mt-1 text-sm text-gray-500">
-                      {r.patient_name} <span className="font-mono text-xs text-gray-400">({r.patient_id})</span>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      {r.patient_name} <span className="font-mono text-xs text-gray-500 dark:text-gray-400">({r.patient_id})</span>
                     </p>
-                    <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-500">
+                    <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
                       <span>Last fill: {r.last_fill_date}</span>
                       <span>Refills remaining: {r.refills_remaining}</span>
                     </div>
 
                     {/* Days supply progress bar */}
                     <div className="mt-3 max-w-md">
-                      <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                         <span>Days Supply Remaining</span>
                         <span className="font-semibold">{r.days_remaining} of {r.days_supply} days</span>
                       </div>
@@ -797,43 +797,43 @@ export default function PharmacyPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="card w-full max-w-lg rounded-2xl p-6 shadow-2xl animate-fade-in-up">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-900">New Prescription</h3>
-              <button onClick={() => setShowNewRxModal(false)} className="rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">New Prescription</h3>
+              <button onClick={() => setShowNewRxModal(false)} className="rounded-full p-1 text-gray-500 dark:text-gray-400 transition hover:bg-gray-100 dark:bg-gray-800 hover:text-gray-600 dark:text-gray-400">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
 
             <div className="mt-5 space-y-4">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-600">Patient ID *</label>
-                <input type="text" value={rxForm.patient_id} onChange={(e) => setRxForm((f) => ({ ...f, patient_id: e.target.value }))} placeholder="P-1001" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">Patient ID *</label>
+                <input type="text" value={rxForm.patient_id} onChange={(e) => setRxForm((f) => ({ ...f, patient_id: e.target.value }))} placeholder="P-1001" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-600">Medication *</label>
-                <input type="text" value={rxForm.medication} onChange={(e) => setRxForm((f) => ({ ...f, medication: e.target.value }))} placeholder="Metformin HCl" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">Medication *</label>
+                <input type="text" value={rxForm.medication} onChange={(e) => setRxForm((f) => ({ ...f, medication: e.target.value }))} placeholder="Metformin HCl" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-gray-600">Dosage *</label>
-                  <input type="text" value={rxForm.dosage} onChange={(e) => setRxForm((f) => ({ ...f, dosage: e.target.value }))} placeholder="500mg" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                  <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">Dosage *</label>
+                  <input type="text" value={rxForm.dosage} onChange={(e) => setRxForm((f) => ({ ...f, dosage: e.target.value }))} placeholder="500mg" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-gray-600">Frequency *</label>
-                  <input type="text" value={rxForm.frequency} onChange={(e) => setRxForm((f) => ({ ...f, frequency: e.target.value }))} placeholder="Twice daily" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                  <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">Frequency *</label>
+                  <input type="text" value={rxForm.frequency} onChange={(e) => setRxForm((f) => ({ ...f, frequency: e.target.value }))} placeholder="Twice daily" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-600">Duration</label>
-                <input type="text" value={rxForm.duration} onChange={(e) => setRxForm((f) => ({ ...f, duration: e.target.value }))} placeholder="30 days" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">Duration</label>
+                <input type="text" value={rxForm.duration} onChange={(e) => setRxForm((f) => ({ ...f, duration: e.target.value }))} placeholder="30 days" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-600">Notes</label>
-                <textarea value={rxForm.notes} onChange={(e) => setRxForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Additional notes..." rows={3} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">Notes</label>
+                <textarea value={rxForm.notes} onChange={(e) => setRxForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Additional notes..." rows={3} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
               </div>
             </div>
 
             <div className="mt-6 flex justify-end gap-3">
-              <button onClick={() => setShowNewRxModal(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+              <button onClick={() => setShowNewRxModal(false)} className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 transition hover:bg-gray-50 dark:hover:bg-gray-800">
                 Cancel
               </button>
               <button

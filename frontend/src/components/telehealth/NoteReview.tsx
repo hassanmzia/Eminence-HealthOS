@@ -71,11 +71,11 @@ function SignModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-        <h3 className="text-lg font-semibold text-gray-900">
+      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Sign &amp; Finalize Note
         </h3>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
           By signing this note, you confirm that you have reviewed the
           AI-generated content and made any necessary amendments.
         </p>
@@ -83,13 +83,13 @@ function SignModal({
           value={attestation}
           onChange={(e) => setAttestation(e.target.value)}
           rows={3}
-          className="mt-4 w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+          className="mt-4 w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
         />
         <div className="mt-4 flex justify-end gap-2">
           <button
             onClick={onCancel}
             disabled={loading}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -133,20 +133,20 @@ function SectionEditor({
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 p-3">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h4 className="text-xs font-medium uppercase text-gray-400">
+          <h4 className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
             {section.section}
           </h4>
           {isModified && (
-            <span className="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-700">
+            <span className="rounded bg-orange-100 px-1.5 py-0.5 text-[11px] font-medium text-orange-700">
               Modified
             </span>
           )}
           {section.confidence !== undefined && (
             <span
-              className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium ${confidenceColor(section.confidence)}`}
+              className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ${confidenceColor(section.confidence)}`}
             >
               <span
                 className={`inline-block h-1.5 w-1.5 rounded-full ${confidenceDot(section.confidence)}`}
@@ -171,7 +171,7 @@ function SectionEditor({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             rows={4}
-            className="w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
           />
           <div className="mt-2 flex gap-2">
             <button
@@ -182,14 +182,14 @@ function SectionEditor({
             </button>
             <button
               onClick={handleCancel}
-              className="rounded border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-50"
+              className="rounded border border-gray-300 dark:border-gray-600 px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               Cancel
             </button>
           </div>
         </div>
       ) : (
-        <p className="mt-1 whitespace-pre-line text-sm text-gray-700">
+        <p className="mt-1 whitespace-pre-line text-sm text-gray-700 dark:text-gray-300">
           {section.content}
         </p>
       )}
@@ -277,14 +277,14 @@ export function NoteReview({ sessionId, note, onNoteUpdated, onRegenerate }: Pro
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-700">
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
           SOAP Note (AI-Generated{isSigned ? " — Signed" : " Draft"})
         </h3>
         {statusBadge(note.status)}
       </div>
 
       {/* Metadata row */}
-      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
         <span>
           Generated: {new Date(note.generated_at).toLocaleString()}
         </span>
@@ -329,13 +329,13 @@ export function NoteReview({ sessionId, note, onNoteUpdated, onRegenerate }: Pro
 
       {/* Amendments history */}
       {note.amendments && note.amendments.length > 0 && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-          <h4 className="text-xs font-medium uppercase text-gray-400">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-3">
+          <h4 className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
             Amendment History
           </h4>
           <ul className="mt-2 space-y-1">
             {note.amendments.map((a, i) => (
-              <li key={i} className="text-xs text-gray-600">
+              <li key={i} className="text-xs text-gray-600 dark:text-gray-400">
                 <span className="font-medium">{a.section}</span> amended on{" "}
                 {new Date(a.amended_at).toLocaleString()}
               </li>
@@ -369,7 +369,7 @@ export function NoteReview({ sessionId, note, onNoteUpdated, onRegenerate }: Pro
           )}
           <button
             onClick={onRegenerate}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             Regenerate
           </button>

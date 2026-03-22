@@ -49,7 +49,7 @@ export function QualityMetrics() {
   if (loading) {
     return (
       <div className="card">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Quality Metrics</h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Quality Metrics</h2>
         <div className="animate-pulse space-y-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i}>
@@ -57,7 +57,7 @@ export function QualityMetrics() {
                 <div className="h-4 w-32 rounded bg-gray-200" />
                 <div className="h-4 w-12 rounded bg-gray-200" />
               </div>
-              <div className="h-2 rounded-full bg-gray-100" />
+              <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800" />
             </div>
           ))}
         </div>
@@ -68,7 +68,7 @@ export function QualityMetrics() {
   if (error) {
     return (
       <div className="card">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Quality Metrics</h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Quality Metrics</h2>
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
           <p className="text-sm text-red-600">{error}</p>
           <button onClick={loadData} className="mt-2 rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700">
@@ -82,7 +82,7 @@ export function QualityMetrics() {
   return (
     <div className="card">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Quality Metrics</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Quality Metrics</h2>
         <div className="flex items-center gap-2">
           <span className="rounded bg-healthos-50 px-2 py-0.5 text-xs font-medium text-healthos-700">
             {metCount}/{measures.length} targets met
@@ -94,15 +94,15 @@ export function QualityMetrics() {
         {measures.map((m) => (
           <div key={m.measure}>
             <div className="mb-1 flex items-center justify-between text-sm">
-              <span className="font-medium text-gray-900">{m.measure}</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{m.measure}</span>
               <div className="flex items-center gap-2">
                 <span className={m.met ? "text-green-600" : "text-red-600"}>
                   {(m.rate * 100).toFixed(0)}%
                 </span>
-                <span className="text-xs text-gray-400">/ {(m.target * 100).toFixed(0)}%</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">/ {(m.target * 100).toFixed(0)}%</span>
               </div>
             </div>
-            <div className="relative h-2 rounded-full bg-gray-100">
+            <div className="relative h-2 rounded-full bg-gray-100 dark:bg-gray-800">
               <div
                 className={`h-2 rounded-full ${m.met ? "bg-green-500" : "bg-red-400"}`}
                 style={{ width: `${m.rate * 100}%` }}
@@ -116,9 +116,9 @@ export function QualityMetrics() {
         ))}
       </div>
 
-      <div className="mt-4 rounded-lg bg-gray-50 p-3">
+      <div className="mt-4 rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
         <div className="flex items-center justify-between text-sm">
-          <span className="font-medium text-gray-700">Overall Quality Score</span>
+          <span className="font-medium text-gray-700 dark:text-gray-300">Overall Quality Score</span>
           <span className="text-lg font-bold text-healthos-600">{overallScore.toFixed(2)}</span>
         </div>
       </div>

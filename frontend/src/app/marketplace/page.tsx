@@ -369,7 +369,7 @@ function StarRating({ rating }: { rating: number }) {
           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
         </svg>
       ))}
-      <span className="ml-1 text-sm text-gray-600">{rating.toFixed(1)}</span>
+      <span className="ml-1 text-sm text-gray-600 dark:text-gray-400">{rating.toFixed(1)}</span>
     </span>
   );
 }
@@ -378,7 +378,7 @@ function SecurityBadge({ status }: { status: SecurityStatus }) {
   const config = {
     verified: { color: "text-emerald-600", bg: "bg-emerald-50", label: "Verified" },
     pending: { color: "text-amber-600", bg: "bg-amber-50", label: "Pending" },
-    unverified: { color: "text-gray-500", bg: "bg-gray-50", label: "Unverified" },
+    unverified: { color: "text-gray-500 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-800", label: "Unverified" },
   }[status];
 
   return (
@@ -394,7 +394,7 @@ function SecurityBadge({ status }: { status: SecurityStatus }) {
 function StatusBadge({ status }: { status: AgentStatus }) {
   const config = {
     active: { bg: "bg-emerald-100", text: "text-emerald-700", label: "Active" },
-    disabled: { bg: "bg-gray-100", text: "text-gray-600", label: "Disabled" },
+    disabled: { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400", label: "Disabled" },
     "update-available": { bg: "bg-blue-100", text: "text-blue-700", label: "Update Available" },
   }[status];
 
@@ -431,13 +431,13 @@ function KPICard({
   trend?: string;
 }) {
   return (
-    <div className="card card-hover flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4">
+    <div className="card card-hover flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-healthos-50 text-healthos-600">
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-sm text-gray-500">{label}</p>
-        <p className="text-xl font-bold text-gray-900">{value}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+        <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
         {trend && <p className="text-xs text-emerald-600">{trend}</p>}
       </div>
     </div>
@@ -476,7 +476,7 @@ function BrowseTab({
       <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <svg
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -489,7 +489,7 @@ function BrowseTab({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search agents by name, description, or publisher..."
-            className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 pl-10 pr-4 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
           />
         </div>
       </div>
@@ -503,7 +503,7 @@ function BrowseTab({
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
               category === cat.value
                 ? "bg-healthos-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
             }`}
           >
             {cat.label}
@@ -514,21 +514,21 @@ function BrowseTab({
       {/* Grid */}
       {filtered.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-lg text-gray-400">No agents found matching your criteria.</p>
+          <p className="text-lg text-gray-500 dark:text-gray-400">No agents found matching your criteria.</p>
         </div>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((agent, idx) => (
             <div
               key={agent.id}
-              className="card card-hover animate-fade-in-up flex flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+              className="card card-hover animate-fade-in-up flex flex-col rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm transition-shadow hover:shadow-md"
               style={{ animationDelay: `${idx * 50}ms` }}
             >
               {/* Top row: name + category badge */}
               <div className="mb-2 flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate text-base font-semibold text-gray-900">{agent.name}</h3>
-                  <p className="text-sm text-gray-500">{agent.publisher}</p>
+                  <h3 className="truncate text-base font-semibold text-gray-900 dark:text-gray-100">{agent.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{agent.publisher}</p>
                 </div>
                 <span
                   className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${CATEGORY_COLORS[agent.category]}`}
@@ -543,17 +543,17 @@ function BrowseTab({
               </div>
 
               {/* Description (2 line truncate) */}
-              <p className="mb-4 line-clamp-2 flex-1 text-sm text-gray-600">{agent.description}</p>
+              <p className="mb-4 line-clamp-2 flex-1 text-sm text-gray-600 dark:text-gray-400">{agent.description}</p>
 
               {/* Stats row */}
               <div className="mb-4 flex items-center gap-4">
                 <StarRating rating={agent.rating} />
-                <span className="text-sm text-gray-500">{agent.installs.toLocaleString()} installs</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{agent.installs.toLocaleString()} installs</span>
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-                <span className="text-xs text-gray-400">v{agent.version}</span>
+              <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-3">
+                <span className="text-xs text-gray-500 dark:text-gray-400">v{agent.version}</span>
                 {agent.installed ? (
                   <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-4 py-1.5 text-sm font-medium text-emerald-700">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -600,28 +600,28 @@ function MyAgentsTab({ agents }: { agents: InstalledAgent[] }) {
   return (
     <div className="animate-fade-in-up space-y-4">
       {installed.length === 0 ? (
-        <div className="card rounded-xl border border-gray-200 bg-white py-16 text-center">
-          <p className="text-lg font-medium text-gray-400">No agents installed yet</p>
-          <p className="mt-1 text-sm text-gray-400">Browse the marketplace to discover and install agents</p>
+        <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-16 text-center">
+          <p className="text-lg font-medium text-gray-500 dark:text-gray-400">No agents installed yet</p>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Browse the marketplace to discover and install agents</p>
         </div>
       ) : (
         installed.map((agent, idx) => (
           <div
             key={agent.id}
-            className="card card-hover animate-fade-in-up rounded-xl border border-gray-200 bg-white p-5"
+            className="card card-hover animate-fade-in-up rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5"
             style={{ animationDelay: `${idx * 50}ms` }}
           >
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               {/* Left: Info */}
               <div className="min-w-0 flex-1">
                 <div className="mb-2 flex flex-wrap items-center gap-3">
-                  <h3 className="text-base font-semibold text-gray-900">{agent.name}</h3>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{agent.name}</h3>
                   <StatusBadge status={agent.status} />
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${CATEGORY_COLORS[agent.category]}`}>
                     {agent.category}
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-500">
+                <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
                   <span>v{agent.version}</span>
                   <span>Installed {agent.installedDate}</span>
                 </div>
@@ -629,21 +629,21 @@ function MyAgentsTab({ agents }: { agents: InstalledAgent[] }) {
                 {/* Analytics */}
                 <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
                   <div>
-                    <p className="text-xs text-gray-400">Calls This Month</p>
-                    <p className="text-lg font-semibold text-gray-900">{agent.callsThisMonth.toLocaleString()}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Calls This Month</p>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{agent.callsThisMonth.toLocaleString()}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Error Rate</p>
-                    <p className={`text-lg font-semibold ${agent.errorRate > 1 ? "text-red-600" : "text-gray-900"}`}>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Error Rate</p>
+                    <p className={`text-lg font-semibold ${agent.errorRate > 1 ? "text-red-600" : "text-gray-900 dark:text-gray-100"}`}>
                       {agent.errorRate}%
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Avg Response</p>
-                    <p className="text-lg font-semibold text-gray-900">{agent.avgResponseMs}ms</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Avg Response</p>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{agent.avgResponseMs}ms</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Usage Trend</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Usage Trend</p>
                     {/* Graph placeholder */}
                     <div className="mt-1 flex h-6 items-end gap-0.5">
                       {[40, 55, 45, 70, 60, 80, 75].map((h, i) => (
@@ -664,7 +664,7 @@ function MyAgentsTab({ agents }: { agents: InstalledAgent[] }) {
                   onClick={() => toggleAgent(agent.id)}
                   className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                     agent.status === "active"
-                      ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      ? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200"
                       : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                   }`}
                 >
@@ -675,7 +675,7 @@ function MyAgentsTab({ agents }: { agents: InstalledAgent[] }) {
                     Update to v{agent.latestVersion}
                   </button>
                 )}
-                <button className="rounded-lg bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100">
+                <button className="rounded-lg bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:bg-gray-800">
                   Configure
                 </button>
                 <button
@@ -746,44 +746,44 @@ function PublishTab({
   return (
     <div className="animate-fade-in-up space-y-8">
       {/* Publishing Form */}
-      <div className="card rounded-xl border border-gray-200 bg-white p-6">
-        <h3 className="mb-6 text-lg font-semibold text-gray-900">Publish a New Agent</h3>
+      <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+        <h3 className="mb-6 text-lg font-semibold text-gray-900 dark:text-gray-100">Publish a New Agent</h3>
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Left: Form fields */}
           <div className="space-y-5">
             {/* Name */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Agent Name</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Agent Name</label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => updateField("name", e.target.value)}
                 placeholder="e.g., Sepsis Early Warning"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Description</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
               <textarea
                 value={form.description}
                 onChange={(e) => updateField("description", e.target.value)}
                 placeholder="Describe what your agent does, its key features, and benefits..."
                 rows={4}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               />
             </div>
 
             {/* Category + Version row */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Category</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
                 <select
                   value={form.category}
                   onChange={(e) => updateField("category", e.target.value as AgentCategory)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   <option value="">Select...</option>
                   <option value="clinical">Clinical</option>
@@ -793,20 +793,20 @@ function PublishTab({
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Version</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Version</label>
                 <input
                   type="text"
                   value={form.version}
                   onChange={(e) => updateField("version", e.target.value)}
                   placeholder="1.0.0"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 />
               </div>
             </div>
 
             {/* Capabilities (multi-select) */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">Capabilities</label>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Capabilities</label>
               <div className="flex flex-wrap gap-2">
                 {CAPABILITIES_OPTIONS.map((cap) => (
                   <button
@@ -815,7 +815,7 @@ function PublishTab({
                     className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                       form.capabilities.includes(cap)
                         ? "bg-healthos-600 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
                     }`}
                   >
                     {cap}
@@ -826,7 +826,7 @@ function PublishTab({
 
             {/* Required Permissions (multi-select) */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">Required Permissions</label>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Required Permissions</label>
               <div className="flex flex-wrap gap-2">
                 {PERMISSIONS_OPTIONS.map((perm) => (
                   <button
@@ -835,7 +835,7 @@ function PublishTab({
                     className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                       form.permissions.includes(perm)
                         ? "bg-orange-500 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
                     }`}
                   >
                     {perm}
@@ -846,35 +846,35 @@ function PublishTab({
 
             {/* Documentation URL */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Documentation URL</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Documentation URL</label>
               <input
                 type="url"
                 value={form.documentationUrl}
                 onChange={(e) => updateField("documentationUrl", e.target.value)}
                 placeholder="https://docs.example.com/agent"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               />
             </div>
 
             {/* File upload area */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Agent Package</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Agent Package</label>
               <div
-                className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-8 transition-colors hover:border-healthos-400"
+                className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 px-6 py-8 transition-colors hover:border-healthos-400"
                 onClick={() => {
                   // Simulate file selection
                   updateField("fileName", "agent-package-v1.0.0.tar.gz");
                 }}
               >
-                <svg className="mb-2 h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <svg className="mb-2 h-8 w-8 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
                 </svg>
                 {form.fileName ? (
                   <p className="text-sm font-medium text-healthos-600">{form.fileName}</p>
                 ) : (
                   <>
-                    <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                    <p className="mt-1 text-xs text-gray-400">.tar.gz, .zip up to 50MB</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Click to upload or drag and drop</p>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">.tar.gz, .zip up to 50MB</p>
                   </>
                 )}
               </div>
@@ -890,7 +890,7 @@ function PublishTab({
               </button>
               <button
                 onClick={() => setShowPreview(!showPreview)}
-                className="rounded-lg bg-gray-100 px-6 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                className="rounded-lg bg-gray-100 dark:bg-gray-800 px-6 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-200"
               >
                 {showPreview ? "Hide Preview" : "Preview Card"}
               </button>
@@ -901,12 +901,12 @@ function PublishTab({
           <div>
             {showPreview && form.name && (
               <div className="sticky top-6">
-                <p className="mb-3 text-sm font-medium text-gray-500">Card Preview</p>
-                <div className="card rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <p className="mb-3 text-sm font-medium text-gray-500 dark:text-gray-400">Card Preview</p>
+                <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm">
                   <div className="mb-2 flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-base font-semibold text-gray-900">{form.name || "Agent Name"}</h3>
-                      <p className="text-sm text-gray-500">Your Organization</p>
+                      <h3 className="truncate text-base font-semibold text-gray-900 dark:text-gray-100">{form.name || "Agent Name"}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Your Organization</p>
                     </div>
                     {form.category && (
                       <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${CATEGORY_COLORS[form.category as AgentCategory]}`}>
@@ -917,16 +917,16 @@ function PublishTab({
                   <div className="mb-2">
                     <SecurityBadge status="pending" />
                   </div>
-                  <p className="mb-4 line-clamp-2 text-sm text-gray-600">
+                  <p className="mb-4 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
                     {form.description || "Agent description will appear here..."}
                   </p>
                   <div className="mb-4 flex items-center gap-4">
                     <StarRating rating={0} />
-                    <span className="text-sm text-gray-500">0 installs</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">0 installs</span>
                   </div>
-                  <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-                    <span className="text-xs text-gray-400">v{form.version || "0.0.0"}</span>
-                    <span className="rounded-lg bg-gray-100 px-4 py-1.5 text-sm font-medium text-gray-400">
+                  <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-3">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">v{form.version || "0.0.0"}</span>
+                    <span className="rounded-lg bg-gray-100 dark:bg-gray-800 px-4 py-1.5 text-sm font-medium text-gray-500 dark:text-gray-400">
                       Install
                     </span>
                   </div>
@@ -939,28 +939,28 @@ function PublishTab({
 
       {/* Published agents list */}
       <div>
-        <h3 className="mb-4 text-lg font-semibold text-gray-900">Your Published Agents</h3>
+        <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Your Published Agents</h3>
         {publishedAgents.length === 0 ? (
-          <div className="card rounded-xl border border-gray-200 bg-white py-12 text-center">
-            <p className="text-gray-400">No agents published yet</p>
+          <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-12 text-center">
+            <p className="text-gray-500 dark:text-gray-400">No agents published yet</p>
           </div>
         ) : (
           <div className="space-y-3">
             {publishedAgents.map((agent) => (
               <div
                 key={agent.id}
-                className="card card-hover flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4"
+                className="card card-hover flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4"
               >
                 <div className="flex flex-wrap items-center gap-3">
-                  <h4 className="font-medium text-gray-900">{agent.name}</h4>
-                  <span className="text-sm text-gray-500">v{agent.version}</span>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">{agent.name}</h4>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">v{agent.version}</span>
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${CATEGORY_COLORS[agent.category]}`}>
                     {agent.category}
                   </span>
                   <ReviewBadge status={agent.reviewStatus} />
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-400">Submitted {agent.submittedDate}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Submitted {agent.submittedDate}</p>
                   {agent.reviewNote && (
                     <p className="mt-1 text-xs text-red-500">{agent.reviewNote}</p>
                   )}
@@ -1054,12 +1054,12 @@ export default function MarketplacePage() {
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-gray-900">AI Agent Marketplace</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">AI Agent Marketplace</h1>
             <span className="inline-flex items-center rounded-full bg-healthos-100 px-3 py-0.5 text-sm font-semibold text-healthos-700">
               {totalAgents} Available
             </span>
           </div>
-          <p className="mt-1 text-base text-gray-500">
+          <p className="mt-1 text-base text-gray-500 dark:text-gray-400">
             Discover, install, and manage AI agents built on the HealthOS platform
           </p>
         </div>
@@ -1127,15 +1127,15 @@ export default function MarketplacePage() {
       </div>
 
       {/* Tabs */}
-      <div className="mb-6 flex gap-1 rounded-lg bg-gray-100 p-1 w-fit">
+      <div className="mb-6 flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 w-fit">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
               tab === t.key
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
             }`}
           >
             {t.label}
@@ -1150,12 +1150,12 @@ export default function MarketplacePage() {
 
       {/* Security Section */}
       <div className="mt-10 animate-fade-in-up">
-        <div className="card rounded-xl border border-gray-200 bg-white p-6">
+        <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
           <div className="mb-4 flex items-center gap-2">
             <svg className="h-5 w-5 text-healthos-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            <h3 className="text-lg font-semibold text-gray-900">Security Scan Results</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Security Scan Results</h3>
           </div>
           <div className="grid gap-6 sm:grid-cols-3">
             <div className="rounded-lg bg-emerald-50 p-4">

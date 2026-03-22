@@ -13,11 +13,11 @@ interface Referral {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  created: "bg-gray-100 text-gray-800",
+  created: "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
   sent: "bg-blue-100 text-blue-800",
   scheduled: "bg-indigo-100 text-indigo-800",
   completed: "bg-green-100 text-green-800",
-  closed: "bg-gray-100 text-gray-600",
+  closed: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
 };
 
 const URGENCY_DOT: Record<string, string> = {
@@ -44,16 +44,16 @@ export function ReferralTracker() {
   return (
     <div className="card">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Referral Tracker</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Referral Tracker</h2>
         <button className="rounded bg-healthos-600 px-3 py-1 text-xs font-medium text-white hover:bg-healthos-700">
           New Referral
         </button>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 text-left text-xs text-gray-500">
+            <tr className="border-b border-gray-200 dark:border-gray-700 text-left text-xs text-gray-500 dark:text-gray-400">
               <th className="pb-2 font-medium">Patient</th>
               <th className="pb-2 font-medium">Specialty</th>
               <th className="pb-2 font-medium">Specialist</th>
@@ -63,16 +63,16 @@ export function ReferralTracker() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {referrals.map((ref) => (
-              <tr key={ref.referral_id} className="cursor-pointer transition-colors hover:bg-gray-50">
+              <tr key={ref.referral_id} className="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td className="py-2.5">
                   <div className="flex items-center gap-2">
                     <span className={`h-2 w-2 rounded-full ${URGENCY_DOT[ref.urgency] || "bg-gray-400"}`} />
-                    <span className="font-medium text-gray-900">{ref.patient_name}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{ref.patient_name}</span>
                   </div>
                 </td>
-                <td className="py-2.5 text-gray-600">{ref.specialty}</td>
-                <td className="py-2.5 text-gray-600">{ref.specialist}</td>
-                <td className="py-2.5 text-gray-500">{ref.target_date}</td>
+                <td className="py-2.5 text-gray-600 dark:text-gray-400">{ref.specialty}</td>
+                <td className="py-2.5 text-gray-600 dark:text-gray-400">{ref.specialist}</td>
+                <td className="py-2.5 text-gray-500 dark:text-gray-400">{ref.target_date}</td>
                 <td className="py-2.5">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[ref.status]}`}>
                     {ref.status}
@@ -81,7 +81,7 @@ export function ReferralTracker() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );

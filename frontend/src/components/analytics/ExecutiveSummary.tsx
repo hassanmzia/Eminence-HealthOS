@@ -72,22 +72,22 @@ export function ExecutiveSummary() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-semibold text-gray-900">Executive Summary</h2>
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Executive Summary</h2>
         <div className="animate-pulse">
           <div className="mt-2 h-4 w-3/4 rounded bg-gray-200" />
-          <div className="my-4 grid grid-cols-5 gap-3">
+          <div className="my-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-16 rounded-lg bg-gray-100" />
+              <div key={i} className="h-16 rounded-lg bg-gray-100 dark:bg-gray-800" />
             ))}
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="space-y-2">
                 <div className="h-4 w-24 rounded bg-gray-200" />
-                <div className="h-3 w-full rounded bg-gray-100" />
-                <div className="h-3 w-full rounded bg-gray-100" />
-                <div className="h-3 w-3/4 rounded bg-gray-100" />
+                <div className="h-3 w-full rounded bg-gray-100 dark:bg-gray-800" />
+                <div className="h-3 w-full rounded bg-gray-100 dark:bg-gray-800" />
+                <div className="h-3 w-3/4 rounded bg-gray-100 dark:bg-gray-800" />
               </div>
             ))}
           </div>
@@ -98,8 +98,8 @@ export function ExecutiveSummary() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-semibold text-gray-900">Executive Summary</h2>
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Executive Summary</h2>
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-center">
           <p className="text-sm text-red-600">{error}</p>
           <button onClick={loadData} className="mt-2 rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700">
@@ -111,16 +111,16 @@ export function ExecutiveSummary() {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
-      <h2 className="text-lg font-semibold text-gray-900">Executive Summary</h2>
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Executive Summary</h2>
       <p className="mt-1 text-sm text-healthos-600 font-medium">{headline}</p>
 
       {/* KPI strip */}
-      <div className="my-4 grid grid-cols-5 gap-3">
+      <div className="my-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {headlineKpis.map((kpi) => (
-          <div key={kpi.label} className="rounded-lg bg-gray-50 p-3 text-center">
-            <p className="text-xs text-gray-500">{kpi.label}</p>
-            <p className="mt-0.5 text-xl font-bold text-gray-900">{kpi.value}</p>
+          <div key={kpi.label} className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400">{kpi.label}</p>
+            <p className="mt-0.5 text-xl font-bold text-gray-900 dark:text-gray-100">{kpi.value}</p>
           </div>
         ))}
       </div>
@@ -133,7 +133,7 @@ export function ExecutiveSummary() {
           </h3>
           <ul className="space-y-1.5">
             {achievements.map((a, i) => (
-              <li key={i} className="text-xs text-gray-700 leading-relaxed">{a}</li>
+              <li key={i} className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{a}</li>
             ))}
           </ul>
         </div>
@@ -144,7 +144,7 @@ export function ExecutiveSummary() {
           </h3>
           <ul className="space-y-1.5">
             {concerns.map((c, i) => (
-              <li key={i} className="text-xs text-gray-700 leading-relaxed">{c}</li>
+              <li key={i} className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{c}</li>
             ))}
           </ul>
         </div>
@@ -155,7 +155,7 @@ export function ExecutiveSummary() {
           </h3>
           <ul className="space-y-1.5">
             {recommendations.map((r, i) => (
-              <li key={i} className="text-xs text-gray-700 leading-relaxed">{r}</li>
+              <li key={i} className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{r}</li>
             ))}
           </ul>
         </div>

@@ -64,10 +64,10 @@ interface CustomTooltipProps {
 function CustomTooltip({ active, payload, label, unit, color }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-md">
-      <p className="text-xs text-gray-500">{label}</p>
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 shadow-md">
+      <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
       <p className="text-sm font-semibold" style={{ color }}>
-        {payload[0].value} <span className="font-normal text-gray-400">{unit}</span>
+        {payload[0].value} <span className="font-normal text-gray-500 dark:text-gray-400">{unit}</span>
       </p>
     </div>
   );
@@ -109,20 +109,20 @@ export function VitalsTrendChart({ patientId }: { patientId: string }) {
   return (
     <div className="card">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Vitals Trend</h2>
-        <span className="text-sm text-gray-400">Recent readings</span>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Vitals Trend</h2>
+        <span className="text-sm text-gray-500 dark:text-gray-400">Recent readings</span>
       </div>
 
       {/* Vital type tabs */}
-      <div className="mb-4 flex gap-1 rounded-lg bg-gray-100 p-1">
+      <div className="mb-4 flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
         {VITAL_TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
             className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
               activeTab === t.key
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
             }`}
           >
             {t.label}
@@ -131,11 +131,11 @@ export function VitalsTrendChart({ patientId }: { patientId: string }) {
       </div>
 
       {loading ? (
-        <div className="flex h-40 items-center justify-center text-sm text-gray-400">
+        <div className="flex h-40 items-center justify-center text-sm text-gray-500 dark:text-gray-400">
           Loading vitals...
         </div>
       ) : data.length === 0 ? (
-        <div className="flex h-40 items-center justify-center text-sm text-gray-400">
+        <div className="flex h-40 items-center justify-center text-sm text-gray-500 dark:text-gray-400">
           No {tab.label.toLowerCase()} readings
         </div>
       ) : (
@@ -145,7 +145,7 @@ export function VitalsTrendChart({ patientId }: { patientId: string }) {
             <span className="text-3xl font-bold" style={{ color: tab.color }}>
               {currentValue}
             </span>
-            <span className="text-sm text-gray-400">{tab.unit}</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">{tab.unit}</span>
           </div>
 
           {/* Chart */}

@@ -125,15 +125,15 @@ export function EncounterConsole({ sessionId }: Props) {
   return (
     <div className="card">
       {/* Tab bar */}
-      <div className="mb-4 flex gap-1 rounded-lg bg-gray-100 p-1">
+      <div className="mb-4 flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
         {(["encounter", "notes", "plan"] as Tab[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-1 rounded-md px-3 py-2 text-sm font-medium capitalize transition-colors ${
               activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
             }`}
           >
             {tab === "notes"
@@ -151,7 +151,7 @@ export function EncounterConsole({ sessionId }: Props) {
           {/* Video area */}
           <div
             ref={video.containerRef}
-            className="relative flex h-64 items-center justify-center overflow-hidden rounded-lg bg-gray-900 text-gray-400"
+            className="relative flex h-64 items-center justify-center overflow-hidden rounded-lg bg-gray-900 text-gray-500 dark:text-gray-400"
           >
             {video.state === "idle" && (
               <div className="text-center">
@@ -169,7 +169,7 @@ export function EncounterConsole({ sessionId }: Props) {
                   />
                 </svg>
                 <p className="mt-2 text-sm">Video encounter area</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {sessionId
                     ? 'Click "Start Visit" to begin'
                     : "Select a session from the queue"}
@@ -192,14 +192,14 @@ export function EncounterConsole({ sessionId }: Props) {
                   </svg>
                 </div>
                 <p className="mt-3 text-sm text-green-400">Visit in Progress</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Video provider: Daily.co (demo mode)
                 </p>
                 <div className="mt-2 flex items-center justify-center gap-2">
                   <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
                   <span className="text-xs text-green-400">Connected</span>
-                  {video.isMuted && <span className="rounded bg-red-900/50 px-1.5 py-0.5 text-[10px] text-red-300">Muted</span>}
-                  {video.isCameraOff && <span className="rounded bg-red-900/50 px-1.5 py-0.5 text-[10px] text-red-300">Camera Off</span>}
+                  {video.isMuted && <span className="rounded bg-red-900/50 px-1.5 py-0.5 text-[11px] text-red-300">Muted</span>}
+                  {video.isCameraOff && <span className="rounded bg-red-900/50 px-1.5 py-0.5 text-[11px] text-red-300">Camera Off</span>}
                 </div>
               </div>
             )}
@@ -207,7 +207,7 @@ export function EncounterConsole({ sessionId }: Props) {
             {video.state === "error" && (
               <div className="text-center">
                 <p className="text-sm text-red-400">Connection failed</p>
-                <p className="text-xs text-gray-500">{video.error}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{video.error}</p>
               </div>
             )}
           </div>
@@ -229,7 +229,7 @@ export function EncounterConsole({ sessionId }: Props) {
                   className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                     video.isMuted
                       ? "border-red-300 bg-red-50 text-red-700"
-                      : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                      : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                   }`}
                 >
                   {video.isMuted ? "Unmute" : "Mute"}
@@ -239,7 +239,7 @@ export function EncounterConsole({ sessionId }: Props) {
                   className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                     video.isCameraOff
                       ? "border-red-300 bg-red-50 text-red-700"
-                      : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                      : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                   }`}
                 >
                   {video.isCameraOff ? "Camera On" : "Camera Off"}
@@ -261,7 +261,7 @@ export function EncounterConsole({ sessionId }: Props) {
                 <span className="h-2 w-2 animate-pulse rounded-full bg-healthos-500" />
                 AI Agent Insights
               </div>
-              <p className="mt-2 text-xs text-gray-500">
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                 {video.state === "connected"
                   ? "Listening to encounter... AI-generated SOAP notes will be available when the visit ends."
                   : "AI insights will appear here during the encounter."}
@@ -275,7 +275,7 @@ export function EncounterConsole({ sessionId }: Props) {
       {activeTab === "notes" && (
         <div className="space-y-4">
           {!sessionId ? (
-            <p className="py-8 text-center text-sm text-gray-400">
+            <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
               Select a session to generate notes
             </p>
           ) : clinicalNote && !notesLoading ? (
@@ -287,7 +287,7 @@ export function EncounterConsole({ sessionId }: Props) {
               onRegenerate={handleGenerateNote}
             />
           ) : notesLoading ? (
-            <div className="py-8 text-center text-sm text-gray-400">
+            <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
               Generating clinical note...
             </div>
           ) : notesError ? (
@@ -302,7 +302,7 @@ export function EncounterConsole({ sessionId }: Props) {
             </div>
           ) : (
             <div className="py-8 text-center">
-              <p className="mb-3 text-sm text-gray-400">
+              <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
                 No clinical notes generated yet
               </p>
               <button
@@ -320,12 +320,12 @@ export function EncounterConsole({ sessionId }: Props) {
       {activeTab === "plan" && (
         <div className="space-y-4">
           {!sessionId ? (
-            <p className="py-8 text-center text-sm text-gray-400">
+            <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
               Select a session to generate a follow-up plan
             </p>
           ) : !followUp && !planLoading ? (
             <div className="py-8 text-center">
-              <p className="mb-3 text-sm text-gray-400">
+              <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
                 No follow-up plan generated yet
               </p>
               <button
@@ -336,7 +336,7 @@ export function EncounterConsole({ sessionId }: Props) {
               </button>
             </div>
           ) : planLoading ? (
-            <div className="py-8 text-center text-sm text-gray-400">
+            <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
               Generating follow-up plan...
             </div>
           ) : planError ? (
@@ -352,20 +352,20 @@ export function EncounterConsole({ sessionId }: Props) {
           ) : followUp ? (
             <>
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-gray-700">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Follow-Up Care Plan
                 </h3>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   Follow-up in {followUp.follow_up_days} days
                 </span>
               </div>
 
               {followUp.monitoring && (
                 <div>
-                  <h4 className="text-xs font-medium uppercase text-gray-400">
+                  <h4 className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                     Monitoring
                   </h4>
-                  <p className="mt-1 text-sm text-gray-700">
+                  <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
                     {followUp.monitoring}
                   </p>
                 </div>
@@ -373,18 +373,18 @@ export function EncounterConsole({ sessionId }: Props) {
 
               {followUp.action_items.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-medium uppercase text-gray-400">
+                  <h4 className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                     Action Items
                   </h4>
                   <ul className="mt-1 space-y-1">
                     {followUp.action_items.map((item) => (
                       <li
                         key={item}
-                        className="flex items-center gap-2 text-sm text-gray-700"
+                        className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
                       >
                         <input
                           type="checkbox"
-                          className="h-3.5 w-3.5 rounded border-gray-300"
+                          className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600"
                         />
                         {item}
                       </li>
@@ -395,12 +395,12 @@ export function EncounterConsole({ sessionId }: Props) {
 
               {followUp.patient_education.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-medium uppercase text-gray-400">
+                  <h4 className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                     Patient Education
                   </h4>
                   <ul className="mt-1 space-y-0.5">
                     {followUp.patient_education.map((item) => (
-                      <li key={item} className="text-sm text-gray-600">
+                      <li key={item} className="text-sm text-gray-600 dark:text-gray-400">
                         &bull; {item}
                       </li>
                     ))}
@@ -414,7 +414,7 @@ export function EncounterConsole({ sessionId }: Props) {
                 </button>
                 <button
                   onClick={handleGenerateFollowUp}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                  className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   Regenerate
                 </button>

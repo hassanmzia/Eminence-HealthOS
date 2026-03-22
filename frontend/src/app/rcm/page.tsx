@@ -125,7 +125,7 @@ function CleanClaimGauge({ rate }: { rate: number }) {
           {rate}%
         </text>
       </svg>
-      <p className="text-xs text-gray-500 mt-1">Clean Claim Rate</p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Clean Claim Rate</p>
     </div>
   );
 }
@@ -286,8 +286,8 @@ export default function RCMPage() {
       {/* ── Header ── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Revenue Cycle Management</h1>
-          <p className="text-sm text-gray-500 mt-1">End-to-end claims lifecycle, denial recovery, and revenue integrity intelligence</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Revenue Cycle Management</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">End-to-end claims lifecycle, denial recovery, and revenue integrity intelligence</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
@@ -319,8 +319,8 @@ export default function RCMPage() {
           { label: "Collection Rate", value: "96.2%", change: "+1.1%", positive: true },
         ].map((kpi) => (
           <div key={kpi.label} className="card card-hover p-4">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{kpi.label}</p>
-            <p className={`mt-2 font-bold text-gray-900 ${kpi.label === "Net Revenue (MTD)" ? "text-2xl" : "text-xl"}`}>{kpi.value}</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{kpi.label}</p>
+            <p className={`mt-2 font-bold text-gray-900 dark:text-gray-100 ${kpi.label === "Net Revenue (MTD)" ? "text-2xl" : "text-xl"}`}>{kpi.value}</p>
             <p className={`text-xs mt-1 font-medium ${kpi.positive ? "text-emerald-600" : "text-red-600"}`}>
               {kpi.change} vs last month
             </p>
@@ -329,7 +329,7 @@ export default function RCMPage() {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex gap-6 overflow-x-auto">
           {TABS.map((t) => (
             <button
@@ -338,7 +338,7 @@ export default function RCMPage() {
               className={`whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors ${
                 activeTab === t.key
                   ? "border-healthos-600 text-healthos-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:border-gray-600"
               }`}
             >
               {t.label}
@@ -354,18 +354,18 @@ export default function RCMPage() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Claims List */}
             <div className="lg:col-span-3 card overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h2 className="text-base font-semibold text-gray-900">Claims Pipeline</h2>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Claims Pipeline</h2>
                 <button onClick={() => setShowChargeForm(true)} className="rounded-lg border border-healthos-200 bg-healthos-50 px-3 py-1.5 text-xs font-medium text-healthos-700 hover:bg-healthos-100 transition-colors">
                   + Capture Charges
                 </button>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-100">
+                <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-100">
                   <thead>
                     <tr className="bg-gray-50/50">
                       {["Claim ID", "Patient", "Procedure Codes", "Amount", "Payer", "Status", "Submitted", ""].map((h) => (
-                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">{h}</th>
+                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -373,24 +373,24 @@ export default function RCMPage() {
                     {claims.map((c) => (
                       <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-4 py-3 text-sm font-semibold text-healthos-600">{c.id}</td>
-                        <td className="px-4 py-3 text-sm text-gray-900">{c.patient}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{c.patient}</td>
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
                             {c.codes.map((code) => (
-                              <span key={code} className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-mono font-medium text-gray-700">
+                              <span key={code} className="inline-flex rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-mono font-medium text-gray-700 dark:text-gray-300">
                                 {code}
                               </span>
                             ))}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm font-semibold text-gray-900">${c.amount.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{c.payer}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">${c.amount.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{c.payer}</td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_COLORS[c.status] || "bg-gray-100 text-gray-600"}`}>
+                          <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_COLORS[c.status] || "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>
                             {c.status}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{c.date}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{c.date}</td>
                         <td className="px-4 py-3">
                           <button
                             onClick={() => handleOptimizeClaim(c.id)}
@@ -403,26 +403,26 @@ export default function RCMPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             </div>
 
             {/* Clean Claim Rate Gauge */}
             <div className="card card-hover p-5 flex flex-col items-center justify-center gap-4">
-              <h3 className="text-sm font-semibold text-gray-700">Quality Indicator</h3>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Quality Indicator</h3>
               <CleanClaimGauge rate={cleanClaimRate} />
               <div className="w-full space-y-2 mt-2">
-                <div className="flex justify-between text-xs text-gray-500">
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                   <span>First Pass Rate</span>
-                  <span className="font-medium text-gray-900">91.3%</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">91.3%</span>
                 </div>
-                <div className="flex justify-between text-xs text-gray-500">
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                   <span>Rejection Rate</span>
-                  <span className="font-medium text-gray-900">3.1%</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">3.1%</span>
                 </div>
-                <div className="flex justify-between text-xs text-gray-500">
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                   <span>Avg Processing</span>
-                  <span className="font-medium text-gray-900">4.2 days</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">4.2 days</span>
                 </div>
               </div>
             </div>
@@ -431,33 +431,33 @@ export default function RCMPage() {
           {/* Capture Charges Form */}
           {showChargeForm && (
             <div className="card animate-fade-in-up">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h3 className="text-base font-semibold text-gray-900">Capture Charges</h3>
-                <button onClick={() => setShowChargeForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Capture Charges</h3>
+                <button onClick={() => setShowChargeForm(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none">&times;</button>
               </div>
               <form onSubmit={handleCaptureCharge} className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Patient Name</label>
-                  <input required value={chargeForm.patient} onChange={(e) => setChargeForm({ ...chargeForm, patient: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Patient Name</label>
+                  <input required value={chargeForm.patient} onChange={(e) => setChargeForm({ ...chargeForm, patient: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Payer</label>
-                  <select required value={chargeForm.payer} onChange={(e) => setChargeForm({ ...chargeForm, payer: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payer</label>
+                  <select required value={chargeForm.payer} onChange={(e) => setChargeForm({ ...chargeForm, payer: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
                     <option value="">Select Payer</option>
                     {["Blue Cross", "Aetna", "UnitedHealth", "Medicare", "Cigna", "Medicaid"].map((p) => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">CPT Codes</label>
-                  <input required value={chargeForm.codes} onChange={(e) => setChargeForm({ ...chargeForm, codes: e.target.value })} placeholder="99214, 80048" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CPT Codes</label>
+                  <input required value={chargeForm.codes} onChange={(e) => setChargeForm({ ...chargeForm, codes: e.target.value })} placeholder="99214, 80048" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount ($)</label>
-                  <input required type="number" step="0.01" value={chargeForm.amount} onChange={(e) => setChargeForm({ ...chargeForm, amount: e.target.value })} placeholder="425.00" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount ($)</label>
+                  <input required type="number" step="0.01" value={chargeForm.amount} onChange={(e) => setChargeForm({ ...chargeForm, amount: e.target.value })} placeholder="425.00" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Diagnosis (ICD-10)</label>
-                  <input value={chargeForm.diagnosis} onChange={(e) => setChargeForm({ ...chargeForm, diagnosis: e.target.value })} placeholder="E11.9" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Diagnosis (ICD-10)</label>
+                  <input value={chargeForm.diagnosis} onChange={(e) => setChargeForm({ ...chargeForm, diagnosis: e.target.value })} placeholder="E11.9" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
                 </div>
                 <div className="flex items-end">
                   <button type="submit" disabled={submittingCharge} className="w-full rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50 transition-colors">
@@ -494,35 +494,35 @@ export default function RCMPage() {
                   <div className="flex items-center gap-3">
                     <div className={`h-3 w-3 rounded-full ${SEVERITY_COLORS[d.severity]}`} title={`${d.severity} severity`} />
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{d.id} <span className="text-gray-400 font-normal">/ {d.claimId}</span></p>
-                      <p className="text-xs text-gray-500 mt-0.5">{d.date}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{d.id} <span className="text-gray-500 dark:text-gray-400 font-normal">/ {d.claimId}</span></p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{d.date}</p>
                     </div>
                   </div>
                   <span className="text-base font-bold text-red-600">{formatCurrency(d.amount)}</span>
                 </div>
-                <p className="text-sm text-gray-700">{d.reason}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{d.reason}</p>
                 <div className="flex items-center gap-2">
                   <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${CATEGORY_COLORS[d.category]}`}>
                     {CATEGORY_LABELS[d.category]}
                   </span>
-                  <span className="text-xs text-gray-400">{d.payer}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{d.payer}</span>
                 </div>
 
                 {/* AI Analysis result */}
                 {denialAnalysis[d.id] && (
                   <div className="mt-3 rounded-lg border border-healthos-200 bg-healthos-50/50 p-4 space-y-2 animate-fade-in-up">
                     <p className="text-xs font-semibold text-healthos-700 uppercase tracking-wide">AI Root Cause Analysis</p>
-                    <p className="text-sm text-gray-800">{denialAnalysis[d.id].rootCause}</p>
+                    <p className="text-sm text-gray-800 dark:text-gray-200">{denialAnalysis[d.id].rootCause}</p>
                     <div className="space-y-1">
-                      <p className="text-xs font-semibold text-gray-600 mt-2">Insights:</p>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-2">Insights:</p>
                       {denialAnalysis[d.id].aiInsights.map((insight, i) => (
-                        <p key={i} className="text-xs text-gray-600 flex gap-2">
+                        <p key={i} className="text-xs text-gray-600 dark:text-gray-400 flex gap-2">
                           <span className="text-healthos-500 mt-0.5 shrink-0">&#9656;</span>
                           {insight}
                         </p>
                       ))}
                     </div>
-                    <p className="text-xs text-gray-600 mt-2"><span className="font-semibold">Recommended:</span> {denialAnalysis[d.id].recommendedAction}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2"><span className="font-semibold">Recommended:</span> {denialAnalysis[d.id].recommendedAction}</p>
                   </div>
                 )}
 
@@ -530,7 +530,7 @@ export default function RCMPage() {
                   <button
                     onClick={() => handleAnalyzeDenial(d.id, d.claimId)}
                     disabled={analyzingDenial === d.id}
-                    className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                    className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
                   >
                     {analyzingDenial === d.id ? (
                       <span className="flex items-center gap-1">
@@ -553,12 +553,12 @@ export default function RCMPage() {
 
           {/* Denial Trends */}
           <div className="card p-5">
-            <h3 className="text-base font-semibold text-gray-900 mb-4">Top Denial Reasons</h3>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Top Denial Reasons</h3>
             <div className="space-y-3">
               {DEMO_DENIAL_TRENDS.map((t) => (
                 <div key={t.reason} className="flex items-center gap-4">
-                  <span className="w-36 text-sm text-gray-700 shrink-0">{t.reason}</span>
-                  <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
+                  <span className="w-36 text-sm text-gray-700 dark:text-gray-300 shrink-0">{t.reason}</span>
+                  <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                     <div
                       className={`h-full ${t.color} rounded-full transition-all duration-700 flex items-center justify-end pr-2`}
                       style={{ width: `${(t.count / maxDenialCount) * 100}%` }}
@@ -579,17 +579,17 @@ export default function RCMPage() {
           {/* Summary metrics */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="card card-hover p-5 text-center">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Leakage Identified</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Leakage Identified</p>
               <p className="mt-2 text-2xl font-bold text-orange-600">{formatCurrency(totalLeakage)}</p>
             </div>
             <div className="card card-hover p-5 text-center">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Opportunities Found</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Opportunities Found</p>
               <p className="mt-2 text-2xl font-bold text-healthos-600">{integrityFindings.length}</p>
             </div>
             <div className="card card-hover p-5 text-center">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Estimated Recovery</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Estimated Recovery</p>
               <p className="mt-2 text-2xl font-bold text-emerald-600">{formatCurrency(Math.round(totalLeakage * 0.82))}</p>
-              <p className="text-xs text-gray-400 mt-1">82% projected recovery rate</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">82% projected recovery rate</p>
             </div>
           </div>
 
@@ -622,18 +622,18 @@ export default function RCMPage() {
                     }`}>
                       {f.type}
                     </span>
-                    <p className="text-xs text-gray-400 mt-1">{f.id}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{f.id}</p>
                   </div>
                   <p className="text-lg font-bold text-orange-600">{formatCurrency(f.impact)}</p>
                 </div>
-                <p className="text-sm text-gray-700">{f.description}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{f.description}</p>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">Confidence:</span>
-                    <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Confidence:</span>
+                    <div className="w-24 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                       <div className={`h-full rounded-full ${f.confidence >= 90 ? "bg-emerald-500" : f.confidence >= 80 ? "bg-yellow-500" : "bg-red-500"}`} style={{ width: `${f.confidence}%` }} />
                     </div>
-                    <span className="text-xs font-medium text-gray-700">{f.confidence}%</span>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{f.confidence}%</span>
                   </div>
                   <button
                     onClick={() => {
@@ -653,7 +653,7 @@ export default function RCMPage() {
             <button
               onClick={handleRunIntegrityScan}
               disabled={scanRunning}
-              className="rounded-lg border-2 border-dashed border-gray-300 px-6 py-3 text-sm font-medium text-gray-600 hover:border-healthos-400 hover:text-healthos-600 disabled:opacity-50 transition-colors"
+              className="rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 px-6 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:border-healthos-400 hover:text-healthos-600 disabled:opacity-50 transition-colors"
             >
               {scanRunning ? "Scan in Progress..." : "Run New Integrity Scan"}
             </button>
@@ -667,30 +667,30 @@ export default function RCMPage() {
           {/* Collections summary */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="card card-hover p-5">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Outstanding</p>
-              <p className="mt-2 text-2xl font-bold text-gray-900">{formatCurrency(totalAR)}</p>
-              <p className="text-xs text-gray-400 mt-1">493 open claims</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Outstanding</p>
+              <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{formatCurrency(totalAR)}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">493 open claims</p>
             </div>
             <div className="card card-hover p-5">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Collected This Month</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Collected This Month</p>
               <p className="mt-2 text-2xl font-bold text-emerald-600">{formatCurrency(428000)}</p>
               <p className="text-xs text-emerald-500 mt-1">+5.7% vs last month</p>
             </div>
             <div className="card card-hover p-5">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Aging Trend</p>
-              <p className="mt-2 text-2xl font-bold text-gray-900">42.5 days</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Aging Trend</p>
+              <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">42.5 days</p>
               <p className="text-xs text-emerald-500 mt-1">-3.2 days improvement</p>
             </div>
           </div>
 
           {/* AR Aging Buckets Visualization */}
           <div className="card p-5">
-            <h3 className="text-base font-semibold text-gray-900 mb-6">Accounts Receivable Aging</h3>
-            <div className="grid grid-cols-4 gap-4">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-6">Accounts Receivable Aging</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {DEMO_AR_BUCKETS.map((bucket) => (
                 <div key={bucket.label} className="flex flex-col items-center">
                   {/* Column */}
-                  <div className="w-full h-48 bg-gray-50 rounded-t-lg relative flex items-end justify-center overflow-hidden">
+                  <div className="w-full h-48 bg-gray-50 dark:bg-gray-800 rounded-t-lg relative flex items-end justify-center overflow-hidden">
                     <div
                       className={`w-full ${bucket.color} rounded-t-lg transition-all duration-700 flex items-center justify-center`}
                       style={{ height: `${(bucket.amount / maxBucketAmount) * 100}%` }}
@@ -699,9 +699,9 @@ export default function RCMPage() {
                     </div>
                   </div>
                   {/* Label */}
-                  <div className="w-full bg-gray-100 rounded-b-lg p-2 text-center">
-                    <p className="text-xs font-semibold text-gray-700">{bucket.label}</p>
-                    <p className="text-xs text-gray-500">{bucket.claims} claims</p>
+                  <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-b-lg p-2 text-center">
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{bucket.label}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{bucket.claims} claims</p>
                   </div>
                 </div>
               ))}
@@ -712,19 +712,19 @@ export default function RCMPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Payment Posting Form */}
             <div className="card p-5">
-              <h3 className="text-base font-semibold text-gray-900 mb-4">Post Payment</h3>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Post Payment</h3>
               <form onSubmit={handlePostPayment} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Claim ID</label>
-                  <input required value={paymentForm.claimId} onChange={(e) => setPaymentForm({ ...paymentForm, claimId: e.target.value })} placeholder="CLM-8920" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Claim ID</label>
+                  <input required value={paymentForm.claimId} onChange={(e) => setPaymentForm({ ...paymentForm, claimId: e.target.value })} placeholder="CLM-8920" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount ($)</label>
-                  <input required type="number" step="0.01" value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} placeholder="285.50" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount ($)</label>
+                  <input required type="number" step="0.01" value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} placeholder="285.50" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-                  <select value={paymentForm.method} onChange={(e) => setPaymentForm({ ...paymentForm, method: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Method</label>
+                  <select value={paymentForm.method} onChange={(e) => setPaymentForm({ ...paymentForm, method: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
                     <option value="eft">EFT</option>
                     <option value="check">Check</option>
                     <option value="credit_card">Credit Card</option>
@@ -732,8 +732,8 @@ export default function RCMPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Reference Number</label>
-                  <input value={paymentForm.reference} onChange={(e) => setPaymentForm({ ...paymentForm, reference: e.target.value })} placeholder="EFT-20260315-001" className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reference Number</label>
+                  <input value={paymentForm.reference} onChange={(e) => setPaymentForm({ ...paymentForm, reference: e.target.value })} placeholder="EFT-20260315-001" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
                 </div>
                 <button type="submit" disabled={postingPayment} className="w-full rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50 transition-colors">
                   {postingPayment ? "Posting..." : "Post Payment"}
@@ -743,7 +743,7 @@ export default function RCMPage() {
 
             {/* Reconciliation Status */}
             <div className="card p-5">
-              <h3 className="text-base font-semibold text-gray-900 mb-4">Reconciliation Status</h3>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Reconciliation Status</h3>
               <div className="space-y-4">
                 {[
                   { payer: "Blue Cross", posted: 45200, expected: 48600, status: "partial" },
@@ -754,25 +754,25 @@ export default function RCMPage() {
                 ].map((r) => (
                   <div key={r.payer} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{r.payer}</p>
-                      <p className="text-xs text-gray-500">{formatCurrency(r.posted)} / {formatCurrency(r.expected)}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{r.payer}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{formatCurrency(r.posted)} / {formatCurrency(r.expected)}</p>
                     </div>
                     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
                       r.status === "reconciled" ? "bg-green-100 text-green-700" :
                       r.status === "partial" ? "bg-yellow-100 text-yellow-700" :
-                      "bg-gray-100 text-gray-600"
+                      "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
                     }`}>
                       {r.status}
                     </span>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-gray-900">Overall Match Rate</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Overall Match Rate</p>
                   <p className="text-sm font-bold text-healthos-600">94.7%</p>
                 </div>
-                <div className="mt-2 h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div className="mt-2 h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                   <div className="h-full bg-healthos-500 rounded-full" style={{ width: "94.7%" }} />
                 </div>
               </div>

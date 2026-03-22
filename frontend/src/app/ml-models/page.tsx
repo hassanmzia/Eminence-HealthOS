@@ -58,7 +58,7 @@ function badgeFor(type: string) {
   for (const [key, val] of Object.entries(TYPE_BADGE)) {
     if (type.toLowerCase().includes(key.toLowerCase())) return val;
   }
-  return { bg: "bg-gray-100", text: "text-gray-700" };
+  return { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-700 dark:text-gray-300" };
 }
 
 const STATUS_STYLES: Record<string, { dot: string; label: string }> = {
@@ -228,8 +228,8 @@ export default function MLModelsPage() {
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between animate-fade-in-up">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">ML Models &amp; AI</h1>
-          <p className="text-sm text-gray-500">Monitor model performance, predictions, and federated learning</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">ML Models &amp; AI</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Monitor model performance, predictions, and federated learning</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -251,16 +251,16 @@ export default function MLModelsPage() {
           { label: "Federated Status", value: federated.status === "in_progress" ? "In Progress" : federated.status, sub: `Round ${federated.current_round}/${federated.total_rounds}` },
         ].map((kpi) => (
           <div key={kpi.label} className="card">
-            <p className="text-xs font-medium text-gray-500">{kpi.label}</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{kpi.value}</p>
-            <p className="mt-1 text-xs text-gray-400">{kpi.sub}</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{kpi.label}</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{kpi.value}</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{kpi.sub}</p>
           </div>
         ))}
       </div>
 
       {/* ── Model Cards Grid ────────────────────────────────────────────────── */}
       <div>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Models ({models.length})</h2>
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Models ({models.length})</h2>
         {loading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -290,34 +290,34 @@ export default function MLModelsPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-sm font-semibold text-gray-900">{model.name}</h3>
+                      <h3 className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{model.name}</h3>
                       <div className="mt-1 flex items-center gap-2">
                         <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge.bg} ${badge.text}`}>
                           {model.type}
                         </span>
-                        <span className="text-xs text-gray-400">v{model.version}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">v{model.version}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className={`h-2 w-2 rounded-full ${status.dot}`} />
-                      <span className="text-xs text-gray-500">{status.label}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{status.label}</span>
                     </div>
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <div>
-                      <p className="text-xs text-gray-400">Accuracy</p>
-                      <p className="text-lg font-bold text-gray-900">{(acc * 100).toFixed(1)}%</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Accuracy</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{(acc * 100).toFixed(1)}%</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400">Predictions</p>
-                      <p className="text-lg font-bold text-gray-900">{model.predictions_count.toLocaleString()}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Predictions</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{model.predictions_count.toLocaleString()}</p>
                     </div>
                   </div>
 
                   {/* Accuracy sparkline bar */}
                   <div className="mt-3">
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                       <div
                         className="h-full rounded-full bg-healthos-500 transition-all duration-500"
                         style={{ width: `${acc * 100}%` }}
@@ -328,7 +328,7 @@ export default function MLModelsPage() {
                   <div className="mt-4 flex gap-2">
                     <button
                       onClick={(e) => { e.stopPropagation(); selectModel(model.id); }}
-                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                       View Details
                     </button>
@@ -349,14 +349,14 @@ export default function MLModelsPage() {
       {/* ── Model Detail Panel ──────────────────────────────────────────────── */}
       {selectedModel && (
         <div className="card animate-fade-in-up">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-4">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">{selectedModel.name}</h2>
-              <p className="text-sm text-gray-500">{selectedModel.description}</p>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{selectedModel.name}</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{selectedModel.description}</p>
             </div>
             <button
               onClick={() => { setSelectedModelId(null); setSelectedMetrics(null); }}
-              className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 hover:text-gray-600 dark:text-gray-400"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -385,9 +385,9 @@ export default function MLModelsPage() {
                   { label: "AUC-ROC", value: selectedMetrics.auc_roc },
                 ] as const).map((m) => (
                   <div key={m.label}>
-                    <p className="text-xs font-medium text-gray-500">{m.label}</p>
-                    <p className="mt-1 text-xl font-bold text-gray-900">{(m.value * 100).toFixed(1)}%</p>
-                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{m.label}</p>
+                    <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">{(m.value * 100).toFixed(1)}%</p>
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                       <div
                         className="h-full rounded-full bg-healthos-500 transition-all duration-700"
                         style={{ width: `${m.value * 100}%` }}
@@ -400,13 +400,13 @@ export default function MLModelsPage() {
               {/* Fairness metrics */}
               {selectedMetrics.fairness_metrics && Object.keys(selectedMetrics.fairness_metrics).length > 0 && (
                 <div>
-                  <h3 className="mb-3 text-sm font-semibold text-gray-700">Fairness Metrics</h3>
+                  <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Fairness Metrics</h3>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {Object.entries(selectedMetrics.fairness_metrics).map(([key, val]) => (
-                      <div key={key} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
-                        <p className="text-xs font-medium capitalize text-gray-500">{key.replace(/_/g, " ")}</p>
+                      <div key={key} className="rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-3">
+                        <p className="text-xs font-medium capitalize text-gray-500 dark:text-gray-400">{key.replace(/_/g, " ")}</p>
                         <div className="mt-1 flex items-center gap-2">
-                          <span className="text-lg font-bold text-gray-900">{(val * 100).toFixed(1)}%</span>
+                          <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{(val * 100).toFixed(1)}%</span>
                           <span className={`text-xs font-medium ${val >= 0.9 ? "text-emerald-600" : val >= 0.8 ? "text-amber-600" : "text-red-600"}`}>
                             {val >= 0.9 ? "Good" : val >= 0.8 ? "Fair" : "Needs Review"}
                           </span>
@@ -425,7 +425,7 @@ export default function MLModelsPage() {
 
               {/* Prediction history chart */}
               <div>
-                <h3 className="mb-3 text-sm font-semibold text-gray-700">Prediction History (Last 7 Days)</h3>
+                <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Prediction History (Last 7 Days)</h3>
                 <div className="h-56 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={DEMO_PREDICTION_HISTORY} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -442,8 +442,8 @@ export default function MLModelsPage() {
               </div>
 
               {/* Quick run prediction */}
-              <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4">
-                <p className="text-sm text-gray-600">Quick prediction with this model:</p>
+              <div className="flex items-center gap-3 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Quick prediction with this model:</p>
                 <button
                   onClick={() => openPredictionRunner(selectedModel.name)}
                   className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 transition-colors"
@@ -458,10 +458,10 @@ export default function MLModelsPage() {
 
       {/* ── Federated Learning Panel ────────────────────────────────────────── */}
       <div className="card animate-fade-in-up" style={{ animationDelay: "100ms" }}>
-        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+        <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-4">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Federated Learning</h2>
-            <p className="text-sm text-gray-500">Privacy-preserving distributed model training</p>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Federated Learning</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Privacy-preserving distributed model training</p>
           </div>
           <button
             onClick={() => setShowFedForm(!showFedForm)}
@@ -474,30 +474,30 @@ export default function MLModelsPage() {
         <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {/* Current Round Progress */}
           <div>
-            <p className="text-xs font-medium text-gray-500">Round Progress</p>
-            <p className="mt-1 text-xl font-bold text-gray-900">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Round Progress</p>
+            <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">
               {federated.current_round} / {federated.total_rounds}
             </p>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
               <div
                 className="h-full rounded-full bg-healthos-500 transition-all duration-700"
                 style={{ width: `${(federated.current_round / federated.total_rounds) * 100}%` }}
               />
             </div>
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               {((federated.current_round / federated.total_rounds) * 100).toFixed(0)}% complete
             </p>
           </div>
 
           {/* Participating Tenants */}
           <div>
-            <p className="text-xs font-medium text-gray-500">Participating Tenants</p>
-            <p className="mt-1 text-xl font-bold text-gray-900">{federated.participating_tenants}</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Participating Tenants</p>
+            <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">{federated.participating_tenants}</p>
             <div className="mt-2 flex -space-x-1">
               {Array.from({ length: Math.min(federated.participating_tenants, 8) }).map((_, i) => (
                 <div
                   key={i}
-                  className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-healthos-500 text-[10px] font-bold text-white"
+                  className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-healthos-500 text-[11px] font-bold text-white"
                 >
                   T{i + 1}
                 </div>
@@ -507,9 +507,9 @@ export default function MLModelsPage() {
 
           {/* Global Accuracy Trend */}
           <div>
-            <p className="text-xs font-medium text-gray-500">Global Accuracy</p>
-            <p className="mt-1 text-xl font-bold text-gray-900">{(federated.global_accuracy * 100).toFixed(1)}%</p>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Global Accuracy</p>
+            <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">{(federated.global_accuracy * 100).toFixed(1)}%</p>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
               <div
                 className="h-full rounded-full bg-emerald-500 transition-all duration-700"
                 style={{ width: `${federated.global_accuracy * 100}%` }}
@@ -520,9 +520,9 @@ export default function MLModelsPage() {
 
           {/* Privacy Budget Remaining */}
           <div>
-            <p className="text-xs font-medium text-gray-500">Privacy Budget Remaining</p>
-            <p className="mt-1 text-xl font-bold text-gray-900">{(federated.privacy_budget_remaining * 100).toFixed(0)}%</p>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Privacy Budget Remaining</p>
+            <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">{(federated.privacy_budget_remaining * 100).toFixed(0)}%</p>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
               <div
                 className={`h-full rounded-full transition-all duration-700 ${
                   federated.privacy_budget_remaining > 0.5
@@ -534,21 +534,21 @@ export default function MLModelsPage() {
                 style={{ width: `${federated.privacy_budget_remaining * 100}%` }}
               />
             </div>
-            <p className="mt-1 text-xs text-gray-400">Differential privacy (epsilon)</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Differential privacy (epsilon)</p>
           </div>
         </div>
 
         {/* Start new round form */}
         {showFedForm && (
-          <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 animate-fade-in-up">
-            <h3 className="mb-4 text-sm font-semibold text-gray-700">Start New Federated Round</h3>
+          <div className="mt-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 animate-fade-in-up">
+            <h3 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Start New Federated Round</h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">Model</label>
+                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Model</label>
                 <select
                   value={fedModelName}
                   onChange={(e) => setFedModelName(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   <option value="">Select model...</option>
                   {models.map((m) => (
@@ -557,25 +557,25 @@ export default function MLModelsPage() {
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">Rounds</label>
+                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Rounds</label>
                 <input
                   type="number"
                   min={1}
                   max={100}
                   value={fedRounds}
                   onChange={(e) => setFedRounds(Number(e.target.value))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">Min Clients</label>
+                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Min Clients</label>
                 <input
                   type="number"
                   min={1}
                   max={20}
                   value={fedMinClients}
                   onChange={(e) => setFedMinClients(Number(e.target.value))}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 />
               </div>
             </div>
@@ -598,12 +598,12 @@ export default function MLModelsPage() {
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowPrediction(false)} />
           {/* Panel */}
-          <div className="relative w-full max-w-md bg-white shadow-xl animate-fade-in-up overflow-y-auto">
-            <div className="sticky top-0 flex items-center justify-between border-b border-gray-100 bg-white px-6 py-4">
-              <h2 className="text-lg font-bold text-gray-900">Run Prediction</h2>
+          <div className="relative w-full max-w-md bg-white dark:bg-gray-900 shadow-xl animate-fade-in-up overflow-y-auto">
+            <div className="sticky top-0 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-6 py-4">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Run Prediction</h2>
               <button
                 onClick={() => setShowPrediction(false)}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 hover:text-gray-600 dark:text-gray-400"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -613,11 +613,11 @@ export default function MLModelsPage() {
 
             <div className="space-y-4 p-6">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Model</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Model</label>
                 <select
                   value={predModelName}
                   onChange={(e) => setPredModelName(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   <option value="">Select model...</option>
                   {models.map((m) => (
@@ -627,13 +627,13 @@ export default function MLModelsPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Patient ID</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Patient ID</label>
                 <input
                   type="text"
                   value={predPatientId}
                   onChange={(e) => setPredPatientId(e.target.value)}
                   placeholder="e.g. PAT-001"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 />
               </div>
 
@@ -660,16 +660,16 @@ export default function MLModelsPage() {
               )}
 
               {predResult && (
-                <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 animate-fade-in-up">
+                <div className="space-y-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 animate-fade-in-up">
                   <div>
-                    <p className="text-xs font-medium text-gray-500">Model</p>
-                    <p className="text-sm font-semibold text-gray-900">{predResult.model_name}</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Model</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{predResult.model_name}</p>
                   </div>
 
                   <div>
-                    <p className="text-xs font-medium text-gray-500">Confidence</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Confidence</p>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className="text-2xl font-bold text-gray-900">{(predResult.confidence * 100).toFixed(1)}%</span>
+                      <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{(predResult.confidence * 100).toFixed(1)}%</span>
                       <div className="flex-1">
                         <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
                           <div
@@ -688,19 +688,19 @@ export default function MLModelsPage() {
                   </div>
 
                   <div>
-                    <p className="text-xs font-medium text-gray-500">Prediction</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Prediction</p>
                     <div className="mt-1 space-y-1">
                       {Object.entries(predResult.prediction).map(([k, v]) => (
                         <div key={k} className="flex justify-between text-sm">
-                          <span className="capitalize text-gray-600">{k.replace(/_/g, " ")}</span>
-                          <span className="font-medium text-gray-900">{String(v)}</span>
+                          <span className="capitalize text-gray-600 dark:text-gray-400">{k.replace(/_/g, " ")}</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{String(v)}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-xs font-medium text-gray-500">Features Used</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Features Used</p>
                     <div className="mt-1 flex flex-wrap gap-1.5">
                       {predResult.features_used.map((f) => (
                         <span key={f} className="rounded-full bg-healthos-100 px-2 py-0.5 text-xs font-medium text-healthos-700">
@@ -711,7 +711,7 @@ export default function MLModelsPage() {
                   </div>
 
                   <div>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       Ran at {new Date(predResult.timestamp).toLocaleString()}
                     </p>
                   </div>

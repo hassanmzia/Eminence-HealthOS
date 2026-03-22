@@ -183,7 +183,7 @@ export function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload || payload.length === 0) return null;
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 shadow-lg dark:border-gray-700 dark:bg-gray-800">
       {label && (
         <p className="mb-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100">
           {label}
@@ -195,7 +195,7 @@ export function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
             className="inline-block h-2.5 w-2.5 rounded-full"
             style={{ backgroundColor: entry.color }}
           />
-          <span className="text-gray-500 dark:text-gray-400">
+          <span className="text-gray-500 dark:text-gray-500">
             {entry.name}:
           </span>
           <span className="font-medium text-gray-900 dark:text-gray-100">
@@ -243,7 +243,7 @@ export function DrillDownBarChart({
   }, []);
 
   return (
-    <div className="card rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           {title}
@@ -270,7 +270,7 @@ export function DrillDownBarChart({
               className={`rounded px-1.5 py-0.5 transition ${
                 i === breadcrumbs.length - 1
                   ? "font-medium text-gray-900 dark:text-gray-100"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-200"
               }`}
             >
               {crumb.label}
@@ -292,7 +292,7 @@ export function DrillDownBarChart({
             <XAxis
               dataKey="name"
               tick={{ fontSize: 12 }}
-              className="text-gray-600 dark:text-gray-400"
+              className="text-gray-600 dark:text-gray-500"
             />
             <YAxis tick={{ fontSize: 12 }} />
             <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(99,102,241,0.08)" }} />
@@ -399,14 +399,14 @@ export function ZoomableLineChart({
   }, []);
 
   return (
-    <div className="card rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           {title}
         </h3>
         <div className="flex items-center gap-3">
           {zoomRange && (
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs text-gray-500 dark:text-gray-500">
               Showing {zoomRange.end - zoomRange.start + 1} of {data.length}{" "}
               points
             </span>
@@ -495,7 +495,7 @@ export function InteractivePieChart({
   );
 
   return (
-    <div className="card rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
       <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
         {title}
       </h3>
@@ -547,7 +547,7 @@ export function InteractivePieChart({
         <div className="w-full md:w-1/2">
           {activeItem ? (
             <div
-              className="rounded-lg border border-gray-100 bg-gray-50 p-4 transition-all duration-300 dark:border-gray-700 dark:bg-gray-800"
+              className="rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-4 transition-all duration-300 dark:border-gray-700 dark:bg-gray-800"
               style={{ opacity: 1 }}
             >
               <div className="mb-3 flex items-center gap-3">
@@ -568,7 +568,7 @@ export function InteractivePieChart({
                 <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                   {activeItem.value}%
                 </span>
-                <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                <span className="ml-2 text-sm text-gray-500 dark:text-gray-500">
                   of total ({total}%)
                 </span>
               </div>
@@ -578,9 +578,9 @@ export function InteractivePieChart({
                   {activeItem.details.map((detail, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between rounded-md bg-white px-3 py-2 dark:bg-gray-900"
+                      className="flex items-center justify-between rounded-md bg-white dark:bg-gray-900 px-3 py-2 dark:bg-gray-900"
                     >
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                      <span className="text-sm text-gray-500 dark:text-gray-500">
                         {detail.label}
                       </span>
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -594,7 +594,7 @@ export function InteractivePieChart({
               )}
             </div>
           ) : (
-            <div className="flex h-full min-h-[200px] items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex h-full min-h-[200px] items-center justify-center rounded-lg border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:bg-gray-800">
               <p className="text-sm text-gray-400 dark:text-gray-500">
                 Click a segment to view details
               </p>
@@ -612,7 +612,7 @@ export function InteractivePieChart({
                 className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-sm transition ${
                   activeIndex === i
                     ? "bg-indigo-50 dark:bg-indigo-950"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-800 dark:hover:bg-gray-800"
                 }`}
               >
                 <div className="flex items-center gap-2">

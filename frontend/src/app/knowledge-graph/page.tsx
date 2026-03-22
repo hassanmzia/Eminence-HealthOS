@@ -327,8 +327,8 @@ export default function KnowledgeGraphPage() {
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Knowledge Graph Explorer</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Knowledge Graph Explorer</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Explore clinical relationships across diseases, drugs, symptoms, and patients
           </p>
         </div>
@@ -356,7 +356,7 @@ export default function KnowledgeGraphPage() {
               { label: "Edge Types", value: Object.keys(stats.edge_types).length.toString(), icon: "git-merge" },
             ].map((kpi) => (
               <div key={kpi.label} className="card card-hover">
-                <p className="text-xs font-medium text-gray-500">{kpi.label}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{kpi.label}</p>
                 <p className="mt-1 text-2xl font-bold text-healthos-700">{kpi.value}</p>
               </div>
             ))}
@@ -367,15 +367,15 @@ export default function KnowledgeGraphPage() {
         {/* ── Query Panel (1/3) ────────────────────────────────────────── */}
         <div className="w-full space-y-4 lg:w-1/3">
           <div className="card space-y-4">
-            <h2 className="text-sm font-semibold text-gray-900">Query Builder</h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Query Builder</h2>
 
             {/* Query type */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">Query Type</label>
+              <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Query Type</label>
               <select
                 value={queryType}
                 onChange={(e) => setQueryType(e.target.value as QueryType)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               >
                 <option value="drug_interactions">Drug Interactions</option>
                 <option value="disease_relations">Disease Relations</option>
@@ -386,7 +386,7 @@ export default function KnowledgeGraphPage() {
 
             {/* Entity input */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">
+              <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                 {queryType === "patient_graph" ? "Patient ID" : "Entity Name"}
               </label>
               <input
@@ -403,13 +403,13 @@ export default function KnowledgeGraphPage() {
                         ? "e.g. PAT-0042"
                         : "Enter entity or CYPHER query"
                 }
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:text-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               />
             </div>
 
             {/* Depth slider */}
             <div>
-              <label className="mb-1 flex items-center justify-between text-xs font-medium text-gray-600">
+              <label className="mb-1 flex items-center justify-between text-xs font-medium text-gray-600 dark:text-gray-400">
                 <span>Traversal Depth</span>
                 <span className="rounded bg-healthos-50 px-1.5 py-0.5 text-healthos-700 font-semibold">{depth}</span>
               </label>
@@ -421,7 +421,7 @@ export default function KnowledgeGraphPage() {
                 onChange={(e) => setDepth(Number(e.target.value))}
                 className="w-full accent-healthos-600"
               />
-              <div className="mt-1 flex justify-between text-[10px] text-gray-400">
+              <div className="mt-1 flex justify-between text-[11px] text-gray-500 dark:text-gray-400">
                 <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
               </div>
             </div>
@@ -449,15 +449,15 @@ export default function KnowledgeGraphPage() {
           {/* ── Recent Queries ──────────────────────────────────────────── */}
           {recentQueries.length > 0 && (
             <div className="card space-y-2">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Recent Queries</h3>
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Recent Queries</h3>
               <ul className="space-y-1">
                 {recentQueries.map((q: RecentQuery, i: number) => (
                   <li key={i}>
                     <button
                       onClick={() => replayQuery(q)}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-gray-700 hover:bg-healthos-50 transition"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-gray-700 dark:text-gray-300 hover:bg-healthos-50 transition"
                     >
-                      <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">
+                      <span className="shrink-0 rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400">
                         {queryTypeLabels[q.type as QueryType].split(" ")[0]}
                       </span>
                       <span className="truncate font-medium">{q.entity}</span>
@@ -470,10 +470,10 @@ export default function KnowledgeGraphPage() {
 
           {/* ── Legend ──────────────────────────────────────────────────── */}
           <div className="card space-y-2">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Node Types</h3>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Node Types</h3>
             <div className="flex flex-wrap gap-3">
               {Object.entries(NODE_COLORS_BG).map(([type, bg]) => (
-                <span key={type} className="flex items-center gap-1.5 text-xs text-gray-700">
+                <span key={type} className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300">
                   <span className={`inline-block h-3 w-3 rounded-full ${bg}`} />
                   {type}
                 </span>
@@ -487,7 +487,7 @@ export default function KnowledgeGraphPage() {
           {/* SVG Graph */}
           <div className="card card-hover relative overflow-hidden" style={{ minHeight: 500 }}>
             <div className="absolute left-4 top-4 z-10 flex items-center gap-2">
-              <span className="rounded-md bg-white/80 px-2 py-1 text-xs font-medium text-gray-600 shadow-sm backdrop-blur">
+              <span className="rounded-md bg-white/80 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 shadow-sm backdrop-blur">
                 {nodes.length} nodes &middot; {edges.length} edges
               </span>
             </div>
@@ -556,7 +556,7 @@ export default function KnowledgeGraphPage() {
                         x={mx}
                         y={my - 6}
                         textAnchor="middle"
-                        className="text-[9px] font-medium fill-indigo-600"
+                        className="text-[11px] font-medium fill-indigo-600"
                       >
                         {edge.relationship}
                       </text>
@@ -608,7 +608,7 @@ export default function KnowledgeGraphPage() {
                       x={n.x}
                       y={n.y + r + 14}
                       textAnchor="middle"
-                      className="text-[10px] font-semibold fill-gray-700"
+                      className="text-[11px] font-semibold fill-gray-700"
                       fillOpacity={dimmed ? 0.2 : 1}
                     >
                       {n.label.length > 16 ? n.label.slice(0, 14) + "..." : n.label}
@@ -618,7 +618,7 @@ export default function KnowledgeGraphPage() {
                       x={n.x}
                       y={n.y + 4}
                       textAnchor="middle"
-                      className="text-[9px] font-bold"
+                      className="text-[11px] font-bold"
                       fill="white"
                       fillOpacity={dimmed ? 0.2 : 0.95}
                     >
@@ -639,16 +639,16 @@ export default function KnowledgeGraphPage() {
                     <span
                       className={`inline-block h-3 w-3 rounded-full ${NODE_COLORS_BG[selectedNode.type] || "bg-gray-400"}`}
                     />
-                    <h3 className="text-sm font-bold text-gray-900">{selectedNode.label}</h3>
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{selectedNode.label}</h3>
+                    <span className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400">
                       {selectedNode.type}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs text-gray-400">ID: {selectedNode.id}</p>
+                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">ID: {selectedNode.id}</p>
                 </div>
                 <button
                   onClick={() => setSelectedNodeId(null)}
-                  className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                  className="rounded p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 hover:text-gray-600 dark:text-gray-400"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -658,12 +658,12 @@ export default function KnowledgeGraphPage() {
 
               {/* Properties table */}
               <div className="mt-3">
-                <h4 className="mb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Properties</h4>
-                <div className="rounded-lg border border-gray-100 divide-y divide-gray-100">
+                <h4 className="mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Properties</h4>
+                <div className="rounded-lg border border-gray-100 dark:border-gray-800 divide-y divide-gray-100">
                   {Object.entries(selectedNode.properties).map(([k, v]) => (
                     <div key={k} className="flex items-center justify-between px-3 py-1.5 text-xs">
-                      <span className="font-medium text-gray-600">{k}</span>
-                      <span className="text-gray-900">{String(v)}</span>
+                      <span className="font-medium text-gray-600 dark:text-gray-400">{k}</span>
+                      <span className="text-gray-900 dark:text-gray-100">{String(v)}</span>
                     </div>
                   ))}
                 </div>
@@ -672,7 +672,7 @@ export default function KnowledgeGraphPage() {
               {/* Connected edges */}
               {connectedEdges.length > 0 && (
                 <div className="mt-3">
-                  <h4 className="mb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <h4 className="mb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Connections ({connectedEdges.length})
                   </h4>
                   <div className="space-y-1">
@@ -683,11 +683,11 @@ export default function KnowledgeGraphPage() {
                         <button
                           key={i}
                           onClick={() => setSelectedNodeId(otherNodeId)}
-                          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-gray-50 transition"
+                          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition"
                         >
                           <span className={`h-2 w-2 rounded-full ${NODE_COLORS_BG[otherNode?.type || ""] || "bg-gray-400"}`} />
-                          <span className="font-medium text-gray-800">{otherNode?.label || otherNodeId}</span>
-                          <span className="ml-auto rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">
+                          <span className="font-medium text-gray-800 dark:text-gray-200">{otherNode?.label || otherNodeId}</span>
+                          <span className="ml-auto rounded bg-indigo-50 px-1.5 py-0.5 text-[11px] font-medium text-indigo-600">
                             {e.relationship}
                           </span>
                         </button>
@@ -704,13 +704,13 @@ export default function KnowledgeGraphPage() {
       {/* ── Relationship Table ─────────────────────────────────────────── */}
       <div className="card">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900">All Relationships</h2>
-          <span className="text-xs text-gray-400">{edges.length} edges</span>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">All Relationships</h2>
+          <span className="text-xs text-gray-500 dark:text-gray-400">{edges.length} edges</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-gray-200 text-gray-500">
+              <tr className="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
                 <th className="pb-2 pr-4 font-medium">Source</th>
                 <th className="pb-2 pr-4 font-medium">Relationship</th>
                 <th className="pb-2 pr-4 font-medium">Target</th>
@@ -730,26 +730,26 @@ export default function KnowledgeGraphPage() {
                     <td className="py-2 pr-4">
                       <span className="flex items-center gap-1.5">
                         <span className={`h-2 w-2 rounded-full ${NODE_COLORS_BG[srcNode?.type || ""] || "bg-gray-400"}`} />
-                        <span className={`font-medium ${NODE_COLORS_TEXT[srcNode?.type || ""] || "text-gray-700"}`}>
+                        <span className={`font-medium ${NODE_COLORS_TEXT[srcNode?.type || ""] || "text-gray-700 dark:text-gray-300"}`}>
                           {srcNode?.label || edge.source}
                         </span>
                       </span>
                     </td>
                     <td className="py-2 pr-4">
-                      <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
+                      <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">
                         {edge.relationship}
                       </span>
                     </td>
                     <td className="py-2 pr-4">
                       <span className="flex items-center gap-1.5">
                         <span className={`h-2 w-2 rounded-full ${NODE_COLORS_BG[tgtNode?.type || ""] || "bg-gray-400"}`} />
-                        <span className={`font-medium ${NODE_COLORS_TEXT[tgtNode?.type || ""] || "text-gray-700"}`}>
+                        <span className={`font-medium ${NODE_COLORS_TEXT[tgtNode?.type || ""] || "text-gray-700 dark:text-gray-300"}`}>
                           {tgtNode?.label || edge.target}
                         </span>
                       </span>
                     </td>
                     <td className="py-2">
-                      <span className="text-gray-500">
+                      <span className="text-gray-500 dark:text-gray-400">
                         {Object.entries(edge.properties)
                           .map(([k, v]) => `${k}: ${v}`)
                           .join(", ")}
@@ -759,7 +759,7 @@ export default function KnowledgeGraphPage() {
                 );
               })}
             </tbody>
-          </table>
+          </table></div>
         </div>
       </div>
     </div>

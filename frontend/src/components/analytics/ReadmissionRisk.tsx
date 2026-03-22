@@ -54,10 +54,10 @@ export function ReadmissionRisk() {
   if (loading) {
     return (
       <div className="card">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Readmission Risk</h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Readmission Risk</h2>
         <div className="animate-pulse space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-14 rounded-lg bg-gray-100" />
+            <div key={i} className="h-14 rounded-lg bg-gray-100 dark:bg-gray-800" />
           ))}
         </div>
       </div>
@@ -67,7 +67,7 @@ export function ReadmissionRisk() {
   if (error) {
     return (
       <div className="card">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Readmission Risk</h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Readmission Risk</h2>
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
           <p className="text-sm text-red-600">{error}</p>
           <button onClick={loadData} className="mt-2 rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700">
@@ -81,7 +81,7 @@ export function ReadmissionRisk() {
   return (
     <div className="card">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Readmission Risk</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Readmission Risk</h2>
         <span className="rounded bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
           {patients.length} high-risk discharges
         </span>
@@ -92,19 +92,19 @@ export function ReadmissionRisk() {
           <div key={p.id}>
             <button
               onClick={() => setSelectedPatient(selectedPatient === p.id ? null : p.id)}
-              className="flex w-full items-center justify-between rounded-lg border border-gray-200 p-3 text-left hover:bg-gray-50"
+              className="flex w-full items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               <div className="flex items-center gap-3">
                 <span className={`h-2.5 w-2.5 rounded-full ${
                   p.level === "critical" ? "bg-red-500" : "bg-orange-500"
                 }`} />
                 <div>
-                  <span className="text-sm font-medium text-gray-900">{p.name}</span>
-                  <span className="ml-2 text-xs text-gray-500">Age {p.age}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{p.name}</span>
+                  <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">Age {p.age}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-gray-500">{p.daysPost}d post-discharge</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{p.daysPost}d post-discharge</span>
                 <span className={`rounded px-2 py-0.5 text-xs font-bold ${
                   p.level === "critical" ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"
                 }`}>
@@ -114,14 +114,14 @@ export function ReadmissionRisk() {
             </button>
 
             {selectedPatient === p.id && (
-              <div className="ml-5 mt-1 rounded-lg border border-gray-100 bg-gray-50 p-3">
-                <p className="mb-2 text-xs font-medium text-gray-700">
-                  Top factor: <span className="text-gray-900">{p.topFactor.replace(/_/g, " ")}</span>
+              <div className="ml-5 mt-1 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-3">
+                <p className="mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Top factor: <span className="text-gray-900 dark:text-gray-100">{p.topFactor.replace(/_/g, " ")}</span>
                 </p>
-                <p className="mb-1 text-xs font-medium text-gray-700">Recommended interventions:</p>
+                <p className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-300">Recommended interventions:</p>
                 <ul className="space-y-1">
                   {(INTERVENTIONS[p.level as keyof typeof INTERVENTIONS] || []).map((i, idx) => (
-                    <li key={idx} className="flex items-center gap-1.5 text-xs text-gray-600">
+                    <li key={idx} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
                       <span className="h-1 w-1 rounded-full bg-gray-400" />
                       {i}
                     </li>

@@ -48,8 +48,8 @@ export default function AppointmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Appointments</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Appointments</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             View and manage your upcoming and past appointments.
           </p>
         </div>
@@ -74,12 +74,12 @@ export default function AppointmentsPage() {
       )}
 
       {/* Upcoming */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+      <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
           Upcoming Appointments
         </h2>
         {upcoming.length === 0 ? (
-          <p className="text-sm text-gray-500">No upcoming appointments.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No upcoming appointments.</p>
         ) : (
           <div className="space-y-3">
             {upcoming.map((appt) => (
@@ -90,12 +90,12 @@ export default function AppointmentsPage() {
       </section>
 
       {/* Past */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+      <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
           Past Appointments
         </h2>
         {past.length === 0 ? (
-          <p className="text-sm text-gray-500">No past appointments.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No past appointments.</p>
         ) : (
           <div className="space-y-3">
             {past.map((appt) => (
@@ -120,7 +120,7 @@ function AppointmentRow({
   const statusColors: Record<string, string> = {
     scheduled: "bg-blue-100 text-blue-700",
     confirmed: "bg-green-100 text-green-700",
-    completed: "bg-gray-100 text-gray-600",
+    completed: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
     cancelled: "bg-red-100 text-red-600",
     in_progress: "bg-yellow-100 text-yellow-700",
   };
@@ -130,14 +130,14 @@ function AppointmentRow({
     appointment.type?.toLowerCase().includes("virtual");
 
   return (
-    <div className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 p-4">
+    <div className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-4">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-medium text-gray-900 capitalize">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">
             {appointment.type ?? "Appointment"}
           </p>
           <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[appointment.status] ?? "bg-gray-100 text-gray-600"}`}
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[appointment.status] ?? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}
           >
             {appointment.status}
           </span>
@@ -148,9 +148,9 @@ function AppointmentRow({
           )}
         </div>
         {appointment.reason && (
-          <p className="mt-1 text-xs text-gray-500">{appointment.reason}</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{appointment.reason}</p>
         )}
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
           {appointment.scheduled_at
             ? new Date(appointment.scheduled_at).toLocaleString()
             : "Date TBD"}
@@ -199,25 +199,25 @@ function RequestAppointmentForm({
   return (
     <div className="rounded-xl border border-healthos-200 bg-healthos-50 p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Request an Appointment
         </h3>
         <button
           onClick={onClose}
-          className="text-sm text-gray-500 hover:text-gray-700"
+          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"
         >
           Cancel
         </button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Visit Type
           </label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+            className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
           >
             <option value="office_visit">Office Visit</option>
             <option value="telehealth">Telehealth</option>
@@ -227,7 +227,7 @@ function RequestAppointmentForm({
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Reason
           </label>
           <textarea
@@ -235,19 +235,19 @@ function RequestAppointmentForm({
             onChange={(e) => setReason(e.target.value)}
             rows={3}
             placeholder="Describe the reason for your visit..."
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+            className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Preferred Date (optional)
           </label>
           <input
             type="date"
             value={preferredDate}
             onChange={(e) => setPreferredDate(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+            className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
           />
         </div>
         {submitError && (

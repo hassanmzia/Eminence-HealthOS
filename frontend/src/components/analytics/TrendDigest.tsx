@@ -57,13 +57,13 @@ export function TrendDigest() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Trend Analysis</h2>
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Trend Analysis</h2>
         <div className="animate-pulse space-y-2">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-10 rounded-lg bg-gray-100" />
+            <div key={i} className="h-10 rounded-lg bg-gray-100 dark:bg-gray-800" />
           ))}
-          <div className="mt-4 h-16 rounded-lg bg-gray-100" />
+          <div className="mt-4 h-16 rounded-lg bg-gray-100 dark:bg-gray-800" />
         </div>
       </div>
     );
@@ -71,8 +71,8 @@ export function TrendDigest() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Trend Analysis</h2>
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Trend Analysis</h2>
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
           <p className="text-sm text-red-600">{error}</p>
           <button onClick={loadData} className="mt-2 rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700">
@@ -84,24 +84,24 @@ export function TrendDigest() {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Trend Analysis</h2>
-        <span className="text-xs text-gray-500">Last 6 months</span>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Trend Analysis</h2>
+        <span className="text-xs text-gray-500 dark:text-gray-400">Last 6 months</span>
       </div>
 
       <div className="space-y-2">
         {trends.map((t) => (
-          <div key={t.metric} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
+          <div key={t.metric} className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-800 px-3 py-2">
             <div className="flex items-center gap-2">
               <span className={t.direction === "up" ? "text-green-500" : "text-green-500"}>
                 {t.direction === "up" ? "\u2191" : "\u2193"}
               </span>
-              <span className="text-sm text-gray-900">{t.metric}</span>
+              <span className="text-sm text-gray-900 dark:text-gray-100">{t.metric}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-900">{t.current}</span>
-              <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${STATUS_STYLE[t.status as keyof typeof STATUS_STYLE] ?? "bg-gray-100 text-gray-600"}`}>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t.current}</span>
+              <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${STATUS_STYLE[t.status as keyof typeof STATUS_STYLE] ?? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>
                 {t.change}
               </span>
             </div>
@@ -109,8 +109,8 @@ export function TrendDigest() {
         ))}
       </div>
 
-      <div className="mt-4 rounded-lg bg-gray-50 p-3">
-        <p className="text-xs leading-relaxed text-gray-700">{narrative}</p>
+      <div className="mt-4 rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
+        <p className="text-xs leading-relaxed text-gray-700 dark:text-gray-300">{narrative}</p>
       </div>
     </div>
   );

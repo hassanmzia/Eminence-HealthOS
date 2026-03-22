@@ -52,12 +52,12 @@ export function OpportunityList() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-semibold text-gray-900">Cost Reduction Opportunities</h2>
-        <p className="mb-4 text-xs text-gray-500">Loading...</p>
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Cost Reduction Opportunities</h2>
+        <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">Loading...</p>
         <div className="animate-pulse space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-16 rounded-lg bg-gray-100" />
+            <div key={i} className="h-16 rounded-lg bg-gray-100 dark:bg-gray-800" />
           ))}
         </div>
       </div>
@@ -66,8 +66,8 @@ export function OpportunityList() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-semibold text-gray-900">Cost Reduction Opportunities</h2>
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Cost Reduction Opportunities</h2>
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-center">
           <p className="text-sm text-red-600">{error}</p>
           <button onClick={loadData} className="mt-2 rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700">
@@ -79,20 +79,20 @@ export function OpportunityList() {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
-      <h2 className="text-lg font-semibold text-gray-900">Cost Reduction Opportunities</h2>
-      <p className="mb-4 text-xs text-gray-500">{totalSavings} total potential annual savings</p>
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Cost Reduction Opportunities</h2>
+      <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">{totalSavings} total potential annual savings</p>
 
       <div className="space-y-3">
         {opportunities.map((o) => (
-          <div key={o.name} className="flex items-center justify-between rounded-lg border border-gray-100 p-3">
+          <div key={o.name} className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-800 p-3">
             <div>
-              <p className="text-sm font-medium text-gray-900">{o.name}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{o.name}</p>
               <div className="mt-1 flex gap-2 text-xs">
-                <span className={`rounded px-1.5 py-0.5 ${EFFORT_STYLE[o.effort as keyof typeof EFFORT_STYLE] ?? "bg-gray-100 text-gray-600"}`}>
+                <span className={`rounded px-1.5 py-0.5 ${EFFORT_STYLE[o.effort as keyof typeof EFFORT_STYLE] ?? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>
                   {o.effort} effort
                 </span>
-                <span className="text-gray-500">{o.timeline}</span>
+                <span className="text-gray-500 dark:text-gray-400">{o.timeline}</span>
               </div>
             </div>
             <span className="text-sm font-bold text-green-600">{o.savings}/yr</span>

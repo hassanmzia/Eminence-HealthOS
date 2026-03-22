@@ -376,7 +376,7 @@ function DurationCounter({ startTime }: { startTime: string }) {
     return () => clearInterval(interval);
   }, [startTime]);
 
-  return <span className="font-mono text-sm text-gray-700">{elapsed}</span>;
+  return <span className="font-mono text-sm text-gray-700 dark:text-gray-300">{elapsed}</span>;
 }
 
 // ── Main Page ────────────────────────────────────────────────────────────────
@@ -590,7 +590,7 @@ export default function AmbientAIPage() {
       "needs-review": "bg-orange-100 text-orange-700",
     };
     return (
-      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${map[status] || "bg-gray-100 text-gray-600"}`}>
+      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${map[status] || "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>
         {status}
       </span>
     );
@@ -602,7 +602,7 @@ export default function AmbientAIPage() {
       verified: "bg-green-100 text-green-700 border-green-200",
       "needs-review": "bg-yellow-100 text-yellow-700 border-yellow-200",
     };
-    return map[status] || "bg-gray-100 text-gray-600 border-gray-200";
+    return map[status] || "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700";
   };
 
   const attestationStatusBadge = (status: string) => {
@@ -611,7 +611,7 @@ export default function AmbientAIPage() {
       approved: "bg-green-100 text-green-700",
     };
     return (
-      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${map[status] || "bg-gray-100 text-gray-600"}`}>
+      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${map[status] || "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>
         {status}
       </span>
     );
@@ -642,8 +642,8 @@ export default function AmbientAIPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Ambient AI Documentation</h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Ambient AI Documentation</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Automatic clinical documentation from patient-provider conversations
             </p>
           </div>
@@ -665,7 +665,7 @@ export default function AmbientAIPage() {
         {stats.map((s) => (
           <div key={s.label} className="card card-hover p-4">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{s.label}</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{s.label}</p>
             </div>
             <p className={`mt-2 text-2xl font-bold ${s.color}`}>{s.value}</p>
           </div>
@@ -673,7 +673,7 @@ export default function AmbientAIPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex gap-6">
           {tabs.map((t) => (
             <button
@@ -682,7 +682,7 @@ export default function AmbientAIPage() {
               className={`border-b-2 pb-3 text-sm font-medium transition-colors ${
                 activeTab === t.key
                   ? "border-healthos-600 text-healthos-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:border-gray-600"
               }`}
             >
               {t.label}
@@ -697,24 +697,24 @@ export default function AmbientAIPage() {
           {/* Start Session Form */}
           {showStartForm && (
             <div className="card p-6 border-2 border-healthos-200 bg-healthos-50/30">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Start New Session</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Start New Session</h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Patient ID</label>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Patient ID</label>
                   <input
                     type="text"
                     value={newPatientId}
                     onChange={(e) => setNewPatientId(e.target.value)}
                     placeholder="PAT-1001"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Encounter Type</label>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Encounter Type</label>
                   <select
                     value={newEncounterType}
                     onChange={(e) => setNewEncounterType(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
                   >
                     <option>Follow-up</option>
                     <option>New Patient</option>
@@ -724,11 +724,11 @@ export default function AmbientAIPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Provider</label>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Provider</label>
                   <select
                     value={newProvider}
                     onChange={(e) => setNewProvider(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
                   >
                     <option>Dr. Williams</option>
                     <option>Dr. Patel</option>
@@ -746,7 +746,7 @@ export default function AmbientAIPage() {
                 </button>
                 <button
                   onClick={() => setShowStartForm(false)}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   Cancel
                 </button>
@@ -756,9 +756,9 @@ export default function AmbientAIPage() {
 
           {/* Active Session Cards */}
           <div>
-            <h2 className="text-sm font-semibold text-gray-900 mb-3">Active Sessions</h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Active Sessions</h2>
             {liveSessions.filter((s) => s.status !== "completed").length === 0 ? (
-              <div className="card p-8 text-center text-sm text-gray-500">
+              <div className="card p-8 text-center text-sm text-gray-500 dark:text-gray-400">
                 No active sessions. Click &quot;Start Session&quot; to begin.
               </div>
             ) : (
@@ -769,19 +769,19 @@ export default function AmbientAIPage() {
                     <div key={session.sessionId} className="card card-hover p-5 animate-fade-in-up">
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <p className="text-xs font-mono text-gray-500">{session.sessionId}</p>
-                          <p className="text-sm font-semibold text-gray-900 mt-0.5">{session.patientName}</p>
+                          <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{session.sessionId}</p>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-0.5">{session.patientName}</p>
                         </div>
                         {sessionStatusBadge(session.status)}
                       </div>
-                      <div className="space-y-1.5 text-xs text-gray-600 mb-3">
+                      <div className="space-y-1.5 text-xs text-gray-600 dark:text-gray-400 mb-3">
                         <div className="flex justify-between">
                           <span>Provider</span>
-                          <span className="font-medium text-gray-900">{session.provider}</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{session.provider}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Type</span>
-                          <span className="font-medium text-gray-900">{session.encounterType}</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{session.encounterType}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Duration</span>
@@ -789,7 +789,7 @@ export default function AmbientAIPage() {
                         </div>
                       </div>
                       {/* Audio Waveform Visualization */}
-                      <div className="mb-3 p-2 rounded-lg bg-gray-50 border border-gray-100">
+                      <div className="mb-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-800">
                         <AudioWaveform active={session.status === "recording"} key={waveformTick} />
                       </div>
                       {session.status === "recording" && (
@@ -817,30 +817,30 @@ export default function AmbientAIPage() {
 
           {/* Recent Completed Sessions */}
           <div>
-            <h2 className="text-sm font-semibold text-gray-900 mb-3">Recent Completed Sessions</h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Recent Completed Sessions</h2>
             <div className="card overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
                     {["Session", "Patient", "Provider", "Duration", "Notes", "Coded", "Date"].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {completedSessions.map((cs) => (
-                    <tr key={cs.sessionId} className="hover:bg-gray-50 transition-colors">
+                    <tr key={cs.sessionId} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                       <td className="px-4 py-3 text-sm font-mono text-healthos-600">{cs.sessionId}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{cs.patientName}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{cs.provider}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{cs.duration}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{cs.patientName}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{cs.provider}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{cs.duration}</td>
                       <td className="px-4 py-3">
                         {cs.notesGenerated ? (
                           <span className="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Generated</span>
                         ) : (
-                          <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Pending</span>
+                          <span className="inline-flex rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400">Pending</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -850,13 +850,13 @@ export default function AmbientAIPage() {
                           <span className="inline-flex rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">No</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                         {new Date(cs.startTime).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </div>
         </div>
@@ -869,16 +869,16 @@ export default function AmbientAIPage() {
             <div key={note.noteId} className="card card-hover overflow-hidden">
               {/* Note Header */}
               <div
-                className="flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 onClick={() => setExpandedNote(expandedNote === note.noteId ? null : note.noteId)}
               >
                 <div className="flex items-center gap-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-gray-900">{note.patientName}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{note.patientName}</p>
                       {noteStatusBadge(note.status)}
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                       {note.noteId} &middot; Session {note.sessionId} &middot; Generated{" "}
                       {new Date(note.generatedAt).toLocaleString()}
                     </p>
@@ -886,13 +886,13 @@ export default function AmbientAIPage() {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="text-xs text-gray-500">Overall Confidence</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Overall Confidence</p>
                     <p className={`text-sm font-bold ${note.overallConfidence >= 95 ? "text-green-600" : note.overallConfidence >= 85 ? "text-yellow-600" : "text-orange-600"}`}>
                       {note.overallConfidence.toFixed(1)}%
                     </p>
                   </div>
                   <svg
-                    className={`h-5 w-5 text-gray-400 transition-transform ${expandedNote === note.noteId ? "rotate-180" : ""}`}
+                    className={`h-5 w-5 text-gray-500 dark:text-gray-400 transition-transform ${expandedNote === note.noteId ? "rotate-180" : ""}`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -904,7 +904,7 @@ export default function AmbientAIPage() {
 
               {/* Expanded Detail */}
               {expandedNote === note.noteId && (
-                <div className="border-t border-gray-200 p-5 space-y-4 animate-fade-in-up">
+                <div className="border-t border-gray-200 dark:border-gray-700 p-5 space-y-4 animate-fade-in-up">
                   {(["subjective", "objective", "assessment", "plan"] as const).map((section) => {
                     const sectionData = note.sections[section];
                     const sectionColors: Record<string, string> = {
@@ -951,11 +951,11 @@ export default function AmbientAIPage() {
                           <textarea
                             value={editText}
                             onChange={(e) => setEditText(e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 p-3 text-sm text-gray-700 focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none min-h-[100px]"
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 text-sm text-gray-700 dark:text-gray-300 focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none min-h-[100px]"
                             onClick={(e) => e.stopPropagation()}
                           />
                         ) : (
-                          <p className="text-sm text-gray-700 whitespace-pre-line">{sectionData.text}</p>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{sectionData.text}</p>
                         )}
                       </div>
                     );
@@ -992,7 +992,7 @@ export default function AmbientAIPage() {
                         e.stopPropagation();
                         handleGenerateSOAP(note.sessionId);
                       }}
-                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                       Regenerate
                     </button>
@@ -1009,12 +1009,12 @@ export default function AmbientAIPage() {
         <div className="space-y-6 animate-fade-in-up">
           {/* Code Encounter Form */}
           <div className="card p-5">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Code Encounter</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Code Encounter</h3>
             <div className="flex gap-3">
               <select
                 value={codeSessionId}
                 onChange={(e) => setCodeSessionId(e.target.value)}
-                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
+                className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none"
               >
                 <option value="">Select session...</option>
                 {completedSessions.map((cs) => (
@@ -1038,8 +1038,8 @@ export default function AmbientAIPage() {
             <div key={cr.sessionId} className="card card-hover p-5 animate-fade-in-up">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">{cr.patientName}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{cr.patientName}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {cr.sessionId} &middot; {cr.provider} &middot; Coded{" "}
                     {new Date(cr.codedAt).toLocaleString()}
                   </p>
@@ -1054,7 +1054,7 @@ export default function AmbientAIPage() {
 
               {/* ICD-10 Codes */}
               <div className="mb-4">
-                <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">ICD-10 Codes</h4>
+                <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">ICD-10 Codes</h4>
                 <div className="flex flex-wrap gap-2">
                   {cr.icdCodes.map((code) => (
                     <div
@@ -1062,9 +1062,9 @@ export default function AmbientAIPage() {
                       className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${codeValidationBadge(code.validationStatus)}`}
                     >
                       <span className="font-mono font-bold">{code.code}</span>
-                      <span className="text-gray-600">{code.description}</span>
+                      <span className="text-gray-600 dark:text-gray-400">{code.description}</span>
                       <span className="font-medium">{code.confidence.toFixed(0)}%</span>
-                      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                      <span className={`rounded-full px-1.5 py-0.5 text-[11px] font-medium ${
                         code.validationStatus === "verified"
                           ? "bg-green-200 text-green-800"
                           : code.validationStatus === "auto-coded"
@@ -1080,7 +1080,7 @@ export default function AmbientAIPage() {
 
               {/* CPT Codes */}
               <div>
-                <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">CPT Codes</h4>
+                <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">CPT Codes</h4>
                 <div className="flex flex-wrap gap-2">
                   {cr.cptCodes.map((code) => (
                     <div
@@ -1088,9 +1088,9 @@ export default function AmbientAIPage() {
                       className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${codeValidationBadge(code.validationStatus)}`}
                     >
                       <span className="font-mono font-bold">{code.code}</span>
-                      <span className="text-gray-600">{code.description}</span>
+                      <span className="text-gray-600 dark:text-gray-400">{code.description}</span>
                       <span className="font-medium">{code.confidence.toFixed(0)}%</span>
-                      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                      <span className={`rounded-full px-1.5 py-0.5 text-[11px] font-medium ${
                         code.validationStatus === "verified"
                           ? "bg-green-200 text-green-800"
                           : code.validationStatus === "auto-coded"
@@ -1114,13 +1114,13 @@ export default function AmbientAIPage() {
           {/* Pending Attestation Queue */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <h2 className="text-sm font-semibold text-gray-900">Pending Attestation Queue</h2>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Pending Attestation Queue</h2>
               <span className="inline-flex rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">
                 {pendingAttestations.length}
               </span>
             </div>
             {pendingAttestations.length === 0 ? (
-              <div className="card p-8 text-center text-sm text-gray-500">
+              <div className="card p-8 text-center text-sm text-gray-500 dark:text-gray-400">
                 No pending attestations. All documentation is up to date.
               </div>
             ) : (
@@ -1130,10 +1130,10 @@ export default function AmbientAIPage() {
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-gray-900">{att.patientName}</p>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{att.patientName}</p>
                           {attestationStatusBadge(att.status)}
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                           {att.id} &middot; Encounter {att.encounter} &middot; {att.provider} &middot;{" "}
                           {new Date(att.timestamp).toLocaleString()}
                         </p>
@@ -1142,26 +1142,26 @@ export default function AmbientAIPage() {
 
                     {/* Summary */}
                     <div className="space-y-2 mb-4">
-                      <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                        <p className="text-xs font-medium text-gray-500 mb-1">Note Summary</p>
-                        <p className="text-sm text-gray-700">{att.noteSummary}</p>
+                      <div className="rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-800 p-3">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Note Summary</p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">{att.noteSummary}</p>
                       </div>
-                      <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                        <p className="text-xs font-medium text-gray-500 mb-1">Code Summary</p>
-                        <p className="text-sm font-mono text-gray-700">{att.codeSummary}</p>
+                      <div className="rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-800 p-3">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Code Summary</p>
+                        <p className="text-sm font-mono text-gray-700 dark:text-gray-300">{att.codeSummary}</p>
                       </div>
                     </div>
 
                     {/* Review Workflow */}
                     {reviewingAttestation === att.id ? (
-                      <div className="space-y-3 border-t border-gray-200 pt-4">
+                      <div className="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-4">
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Review Notes</label>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Review Notes</label>
                           <textarea
                             value={attestationNotes}
                             onChange={(e) => setAttestationNotes(e.target.value)}
                             placeholder="Enter review notes or change requests..."
-                            className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none min-h-[80px]"
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 text-sm focus:border-healthos-500 focus:ring-1 focus:ring-healthos-500 outline-none min-h-[80px]"
                           />
                         </div>
                         <div className="flex gap-3">
@@ -1179,7 +1179,7 @@ export default function AmbientAIPage() {
                           </button>
                           <button
                             onClick={() => { setReviewingAttestation(null); setAttestationNotes(""); }}
-                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                           >
                             Cancel
                           </button>
@@ -1195,7 +1195,7 @@ export default function AmbientAIPage() {
                         </button>
                         <button
                           onClick={() => setReviewingAttestation(att.id)}
-                          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                         >
                           Review Details
                         </button>
@@ -1209,28 +1209,28 @@ export default function AmbientAIPage() {
 
           {/* Approved Attestation Log */}
           <div>
-            <h2 className="text-sm font-semibold text-gray-900 mb-3">Approved Attestation Log</h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Approved Attestation Log</h2>
             <div className="card overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
                     {["Attestation ID", "Encounter", "Patient", "Provider", "Timestamp", "Status"].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {attestations
                     .filter((a) => a.status === "approved")
                     .map((att) => (
-                      <tr key={att.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 text-sm font-mono text-gray-900">{att.id}</td>
+                      <tr key={att.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">{att.id}</td>
                         <td className="px-4 py-3 text-sm text-healthos-600">{att.encounter}</td>
-                        <td className="px-4 py-3 text-sm text-gray-900">{att.patientName}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{att.provider}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">
+                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{att.patientName}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{att.provider}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                           {new Date(att.timestamp).toLocaleString()}
                         </td>
                         <td className="px-4 py-3">{attestationStatusBadge(att.status)}</td>
@@ -1238,13 +1238,13 @@ export default function AmbientAIPage() {
                     ))}
                   {attestations.filter((a) => a.status === "approved").length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">
+                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                         No approved attestations yet.
                       </td>
                     </tr>
                   )}
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </div>
         </div>

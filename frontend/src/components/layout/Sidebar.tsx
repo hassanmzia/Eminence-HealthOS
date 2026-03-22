@@ -252,7 +252,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-full w-64 flex-col bg-white border-r border-gray-200/80 dark:bg-gray-900 dark:border-gray-700/80">
+    <aside className="flex h-full w-64 flex-col border-r border-gray-200/80 bg-white dark:border-gray-700/80 dark:bg-gray-900">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-gray-200/80 px-5 dark:border-gray-700/80">
         <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-healthos-500 to-healthos-700 text-sm font-bold text-white shadow-sm">
@@ -261,7 +261,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
         </div>
         <div>
           <span className="text-base font-bold text-gray-900 dark:text-gray-100">Eminence</span>
-          <span className="ml-1 text-[10px] font-semibold uppercase tracking-wider text-healthos-600 dark:text-healthos-400">HealthOS</span>
+          <span className="ml-1 text-[11px] font-semibold uppercase tracking-wider text-healthos-600 dark:text-healthos-400">HealthOS</span>
         </div>
       </div>
 
@@ -269,7 +269,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
       <nav className="flex-1 overflow-y-auto px-3 py-3">
         {NAV_SECTIONS.map((section) => (
           <div key={section.label} className="mb-4">
-            <p className="mb-1 px-3 text-[10px] font-bold uppercase tracking-[0.08em] text-gray-400 dark:text-gray-500">
+            <p className="mb-1 px-3 text-[11px] font-bold uppercase tracking-[0.08em] text-gray-400 dark:text-gray-500">
               {section.label}
             </p>
             <div className="space-y-0.5">

@@ -88,17 +88,17 @@ function priorityBadge(p: string) {
     urgent: "bg-orange-100 text-orange-800 border border-orange-300",
     routine: "bg-blue-100 text-blue-700 border border-blue-200",
   };
-  return map[p] ?? "bg-gray-100 text-gray-700";
+  return map[p] ?? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300";
 }
 
 function statusBadge(s: string) {
   const map: Record<string, string> = {
-    ordered: "bg-gray-100 text-gray-700",
+    ordered: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300",
     collected: "bg-yellow-100 text-yellow-800",
     processing: "bg-blue-100 text-blue-800",
     completed: "bg-green-100 text-green-800",
   };
-  return map[s] ?? "bg-gray-100 text-gray-700";
+  return map[s] ?? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300";
 }
 
 function flagBadge(f: string) {
@@ -108,23 +108,23 @@ function flagBadge(f: string) {
     low: "bg-blue-100 text-blue-800",
     critical: "bg-red-200 text-red-900 font-bold",
   };
-  return map[f] ?? "bg-gray-100 text-gray-700";
+  return map[f] ?? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300";
 }
 
 function valueHighlight(flag: string) {
   if (flag === "critical") return "text-red-700 font-bold";
   if (flag === "high" || flag === "low") return "text-orange-700 font-semibold";
-  return "text-gray-900";
+  return "text-gray-900 dark:text-gray-100";
 }
 
 function escalationBadge(e: string) {
   const map: Record<string, [string, string]> = {
-    none: ["bg-gray-100 text-gray-600", "Pending"],
+    none: ["bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400", "Pending"],
     provider_notified: ["bg-yellow-100 text-yellow-800", "Provider Notified"],
     escalated: ["bg-red-100 text-red-800", "Escalated"],
     resolved: ["bg-green-100 text-green-800", "Resolved"],
   };
-  const [cls, label] = map[e] ?? ["bg-gray-100 text-gray-600", e];
+  const [cls, label] = map[e] ?? ["bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400", e];
   return { cls, label };
 }
 
@@ -134,7 +134,7 @@ function criticalStatusBadge(s: string) {
     acknowledged: ["bg-yellow-100 text-yellow-800", "Acknowledged"],
     resolved: ["bg-green-100 text-green-800", "Resolved"],
   };
-  const [cls, label] = map[s] ?? ["bg-gray-100 text-gray-600", s];
+  const [cls, label] = map[s] ?? ["bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400", s];
   return { cls, label };
 }
 
@@ -340,7 +340,7 @@ export default function LabsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">Labs &amp; Pathology</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Labs &amp; Pathology</h1>
             {pendingCount > 0 && (
               <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800">
                 <span className="relative flex h-2 w-2">
@@ -351,7 +351,7 @@ export default function LabsPage() {
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Order management, result interpretation, trend analysis, and CLIA-compliant critical value alerting
           </p>
         </div>
@@ -373,19 +373,19 @@ export default function LabsPage() {
           { label: "Avg Turnaround", value: "4.2h", icon: "⏱", color: "border-l-green-500", sub: "Target: 6h" },
           { label: "Abnormal Rate", value: "32%", icon: "📊", color: "border-l-purple-500", sub: "↑ 4% from last week" },
         ].map((kpi) => (
-          <div key={kpi.label} className={`card card-hover rounded-lg border-l-4 ${kpi.color} bg-white p-4`}>
+          <div key={kpi.label} className={`card card-hover rounded-lg border-l-4 ${kpi.color} bg-white dark:bg-gray-900 p-4`}>
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{kpi.label}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{kpi.label}</p>
               <span className="text-lg">{kpi.icon}</span>
             </div>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{kpi.value}</p>
-            <p className="mt-0.5 text-xs text-gray-400">{kpi.sub}</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{kpi.value}</p>
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{kpi.sub}</p>
           </div>
         ))}
       </div>
 
       {/* ── Tab Navigation ─────────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex gap-6 overflow-x-auto">
           {TABS.map((t) => (
             <button
@@ -394,12 +394,12 @@ export default function LabsPage() {
               className={`whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
                 tab === t
                   ? "border-healthos-600 text-healthos-600"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:text-gray-300"
               }`}
             >
               {t}
               {t === "Critical Values" && criticalValues.filter((c) => c.status === "new").length > 0 && (
-                <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[11px] font-bold text-white">
                   {criticalValues.filter((c) => c.status === "new").length}
                 </span>
               )}
@@ -415,28 +415,28 @@ export default function LabsPage() {
           {showCreateOrder && (
             <div className="card rounded-lg border border-healthos-200 bg-healthos-50/30 p-6">
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Create Lab Order</h3>
-                <button onClick={() => setShowCreateOrder(false)} className="text-gray-400 hover:text-gray-600">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Create Lab Order</h3>
+                <button onClick={() => setShowCreateOrder(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Patient ID</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Patient ID</label>
                   <input
                     type="text"
                     value={newOrder.patient_id}
                     onChange={(e) => setNewOrder((p) => ({ ...p, patient_id: e.target.value }))}
                     placeholder="e.g. P-1001"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Priority</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Priority</label>
                   <select
                     value={newOrder.priority}
                     onChange={(e) => setNewOrder((p) => ({ ...p, priority: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   >
                     <option value="routine">Routine</option>
                     <option value="urgent">Urgent</option>
@@ -444,7 +444,7 @@ export default function LabsPage() {
                   </select>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="mb-2 block text-sm font-medium text-gray-700">Panels (select multiple)</label>
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Panels (select multiple)</label>
                   <div className="flex flex-wrap gap-2">
                     {AVAILABLE_PANELS.map((panel) => (
                       <button
@@ -453,7 +453,7 @@ export default function LabsPage() {
                         className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
                           newOrder.panels.includes(panel)
                             ? "bg-healthos-600 text-white shadow-sm"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
                         }`}
                       >
                         {panel}
@@ -462,18 +462,18 @@ export default function LabsPage() {
                   </div>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Clinical Notes</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Clinical Notes</label>
                   <textarea
                     value={newOrder.notes}
                     onChange={(e) => setNewOrder((p) => ({ ...p, notes: e.target.value }))}
                     rows={3}
                     placeholder="Clinical indication, special instructions..."
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                   />
                 </div>
               </div>
               <div className="mt-4 flex justify-end gap-3">
-                <button onClick={() => setShowCreateOrder(false)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <button onClick={() => setShowCreateOrder(false)} className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
                   Cancel
                 </button>
                 <button
@@ -491,7 +491,7 @@ export default function LabsPage() {
             <div className="flex justify-end">
               <button
                 onClick={() => setShowCreateOrder(true)}
-                className="inline-flex items-center gap-2 rounded-lg border border-healthos-300 bg-white px-4 py-2 text-sm font-medium text-healthos-700 transition-all hover:bg-healthos-50"
+                className="inline-flex items-center gap-2 rounded-lg border border-healthos-300 bg-white dark:bg-gray-900 px-4 py-2 text-sm font-medium text-healthos-700 transition-all hover:bg-healthos-50"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                 Create Order
@@ -500,21 +500,21 @@ export default function LabsPage() {
           )}
 
           {/* Orders Table */}
-          <div className="card overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="card overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
+              <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
                     {["Order ID", "Patient", "Panels", "Priority", "Status", "Ordered", "Provider"].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">{h}</th>
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {labOrders.map((o) => (
-                    <tr key={o.id} className="transition-colors hover:bg-gray-50">
+                    <tr key={o.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
                       <td className="px-4 py-3 font-mono text-xs font-medium text-healthos-700">{o.id}</td>
-                      <td className="px-4 py-3 font-medium text-gray-900">{o.patient}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{o.patient}</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {o.panels.map((p) => (
@@ -534,12 +534,12 @@ export default function LabsPage() {
                           {o.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-500">{o.ordered}</td>
-                      <td className="px-4 py-3 text-gray-600">{o.provider}</td>
+                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{o.ordered}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{o.provider}</td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </div>
         </div>
@@ -551,13 +551,13 @@ export default function LabsPage() {
           {/* Search + Interpret */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 max-w-md">
-              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
               <input
                 type="text"
                 placeholder="Search patient results by test name..."
                 value={resultsSearch}
                 onChange={(e) => setResultsSearch(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 pl-10 pr-4 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               />
             </div>
             <button
@@ -571,33 +571,33 @@ export default function LabsPage() {
           </div>
 
           {/* Results Table */}
-          <div className="card overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="card overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
+              <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
                     {["Test Name", "Value", "Unit", "Reference Range", "Flag", "Date"].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">{h}</th>
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filteredResults.map((r) => (
-                    <tr key={`${r.test ?? "unknown"}-${r.date ?? "nodate"}-${filteredResults.indexOf(r)}`} className={`transition-colors hover:bg-gray-50 ${r.flag === "critical" ? "bg-red-50/50" : ""}`}>
-                      <td className="px-4 py-3 font-medium text-gray-900">{r.test}</td>
+                    <tr key={`${r.test ?? "unknown"}-${r.date ?? "nodate"}-${filteredResults.indexOf(r)}`} className={`transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${r.flag === "critical" ? "bg-red-50/50" : ""}`}>
+                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{r.test}</td>
                       <td className={`px-4 py-3 font-mono text-sm ${valueHighlight(r.flag)}`}>{r.value}</td>
-                      <td className="px-4 py-3 text-gray-500">{r.unit}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{r.range}</td>
+                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{r.unit}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">{r.range}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${flagBadge(r.flag)}`}>
                           {r.flag}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-500">{r.date}</td>
+                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{r.date}</td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </div>
 
@@ -618,22 +618,22 @@ export default function LabsPage() {
       {tab === "Trend Analysis" && (
         <div className="space-y-6 animate-fade-in-up">
           {/* Controls */}
-          <div className="card flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:flex-row sm:items-end">
+          <div className="card flex flex-col gap-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sm:flex-row sm:items-end">
             <div className="flex-1">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Patient ID</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Patient ID</label>
               <input
                 type="text"
                 value={trendPatient}
                 onChange={(e) => setTrendPatient(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               />
             </div>
             <div className="flex-1">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Test</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Test</label>
               <select
                 value={trendTest}
                 onChange={(e) => { setTrendTest(e.target.value); setTrendInsights(null); }}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               >
                 {DEMO_TREND_DATA.map((t) => (
                   <option key={t.test} value={t.test}>{t.test}</option>
@@ -652,12 +652,12 @@ export default function LabsPage() {
 
           {/* Simulated Chart */}
           {currentTrend && (
-            <div className="card rounded-lg border border-gray-200 bg-white p-6">
-              <h3 className="mb-1 text-lg font-semibold text-gray-900">{currentTrend.test} Trend</h3>
-              <p className="mb-4 text-xs text-gray-500">Values over time with reference range ({currentTrend.refLow} - {currentTrend.refHigh} {currentTrend.unit})</p>
+            <div className="card rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+              <h3 className="mb-1 text-lg font-semibold text-gray-900 dark:text-gray-100">{currentTrend.test} Trend</h3>
+              <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">Values over time with reference range ({currentTrend.refLow} - {currentTrend.refHigh} {currentTrend.unit})</p>
 
               {/* Chart area */}
-              <div className="relative h-56 w-full rounded-lg border border-gray-100 bg-gray-50 p-4">
+              <div className="relative h-56 w-full rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-4">
                 {(() => {
                   const allVals = [...currentTrend.values, currentTrend.refLow, currentTrend.refHigh];
                   const min = Math.min(...allVals) * 0.9;
@@ -676,10 +676,10 @@ export default function LabsPage() {
                         className="absolute left-4 right-4 rounded bg-green-100/60 border-y border-green-300/40"
                         style={{ top: `${16 + refHighY}px`, height: `${refLowY - refHighY}px` }}
                       />
-                      <div className="absolute right-6 text-[10px] font-medium text-green-600" style={{ top: `${14 + refHighY}px` }}>
+                      <div className="absolute right-6 text-[11px] font-medium text-green-600" style={{ top: `${14 + refHighY}px` }}>
                         High: {currentTrend.refHigh}
                       </div>
-                      <div className="absolute right-6 text-[10px] font-medium text-green-600" style={{ top: `${14 + refLowY}px` }}>
+                      <div className="absolute right-6 text-[11px] font-medium text-green-600" style={{ top: `${14 + refLowY}px` }}>
                         Low: {currentTrend.refLow}
                       </div>
 
@@ -690,7 +690,7 @@ export default function LabsPage() {
                           const isAbnormal = v > currentTrend.refHigh || v < currentTrend.refLow;
                           return (
                             <div key={i} className="flex flex-col items-center gap-1" style={{ width: `${barWidth}%` }}>
-                              <span className={`text-xs font-bold ${isAbnormal ? "text-red-600" : "text-gray-700"}`}>{v}</span>
+                              <span className={`text-xs font-bold ${isAbnormal ? "text-red-600" : "text-gray-700 dark:text-gray-300"}`}>{v}</span>
                               <div
                                 className={`w-8 rounded-t-md transition-all ${isAbnormal ? "bg-red-400/80" : "bg-healthos-500/70"}`}
                                 style={{ height: `${Math.max(h, 4)}px` }}
@@ -703,7 +703,7 @@ export default function LabsPage() {
                       {/* Date labels */}
                       <div className="flex justify-around px-8 pt-2">
                         {currentTrend.dates.map((d, i) => (
-                          <span key={i} className="text-[10px] text-gray-400" style={{ width: `${barWidth}%`, textAlign: "center" }}>{d}</span>
+                          <span key={i} className="text-[11px] text-gray-500 dark:text-gray-400" style={{ width: `${barWidth}%`, textAlign: "center" }}>{d}</span>
                         ))}
                       </div>
                     </>
@@ -716,9 +716,9 @@ export default function LabsPage() {
                 {currentTrend.values.map((v, i) => {
                   const isAbnormal = v > currentTrend.refHigh || v < currentTrend.refLow;
                   return (
-                    <div key={i} className={`rounded-lg border px-3 py-2 text-center ${isAbnormal ? "border-red-200 bg-red-50" : "border-gray-200 bg-white"}`}>
-                      <p className={`font-mono text-lg font-bold ${isAbnormal ? "text-red-700" : "text-gray-900"}`}>{v}</p>
-                      <p className="text-[10px] text-gray-500">{currentTrend.dates[i]}</p>
+                    <div key={i} className={`rounded-lg border px-3 py-2 text-center ${isAbnormal ? "border-red-200 bg-red-50" : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"}`}>
+                      <p className={`font-mono text-lg font-bold ${isAbnormal ? "text-red-700" : "text-gray-900 dark:text-gray-100"}`}>{v}</p>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400">{currentTrend.dates[i]}</p>
                     </div>
                   );
                 })}
@@ -739,19 +739,19 @@ export default function LabsPage() {
                   key={t.test}
                   onClick={() => { setTrendTest(t.test); setTrendInsights(null); }}
                   className={`card card-hover cursor-pointer rounded-lg border p-4 transition-all ${
-                    trendTest === t.test ? "border-healthos-400 ring-2 ring-healthos-200" : isAbnormal ? "border-red-200" : "border-gray-200"
+                    trendTest === t.test ? "border-healthos-400 ring-2 ring-healthos-200" : isAbnormal ? "border-red-200" : "border-gray-200 dark:border-gray-700"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-gray-900">{t.test}</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">{t.test}</h4>
                     <span className={`text-xs font-medium ${direction === "up" ? "text-red-600" : direction === "down" ? "text-blue-600" : "text-green-600"}`}>
                       {direction === "up" ? "↑" : direction === "down" ? "↓" : "→"} {Math.abs(diff).toFixed(1)}
                     </span>
                   </div>
-                  <p className={`mt-1 font-mono text-2xl font-bold ${isAbnormal ? "text-red-700" : "text-gray-900"}`}>
-                    {latest} <span className="text-xs font-normal text-gray-400">{t.unit}</span>
+                  <p className={`mt-1 font-mono text-2xl font-bold ${isAbnormal ? "text-red-700" : "text-gray-900 dark:text-gray-100"}`}>
+                    {latest} <span className="text-xs font-normal text-gray-500 dark:text-gray-400">{t.unit}</span>
                   </p>
-                  <p className="text-xs text-gray-400">Ref: {t.refLow} - {t.refHigh}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Ref: {t.refLow} - {t.refHigh}</p>
                 </div>
               );
             })}
@@ -775,7 +775,7 @@ export default function LabsPage() {
         <div className="space-y-6 animate-fade-in-up">
           {/* Active Critical Values */}
           <div>
-            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <span className="relative flex h-3 w-3">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
                 <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
@@ -791,16 +791,16 @@ export default function LabsPage() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${sBadge.cls}`}>{sBadge.label}</span>
-                          <span className="font-semibold text-gray-900">{cv.patient}</span>
-                          <span className="text-xs text-gray-400">({cv.patient_id})</span>
+                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase ${sBadge.cls}`}>{sBadge.label}</span>
+                          <span className="font-semibold text-gray-900 dark:text-gray-100">{cv.patient}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">({cv.patient_id})</span>
                         </div>
                         <div className="mt-1 flex flex-wrap items-baseline gap-3">
-                          <span className="text-sm font-medium text-gray-700">{cv.test}:</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{cv.test}:</span>
                           <span className="font-mono text-xl font-bold text-red-700">{cv.value} {cv.unit}</span>
-                          <span className="text-xs text-gray-400">Ref: {cv.range}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">Ref: {cv.range}</span>
                         </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                           <span>Detected: {cv.detected}</span>
                           <span className={`rounded-full px-2 py-0.5 font-medium ${eBadge.cls}`}>{eBadge.label}</span>
                         </div>
@@ -832,32 +832,32 @@ export default function LabsPage() {
 
           {/* Resolved Critical Values Log */}
           <div>
-            <h3 className="mb-3 text-lg font-semibold text-gray-900">Resolved Critical Values Log</h3>
-            <div className="card overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">Resolved Critical Values Log</h3>
+            <div className="card overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                  <thead className="bg-gray-50">
+                <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
                       {["ID", "Patient", "Test", "Value", "Detected", "Resolved", "Resolved By", "Action Taken"].map((h) => (
-                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">{h}</th>
+                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {resolvedCritical.map((rc) => (
-                      <tr key={rc.id} className="transition-colors hover:bg-gray-50">
-                        <td className="px-4 py-3 font-mono text-xs text-gray-500">{rc.id}</td>
-                        <td className="px-4 py-3 font-medium text-gray-900">{rc.patient}</td>
-                        <td className="px-4 py-3 text-gray-700">{rc.test}</td>
+                      <tr key={rc.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">{rc.id}</td>
+                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{rc.patient}</td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{rc.test}</td>
                         <td className="px-4 py-3 font-mono font-semibold text-red-700">{rc.value} {rc.unit}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{rc.detected}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{rc.resolved}</td>
-                        <td className="px-4 py-3 text-gray-700">{rc.resolvedBy}</td>
-                        <td className="px-4 py-3 text-xs text-gray-600">{rc.action}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">{rc.detected}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">{rc.resolved}</td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{rc.resolvedBy}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-400">{rc.action}</td>
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             </div>
             <div className="mt-3 rounded-lg border border-green-200 bg-green-50 p-3">

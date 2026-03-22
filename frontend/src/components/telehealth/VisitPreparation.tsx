@@ -56,8 +56,8 @@ export function VisitPreparation({ sessionId }: Props) {
   if (!sessionId) {
     return (
       <div className="card">
-        <h2 className="mb-3 text-lg font-semibold text-gray-900">Pre-Visit Summary</h2>
-        <p className="py-4 text-center text-sm text-gray-400">Select a session to view preparation</p>
+        <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">Pre-Visit Summary</h2>
+        <p className="py-4 text-center text-sm text-gray-500 dark:text-gray-400">Select a session to view preparation</p>
       </div>
     );
   }
@@ -65,8 +65,8 @@ export function VisitPreparation({ sessionId }: Props) {
   if (loading) {
     return (
       <div className="card">
-        <h2 className="mb-3 text-lg font-semibold text-gray-900">Pre-Visit Summary</h2>
-        <div className="py-4 text-center text-sm text-gray-400">Preparing visit summary...</div>
+        <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">Pre-Visit Summary</h2>
+        <div className="py-4 text-center text-sm text-gray-500 dark:text-gray-400">Preparing visit summary...</div>
       </div>
     );
   }
@@ -74,7 +74,7 @@ export function VisitPreparation({ sessionId }: Props) {
   if (error || !summary) {
     return (
       <div className="card">
-        <h2 className="mb-3 text-lg font-semibold text-gray-900">Pre-Visit Summary</h2>
+        <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-100">Pre-Visit Summary</h2>
         <p className="py-4 text-center text-sm text-red-400">{error || "No data available"}</p>
       </div>
     );
@@ -83,14 +83,14 @@ export function VisitPreparation({ sessionId }: Props) {
   return (
     <div className="card">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Pre-Visit Summary</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Pre-Visit Summary</h2>
         <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${RISK_BADGE[summary.risk_level] || RISK_BADGE.low}`}>
           {summary.risk_level}
         </span>
       </div>
 
       {summary.patient_name && (
-        <p className="text-sm font-medium text-gray-700">{summary.patient_name}</p>
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{summary.patient_name}</p>
       )}
 
       {/* Clinical flags */}
@@ -106,13 +106,13 @@ export function VisitPreparation({ sessionId }: Props) {
       {/* Vitals snapshot */}
       {Object.keys(summary.latest_vitals).length > 0 && (
         <div className="mt-3">
-          <p className="text-xs font-medium uppercase text-gray-400">Latest Vitals</p>
+          <p className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Latest Vitals</p>
           <div className="mt-1 grid grid-cols-2 gap-1">
             {Object.entries(summary.latest_vitals).map(([type, data]) => (
-              <div key={type} className="rounded bg-gray-50 px-2 py-1">
-                <span className="text-xs text-gray-500">{type.replace("_", " ")}</span>
-                <p className="text-sm font-medium text-gray-800">
-                  {data.value} <span className="text-xs text-gray-400">{data.unit}</span>
+              <div key={type} className="rounded bg-gray-50 dark:bg-gray-800 px-2 py-1">
+                <span className="text-xs text-gray-500 dark:text-gray-400">{type.replace("_", " ")}</span>
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                  {data.value} <span className="text-xs text-gray-500 dark:text-gray-400">{data.unit}</span>
                 </p>
               </div>
             ))}
@@ -124,17 +124,17 @@ export function VisitPreparation({ sessionId }: Props) {
       <div className="mt-3 grid grid-cols-2 gap-3">
         {summary.conditions.length > 0 && (
           <div>
-            <p className="text-xs font-medium uppercase text-gray-400">Conditions</p>
+            <p className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Conditions</p>
             {summary.conditions.map((c) => (
-              <p key={c} className="text-xs text-gray-600">{c}</p>
+              <p key={c} className="text-xs text-gray-600 dark:text-gray-400">{c}</p>
             ))}
           </div>
         )}
         {summary.medications.length > 0 && (
           <div>
-            <p className="text-xs font-medium uppercase text-gray-400">Medications</p>
+            <p className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Medications</p>
             {summary.medications.map((m) => (
-              <p key={m} className="text-xs text-gray-600">{m}</p>
+              <p key={m} className="text-xs text-gray-600 dark:text-gray-400">{m}</p>
             ))}
           </div>
         )}

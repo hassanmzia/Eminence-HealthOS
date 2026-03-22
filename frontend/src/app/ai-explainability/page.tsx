@@ -380,7 +380,7 @@ export default function AIExplainabilityPage() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AI Explainability</h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-gray-500 dark:text-gray-500">
             SHAP &amp; LIME explanations for clinical AI model predictions
           </p>
         </div>
@@ -412,7 +412,7 @@ export default function AIExplainabilityPage() {
             className={`px-5 py-2.5 text-sm font-medium rounded-t-lg transition-colors ${
               activeTab === t.key
                 ? "bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border border-b-0 border-gray-200 dark:border-gray-700"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                : "text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-200"
             }`}
           >
             {t.label}
@@ -434,7 +434,7 @@ export default function AIExplainabilityPage() {
               { label: "Avg |SHAP|", value: shapStats.avgAbsolute.toFixed(3), sub: "Mean absolute impact" },
             ].map((s) => (
               <div key={s.label} className="card card-hover p-4">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{s.label}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wide">{s.label}</p>
                 <p className="mt-1 text-xl font-bold text-gray-900 dark:text-white truncate">{s.value}</p>
                 <p className="text-xs text-gray-400 dark:text-gray-500">{s.sub}</p>
               </div>
@@ -446,7 +446,7 @@ export default function AIExplainabilityPage() {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Feature Importance &mdash; Top 15 SHAP Values
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
               <span className="inline-block w-3 h-3 rounded-sm bg-red-500 mr-1 align-middle" /> Increases risk
               <span className="inline-block w-3 h-3 rounded-sm bg-blue-500 ml-4 mr-1 align-middle" /> Decreases risk
             </p>
@@ -485,7 +485,7 @@ export default function AIExplainabilityPage() {
           {/* Feature interaction heatmap */}
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Feature Interaction Heatmap</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
               Pairwise SHAP interaction values between feature groups
             </p>
             <div className="overflow-x-auto">
@@ -496,7 +496,7 @@ export default function AIExplainabilityPage() {
                 {/* Header row */}
                 <div />
                 {interactionFeatures.map((f) => (
-                  <div key={f} className="text-xs font-medium text-gray-500 dark:text-gray-400 text-center truncate px-1">
+                  <div key={f} className="text-xs font-medium text-gray-500 dark:text-gray-500 text-center truncate px-1">
                     {f}
                   </div>
                 ))}
@@ -504,7 +504,7 @@ export default function AIExplainabilityPage() {
                 {/* Data rows */}
                 {interactionMatrix.map((row, ri) => (
                   <React.Fragment key={`row-${ri}`}>
-                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center">
+                    <div className="text-xs font-medium text-gray-500 dark:text-gray-500 flex items-center">
                       {interactionFeatures[ri]}
                     </div>
                     {row.map((val, ci) => (
@@ -532,7 +532,7 @@ export default function AIExplainabilityPage() {
           {/* Prediction overview */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="card card-hover p-6 flex flex-col items-center justify-center">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wide">
                 Prediction Probability
               </p>
               <p className="mt-2 text-5xl font-bold text-gray-900 dark:text-white">
@@ -552,7 +552,7 @@ export default function AIExplainabilityPage() {
             </div>
 
             <div className="card card-hover p-6 flex flex-col items-center justify-center">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wide">
                 95% Confidence Interval
               </p>
               <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
@@ -564,7 +564,7 @@ export default function AIExplainabilityPage() {
             </div>
 
             <div className="card card-hover p-6 flex flex-col items-center justify-center">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Model</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wide">Model</p>
               <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{selectedModel}</p>
               <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Instance-level LIME explanation</p>
             </div>
@@ -608,7 +608,7 @@ export default function AIExplainabilityPage() {
           {/* What-If panel */}
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">What-If Analysis</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
               Toggle feature values to simulate how the prediction would change.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -640,7 +640,7 @@ export default function AIExplainabilityPage() {
                       <span className={`px-2 py-1 rounded ${!toggled ? "bg-gray-200 dark:bg-gray-600 font-bold" : "bg-gray-100 dark:bg-gray-700"} text-gray-700 dark:text-gray-300`}>
                         {f.currentValue}
                       </span>
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                       <span className={`px-2 py-1 rounded ${toggled ? "bg-blue-200 dark:bg-blue-700 font-bold" : "bg-gray-100 dark:bg-gray-700"} text-gray-700 dark:text-gray-300`}>
@@ -691,23 +691,23 @@ export default function AIExplainabilityPage() {
 
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Purpose</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{mc.purpose}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-500">{mc.purpose}</p>
                     </div>
 
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Training Data</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{mc.trainingData}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-500">{mc.trainingData}</p>
                       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Sample: {mc.sampleSize}</p>
                     </div>
 
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Intended Use</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{mc.intendedUse}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-500">{mc.intendedUse}</p>
                     </div>
 
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Limitations</h3>
-                      <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                      <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-500 space-y-1">
                         {mc.limitations.map((l, i) => (
                           <li key={i}>{l}</li>
                         ))}
@@ -751,7 +751,7 @@ export default function AIExplainabilityPage() {
                         { label: "Recall", value: mc.recall },
                       ].map((m) => (
                         <div key={m.label} className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-center">
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{m.label}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500">{m.label}</p>
                           <p className={`text-lg font-bold ${metricColor(m.value)}`}>{m.value.toFixed(2)}</p>
                         </div>
                       ))}
@@ -763,7 +763,7 @@ export default function AIExplainabilityPage() {
                       <div className="space-y-2">
                         {mc.fairness.map((f) => (
                           <div key={f.group} className="flex items-center justify-between">
-                            <span className="text-xs text-gray-600 dark:text-gray-400">{f.group}</span>
+                            <span className="text-xs text-gray-600 dark:text-gray-500">{f.group}</span>
                             <div className="flex items-center gap-2">
                               <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                 <div

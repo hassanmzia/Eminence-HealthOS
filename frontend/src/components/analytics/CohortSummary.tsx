@@ -89,10 +89,10 @@ export function CohortSummary() {
   if (loading) {
     return (
       <div className="card">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Cohort Management</h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Cohort Management</h2>
         <div className="animate-pulse space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 rounded-lg bg-gray-100" />
+            <div key={i} className="h-16 rounded-lg bg-gray-100 dark:bg-gray-800" />
           ))}
         </div>
       </div>
@@ -102,7 +102,7 @@ export function CohortSummary() {
   if (error) {
     return (
       <div className="card">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Cohort Management</h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Cohort Management</h2>
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
           <p className="text-sm text-red-600">{error}</p>
           <button onClick={loadData} className="mt-2 rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700">
@@ -116,17 +116,17 @@ export function CohortSummary() {
   return (
     <div className="card">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Cohort Management</h2>
-        <div className="flex gap-1 rounded-lg bg-gray-100 p-0.5">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Cohort Management</h2>
+        <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5">
           <button
             onClick={() => setTab("active")}
-            className={`rounded-md px-2.5 py-1 text-xs font-medium ${tab === "active" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium ${tab === "active" ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm" : "text-gray-500 dark:text-gray-400"}`}
           >
             Active Cohorts
           </button>
           <button
             onClick={() => setTab("templates")}
-            className={`rounded-md px-2.5 py-1 text-xs font-medium ${tab === "templates" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium ${tab === "templates" ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm" : "text-gray-500 dark:text-gray-400"}`}
           >
             Templates
           </button>
@@ -136,23 +136,23 @@ export function CohortSummary() {
       {tab === "active" ? (
         <div className="space-y-2">
           {activeCohorts.map((c) => (
-            <div key={c.id} className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
+            <div key={c.id} className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900">{c.name}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{c.name}</span>
                   <span className={`rounded px-1.5 py-0.5 text-xs ${
-                    c.trend === "improving" ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"
+                    c.trend === "improving" ? "bg-green-50 text-green-600" : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
                   }`}>
                     {c.trend}
                   </span>
                 </div>
-                <div className="mt-1 flex gap-4 text-xs text-gray-500">
+                <div className="mt-1 flex gap-4 text-xs text-gray-500 dark:text-gray-400">
                   <span>{c.patients} patients</span>
                   <span>Avg risk: {(c.avgRisk * 100).toFixed(0)}%</span>
                   <span>Created: {c.created}</span>
                 </div>
               </div>
-              <button className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50">
+              <button className="rounded border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800">
                 Analyze
               </button>
             </div>
@@ -161,10 +161,10 @@ export function CohortSummary() {
       ) : (
         <div className="grid grid-cols-2 gap-2">
           {templates.map((t) => (
-            <div key={t.key} className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
+            <div key={t.key} className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-3">
               <div>
-                <span className="text-sm font-medium text-gray-900">{t.name}</span>
-                <p className="text-xs text-gray-500">{t.patients} patients match</p>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t.name}</span>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t.patients} patients match</p>
               </div>
               <button className="rounded bg-healthos-600 px-2 py-1 text-xs text-white hover:bg-healthos-700">
                 Create

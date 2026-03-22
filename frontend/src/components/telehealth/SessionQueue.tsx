@@ -35,14 +35,14 @@ export function SessionQueue({ selectedSessionId, onSelectSession }: Props) {
   return (
     <div className="card">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Session Queue</h2>
-        <span className="text-xs text-gray-400">{sessions.length} sessions</span>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Session Queue</h2>
+        <span className="text-xs text-gray-500 dark:text-gray-400">{sessions.length} sessions</span>
       </div>
 
       {loading ? (
-        <div className="py-6 text-center text-sm text-gray-400">Loading sessions...</div>
+        <div className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">Loading sessions...</div>
       ) : sessions.length === 0 ? (
-        <div className="py-6 text-center text-sm text-gray-400">No active sessions</div>
+        <div className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">No active sessions</div>
       ) : (
         <div className="space-y-2">
           {sessions.map((session) => (
@@ -54,25 +54,25 @@ export function SessionQueue({ selectedSessionId, onSelectSession }: Props) {
               } ${
                 selectedSessionId === session.session_id
                   ? "bg-healthos-50 ring-1 ring-healthos-200"
-                  : "bg-gray-50 hover:bg-gray-100"
+                  : "bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:bg-gray-800"
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {session.patient_name || `Patient ${session.patient_id.slice(0, 8)}`}
                 </span>
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    STATUS_BADGE[session.status] || "bg-gray-100 text-gray-600"
+                    STATUS_BADGE[session.status] || "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
                   }`}
                 >
                   {session.status.replace("_", " ")}
                 </span>
               </div>
               {session.chief_complaint && (
-                <p className="mt-0.5 text-xs text-gray-500">{session.chief_complaint}</p>
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{session.chief_complaint}</p>
               )}
-              <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
+              <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <span>{session.visit_type.replace("_", " ")}</span>
                 <span>&middot;</span>
                 <span>

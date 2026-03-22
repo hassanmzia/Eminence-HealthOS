@@ -46,7 +46,7 @@ export function KPIStrip() {
     return (
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="animate-pulse rounded-xl border border-gray-200 bg-white p-4">
+          <div key={i} className="animate-pulse rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
             <div className="h-3 w-16 rounded bg-gray-200" />
             <div className="mt-2 h-7 w-20 rounded bg-gray-200" />
             <div className="mt-2 h-3 w-24 rounded bg-gray-200" />
@@ -70,9 +70,9 @@ export function KPIStrip() {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
       {kpis.map((kpi) => (
-        <div key={kpi.label} className="rounded-xl border border-gray-200 bg-white p-4">
-          <p className="text-xs font-medium text-gray-500">{kpi.label}</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{kpi.value}</p>
+        <div key={kpi.label} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{kpi.label}</p>
+          <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{kpi.value}</p>
           <p className={`mt-1 text-xs font-medium ${kpi.positive ? "text-green-600" : "text-red-600"}`}>
             {kpi.change} vs prior period
           </p>

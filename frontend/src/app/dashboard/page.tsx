@@ -16,7 +16,7 @@ function LiveClock() {
     return () => clearInterval(t);
   }, []);
   return (
-    <span className="tabular-nums text-sm text-gray-400">
+    <span className="tabular-nums text-sm text-gray-500 dark:text-gray-400">
       {time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
     </span>
   );
@@ -104,10 +104,10 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             Command Center
           </h1>
-          <p className="text-sm text-gray-500">Real-time clinical operations overview</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Real-time clinical operations overview</p>
         </div>
         <div className="flex items-center gap-3">
           <LiveClock />
@@ -125,20 +125,20 @@ export default function DashboardPage() {
       {providerStats && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="card !p-3">
-            <p className="text-xs text-gray-400">Role</p>
-            <p className="text-lg font-bold text-gray-900 capitalize">{providerStats.role}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Role</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-gray-100 capitalize">{providerStats.role}</p>
           </div>
           <div className="card !p-3">
-            <p className="text-xs text-gray-400">Total Patients</p>
-            <p className="text-lg font-bold text-gray-900">{providerStats.total_patients}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Total Patients</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{providerStats.total_patients}</p>
           </div>
           <div className="card !p-3">
-            <p className="text-xs text-gray-400">Pending Alerts</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Pending Alerts</p>
             <p className="text-lg font-bold text-orange-600">{providerStats.pending_alerts}</p>
           </div>
           <div className="card !p-3">
-            <p className="text-xs text-gray-400">Encounters Today</p>
-            <p className="text-lg font-bold text-gray-900">{providerStats.scheduled_encounters}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Encounters Today</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{providerStats.scheduled_encounters}</p>
           </div>
         </div>
       )}
@@ -163,7 +163,7 @@ export default function DashboardPage() {
       {/* ML Models Overview */}
       <div className="animate-fade-in-up stagger-3">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">ML Model Performance</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">ML Model Performance</h2>
           <Link href="/ml-models" className="text-xs font-medium text-healthos-600 hover:text-healthos-700">
             View All →
           </Link>
@@ -173,26 +173,26 @@ export default function DashboardPage() {
             <Link key={model.name} href="/ml-models" className="card card-hover !p-3 group">
               <div className="flex items-center gap-2 mb-2">
                 <div className={`h-2 w-2 rounded-full ${model.color}`} />
-                <span className="text-xs font-semibold text-gray-700 truncate">{model.name}</span>
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">{model.name}</span>
               </div>
               <div className="flex items-end justify-between">
                 <div>
-                  <p className="text-lg font-bold text-gray-900">{model.accuracy}%</p>
-                  <p className="text-[10px] text-gray-400">accuracy</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{model.accuracy}%</p>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">accuracy</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-medium text-gray-500">{model.predictions.toLocaleString()}</p>
-                  <p className="text-[10px] text-gray-400">predictions</p>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{model.predictions.toLocaleString()}</p>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">predictions</p>
                 </div>
               </div>
-              <div className="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+              <div className="mt-2 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                 <div
                   className={`h-full rounded-full ${model.color} transition-all duration-500`}
                   style={{ width: `${model.accuracy}%` }}
                 />
               </div>
               {model.status === "training" && (
-                <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium text-amber-600">
+                <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-amber-600">
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
                   Training
                 </span>
@@ -204,7 +204,7 @@ export default function DashboardPage() {
 
       {/* Platform Features Grid */}
       <div className="animate-fade-in-up stagger-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-400">Platform Features</h2>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Platform Features</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {PLATFORM_FEATURES.map((feature) => (
             <Link
@@ -218,10 +218,10 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div>
-                <span className="text-sm font-semibold text-gray-800 group-hover:text-gray-900">{feature.label}</span>
-                <p className="text-[11px] text-gray-400 leading-tight mt-0.5">{feature.description}</p>
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 group-hover:text-gray-900 dark:text-gray-100">{feature.label}</span>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">{feature.description}</p>
               </div>
-              <span className="text-[10px] font-medium text-healthos-600 bg-healthos-50 rounded-full px-2 py-0.5 self-start">
+              <span className="text-[11px] font-medium text-healthos-600 bg-healthos-50 rounded-full px-2 py-0.5 self-start">
                 {feature.stat}
               </span>
             </Link>
@@ -231,7 +231,7 @@ export default function DashboardPage() {
 
       {/* Quick Access */}
       <div className="animate-fade-in-up stagger-5">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-400">Quick Actions</h2>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Quick Actions</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { label: "New Session", href: "/telehealth", icon: "M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z", color: "text-healthos-600 bg-healthos-50" },
@@ -249,7 +249,7 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d={action.icon} />
                 </svg>
               </div>
-              <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">{action.label}</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:text-gray-100">{action.label}</span>
             </Link>
           ))}
         </div>
@@ -261,18 +261,18 @@ export default function DashboardPage() {
           {/* Federated Learning Status */}
           <div className="card !p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700">Federated Learning</h3>
-              <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5">Active</span>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Federated Learning</h3>
+              <span className="text-[11px] font-medium text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5">Active</span>
             </div>
             <div className="space-y-2">
-              <div className="flex justify-between text-xs text-gray-500">
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                 <span>Round Progress</span>
-                <span className="font-medium text-gray-700">Round 7 / 10</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">Round 7 / 10</span>
               </div>
-              <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+              <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                 <div className="h-full rounded-full bg-gradient-to-r from-healthos-400 to-healthos-600 w-[70%] transition-all" />
               </div>
-              <div className="flex justify-between text-[11px] text-gray-400 pt-1">
+              <div className="flex justify-between text-[11px] text-gray-500 dark:text-gray-400 pt-1">
                 <span>3 tenants participating</span>
                 <span>Privacy budget: 62% remaining</span>
               </div>
@@ -282,24 +282,24 @@ export default function DashboardPage() {
           {/* EHR Interoperability Status */}
           <div className="card !p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700">EHR Interoperability</h3>
-              <Link href="/ehr-connect" className="text-[10px] font-medium text-healthos-600 hover:text-healthos-700">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">EHR Interoperability</h3>
+              <Link href="/ehr-connect" className="text-[11px] font-medium text-healthos-600 hover:text-healthos-700">
                 Manage →
               </Link>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 { label: "FHIR R4", status: "connected", syncs: 1284 },
                 { label: "HL7v2", status: "connected", syncs: 856 },
                 { label: "MCP Bridge", status: "connected", syncs: 342 },
               ].map((conn) => (
-                <div key={conn.label} className="rounded-lg bg-gray-50 p-2.5 text-center">
+                <div key={conn.label} className="rounded-lg bg-gray-50 dark:bg-gray-800 p-2.5 text-center">
                   <div className="flex items-center justify-center gap-1.5 mb-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    <span className="text-xs font-medium text-gray-700">{conn.label}</span>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{conn.label}</span>
                   </div>
-                  <p className="text-lg font-bold text-gray-900">{conn.syncs.toLocaleString()}</p>
-                  <p className="text-[10px] text-gray-400">syncs today</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{conn.syncs.toLocaleString()}</p>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">syncs today</p>
                 </div>
               ))}
             </div>

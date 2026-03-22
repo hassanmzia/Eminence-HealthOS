@@ -62,14 +62,14 @@ export function CostDriverChart() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-semibold text-gray-900">Cost Drivers</h2>
-        <p className="mb-4 text-xs text-gray-500">Breakdown by category</p>
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Cost Drivers</h2>
+        <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">Breakdown by category</p>
         <div className="animate-pulse">
-          <div className="mb-4 h-6 rounded-full bg-gray-100" />
+          <div className="mb-4 h-6 rounded-full bg-gray-100 dark:bg-gray-800" />
           <div className="space-y-2">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="h-5 rounded bg-gray-100" />
+              <div key={i} className="h-5 rounded bg-gray-100 dark:bg-gray-800" />
             ))}
           </div>
         </div>
@@ -79,8 +79,8 @@ export function CostDriverChart() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-semibold text-gray-900">Cost Drivers</h2>
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Cost Drivers</h2>
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-center">
           <p className="text-sm text-red-600">{error}</p>
           <button onClick={loadData} className="mt-2 rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700">
@@ -92,9 +92,9 @@ export function CostDriverChart() {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
-      <h2 className="text-lg font-semibold text-gray-900">Cost Drivers</h2>
-      <p className="mb-4 text-xs text-gray-500">Breakdown by category</p>
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Cost Drivers</h2>
+      <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">Breakdown by category</p>
 
       {/* Stacked bar */}
       <div className="mb-4 flex h-6 overflow-hidden rounded-full">
@@ -113,9 +113,9 @@ export function CostDriverChart() {
           <div key={d.driver} className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <span className={`h-2.5 w-2.5 rounded-full ${d.color}`} />
-              <span className="text-gray-900">{d.driver}</span>
+              <span className="text-gray-900 dark:text-gray-100">{d.driver}</span>
             </div>
-            <span className="font-medium text-gray-700">{d.pct}%</span>
+            <span className="font-medium text-gray-700 dark:text-gray-300">{d.pct}%</span>
           </div>
         ))}
       </div>

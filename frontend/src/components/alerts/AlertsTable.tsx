@@ -53,54 +53,54 @@ export function AlertsTable({
 
   return (
     <div className="card overflow-hidden p-0">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+      <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Priority</th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Type</th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Message</th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Status</th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Time</th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Priority</th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Type</th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Message</th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Status</th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Time</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200 bg-white">
+        <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
           {loading ? (
             <tr>
-              <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-400">
+              <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                 Loading alerts...
               </td>
             </tr>
           ) : alerts.length === 0 ? (
             <tr>
-              <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-400">
+              <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                 No alerts found
               </td>
             </tr>
           ) : (
             alerts.map((alert) => (
-              <tr key={alert.id} className="transition-colors hover:bg-gray-50">
+              <tr key={alert.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td className="px-6 py-4">
                   <span className={PRIORITY_BADGE[alert.priority]}>{alert.priority}</span>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
+                <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                   {alert.alert_type.replace(/_/g, " ")}
                 </td>
-                <td className="max-w-xs px-6 py-4 text-sm text-gray-700 truncate">
+                <td className="max-w-xs px-6 py-4 text-sm text-gray-700 dark:text-gray-300 truncate">
                   {alert.message || "—"}
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`text-sm font-medium ${STATUS_COLORS[alert.status] || "text-gray-500"}`}>
+                  <span className={`text-sm font-medium ${STATUS_COLORS[alert.status] || "text-gray-500 dark:text-gray-400"}`}>
                     {alert.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-400">
+                <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   {alert.created_at ? timeAgo(alert.created_at) : "—"}
                 </td>
               </tr>
             ))
           )}
         </tbody>
-      </table>
+      </table></div>
     </div>
   );
 }

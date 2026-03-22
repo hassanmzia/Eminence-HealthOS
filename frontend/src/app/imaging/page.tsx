@@ -129,7 +129,7 @@ function modalityBadge(m: Modality) {
     US: "bg-teal-100 text-teal-800 border-teal-200",
     PET: "bg-orange-100 text-orange-800 border-orange-200",
   };
-  return map[m] ?? "bg-gray-100 text-gray-800 border-gray-200";
+  return map[m] ?? "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700";
 }
 
 function modalityIcon(m: Modality) {
@@ -145,21 +145,21 @@ function modalityIcon(m: Modality) {
 
 function statusBadge(s: StudyStatus) {
   const map: Record<StudyStatus, string> = {
-    scheduled: "bg-gray-100 text-gray-700 border-gray-200",
+    scheduled: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700",
     "in-progress": "bg-blue-100 text-blue-700 border-blue-200",
     completed: "bg-yellow-100 text-yellow-700 border-yellow-200",
     reported: "bg-green-100 text-green-700 border-green-200",
   };
-  return map[s] ?? "bg-gray-100 text-gray-700 border-gray-200";
+  return map[s] ?? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700";
 }
 
 function priorityBadge(p: Priority) {
   const map: Record<Priority, string> = {
     STAT: "bg-red-100 text-red-800 border-red-300",
     Urgent: "bg-orange-100 text-orange-800 border-orange-300",
-    Routine: "bg-gray-100 text-gray-600 border-gray-200",
+    Routine: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700",
   };
-  return map[p] ?? "bg-gray-100 text-gray-600 border-gray-200";
+  return map[p] ?? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700";
 }
 
 function severityBadge(s: Severity) {
@@ -169,7 +169,7 @@ function severityBadge(s: Severity) {
     mild: "bg-yellow-100 text-yellow-800 border-yellow-300",
     normal: "bg-green-100 text-green-800 border-green-300",
   };
-  return map[s] ?? "bg-gray-100 text-gray-700 border-gray-200";
+  return map[s] ?? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700";
 }
 
 function commStatusBadge(c: CommStatus) {
@@ -178,7 +178,7 @@ function commStatusBadge(c: CommStatus) {
     pending: "bg-yellow-100 text-yellow-800",
     acknowledged: "bg-green-100 text-green-800",
   };
-  return map[c] ?? "bg-gray-100 text-gray-700";
+  return map[c] ?? "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300";
 }
 
 function confidenceColor(c: number): string {
@@ -194,7 +194,7 @@ function confidenceTextColor(c: number): string {
 }
 
 function slaColor(minutes: number): string {
-  if (minutes <= 0) return "text-gray-400";
+  if (minutes <= 0) return "text-gray-500 dark:text-gray-400";
   if (minutes <= 15) return "text-red-600";
   if (minutes <= 30) return "text-orange-500";
   return "text-green-600";
@@ -364,12 +364,12 @@ export default function ImagingPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">Imaging &amp; Radiology</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Imaging &amp; Radiology</h1>
             <span className="inline-flex items-center rounded-full bg-healthos-100 px-2.5 py-0.5 text-xs font-semibold text-healthos-800 border border-healthos-200">
               {worklistCount} in worklist
             </span>
           </div>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             DICOM worklist management, AI-powered image analysis, patient study history, and critical finding alerts
           </p>
         </div>
@@ -405,17 +405,17 @@ export default function ImagingPage() {
         ].map((kpi) => (
           <div key={kpi.label} className="card card-hover rounded-xl p-4 animate-fade-in-up">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{kpi.label}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{kpi.label}</p>
               {kpi.icon}
             </div>
-            <p className="mt-2 text-2xl font-bold text-gray-900">{kpi.value}</p>
-            <p className="mt-0.5 text-xs text-gray-400">{kpi.sub}</p>
+            <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{kpi.value}</p>
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{kpi.sub}</p>
           </div>
         ))}
       </div>
 
       {/* ── Tabs ────────────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex gap-6">
           {TABS.map((t) => (
             <button
@@ -424,12 +424,12 @@ export default function ImagingPage() {
               className={`border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
                 activeTab === t.key
                   ? "border-healthos-600 text-healthos-600"
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:text-gray-300"
               }`}
             >
               {t.label}
               {t.key === "critical-findings" && activeCritical.length > 0 && (
-                <span className="ml-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                <span className="ml-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[11px] font-bold text-white">
                   {activeCritical.length}
                 </span>
               )}
@@ -454,7 +454,7 @@ export default function ImagingPage() {
                 {/* Left section */}
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-gray-900">{study.patient}</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{study.patient}</span>
                     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${modalityBadge(study.modality)}`}>
                       {study.modality}
                     </span>
@@ -465,17 +465,17 @@ export default function ImagingPage() {
                       {study.status}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600">{study.description}</p>
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
-                    <span>Body Part: <span className="font-medium text-gray-700">{study.bodyPart}</span></span>
-                    <span>Radiologist: <span className="font-medium text-gray-700">{study.radiologist}</span></span>
-                    <span>ID: <span className="font-mono text-gray-400">{study.id}</span></span>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{study.description}</p>
+                  <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                    <span>Body Part: <span className="font-medium text-gray-700 dark:text-gray-300">{study.bodyPart}</span></span>
+                    <span>Radiologist: <span className="font-medium text-gray-700 dark:text-gray-300">{study.radiologist}</span></span>
+                    <span>ID: <span className="font-mono text-gray-500 dark:text-gray-400">{study.id}</span></span>
                   </div>
                 </div>
 
                 {/* Right section — SLA timer & date */}
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="text-xs text-gray-400">{study.date}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{study.date}</span>
                   <div className={`flex items-center gap-1.5 text-sm font-semibold ${slaColor(study.slaMinutesRemaining)}`}>
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -483,7 +483,7 @@ export default function ImagingPage() {
                     <span>{formatSLA(study.slaMinutesRemaining)}</span>
                   </div>
                   {study.slaMinutesRemaining > 0 && study.slaMinutesRemaining <= 15 && (
-                    <span className="text-[10px] font-medium text-red-500 uppercase tracking-wide">SLA at risk</span>
+                    <span className="text-[11px] font-medium text-red-500 uppercase tracking-wide">SLA at risk</span>
                   )}
                 </div>
               </div>
@@ -499,14 +499,14 @@ export default function ImagingPage() {
         <div className="space-y-6 animate-fade-in-up">
           {/* Upload / Select Section */}
           <div className="card rounded-xl p-6">
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Run AI Analysis</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">Run AI Analysis</h3>
             <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-600 mb-1">Select Study</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Select Study</label>
                 <select
                   value={selectedStudyForAI}
                   onChange={(e) => setSelectedStudyForAI(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   <option value="">Choose a study from the worklist...</option>
                   {worklist.map((s) => (
@@ -538,7 +538,7 @@ export default function ImagingPage() {
 
           {/* Image Viewer with modality-specific rendering */}
           <div className="card rounded-xl p-6">
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Image Viewer</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide mb-4">Image Viewer</h3>
             <div className="relative mx-auto aspect-square max-w-md rounded-lg bg-gray-900 overflow-hidden">
               {(() => {
                 const study = worklist.find((s) => s.id === selectedStudyForAI);
@@ -546,9 +546,9 @@ export default function ImagingPage() {
                   return (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center">
-                        <svg className="mx-auto h-16 w-16 text-gray-600" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" /></svg>
-                        <p className="mt-2 text-sm text-gray-500">No Study Selected</p>
-                        <p className="text-xs text-gray-600">Select a study and run AI analysis to view</p>
+                        <svg className="mx-auto h-16 w-16 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" /></svg>
+                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No Study Selected</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Select a study and run AI analysis to view</p>
                       </div>
                     </div>
                   );
@@ -789,7 +789,7 @@ export default function ImagingPage() {
                           return (
                             <div key={f.id}>
                               <div className={`absolute rounded border-2 border-dashed ${borderColor} opacity-70`} style={{ top: pos.top, left: pos.left, height: pos.h, width: pos.w }} />
-                              <div className={`absolute rounded ${bgColor} px-1.5 py-0.5 text-[10px] text-white font-semibold`} style={{ top: pos.top, left: pos.left, transform: "translateY(-100%)" }}>
+                              <div className={`absolute rounded ${bgColor} px-1.5 py-0.5 text-[11px] text-white font-semibold`} style={{ top: pos.top, left: pos.left, transform: "translateY(-100%)" }}>
                                 {f.description.length > 40 ? f.description.slice(0, 40) + "…" : f.description}
                               </div>
                             </div>
@@ -807,23 +807,23 @@ export default function ImagingPage() {
           <div className="card rounded-xl p-6">
             <button
               onClick={() => setShowCompare(!showCompare)}
-              className="flex w-full items-center justify-between text-sm font-semibold text-gray-900 uppercase tracking-wide"
+              className="flex w-full items-center justify-between text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide"
             >
               <span>Compare with Priors</span>
-              <svg className={`h-5 w-5 text-gray-400 transition-transform ${showCompare ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+              <svg className={`h-5 w-5 text-gray-500 dark:text-gray-400 transition-transform ${showCompare ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
             </button>
             {showCompare && (
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-center">
-                  <p className="text-xs font-medium text-gray-500 mb-2">Current Study (2026-03-15)</p>
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 text-center">
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Current Study (2026-03-15)</p>
                   <div className="aspect-video rounded bg-gray-800 flex items-center justify-center">
-                    <span className="text-xs text-gray-500">Current Image</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Current Image</span>
                   </div>
                 </div>
-                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-center">
-                  <p className="text-xs font-medium text-gray-500 mb-2">Prior Study (2026-02-28)</p>
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 text-center">
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Prior Study (2026-02-28)</p>
                   <div className="aspect-video rounded bg-gray-800 flex items-center justify-center">
-                    <span className="text-xs text-gray-500">Prior Image</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Prior Image</span>
                   </div>
                 </div>
               </div>
@@ -832,22 +832,22 @@ export default function ImagingPage() {
 
           {/* AI Findings Results */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">AI Findings ({aiFindings.length})</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">AI Findings ({aiFindings.length})</h3>
             {aiFindings.map((finding) => (
               <div key={finding.id} className="card card-hover rounded-xl p-5 animate-fade-in-up">
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs text-gray-400">{finding.studyId}</span>
+                    <span className="font-mono text-xs text-gray-500 dark:text-gray-400">{finding.studyId}</span>
                     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${severityBadge(finding.severity)}`}>
                       {finding.severity}
                     </span>
-                    <span className="text-xs text-gray-400">Model: {finding.model}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Model: {finding.model}</span>
                   </div>
-                  <p className="text-sm font-medium text-gray-900">{finding.description}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{finding.description}</p>
 
                   {/* Confidence bar */}
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-500 w-20 shrink-0">Confidence</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 w-20 shrink-0">Confidence</span>
                     <div className="flex-1 h-2.5 rounded-full bg-gray-200 overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${confidenceColor(finding.confidence)}`}
@@ -859,9 +859,9 @@ export default function ImagingPage() {
                     </span>
                   </div>
 
-                  <div className="rounded-lg bg-gray-50 p-3">
-                    <p className="text-xs font-medium text-gray-500 mb-0.5">Recommended Action</p>
-                    <p className="text-sm text-gray-700">{finding.recommendedAction}</p>
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Recommended Action</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{finding.recommendedAction}</p>
                   </div>
                 </div>
               </div>
@@ -878,13 +878,13 @@ export default function ImagingPage() {
           {/* Search */}
           <div className="card rounded-xl p-4">
             <div className="relative">
-              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
               <input
                 type="text"
                 placeholder="Search by patient name or ID..."
                 value={patientSearch}
                 onChange={(e) => setPatientSearch(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
               />
             </div>
           </div>
@@ -894,13 +894,13 @@ export default function ImagingPage() {
             const [patientId, patientName] = key.split("|");
             return (
               <div key={key} className="card rounded-xl overflow-hidden animate-fade-in-up">
-                <div className="bg-gray-50 border-b border-gray-200 px-5 py-3 flex items-center gap-3">
+                <div className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-5 py-3 flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-healthos-100 text-healthos-700 text-sm font-bold">
                     {patientName.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">{patientName}</p>
-                    <p className="text-xs text-gray-400">{patientId} — {studies.length} {studies.length === 1 ? "study" : "studies"}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{patientName}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{patientId} — {studies.length} {studies.length === 1 ? "study" : "studies"}</p>
                   </div>
                 </div>
                 <div className="divide-y divide-gray-100">
@@ -913,13 +913,13 @@ export default function ImagingPage() {
                             <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${modalityBadge(study.modality)}`}>
                               {study.modality}
                             </span>
-                            <span className="text-xs font-medium text-gray-700">{study.bodyPart}</span>
+                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{study.bodyPart}</span>
                             <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${statusBadge(study.status)}`}>
                               {study.status}
                             </span>
-                            <span className="text-xs text-gray-400">{study.date}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{study.date}</span>
                           </div>
-                          <p className="mt-1 text-sm text-gray-600">{study.description}</p>
+                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{study.description}</p>
 
                           {study.reportText && (
                             <div className="mt-2">
@@ -931,8 +931,8 @@ export default function ImagingPage() {
                                 <svg className={`h-3.5 w-3.5 transition-transform ${expandedReport === study.id ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
                               </button>
                               {expandedReport === study.id && (
-                                <div className="mt-2 rounded-lg bg-gray-50 border border-gray-200 p-4 animate-fade-in-up">
-                                  <p className="whitespace-pre-wrap text-xs text-gray-700 font-mono leading-relaxed">
+                                <div className="mt-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 animate-fade-in-up">
+                                  <p className="whitespace-pre-wrap text-xs text-gray-700 dark:text-gray-300 font-mono leading-relaxed">
                                     {study.reportText}
                                   </p>
                                 </div>
@@ -940,7 +940,7 @@ export default function ImagingPage() {
                             </div>
                           )}
                           {!study.reportText && (
-                            <p className="mt-1 text-xs text-gray-400 italic">Report not yet available</p>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 italic">Report not yet available</p>
                           )}
                         </div>
                       </div>
@@ -954,7 +954,7 @@ export default function ImagingPage() {
           {groupedByPatient.size === 0 && (
             <div className="card rounded-xl p-12 text-center">
               <svg className="mx-auto h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
-              <p className="mt-3 text-sm text-gray-500">No patients match your search.</p>
+              <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No patients match your search.</p>
             </div>
           )}
         </div>
@@ -966,13 +966,13 @@ export default function ImagingPage() {
       {activeTab === "critical-findings" && (
         <div className="space-y-6 animate-fade-in-up">
           {/* Active Critical Findings */}
-          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
             Active Critical Findings ({activeCritical.length})
           </h3>
           {activeCritical.length === 0 && (
             <div className="card rounded-xl p-8 text-center">
               <svg className="mx-auto h-10 w-10 text-green-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <p className="mt-3 text-sm text-gray-500">No active critical findings. All clear.</p>
+              <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No active critical findings. All clear.</p>
             </div>
           )}
           {activeCritical.map((finding) => (
@@ -984,7 +984,7 @@ export default function ImagingPage() {
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
-                    <span className="text-sm font-semibold text-gray-900">{finding.patient}</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{finding.patient}</span>
                     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${severityBadge(finding.severity)}`}>
                       {finding.severity}
                     </span>
@@ -992,10 +992,10 @@ export default function ImagingPage() {
                       {finding.commStatus}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-700">{finding.description}</p>
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
-                    <span>Study: <span className="font-mono text-gray-400">{finding.studyId}</span></span>
-                    <span>Detected: <span className="font-medium text-gray-600">{finding.timeDetected}</span></span>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">{finding.description}</p>
+                  <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                    <span>Study: <span className="font-mono text-gray-500 dark:text-gray-400">{finding.studyId}</span></span>
+                    <span>Detected: <span className="font-medium text-gray-600 dark:text-gray-400">{finding.timeDetected}</span></span>
                     <span className="flex items-center gap-1">
                       AI Confidence:
                       <span className={`font-semibold ${confidenceTextColor(finding.aiConfidence)}`}>
@@ -1037,10 +1037,10 @@ export default function ImagingPage() {
           {/* Action Log */}
           {criticalActionLog.length > 0 && (
             <div className="card rounded-xl p-5">
-              <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">Action Log</h4>
+              <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-3">Action Log</h4>
               <div className="space-y-1">
                 {criticalActionLog.map((entry, i) => (
-                  <p key={i} className="text-xs text-gray-500 font-mono">{entry}</p>
+                  <p key={i} className="text-xs text-gray-500 dark:text-gray-400 font-mono">{entry}</p>
                 ))}
               </div>
             </div>
@@ -1049,7 +1049,7 @@ export default function ImagingPage() {
           {/* Resolved Critical Findings */}
           {resolvedCritical.length > 0 && (
             <>
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide pt-2">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide pt-2">
                 Resolved Critical Findings ({resolvedCritical.length})
               </h3>
               {resolvedCritical.map((finding) => (
@@ -1061,13 +1061,13 @@ export default function ImagingPage() {
                     <div className="flex-1 min-w-0 space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
                         <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <span className="text-sm font-medium text-gray-700">{finding.patient}</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{finding.patient}</span>
                         <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-700">
                           Resolved
                         </span>
                       </div>
-                      <p className="text-sm text-gray-500">{finding.description}</p>
-                      <div className="flex flex-wrap gap-4 text-xs text-gray-400">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{finding.description}</p>
+                      <div className="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400">
                         <span>Study: <span className="font-mono">{finding.studyId}</span></span>
                         <span>Detected: {finding.timeDetected}</span>
                         <span>AI Confidence: {(finding.aiConfidence * 100).toFixed(0)}%</span>

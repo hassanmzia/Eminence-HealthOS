@@ -47,15 +47,15 @@ export function WorkflowConfig() {
   return (
     <div className="card">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Workflow Configuration</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Workflow Configuration</h2>
       </div>
 
       {/* Tabs */}
-      <div className="mb-4 flex gap-1 rounded-lg bg-gray-100 p-1">
+      <div className="mb-4 flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
         <button
           onClick={() => setActiveTab("templates")}
           className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-            activeTab === "templates" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600"
+            activeTab === "templates" ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm" : "text-gray-600 dark:text-gray-400"
           }`}
         >
           Templates
@@ -63,7 +63,7 @@ export function WorkflowConfig() {
         <button
           onClick={() => setActiveTab("sla")}
           className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-            activeTab === "sla" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600"
+            activeTab === "sla" ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm" : "text-gray-600 dark:text-gray-400"
           }`}
         >
           SLA & Assignment Rules
@@ -73,16 +73,16 @@ export function WorkflowConfig() {
       {activeTab === "templates" ? (
         <div className="space-y-2">
           {templates.map((tpl) => (
-            <div key={tpl.type} className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
+            <div key={tpl.type} className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900">{tpl.name}</span>
-                  <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">{tpl.steps} steps</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{tpl.name}</span>
+                  <span className="rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400">{tpl.steps} steps</span>
                 </div>
-                <p className="mt-0.5 text-xs text-gray-500">{tpl.description}</p>
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{tpl.description}</p>
               </div>
               <div className="ml-4 flex gap-2">
-                <button className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50">
+                <button className="rounded border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800">
                   Edit
                 </button>
                 <button className="rounded bg-healthos-600 px-2 py-1 text-xs text-white hover:bg-healthos-700">
@@ -94,9 +94,9 @@ export function WorkflowConfig() {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-xs text-gray-500">
+              <tr className="border-b border-gray-200 dark:border-gray-700 text-left text-xs text-gray-500 dark:text-gray-400">
                 <th className="pb-2 font-medium">Task Type</th>
                 <th className="pb-2 font-medium">Urgent</th>
                 <th className="pb-2 font-medium">Normal</th>
@@ -107,17 +107,17 @@ export function WorkflowConfig() {
             <tbody className="divide-y divide-gray-100">
               {priorities.map((p) => (
                 <tr key={p.task_type}>
-                  <td className="py-2.5 font-medium capitalize text-gray-900">
+                  <td className="py-2.5 font-medium capitalize text-gray-900 dark:text-gray-100">
                     {p.task_type.replace("_", " ")}
                   </td>
                   <td className="py-2.5 text-red-600">{p.urgent_sla_hours}h</td>
                   <td className="py-2.5 text-blue-600">{p.normal_sla_hours}h</td>
-                  <td className="py-2.5 text-gray-500">{p.low_sla_hours}h</td>
-                  <td className="py-2.5 text-gray-600">{p.auto_assignee}</td>
+                  <td className="py-2.5 text-gray-500 dark:text-gray-400">{p.low_sla_hours}h</td>
+                  <td className="py-2.5 text-gray-600 dark:text-gray-400">{p.auto_assignee}</td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
     </div>
