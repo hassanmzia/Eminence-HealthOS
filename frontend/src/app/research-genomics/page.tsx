@@ -532,7 +532,7 @@ export default function ResearchGenomicsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5">
+      <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5 overflow-x-auto">
         {([
           { key: "trials" as Tab, label: "Clinical Trials" },
           { key: "pgx" as Tab, label: "Pharmacogenomics" },
@@ -581,7 +581,7 @@ export default function ResearchGenomicsPage() {
                   placeholder="e.g. CKD, Type 2 Diabetes"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Age</label>
                   <input
@@ -723,8 +723,8 @@ export default function ResearchGenomicsPage() {
 
           {/* Empty state */}
           {!trialResults && !trialsLoading && (
-            <div className="card text-center py-12">
-              <div className="text-4xl mb-3 opacity-40">🔬</div>
+            <div className="card text-center py-6 sm:py-12">
+              <div className="text-2xl sm:text-4xl mb-3 opacity-40">🔬</div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Enter patient criteria above to find matching clinical trials</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Searches across 47 active trials from ClinicalTrials.gov registry</p>
             </div>
@@ -854,8 +854,8 @@ export default function ResearchGenomicsPage() {
 
           {/* Empty state */}
           {!pgxResults && !pgxLoading && (
-            <div className="card text-center py-12">
-              <div className="text-4xl mb-3 opacity-40">💊</div>
+            <div className="card text-center py-6 sm:py-12">
+              <div className="text-2xl sm:text-4xl mb-3 opacity-40">💊</div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Enter patient ID and medications to check pharmacogenomic interactions</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Analyzes CYP450 enzyme variants, HLA alleles, and transporter genes</p>
             </div>
@@ -947,7 +947,7 @@ export default function ResearchGenomicsPage() {
                       </defs>
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">{grResults.riskScore}</span>
+                      <span className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">{grResults.riskScore}</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">/100</span>
                     </div>
                   </div>
@@ -1048,8 +1048,8 @@ export default function ResearchGenomicsPage() {
 
           {/* Empty state for PRS */}
           {!grResults && !grLoading && (
-            <div className="card text-center py-12">
-              <div className="text-4xl mb-3 opacity-40">🧬</div>
+            <div className="card text-center py-6 sm:py-12">
+              <div className="text-2xl sm:text-4xl mb-3 opacity-40">🧬</div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Enter patient ID and condition to calculate polygenic risk score</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Aggregates millions of genetic variants into a single risk metric</p>
             </div>
@@ -1240,8 +1240,8 @@ export default function ResearchGenomicsPage() {
 
           {/* Empty state */}
           {!deidResult && !deidLoading && (
-            <div className="card text-center py-12">
-              <div className="text-4xl mb-3 opacity-40">🛡️</div>
+            <div className="card text-center py-6 sm:py-12">
+              <div className="text-2xl sm:text-4xl mb-3 opacity-40">🛡️</div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Configure dataset parameters above to start de-identification</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">HIPAA Safe Harbor compliant with k-anonymity and differential privacy</p>
             </div>

@@ -246,14 +246,14 @@ export default function WhatIfSimulatorPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-center gap-4">
                   <div>
-                    <p className="text-3xl font-bold font-mono text-red-500">
+                    <p className="text-xl sm:text-3xl font-bold font-mono text-red-500">
                       {result.baselineRisk}%
                     </p>
                     <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Baseline</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                   <div>
-                    <p className="text-3xl font-bold font-mono text-emerald-500">
+                    <p className="text-xl sm:text-3xl font-bold font-mono text-emerald-500">
                       {result.simulatedRisk}%
                     </p>
                     <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">Simulated</p>

@@ -758,7 +758,7 @@ export default function AmbientAIPage() {
           <div>
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Active Sessions</h2>
             {liveSessions.filter((s) => s.status !== "completed").length === 0 ? (
-              <div className="card p-8 text-center text-sm text-gray-500 dark:text-gray-400">
+              <div className="card p-4 sm:p-8 text-center text-sm text-gray-500 dark:text-gray-400">
                 No active sessions. Click &quot;Start Session&quot; to begin.
               </div>
             ) : (
@@ -887,12 +887,7 @@ export default function AmbientAIPage() {
                 <div className="flex items-center gap-4">
                   <div className="text-right">
                     <p className="text-xs text-gray-500 dark:text-gray-400">Overall Confidence</p>
-                    <p className={`text-sm font-bold ${note.overallConfidence >= 95 ? "text-green-600" : note.overallConfidence >= 85 ? "text-yellow-600" : "text-orange-600"}`}>
-                      {note.overallConfidence.toFixed(1)}%
-                    </p>
-                  </div>
-                  <svg
-                    className={`h-5 w-5 text-gray-500 dark:text-gray-400 transition-transform ${expandedNote === note.noteId ? "rotate-180" : ""}`}
+                    <p className={`text-sm font-bold ${note.overallConfidence >= 95 ? "text-green-600" : note.overallConfidence >= 85 ? "text-yellow-600" : "text-orange-600"}`}> {note.overallConfidence.toFixed(1)}% </p> </div> <svg className={`h-5 w-5 text-gray-500 dark:text-gray-400 transition-transform ${expandedNote === note.noteId ?"rotate-180" : ""}`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -1120,7 +1115,7 @@ export default function AmbientAIPage() {
               </span>
             </div>
             {pendingAttestations.length === 0 ? (
-              <div className="card p-8 text-center text-sm text-gray-500 dark:text-gray-400">
+              <div className="card p-4 sm:p-8 text-center text-sm text-gray-500 dark:text-gray-400">
                 No pending attestations. All documentation is up to date.
               </div>
             ) : (

@@ -55,7 +55,7 @@ export default function LoginPage() {
         </div>
 
         {/* Login card */}
-        <div className="rounded-2xl border border-slate-700 bg-slate-800/50 p-8 shadow-xl backdrop-blur">
+        <div className="rounded-2xl border border-slate-700 bg-slate-800/50 p-5 sm:p-8 shadow-xl backdrop-blur">
           <h2 className="mb-6 text-lg font-semibold text-white">Sign in to your account</h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">

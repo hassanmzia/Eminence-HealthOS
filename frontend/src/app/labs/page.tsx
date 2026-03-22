@@ -371,10 +371,7 @@ export default function LabsPage() {
           { label: "Results Today", value: "47", icon: "📋", color: "border-l-blue-500", sub: "8 abnormal" },
           { label: "Critical Values", value: String(criticalValues.filter((c) => c.status === "new").length), icon: "🚨", color: "border-l-red-500", sub: `${criticalValues.length} total active` },
           { label: "Avg Turnaround", value: "4.2h", icon: "⏱", color: "border-l-green-500", sub: "Target: 6h" },
-          { label: "Abnormal Rate", value: "32%", icon: "📊", color: "border-l-purple-500", sub: "↑ 4% from last week" },
-        ].map((kpi) => (
-          <div key={kpi.label} className={`card card-hover rounded-lg border-l-4 ${kpi.color} bg-white dark:bg-gray-900 p-4`}>
-            <div className="flex items-center justify-between">
+          { label: "Abnormal Rate", value: "32%", icon: "📊", color: "border-l-purple-500", sub: "↑ 4% from last week"}, ].map((kpi) => ( <div key={kpi.label} className={`card card-hover rounded-lg border-l-4 ${kpi.color} bg-white dark:bg-gray-900 p-4`}> className="flex items-center justify-between">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{kpi.label}</p>
               <span className="text-lg">{kpi.icon}</span>
             </div>
@@ -416,7 +413,7 @@ export default function LabsPage() {
             <div className="card rounded-lg border border-healthos-200 bg-healthos-50/30 p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Create Lab Order</h3>
-                <button onClick={() => setShowCreateOrder(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400">
+                <button onClick={() => setShowCreateOrder(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
@@ -583,7 +580,7 @@ export default function LabsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filteredResults.map((r) => (
-                    <tr key={`${r.test ?? "unknown"}-${r.date ?? "nodate"}-${filteredResults.indexOf(r)}`} className={`transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${r.flag === "critical" ? "bg-red-50/50" : ""}`}>
+                    <tr key={`${r.test ?? "unknown"}-${r.date ?? "nodate"}-${filteredResults.indexOf(r)}`} className={`transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${r.flag ==="critical" ? "bg-red-50/50" : ""}`}>
                       <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{r.test}</td>
                       <td className={`px-4 py-3 font-mono text-sm ${valueHighlight(r.flag)}`}>{r.value}</td>
                       <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{r.unit}</td>
@@ -684,7 +681,7 @@ export default function LabsPage() {
                       </div>
 
                       {/* Data bars and points */}
-                      <div className="relative flex h-[180px] items-end justify-around px-8">
+                      <div className="relative flex h-[180px] items-end justify-around px-4 sm:px-8">
                         {currentTrend.values.map((v, i) => {
                           const h = ((v - min) / range) * chartH;
                           const isAbnormal = v > currentTrend.refHigh || v < currentTrend.refLow;
@@ -701,7 +698,7 @@ export default function LabsPage() {
                       </div>
 
                       {/* Date labels */}
-                      <div className="flex justify-around px-8 pt-2">
+                      <div className="flex justify-around px-4 sm:px-8 pt-2">
                         {currentTrend.dates.map((d, i) => (
                           <span key={i} className="text-[11px] text-gray-500 dark:text-gray-400" style={{ width: `${barWidth}%`, textAlign: "center" }}>{d}</span>
                         ))}

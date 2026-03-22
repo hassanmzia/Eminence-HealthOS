@@ -386,7 +386,7 @@ export default function ClinicalIntelligencePage() {
           <div className="lg:col-span-3 space-y-4">
             {/* Searching indicator */}
             {searching && (
-              <div className="card rounded-xl p-8 text-center animate-fade-in-up">
+              <div className="card rounded-xl p-4 sm:p-8 text-center animate-fade-in-up">
                 <svg className="mx-auto h-8 w-8 animate-spin text-healthos-500 mb-3" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
@@ -493,7 +493,7 @@ export default function ClinicalIntelligencePage() {
 
             {/* Empty state */}
             {!searchResult && !searching && (
-              <div className="card rounded-xl p-12 text-center animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+              <div className="card rounded-xl p-6 sm:p-12 text-center animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-healthos-50 mb-4">
                   <svg className="h-8 w-8 text-healthos-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
@@ -632,7 +632,7 @@ export default function ClinicalIntelligencePage() {
               <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">Upload Document</h2>
               <button
                 onClick={() => setShowUploadModal(false)}
-                className="rounded-lg p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 hover:text-gray-600 dark:text-gray-400 transition-colors"
+                className="rounded-lg p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 transition-colors"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -713,7 +713,7 @@ export default function ClinicalIntelligencePage() {
               <div className="flex items-center justify-end gap-3 border-t border-gray-100 dark:border-gray-800 px-6 py-4">
                 <button
                   onClick={() => setShowUploadModal(false)}
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 transition-colors"
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   Cancel
                 </button>

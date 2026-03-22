@@ -424,7 +424,7 @@ export default function CompliancePage() {
             strokeDasharray={circumference} strokeDashoffset={offset} />
         </svg>
         <div className="absolute flex flex-col items-center">
-          <span className={`text-4xl font-bold ${score > 90 ? "text-green-600" : score >= 70 ? "text-yellow-600" : "text-red-600"}`}>{score}%</span>
+          <span className={`text-2xl sm:text-4xl font-bold ${score > 90 ? "text-green-600" : score >= 70 ? "text-yellow-600" : "text-red-600"}`}>{score}%</span>
           <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">HIPAA Score</span>
         </div>
       </div>
@@ -497,7 +497,7 @@ export default function CompliancePage() {
       </div>
 
       {/* ── Tabs ────────────────────────────────────────────────────────────── */}
-      <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 w-fit">
+      <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 overflow-x-auto w-fit">
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
             className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${

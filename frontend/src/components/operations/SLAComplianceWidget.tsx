@@ -40,7 +40,7 @@ export function SLAComplianceWidget() {
 
       {/* Main compliance rate */}
       <div className="mb-4 text-center">
-        <div className={`text-4xl font-bold ${complianceColor}`}>
+        <div className={`text-2xl sm:text-4xl font-bold ${complianceColor}`}>
           {metrics.compliance_rate}%
         </div>
         <div className="text-xs text-gray-500 dark:text-gray-400">Overall compliance rate</div>

@@ -46,7 +46,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="flex flex-1 flex-col overflow-hidden">
             <TopBar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
-            <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
+            <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">{children}</main>
           </div>
         </div>
 

@@ -304,7 +304,7 @@ export default function MLModelsPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="mt-4 grid grid-cols-1 xs:grid-cols-2 gap-3">
                     <div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Accuracy</p>
                       <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{(acc * 100).toFixed(1)}%</p>
@@ -356,7 +356,7 @@ export default function MLModelsPage() {
             </div>
             <button
               onClick={() => { setSelectedModelId(null); setSelectedMetrics(null); }}
-              className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 hover:text-gray-600 dark:text-gray-400"
+              className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -603,7 +603,7 @@ export default function MLModelsPage() {
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Run Prediction</h2>
               <button
                 onClick={() => setShowPrediction(false)}
-                className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 hover:text-gray-600 dark:text-gray-400"
+                className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

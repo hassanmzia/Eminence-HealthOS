@@ -340,12 +340,12 @@ export default function SimulatorPage() {
      ══════════════════════════════════════════════════════════════════ */
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-healthos-50/30 p-6 lg:p-10 space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-healthos-50/30 p-6 lg:p-5 sm:p-10 space-y-8">
 
       {/* ── Header ──────────────────────────────────────────────────── */}
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between animate-fade-in-up">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight flex items-center gap-3">
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight flex items-center gap-3">
             <div className="p-2 rounded-xl bg-gradient-to-br from-healthos-500 to-healthos-700 text-white shadow-glow-blue">
               <Brain className="h-7 w-7" />
             </div>
@@ -395,7 +395,7 @@ export default function SimulatorPage() {
       </div>
 
       {/* ── Tabs ────────────────────────────────────────────────────── */}
-      <nav className="flex gap-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+      <nav className="flex gap-1 rounded-xl bg-gray-100 dark:bg-gray-800 p-1 overflow-x-auto animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
         {TABS.map((t) => (
           <button
             key={t.key}
@@ -526,7 +526,7 @@ export default function SimulatorPage() {
                     <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">{scenario.name}</h4>
 
                     {/* Outcome Metrics */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                       {scenario.outcomes.map((o) => {
                         const d = delta(o.before, o.after);
                         const improving =
@@ -587,7 +587,7 @@ export default function SimulatorPage() {
 
                 {/* Placeholder for 3rd comparison slot */}
                 {whatIfResults.length < 3 && (
-                  <div className="card border-dashed border-2 border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-center py-12 hover:border-healthos-300 transition cursor-pointer group"
+                  <div className="card border-dashed border-2 border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-center py-6 sm:py-12 hover:border-healthos-300 transition cursor-pointer group"
                     onClick={() => {
                       setWhatIfResults(null);
                     }}
@@ -726,7 +726,7 @@ export default function SimulatorPage() {
               {/* Side Effect Probability */}
               <div className="card card-hover space-y-4">
                 <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Side Effect Probability</h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                   {medResult.sideEffects.map((se) => (
                     <div
                       key={se.name}
@@ -939,13 +939,13 @@ export default function SimulatorPage() {
               {/* Key Metrics */}
               <div className="card card-hover space-y-4">
                 <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Key Population Metrics</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                   <div className="rounded-lg bg-emerald-50 p-4 text-center">
-                    <p className="text-3xl font-bold text-emerald-700">{popResult.nnt}</p>
+                    <p className="text-xl sm:text-3xl font-bold text-emerald-700">{popResult.nnt}</p>
                     <p className="text-xs text-emerald-600 mt-1">Number Needed to Treat</p>
                   </div>
                   <div className="rounded-lg bg-healthos-50 p-4 text-center">
-                    <p className="text-3xl font-bold text-healthos-700">${popResult.costEffectiveness.toLocaleString()}</p>
+                    <p className="text-xl sm:text-3xl font-bold text-healthos-700">${popResult.costEffectiveness.toLocaleString()}</p>
                     <p className="text-xs text-healthos-600 mt-1">Cost per QALY Gained</p>
                   </div>
                 </div>
@@ -1012,7 +1012,7 @@ export default function SimulatorPage() {
                     <button
                       onClick={() => toggleShare(scenario.id)}
                       className={`rounded-md p-1.5 transition ${
-                        scenario.shared ? "text-healthos-600 bg-healthos-50" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800"
+                        scenario.shared ? "text-healthos-600 bg-healthos-50" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                       }`}
                       title={scenario.shared ? "Shared with organization" : "Share with organization"}
                     >

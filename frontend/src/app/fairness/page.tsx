@@ -614,7 +614,7 @@ export default function AIFairnessBiasMonitorPage() {
 
       {/* ── Loading Overlay ───────────────────────────────────────────────── */}
       {loading && (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-6 sm:py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-healthos-blue" />
           <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">Loading model data...</span>
         </div>
@@ -1009,7 +1009,7 @@ export default function AIFairnessBiasMonitorPage() {
 
           {/* Audit Running Indicator */}
           {auditRunning && (
-            <div className="card p-8 flex flex-col items-center justify-center gap-3 animate-fade-in-up">
+            <div className="card p-4 sm:p-8 flex flex-col items-center justify-center gap-3 animate-fade-in-up">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-healthos-blue" />
               <p className="text-sm text-gray-500 dark:text-gray-400">Running comprehensive model audit...</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -1128,7 +1128,7 @@ export default function AIFairnessBiasMonitorPage() {
 
           {/* No results yet */}
           {!auditRunning && !auditResults && (
-            <div className="card p-12 flex flex-col items-center justify-center text-center animate-fade-in-up">
+            <div className="card p-6 sm:p-12 flex flex-col items-center justify-center text-center animate-fade-in-up">
               <FileSearch className="w-10 h-10 text-gray-300 mb-3" />
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No audit results yet</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">

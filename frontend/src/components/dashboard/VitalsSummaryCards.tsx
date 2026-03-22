@@ -111,7 +111,7 @@ export function VitalsSummaryCards() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{card.label}</p>
-              <p className={`mt-2 text-3xl font-bold tabular-nums ${card.color}`}>
+              <p className={`mt-2 text-xl sm:text-3xl font-bold tabular-nums ${card.color}`}>
                 {card.value.toLocaleString()}
               </p>
               <div className="mt-1.5 flex items-center gap-1.5">

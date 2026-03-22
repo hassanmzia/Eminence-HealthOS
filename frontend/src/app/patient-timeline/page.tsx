@@ -79,7 +79,7 @@ const EVENT_CONFIG: Record<
     bg: "bg-gray-50 dark:bg-gray-800/50",
     border: "border-gray-300 dark:border-gray-700",
     dot: "bg-gray-500",
-    badge: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 dark:bg-gray-800 dark:text-gray-300",
+    badge: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300",
   },
 };
 
@@ -643,7 +643,7 @@ export default function PatientTimelinePage() {
 
           <div className="space-y-4">
             {filteredEvents.length === 0 && (
-              <div className="card rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-8 text-center text-gray-400 dark:text-gray-500 animate-fade-in-up">
+              <div className="card rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-8 text-center text-gray-400 dark:text-gray-500 animate-fade-in-up">
                 No events match your current filters.
               </div>
             )}
@@ -672,15 +672,7 @@ export default function PatientTimelinePage() {
                     style={{ animationDelay: `${Math.min(idx * 40, 400)}ms` }}
                   >
                     {/* Dot */}
-                    <div className="relative z-10 mt-1.5 flex-shrink-0">
-                      <div
-                        className={`h-[10px] w-[10px] rounded-full ring-4 ring-white dark:ring-gray-950 ${cfg.dot}`}
-                      />
-                    </div>
-
-                    {/* Card */}
-                    <button
-                      type="button"
+                    <div className="relative z-10 mt-1.5 flex-shrink-0"> <div className={`h-[10px] w-[10px] rounded-full ring-4 ring-white dark:ring-gray-950 ${cfg.dot}`} /> </div> {/* Card */} <button type="button"
                       onClick={() => evt.details && toggleExpanded(evt.id)}
                       className={`card card-hover flex-1 rounded-xl border text-left transition-all ${cfg.border} ${
                         expanded ? cfg.bg : "bg-white dark:bg-gray-900"

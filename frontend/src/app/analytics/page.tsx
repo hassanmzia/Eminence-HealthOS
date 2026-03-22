@@ -595,7 +595,7 @@ function ExecutiveDashboard({
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{kpi.metric}</p>
-                  <p className="mt-1 text-3xl font-bold text-gray-900 dark:text-gray-100">{kpi.value}</p>
+                  <p className="mt-1 text-xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">{kpi.value}</p>
                 </div>
                 <span
                   className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
@@ -766,7 +766,7 @@ function PopulationHealth({
             return (
               <div key={m.label} className="card card-hover animate-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{m.label}</p>
-                <p className="mt-1 text-3xl font-bold text-gray-900 dark:text-gray-100">
+                <p className="mt-1 text-xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
                   {m.value}
                   <span className="text-lg text-gray-500 dark:text-gray-400">{m.unit}</span>
                 </p>
@@ -1224,7 +1224,7 @@ function OutcomesTracking({
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{m.metric}</p>
-                  <p className="mt-1 text-3xl font-bold text-emerald-600">+{m.improvement}%</p>
+                  <p className="mt-1 text-xl sm:text-3xl font-bold text-emerald-600">+{m.improvement}%</p>
                 </div>
                 <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
                   p={m.pValue}

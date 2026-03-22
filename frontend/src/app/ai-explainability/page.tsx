@@ -379,7 +379,7 @@ export default function AIExplainabilityPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AI Explainability</h1>
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">AI Explainability</h1>
           <p className="mt-1 text-gray-500 dark:text-gray-500">
             SHAP &amp; LIME explanations for clinical AI model predictions
           </p>
@@ -535,7 +535,7 @@ export default function AIExplainabilityPage() {
               <p className="text-sm font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wide">
                 Prediction Probability
               </p>
-              <p className="mt-2 text-5xl font-bold text-gray-900 dark:text-white">
+              <p className="mt-2 text-xl sm:text-3xl lg:text-5xl font-bold text-gray-900 dark:text-white">
                 {(adjustedProbability * 100).toFixed(1)}%
               </p>
               <span
@@ -555,7 +555,7 @@ export default function AIExplainabilityPage() {
               <p className="text-sm font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wide">
                 95% Confidence Interval
               </p>
-              <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+              <p className="mt-2 text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                 {(lime.confidence[0] * 100).toFixed(0)}% &ndash; {(lime.confidence[1] * 100).toFixed(0)}%
               </p>
               <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
@@ -743,7 +743,7 @@ export default function AIExplainabilityPage() {
                     </div>
 
                     {/* Performance metrics */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                       {[
                         { label: "AUC-ROC", value: mc.auc },
                         { label: "F1 Score", value: mc.f1 },

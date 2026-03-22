@@ -354,10 +354,7 @@ export default function RPMPage() {
                     <div className="flex items-center gap-4">
                       {p.alerts > 0 && (
                         <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800">
-                          {p.alerts} alert{p.alerts > 1 ? "s" : ""}
-                        </span>
-                      )}
-                      <svg className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          {p.alerts} alert{p.alerts > 1 ? "s" : ""} </span> )} <svg className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${isExpanded ?"rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
@@ -406,9 +403,7 @@ export default function RPMPage() {
                         { label: "Heart Rate", data: p.hrHistory, unit: "bpm", range: "60–100 bpm", warn: p.hr > 100 || p.hr < 50 },
                         { label: "Systolic BP", data: p.bpHistory, unit: "mmHg", range: "< 140 mmHg", warn: parseInt(p.bp) > 140 },
                         { label: "SpO2", data: p.spo2History, unit: "%", range: "95–100%", warn: p.spo2 < 95 },
-                        { label: "Temperature", data: p.tempHistory, unit: "°F", range: "97.8–99.1°F", warn: p.temp > 99.5 },
-                      ].map((trend) => (
-                        <div key={trend.label} className={`rounded-lg border p-3 bg-white dark:bg-gray-900 ${trend.warn ? "border-red-200" : "border-gray-200 dark:border-gray-700"}`}>
+                        { label: "Temperature", data: p.tempHistory, unit: "°F", range: "97.8–99.1°F", warn: p.temp > 99.5 }, ].map((trend) => ( <div key={trend.label} className={`rounded-lg border p-3 bg-white dark:bg-gray-900 ${trend.warn ?"border-red-200" : "border-gray-200 dark:border-gray-700"}`}>
                           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">{trend.label}</p>
                           <div className="flex items-end gap-1 h-12">
                             {trend.data.map((v, i) => {
@@ -479,14 +474,7 @@ export default function RPMPage() {
               { label: "SpO2", value: selectedPatientData.spo2, unit: "%", range: "95–100", history: selectedPatientData.spo2History, max: 100, warn: selectedPatientData.spo2 < 95 },
               { label: "Temperature", value: selectedPatientData.temp, unit: "°F", range: "97.8–99.1", history: selectedPatientData.tempHistory, max: 103, warn: selectedPatientData.temp > 99.5 },
               { label: "Glucose", value: selectedPatientData.glucose, unit: "mg/dL", range: "70–180", history: [190, 200, 210, 215, 218, selectedPatientData.glucose], max: 350, warn: selectedPatientData.glucose > 180 || selectedPatientData.glucose < 70 },
-              { label: "Adherence", value: selectedPatientData.adherence, unit: "%", range: "> 85", history: [80, 82, 84, 85, 86, selectedPatientData.adherence], max: 100, warn: selectedPatientData.adherence < 75 },
-            ].map((vital) => {
-              const trend = getTrendArrow(vital.history);
-              return (
-                <div
-                  key={vital.label}
-                  className={`card card-hover rounded-xl border-2 p-5 bg-white dark:bg-gray-900 transition-all ${
-                    vital.warn ? "border-red-300 shadow-red-100 shadow-md" : "border-gray-200 dark:border-gray-700"
+              { label: "Adherence", value: selectedPatientData.adherence, unit: "%", range: "> 85", history: [80, 82, 84, 85, 86, selectedPatientData.adherence], max: 100, warn: selectedPatientData.adherence < 75 }, ].map((vital) => { const trend = getTrendArrow(vital.history); return ( <div key={vital.label} className={`card card-hover rounded-xl border-2 p-5 bg-white dark:bg-gray-900 transition-all ${ vital.warn ?"border-red-300 shadow-red-100 shadow-md" : "border-gray-200 dark:border-gray-700"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -494,7 +482,7 @@ export default function RPMPage() {
                     <span className={`text-sm font-bold ${trend.color}`}>{trend.arrow} {trend.label}</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <p className={`text-4xl font-bold ${vital.warn ? "text-red-600" : "text-gray-900 dark:text-gray-100"}`}>
+                    <p className={`text-2xl sm:text-4xl font-bold ${vital.warn ? "text-red-600" : "text-gray-900 dark:text-gray-100"}`}>
                       {vital.value}
                     </p>
                     <span className="text-sm text-gray-500 dark:text-gray-400">{vital.unit}</span>
@@ -594,14 +582,7 @@ export default function RPMPage() {
           {/* Active Alert Cards */}
           <div>
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Active Alerts</h3>
-            <div className="space-y-3">
-              {alerts.map((a) => {
-                const pc = priorityColors[a.priority] ?? priorityColors.moderate;
-                return (
-                  <div
-                    key={a.id}
-                    className={`card card-hover rounded-xl border bg-white dark:bg-gray-900 p-4 transition-all ${
-                      a.priority === "critical" ? "border-red-300 shadow-red-100 shadow-sm" : "border-gray-200 dark:border-gray-700"
+            <div className="space-y-3"> {alerts.map((a) => { const pc = priorityColors[a.priority] ?? priorityColors.moderate; return ( <div key={a.id} className={`card card-hover rounded-xl border bg-white dark:bg-gray-900 p-4 transition-all ${ a.priority ==="critical" ? "border-red-300 shadow-red-100 shadow-sm" : "border-gray-200 dark:border-gray-700"
                     } ${a.status === "acknowledged" ? "opacity-70" : ""}`}
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -738,7 +719,7 @@ export default function RPMPage() {
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Ingest RPM Data</h2>
-              <button onClick={() => setShowIngestModal(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none">&times;</button>
+              <button onClick={() => setShowIngestModal(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
             <form onSubmit={(e) => { handleIngest(e); setShowIngestModal(false); }} className="space-y-4">
               <div>
@@ -755,7 +736,7 @@ export default function RPMPage() {
                   ))}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vital Type</label>
                   <select
@@ -805,7 +786,7 @@ export default function RPMPage() {
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Provision New Device</h2>
-              <button onClick={() => setShowProvisionModal(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none">&times;</button>
+              <button onClick={() => setShowProvisionModal(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
             <form
               onSubmit={(e) => {
@@ -815,7 +796,7 @@ export default function RPMPage() {
               }}
               className="space-y-4"
             >
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Device ID</label>
                   <input

@@ -72,11 +72,7 @@ export function TaskQueue() {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Task Queue</h2>
         <span className="text-xs text-gray-500 dark:text-gray-400">{tasks.length} tasks</span>
       </div>
-      <div className="space-y-2">
-        {tasks.map((task) => (
-          <div
-            key={task.task_id}
-            className={`cursor-pointer rounded-lg border-l-4 bg-gray-50 dark:bg-gray-800 p-3 transition-colors hover:bg-gray-100 dark:bg-gray-800 ${PRIORITY_COLORS[task.priority] || "border-l-gray-300"}`}
+      <div className="space-y-2"> {tasks.map((task) => ( <div key={task.task_id} className={`cursor-pointer rounded-lg border-l-4 bg-gray-50 dark:bg-gray-800 p-3 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${PRIORITY_COLORS[task.priority] ||"border-l-gray-300"}`}
           >
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{task.title}</span>

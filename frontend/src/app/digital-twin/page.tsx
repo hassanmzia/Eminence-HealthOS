@@ -610,7 +610,7 @@ export default function DigitalTwinPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
+      <div className="flex gap-1 rounded-lg bg-gray-100 dark:bg-gray-800 p-1 overflow-x-auto">
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -684,7 +684,7 @@ export default function DigitalTwinPage() {
                   <span className="text-lg">{traj.symbol}</span>
                   {traj.label}
                 </div>
-                <div className={`text-3xl font-bold ${scoreColor(selectedTwin.healthScore)}`}>
+                <div className={`text-xl sm:text-3xl font-bold ${scoreColor(selectedTwin.healthScore)}`}>
                   {(selectedTwin.healthScore * 100).toFixed(0)}%
                 </div>
               </div>
@@ -1060,12 +1060,7 @@ export default function DigitalTwinPage() {
                     {forecastResults.map((ms, i) => (
                       <div
                         key={ms.label}
-                        className="flex flex-col items-center flex-1 animate-fade-in-up"
-                        style={{ animationDelay: `${i * 100}ms` }}
-                      >
-                        {/* Node */}
-                        <div className={`relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 bg-white dark:bg-gray-900 ${
-                          i === 0 ? "border-gray-400" : ms.riskLevel === "low" ? "border-green-400" : ms.riskLevel === "moderate" ? "border-yellow-400" : "border-red-400"
+                        className="flex flex-col items-center flex-1 animate-fade-in-up"style={{ animationDelay: `${i * 100}ms` }} > {/* Node */} <div className={`relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 bg-white dark:bg-gray-900 ${ i === 0 ?"border-gray-400" : ms.riskLevel === "low" ? "border-green-400" : ms.riskLevel === "moderate" ? "border-yellow-400" : "border-red-400"
                         }`}>
                           <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{ms.healthScore}%</span>
                         </div>
@@ -1118,8 +1113,8 @@ export default function DigitalTwinPage() {
           )}
 
           {!forecastResults && !forecasting && (
-            <div className="card text-center py-12">
-              <div className="text-4xl mb-3 opacity-30">{"\uD83D\uDD2E"}</div>
+            <div className="card text-center py-6 sm:py-12">
+              <div className="text-2xl sm:text-4xl mb-3 opacity-30">{"\uD83D\uDD2E"}</div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Select a patient and click Forecast to generate trajectory predictions.</p>
             </div>
           )}
@@ -1240,8 +1235,8 @@ export default function DigitalTwinPage() {
           )}
 
           {!treatmentRecs && !optimizing && (
-            <div className="card text-center py-12">
-              <div className="text-4xl mb-3 opacity-30">{"\uD83D\uDCCA"}</div>
+            <div className="card text-center py-6 sm:py-12">
+              <div className="text-2xl sm:text-4xl mb-3 opacity-30">{"\uD83D\uDCCA"}</div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Click Optimize to analyze the current treatment plan and generate AI-powered recommendations.</p>
             </div>
           )}

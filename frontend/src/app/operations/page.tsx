@@ -820,12 +820,7 @@ export default function OperationsPage() {
 
             {/* Schedule Grid */}
             <div className="card rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="divide-y divide-gray-100">
-                {schedule.map((slot) => (
-                  <div
-                    key={slot.id}
-                    className={`flex items-center gap-4 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                      slot.conflict ? "bg-red-50/50 border-l-4 border-l-red-400" : ""
+              <div className="divide-y divide-gray-100"> {schedule.map((slot) => ( <div key={slot.id} className={`flex items-center gap-4 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${ slot.conflict ?"bg-red-50/50 border-l-4 border-l-red-400" : ""
                     }`}
                   >
                     {/* Time */}
@@ -993,14 +988,14 @@ export default function OperationsPage() {
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">New Task</h2>
-              <button onClick={() => setShowNewTask(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xl leading-none">&times;</button>
+              <button onClick={() => setShowNewTask(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
             <form onSubmit={handleCreateTask} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Task Title *</label>
                 <input required value={taskForm.title} onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. Review prior auth for Patient X" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assignee</label>
                   <input value={taskForm.assignee} onChange={(e) => setTaskForm({ ...taskForm, assignee: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" placeholder="e.g. Dr. Smith" />

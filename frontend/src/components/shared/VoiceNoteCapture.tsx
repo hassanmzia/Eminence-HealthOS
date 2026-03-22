@@ -154,7 +154,7 @@ export function VoiceNoteCapture({
       </div>
 
       {/* Quick templates */}
-      <div className="mt-3 border-t border-gray-100 dark:border-gray-800 pt-3 dark:border-gray-800">
+      <div className="mt-3 border-t border-gray-100 dark:border-gray-800 pt-3">
         <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Quick Templates</p>
         <div className="flex flex-wrap gap-1.5">
           {[
@@ -168,7 +168,7 @@ export function VoiceNoteCapture({
             <button
               key={template}
               onClick={() => setNoteText((prev) => prev + (prev ? " " : "") + template)}
-              className="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500 dark:hover:bg-gray-700"
+              className="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-gray-700"
             >
               {template}
             </button>

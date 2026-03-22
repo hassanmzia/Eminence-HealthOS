@@ -334,7 +334,7 @@ function WorkflowsTab({ workflows, loading, onWorkflowClick }: { workflows: MSRi
   return (
     <div className="space-y-4">
       {workflows.length === 0 ? (
-        <div className="rounded-xl bg-white dark:bg-gray-900 p-8 text-center shadow-sm ring-1 ring-gray-200">
+        <div className="rounded-xl bg-white dark:bg-gray-900 p-4 sm:p-8 text-center shadow-sm ring-1 ring-gray-200">
           <Layers className="mx-auto h-10 w-10 text-gray-300 mb-3" />
           <p className="text-sm text-gray-500 dark:text-gray-400">No workflow runs yet. Click &quot;Run Screening&quot; to start.</p>
         </div>
@@ -392,7 +392,7 @@ function FairnessTab({ workflows }: { workflows: MSRiskWorkflow[] }) {
 
   if (!completedRun) {
     return (
-      <div className="rounded-xl bg-white dark:bg-gray-900 p-8 text-center shadow-sm ring-1 ring-gray-200">
+      <div className="rounded-xl bg-white dark:bg-gray-900 p-4 sm:p-8 text-center shadow-sm ring-1 ring-gray-200">
         <Scale className="mx-auto h-10 w-10 text-gray-300 mb-3" />
         <p className="text-sm text-gray-500 dark:text-gray-400">No completed workflow runs. Run a screening workflow first to see fairness analysis.</p>
       </div>
@@ -475,7 +475,7 @@ function WhatIfTab({ workflows }: { workflows: MSRiskWorkflow[] }) {
 
   if (!completedRun) {
     return (
-      <div className="rounded-xl bg-white dark:bg-gray-900 p-8 text-center shadow-sm ring-1 ring-gray-200">
+      <div className="rounded-xl bg-white dark:bg-gray-900 p-4 sm:p-8 text-center shadow-sm ring-1 ring-gray-200">
         <FlaskConical className="mx-auto h-10 w-10 text-gray-300 mb-3" />
         <p className="text-sm text-gray-500 dark:text-gray-400">No completed workflow runs. Run a screening workflow first.</p>
       </div>
@@ -903,7 +903,7 @@ function PoliciesTab({ policies, loading, onRefresh }: { policies: MSRiskPolicy[
   return (
     <div className="space-y-4">
       {policies.length === 0 ? (
-        <div className="rounded-xl bg-white dark:bg-gray-900 p-8 text-center shadow-sm ring-1 ring-gray-200">
+        <div className="rounded-xl bg-white dark:bg-gray-900 p-4 sm:p-8 text-center shadow-sm ring-1 ring-gray-200">
           <Settings className="mx-auto h-10 w-10 text-gray-300 mb-3" />
           <p className="text-sm text-gray-500 dark:text-gray-400">No policies configured yet.</p>
         </div>
