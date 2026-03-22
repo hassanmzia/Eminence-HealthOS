@@ -720,12 +720,12 @@ export default function TelehealthPage() {
 
       {/* ── Tabs ── */}
       <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="flex gap-6" aria-label="Tabs">
+        <nav className="-mb-px flex gap-4 sm:gap-6 overflow-x-auto" aria-label="Tabs">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`relative pb-3 text-sm font-medium transition-colors ${
+              className={`whitespace-nowrap relative pb-3 text-sm font-medium transition-colors ${
                 activeTab === tab.key
                   ? "text-healthos-600 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-healthos-600"
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300"

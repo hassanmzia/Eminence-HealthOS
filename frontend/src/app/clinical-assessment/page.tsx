@@ -580,7 +580,7 @@ export default function ClinicalAssessmentPage() {
 
       {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex space-x-6">
+        <nav className="-mb-px flex gap-4 sm:gap-6 overflow-x-auto">
           {TABS.map((t) => (
             <button
               key={t.key}
