@@ -221,7 +221,7 @@ export default function AlertsPage() {
                     {/* Expanded details */}
                     {isSelected && (
                       <div className="mt-4 animate-fade-in rounded-lg bg-gray-50 dark:bg-gray-800 p-4">
-                        <div className="grid grid-cols-2 gap-4 text-xs">
+                        <div className="grid grid-cols-1 xs:grid-cols-2 gap-4 text-xs">
                           <div>
                             <p className="font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Alert ID</p>
                             <p className="mt-1 font-mono text-gray-700 dark:text-gray-300">{alert.id.slice(0, 8)}...</p>

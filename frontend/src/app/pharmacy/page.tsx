@@ -614,7 +614,7 @@ export default function PharmacyPage() {
                     {formularyResult.covered ? "Covered" : "Not Covered"}
                   </span>
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="mt-4 grid grid-cols-1 xs:grid-cols-2 gap-3">
                   <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
                     <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Tier</p>
                     <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{formularyResult.tier}</p>
@@ -812,7 +812,7 @@ export default function PharmacyPage() {
                 <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">Medication *</label>
                 <input type="text" value={rxForm.medication} onChange={(e) => setRxForm((f) => ({ ...f, medication: e.target.value }))} placeholder="Metformin HCl" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-gray-600 dark:text-gray-400">Dosage *</label>
                   <input type="text" value={rxForm.dosage} onChange={(e) => setRxForm((f) => ({ ...f, dosage: e.target.value }))} placeholder="500mg" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />

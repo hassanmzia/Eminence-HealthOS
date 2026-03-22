@@ -526,7 +526,7 @@ export default function SimulatorPage() {
                     <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">{scenario.name}</h4>
 
                     {/* Outcome Metrics */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                       {scenario.outcomes.map((o) => {
                         const d = delta(o.before, o.after);
                         const improving =
@@ -726,7 +726,7 @@ export default function SimulatorPage() {
               {/* Side Effect Probability */}
               <div className="card card-hover space-y-4">
                 <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Side Effect Probability</h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                   {medResult.sideEffects.map((se) => (
                     <div
                       key={se.name}

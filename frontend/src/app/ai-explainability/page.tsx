@@ -743,7 +743,7 @@ export default function AIExplainabilityPage() {
                     </div>
 
                     {/* Performance metrics */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                       {[
                         { label: "AUC-ROC", value: mc.auc },
                         { label: "F1 Score", value: mc.f1 },

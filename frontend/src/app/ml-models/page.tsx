@@ -304,7 +304,7 @@ export default function MLModelsPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="mt-4 grid grid-cols-1 xs:grid-cols-2 gap-3">
                     <div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Accuracy</p>
                       <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{(acc * 100).toFixed(1)}%</p>

@@ -581,7 +581,7 @@ export default function ResearchGenomicsPage() {
                   placeholder="e.g. CKD, Type 2 Diabetes"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Age</label>
                   <input
