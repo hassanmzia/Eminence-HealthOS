@@ -652,7 +652,13 @@ function RolesTab() {
           </div>
           <div className="mb-4">
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Badge Color</label>
-            <div className="flex gap-3"> {Object.keys(dotColors).map((c) => ( <button key={c} className={`w-7 h-7 rounded-full ${dotColors[c]} ring-2 ring-offset-2 ring-transparent hover:ring-blue-400 dark:ring-offset-zinc-900 transition-all`} title={c} /> ))} </div> <div className="mb-4">
+            <div className="flex gap-3">
+              {Object.keys(dotColors).map((c) => (
+                <button key={c} className={`w-7 h-7 rounded-full ${dotColors[c]} ring-2 ring-offset-2 ring-transparent hover:ring-blue-400 dark:ring-offset-zinc-900 transition-all`} title={c} />
+              ))}
+            </div>
+          </div>
+          <div className="mb-4">
             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">Base Permissions (clone from existing role)</label>
             <select className="select" defaultValue="">
               <option value="">Start with no permissions</option>
