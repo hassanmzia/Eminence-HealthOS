@@ -13,19 +13,21 @@ const nextConfig: NextConfig = {
     return config;
   },
   // Proxy API calls to the HealthOS backend
+  // Use API_URL (server-side, Docker-internal) for rewrites, not the public NEXT_PUBLIC_API_URL
   async rewrites() {
+    const apiBase = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     return [
       {
         source: "/api/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/:path*`,
+        destination: `${apiBase}/api/:path*`,
       },
       {
         source: "/health",
-        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/health`,
+        destination: `${apiBase}/health`,
       },
       {
         source: "/ws/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/ws/:path*`,
+        destination: `${apiBase}/ws/:path*`,
       },
     ];
   },

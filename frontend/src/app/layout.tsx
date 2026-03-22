@@ -5,6 +5,7 @@ import { AppShell } from "@/components/layout/AppShell";
 export const metadata: Metadata = {
   title: "Eminence HealthOS — Clinician Dashboard",
   description: "The AI Operating System for Digital Healthcare Platforms",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

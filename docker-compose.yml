@@ -42,6 +42,7 @@ services:
       - "0.0.0.0:3052:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://108.48.39.238:4090
+      API_URL: http://api:8000
       WATCHPACK_POLLING: "true"
     depends_on:
       - api
