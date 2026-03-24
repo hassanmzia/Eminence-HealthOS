@@ -79,11 +79,17 @@ async def promote_self_to_admin(
     Promote the current user to admin role.
     Only allowed when no admin exists in the organization (bootstrap scenario).
     """
-    # Check if any admin already exists in the org
+    # Check if any real (non-seed) admin already exists in the org
     admin_check = await db.execute(
         select(func.count())
         .select_from(User)
-        .where(User.org_id == ctx.org_id, User.role.in_(("admin", "super_admin")), User.is_active == True)
+        .where(
+            User.org_id == ctx.org_id,
+            User.role.in_(("admin", "super_admin")),
+            User.is_active == True,
+            User.id != ctx.user_id,
+            ~User.email.in_(("admin@eminence.health", "dr.smith@eminence.health")),
+        )
     )
     admin_count = admin_check.scalar() or 0
     if admin_count > 0:
