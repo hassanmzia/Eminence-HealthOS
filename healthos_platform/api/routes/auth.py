@@ -52,6 +52,36 @@ async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db))
     return user
 
 
+@router.post("/login-debug")
+async def login_debug(request: LoginRequest, db: AsyncSession = Depends(get_db)):
+    """Debug endpoint to diagnose login failures."""
+    import traceback as _tb
+
+    info: dict = {"email": request.email, "steps": []}
+    try:
+        from sqlalchemy import text
+
+        result = await db.execute(
+            text("SELECT id, org_id, email, role, is_active, hashed_password FROM users WHERE email = :e"),
+            {"e": request.email},
+        )
+        rows = result.fetchall()
+        info["steps"].append(f"Found {len(rows)} users with this email")
+        for r in rows:
+            pw_ok = False
+            try:
+                pw_ok = verify_password(request.password, r[5])
+            except Exception as exc:
+                info["steps"].append(f"verify_password error for {r[0]}: {exc}")
+            info["steps"].append(
+                f"user_id={r[0]}, org_id={r[1]}, role={r[3]}, active={r[4]}, pw_match={pw_ok}"
+            )
+    except Exception as exc:
+        info["steps"].append(f"DB error: {exc}\n{''.join(_tb.format_exception(exc))}")
+
+    return info
+
+
 @router.post("/login", response_model=TokenResponse)
 async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
     """Authenticate and return JWT tokens."""
