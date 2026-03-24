@@ -52,9 +52,16 @@ async def get_current_user(
     )
 
 
+async def require_super_admin(ctx: TenantContext = Depends(get_current_user)) -> TenantContext:
+    """Dependency that requires super_admin role (platform-level)."""
+    if ctx.role != "super_admin":
+        raise HTTPException(status_code=403, detail="Super admin access required")
+    return ctx
+
+
 async def require_admin(ctx: TenantContext = Depends(get_current_user)) -> TenantContext:
     """Dependency that requires admin role."""
-    if ctx.role != "admin":
+    if ctx.role not in ("admin", "super_admin"):
         raise HTTPException(status_code=403, detail="Admin access required")
     return ctx
 

@@ -24,6 +24,8 @@ export default function DashboardPage() {
   }
 
   switch (role) {
+    case "super_admin":
+      return <AdminDashboard />;
     case "admin":
       return <AdminDashboard />;
     case "clinician":

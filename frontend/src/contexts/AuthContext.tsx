@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { fetchMyProfile, type UserProfile } from "@/lib/api";
 
 // Mirror backend role/permission definitions
-export type Role = "admin" | "clinician" | "care_manager" | "nurse" | "office_admin" | "patient" | "lab_tech" | "pharmacist" | "billing" | "read_only";
+export type Role = "super_admin" | "admin" | "clinician" | "care_manager" | "nurse" | "office_admin" | "patient" | "lab_tech" | "pharmacist" | "billing" | "read_only";
 
 export type Permission =
   | "patient:read" | "patient:write" | "patient:delete"
@@ -48,6 +48,7 @@ const ALL_PERMISSIONS: Permission[] = [
 
 // Role → Permission mapping (mirrors backend rbac.py exactly)
 const ROLE_PERMISSIONS: Record<Role, Set<Permission>> = {
+  super_admin: new Set(ALL_PERMISSIONS),
   admin: new Set(ALL_PERMISSIONS),
   clinician: new Set([
     "patient:read", "patient:write", "vitals:read", "vitals:write",
@@ -148,41 +149,43 @@ const ROLE_PERMISSIONS: Record<Role, Set<Permission>> = {
 
 // Route → allowed roles mapping for frontend route guards
 export const ROUTE_ACCESS: Record<string, Role[]> = {
-  "/dashboard": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing", "read_only"],
-  "/clinical-workspace": ["admin", "clinician", "care_manager", "nurse"],
-  "/patients": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing", "read_only"],
-  "/alerts": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing", "read_only"],
-  "/messaging": ["admin", "clinician", "care_manager", "nurse", "office_admin", "patient", "lab_tech", "pharmacist", "billing"],
-  "/rpm": ["admin", "clinician", "care_manager", "nurse"],
-  "/telehealth": ["admin", "clinician", "care_manager", "nurse"],
-  "/ambient-ai": ["admin", "clinician"],
-  "/pharmacy": ["admin", "clinician", "care_manager", "nurse", "pharmacist", "read_only"],
-  "/labs": ["admin", "clinician", "care_manager", "nurse", "lab_tech", "pharmacist", "read_only"],
-  "/imaging": ["admin", "clinician", "lab_tech"],
-  "/mental-health": ["admin", "clinician", "care_manager", "nurse"],
-  "/sdoh": ["admin", "clinician", "care_manager", "nurse"],
-  "/patient-timeline": ["admin", "clinician", "care_manager", "nurse"],
-  "/clinical-assessment": ["admin", "clinician"],
-  "/clinical-intelligence": ["admin", "clinician", "care_manager"],
-  "/knowledge-graph": ["admin", "clinician", "care_manager"],
-  "/ml-models": ["admin", "clinician"],
-  "/agents": ["admin", "clinician", "care_manager"],
-  "/digital-twin": ["admin", "clinician"],
-  "/ms-risk-screening": ["admin", "clinician", "care_manager"],
-  "/fairness": ["admin"],
-  "/ai-explainability": ["admin", "clinician", "care_manager"],
-  "/operations": ["admin", "office_admin", "clinician"],
-  "/rcm": ["admin", "office_admin", "billing"],
-  "/analytics": ["admin", "office_admin", "clinician", "billing", "read_only"],
-  "/compliance": ["admin", "office_admin", "billing", "read_only"],
-  "/ehr-connect": ["admin"],
-  "/audit-log": ["admin", "office_admin", "read_only"],
-  "/admin": ["admin"],
-  "/research-genomics": ["admin", "clinician"],
-  "/patient-engagement": ["admin", "clinician"],
-  "/marketplace": ["admin", "clinician"],
-  "/simulator": ["admin", "clinician"],
-  "/profile": ["admin", "clinician", "care_manager", "nurse", "office_admin", "patient", "lab_tech", "pharmacist", "billing", "read_only"],
+  "/dashboard": ["super_admin", "admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing", "read_only"],
+  "/clinical-workspace": ["super_admin", "admin", "clinician", "care_manager", "nurse"],
+  "/patients": ["super_admin", "admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing", "read_only"],
+  "/alerts": ["super_admin", "admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing", "read_only"],
+  "/messaging": ["super_admin", "admin", "clinician", "care_manager", "nurse", "office_admin", "patient", "lab_tech", "pharmacist", "billing"],
+  "/rpm": ["super_admin", "admin", "clinician", "care_manager", "nurse"],
+  "/telehealth": ["super_admin", "admin", "clinician", "care_manager", "nurse"],
+  "/ambient-ai": ["super_admin", "admin", "clinician"],
+  "/pharmacy": ["super_admin", "admin", "clinician", "care_manager", "nurse", "pharmacist", "read_only"],
+  "/labs": ["super_admin", "admin", "clinician", "care_manager", "nurse", "lab_tech", "pharmacist", "read_only"],
+  "/imaging": ["super_admin", "admin", "clinician", "lab_tech"],
+  "/mental-health": ["super_admin", "admin", "clinician", "care_manager", "nurse"],
+  "/sdoh": ["super_admin", "admin", "clinician", "care_manager", "nurse"],
+  "/patient-timeline": ["super_admin", "admin", "clinician", "care_manager", "nurse"],
+  "/clinical-assessment": ["super_admin", "admin", "clinician"],
+  "/clinical-intelligence": ["super_admin", "admin", "clinician", "care_manager"],
+  "/knowledge-graph": ["super_admin", "admin", "clinician", "care_manager"],
+  "/ml-models": ["super_admin", "admin", "clinician"],
+  "/agents": ["super_admin", "admin", "clinician", "care_manager"],
+  "/digital-twin": ["super_admin", "admin", "clinician"],
+  "/ms-risk-screening": ["super_admin", "admin", "clinician", "care_manager"],
+  "/fairness": ["super_admin", "admin"],
+  "/ai-explainability": ["super_admin", "admin", "clinician", "care_manager"],
+  "/operations": ["super_admin", "admin", "office_admin", "clinician"],
+  "/rcm": ["super_admin", "admin", "office_admin", "billing"],
+  "/analytics": ["super_admin", "admin", "office_admin", "clinician", "billing", "read_only"],
+  "/compliance": ["super_admin", "admin", "office_admin", "billing", "read_only"],
+  "/ehr-connect": ["super_admin", "admin"],
+  "/audit-log": ["super_admin", "admin", "office_admin", "read_only"],
+  "/admin": ["super_admin", "admin"],
+  "/platform-admin": ["super_admin"],
+  "/org-settings": ["super_admin", "admin"],
+  "/research-genomics": ["super_admin", "admin", "clinician"],
+  "/patient-engagement": ["super_admin", "admin", "clinician"],
+  "/marketplace": ["super_admin", "admin", "clinician"],
+  "/simulator": ["super_admin", "admin", "clinician"],
+  "/profile": ["super_admin", "admin", "clinician", "care_manager", "nurse", "office_admin", "patient", "lab_tech", "pharmacist", "billing", "read_only"],
   "/patient-portal": ["patient"],
 };
 
@@ -209,6 +212,7 @@ interface AuthContextValue {
   hasPermission: (perm: Permission) => boolean;
   hasAnyPermission: (...perms: Permission[]) => boolean;
   hasRole: (...roles: Role[]) => boolean;
+  isSuperAdmin: boolean;
   isAdmin: boolean;
   isClinician: boolean;
   isNurse: boolean;
@@ -263,7 +267,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasPermission,
     hasAnyPermission,
     hasRole,
-    isAdmin: role === "admin",
+    isSuperAdmin: role === "super_admin",
+    isAdmin: role === "admin" || role === "super_admin",
     isClinician: role === "clinician",
     isNurse: role === "nurse",
     isPatient: role === "patient",
