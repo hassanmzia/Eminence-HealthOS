@@ -14,7 +14,7 @@ const PUBLIC_ROUTES = ["/login", "/register"];
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, loading } = useAuth();
+  const { role, loading, isPatient } = useAuth();
 
   // Still loading user data — show nothing yet
   if (loading) {
@@ -26,6 +26,14 @@ function RouteGuard({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
+  }
+
+  // Patient users trying to access staff routes → redirect to patient portal
+  if (isPatient && pathname && !pathname.startsWith("/patient-portal") && pathname !== "/messaging" && pathname !== "/profile") {
+    if (typeof window !== "undefined") {
+      router.replace("/patient-portal");
+    }
+    return null;
   }
 
   // Check route-level access
