@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from healthos_platform.api.middleware.audit import AuditMiddleware
 from healthos_platform.api.routes import (
+    admin_users,
     agents,
     alerts,
     auth,
@@ -400,6 +401,9 @@ def create_app() -> FastAPI:
 
     # Phase 6: Enterprise Auth — MFA, email verification, sessions
     app.include_router(enterprise_auth.router, prefix=api_prefix)
+
+    # Admin User Management
+    app.include_router(admin_users.router, prefix=api_prefix)
 
     # Treatment Plans — AI-proposed and doctor-created
     app.include_router(treatment_plans.router, prefix=api_prefix)

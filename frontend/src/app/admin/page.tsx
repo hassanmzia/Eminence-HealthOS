@@ -8,12 +8,17 @@ import {
   fetchOfficeAdmins,
   fetchAuthConfigs,
   fetchSessions,
+  fetchAdminUsers,
+  createAdminUser,
+  updateAdminUser,
+  deactivateAdminUser,
   unlockAccount,
   getUserRole,
   type HospitalResponse,
   type ProviderProfileResponse,
   type AuthConfigResponse,
   type SessionResponse,
+  type AdminUserResponse,
 } from "@/lib/platform-api";
 
 /* ------------------------------------------------------------------ */
@@ -164,15 +169,12 @@ export default function AdminPage() {
   const lockedUsers = users.filter((u) => u.status === "locked").length;
   const totalPermissions = PERMISSION_CATEGORIES.reduce((sum, c) => sum + c.actions.length, 0) * ROLES.length;
 
-  // Load real data from Phase 1-6 APIs
+  // Load real data from APIs — prefer admin user management endpoint
   useEffect(() => {
     (async () => {
       try {
         const isAdmin = getUserRole() === "admin";
-        const [providerList, nurseList, adminList, hospitalList, configList, sessionList] = await Promise.all([
-          fetchProviders().catch(() => []),
-          fetchNurses().catch(() => []),
-          fetchOfficeAdmins().catch(() => []),
+        const [hospitalList, configList, sessionList] = await Promise.all([
           fetchHospitals().catch(() => []),
           isAdmin ? fetchAuthConfigs().catch(() => []) : Promise.resolve([]),
           fetchSessions().catch(() => []),
@@ -181,7 +183,43 @@ export default function AdminPage() {
         setAuthConfigs(configList);
         setSessions(sessionList);
 
-        // Merge provider/nurse/admin data into user list if available
+        // Try the real admin users API first
+        try {
+          const adminData = await fetchAdminUsers({ page: 1, page_size: 100 });
+          if (adminData.users.length > 0) {
+            const ROLE_MAP: Record<string, string> = {
+              admin: "Super Admin",
+              super_admin: "Super Admin",
+              clinician: "Physician",
+              nurse: "Nurse",
+              care_manager: "Admin",
+              lab_tech: "Lab Tech",
+              pharmacist: "Pharmacist",
+              billing: "Billing",
+              read_only: "Read Only",
+            };
+            const realUsers: User[] = adminData.users.map((u: AdminUserResponse, idx: number) => ({
+              id: idx + 1,
+              name: u.full_name || u.email.split("@")[0],
+              email: u.email,
+              role: ROLE_MAP[u.role] ?? u.role,
+              department: u.role === "clinician" ? "Clinical" : u.role === "admin" ? "IT" : "General",
+              status: u.is_active ? "active" as const : "inactive" as const,
+              lastLogin: u.updated_at?.split("T")[0] ?? u.created_at?.split("T")[0] ?? "",
+            }));
+            setUsers(realUsers);
+            return;
+          }
+        } catch {
+          // Admin API not available, fall back to provider/nurse/admin endpoints
+        }
+
+        // Fallback: merge provider/nurse/admin data into user list
+        const [providerList, nurseList, adminList] = await Promise.all([
+          fetchProviders().catch(() => []),
+          fetchNurses().catch(() => []),
+          fetchOfficeAdmins().catch(() => []),
+        ]);
         const apiUsers: User[] = [];
         let idx = 100;
         for (const p of providerList) {
