@@ -52,71 +52,29 @@ async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db))
     return user
 
 
-@router.post("/login-debug")
-async def login_debug(request: LoginRequest, db: AsyncSession = Depends(get_db)):
-    """Debug endpoint to diagnose login failures."""
-    import traceback as _tb
-
-    info: dict = {"email": request.email, "steps": []}
-    try:
-        from sqlalchemy import text
-
-        result = await db.execute(
-            text("SELECT id, org_id, email, role, is_active, hashed_password FROM users WHERE email = :e"),
-            {"e": request.email},
-        )
-        rows = result.fetchall()
-        info["steps"].append(f"Found {len(rows)} users with this email")
-        for r in rows:
-            pw_ok = False
-            try:
-                pw_ok = verify_password(request.password, r[5])
-            except Exception as exc:
-                info["steps"].append(f"verify_password error for {r[0]}: {exc}")
-            info["steps"].append(
-                f"user_id={r[0]}, org_id={r[1]}, role={r[3]}, active={r[4]}, pw_match={pw_ok}"
-            )
-    except Exception as exc:
-        info["steps"].append(f"DB error: {exc}\n{''.join(_tb.format_exception(exc))}")
-
-    return info
-
-
 @router.post("/login", response_model=TokenResponse)
 async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
     """Authenticate and return JWT tokens."""
-    import traceback as _tb
+    # Fetch all matching users — unique constraint is (org_id, email), so the
+    # same email can exist in multiple orgs.
+    result = await db.execute(
+        select(User).where(User.email == request.email, User.is_active == True)
+    )
+    users = result.scalars().all()
 
-    try:
-        result = await db.execute(
-            select(User).where(User.email == request.email, User.is_active == True)
-        )
-        users = result.scalars().all()
-    except Exception as exc:
-        print(f"[LOGIN ERROR] DB query failed: {exc}\n{''.join(_tb.format_exception(exc))}")
-        raise HTTPException(status_code=500, detail=f"DB error: {exc}")
-
-    # Try each matching user (across orgs) until password matches
+    # Try each matching user until password matches
     matched_user = None
     for u in users:
-        try:
-            if verify_password(request.password, u.hashed_password):
-                matched_user = u
-                break
-        except Exception as exc:
-            print(f"[LOGIN ERROR] verify_password failed for user {u.id}: {exc}")
-            continue
+        if verify_password(request.password, u.hashed_password):
+            matched_user = u
+            break
 
     if not matched_user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    try:
-        tokens = create_tokens(matched_user.id, matched_user.org_id, matched_user.role)
-        return TokenResponse(
-            access_token=tokens.access_token,
-            refresh_token=tokens.refresh_token,
-            expires_in=tokens.expires_in,
-        )
-    except Exception as exc:
-        print(f"[LOGIN ERROR] Token creation failed: {exc}\n{''.join(_tb.format_exception(exc))}")
-        raise HTTPException(status_code=500, detail=f"Token error: {exc}")
+    tokens = create_tokens(matched_user.id, matched_user.org_id, matched_user.role)
+    return TokenResponse(
+        access_token=tokens.access_token,
+        refresh_token=tokens.refresh_token,
+        expires_in=tokens.expires_in,
+    )

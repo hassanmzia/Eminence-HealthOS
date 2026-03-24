@@ -26,7 +26,48 @@ def _require_admin(ctx: TenantContext) -> None:
         raise HTTPException(status_code=403, detail="Admin access required")
 
 
-# ── Self-Promote (bootstrap) ───────────────────────────────────────────────
+# ── Schemas ──────────────────────────────────────────────────────────────────
+
+
+class AdminUserResponse(BaseModel):
+    id: uuid.UUID
+    email: str
+    full_name: str
+    role: str
+    org_id: uuid.UUID
+    is_active: bool
+    mfa_enabled: bool
+    phone: str | None = None
+    avatar_url: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    last_login: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class UserListResponse(BaseModel):
+    users: list[AdminUserResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+class CreateUserRequest(BaseModel):
+    email: str
+    password: str
+    full_name: str
+    role: str = "clinician"
+
+
+class UpdateUserRequest(BaseModel):
+    full_name: str | None = None
+    role: str | None = None
+    is_active: bool | None = None
+    phone: str | None = None
+
+
+# ── Endpoints ────────────────────────────────────────────────────────────────
 
 
 @router.post("/promote-self", response_model=AdminUserResponse)
@@ -74,50 +115,6 @@ async def promote_self_to_admin(
         created_at=user.created_at.isoformat() if user.created_at else None,
         updated_at=user.updated_at.isoformat() if user.updated_at else None,
     )
-
-
-# ── Schemas ──────────────────────────────────────────────────────────────────
-
-
-class AdminUserResponse(BaseModel):
-    id: uuid.UUID
-    email: str
-    full_name: str
-    role: str
-    org_id: uuid.UUID
-    is_active: bool
-    mfa_enabled: bool
-    phone: str | None = None
-    avatar_url: str | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-    last_login: str | None = None
-
-    model_config = {"from_attributes": True}
-
-
-class UserListResponse(BaseModel):
-    users: list[AdminUserResponse]
-    total: int
-    page: int
-    page_size: int
-
-
-class CreateUserRequest(BaseModel):
-    email: str
-    password: str
-    full_name: str
-    role: str = "clinician"
-
-
-class UpdateUserRequest(BaseModel):
-    full_name: str | None = None
-    role: str | None = None
-    is_active: bool | None = None
-    phone: str | None = None
-
-
-# ── Endpoints ────────────────────────────────────────────────────────────────
 
 
 @router.get("", response_model=UserListResponse)
