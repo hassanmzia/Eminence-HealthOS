@@ -27,6 +27,7 @@ import { fetchMyProfile, type UserProfile } from "@/lib/api";
 /* ------------------------------------------------------------------ */
 interface User {
   id: number;
+  backendId?: string; // UUID from the backend for API calls
   name: string;
   email: string;
   role: string;
@@ -219,6 +220,7 @@ export default function AdminPage() {
           if (adminData.users.length > 0) {
             const realUsers: User[] = adminData.users.map((u: AdminUserResponse, idx: number) => ({
               id: idx + 1,
+              backendId: u.id,
               name: u.full_name || u.email.split("@")[0],
               email: u.email,
               role: ROLE_MAP[u.role] ?? u.role,
@@ -389,6 +391,14 @@ function UserAvatar({ name }: { name: string }) {
 function UsersTab() {
   const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [search, setSearch] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  // Edit modal state
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState("");
+  const [editPhone, setEditPhone] = useState("");
 
   const ROLE_MAP_TAB: Record<string, string> = {
     admin: "Super Admin",
@@ -402,84 +412,40 @@ function UsersTab() {
     read_only: "Read Only",
   };
 
+  const ROLE_REVERSE_MAP: Record<string, string> = {
+    "Super Admin": "admin",
+    Physician: "clinician",
+    Nurse: "nurse",
+    Admin: "care_manager",
+    "Lab Tech": "lab_tech",
+    Pharmacist: "pharmacist",
+    Billing: "billing",
+    "Read Only": "read_only",
+  };
+
   // Load real user data — always include current logged-in user
-  useEffect(() => {
-    (async () => {
+  const loadUsers = useCallback(async () => {
+    try {
+      const myProfile = await fetchMyProfile().catch(() => null);
+
+      // Try admin users API first
       try {
-        // Always fetch the current user's profile
-        const myProfile = await fetchMyProfile().catch(() => null);
-
-        // Try admin users API first
-        try {
-          const adminData = await fetchAdminUsers({ page: 1, page_size: 100 });
-          if (adminData.users.length > 0) {
-            const realUsers: User[] = adminData.users.map((u: AdminUserResponse, idx: number) => ({
-              id: idx + 1,
-              name: u.full_name || u.email.split("@")[0],
-              email: u.email,
-              role: ROLE_MAP_TAB[u.role] ?? u.role,
-              department: u.role === "clinician" ? "Clinical" : u.role === "admin" ? "IT" : "General",
-              status: u.is_active ? "active" as const : "inactive" as const,
-              lastLogin: u.updated_at?.split("T")[0] ?? u.created_at?.split("T")[0] ?? "",
-            }));
-            if (myProfile && !realUsers.some((u) => u.email === myProfile.email)) {
-              realUsers.unshift({
-                id: 0,
-                name: myProfile.full_name || myProfile.email.split("@")[0],
-                email: myProfile.email,
-                role: ROLE_MAP_TAB[myProfile.role] ?? myProfile.role,
-                department: myProfile.role === "clinician" ? "Clinical" : myProfile.role === "admin" ? "IT" : "General",
-                status: myProfile.is_active ? "active" : "inactive",
-                lastLogin: myProfile.updated_at?.split("T")[0] ?? myProfile.created_at?.split("T")[0] ?? "",
-              });
-            }
-            setUsers(realUsers);
-            return;
-          }
-        } catch {
-          // Admin API not available, fall back
-        }
-
-        // Fallback: merge provider/nurse/admin data
-        const [providerList, nurseList, adminList] = await Promise.all([
-          fetchProviders().catch(() => []),
-          fetchNurses().catch(() => []),
-          fetchOfficeAdmins().catch(() => []),
-        ]);
-        const apiUsers: User[] = [];
-        let idx = 100;
-
-        // Always include the logged-in user first
-        if (myProfile) {
-          apiUsers.push({
-            id: idx++,
-            name: myProfile.full_name || myProfile.email.split("@")[0],
-            email: myProfile.email,
-            role: ROLE_MAP_TAB[myProfile.role] ?? myProfile.role,
-            department: myProfile.role === "clinician" ? "Clinical" : myProfile.role === "admin" ? "IT" : "General",
-            status: myProfile.is_active ? "active" : "inactive",
-            lastLogin: myProfile.updated_at?.split("T")[0] ?? myProfile.created_at?.split("T")[0] ?? "",
-          });
-        }
-
-        for (const p of providerList) {
-          apiUsers.push({ id: idx++, name: p.user_id.slice(0, 8), email: `${p.user_id.slice(0, 8)}@eminence.health`, role: "Physician", department: p.specialty, status: p.is_active ? "active" : "inactive", lastLogin: p.created_at?.split("T")[0] ?? "" });
-        }
-        for (const n of nurseList) {
-          apiUsers.push({ id: idx++, name: n.user_id.slice(0, 8), email: `${n.user_id.slice(0, 8)}@eminence.health`, role: "Nurse", department: n.specialty, status: n.is_active ? "active" : "inactive", lastLogin: n.created_at?.split("T")[0] ?? "" });
-        }
-        for (const a of adminList) {
-          apiUsers.push({ id: idx++, name: a.user_id.slice(0, 8), email: `${a.user_id.slice(0, 8)}@eminence.health`, role: "Admin", department: a.position, status: a.is_active ? "active" : "inactive", lastLogin: a.created_at?.split("T")[0] ?? "" });
-        }
-
-        if (apiUsers.length > 0) {
-          setUsers(apiUsers);
-        } else if (myProfile) {
-          // Show current user + demo data
-          const demoWithUser = [...INITIAL_USERS];
-          if (!demoWithUser.some((u) => u.email === myProfile.email)) {
-            demoWithUser.unshift({
+        const adminData = await fetchAdminUsers({ page: 1, page_size: 100 });
+        if (adminData.users.length > 0) {
+          const realUsers: User[] = adminData.users.map((u: AdminUserResponse, idx: number) => ({
+            id: idx + 1,
+            backendId: u.id,
+            name: u.full_name || u.email.split("@")[0],
+            email: u.email,
+            role: ROLE_MAP_TAB[u.role] ?? u.role,
+            department: u.role === "clinician" ? "Clinical" : u.role === "admin" ? "IT" : "General",
+            status: u.is_active ? "active" as const : "inactive" as const,
+            lastLogin: u.updated_at?.split("T")[0] ?? u.created_at?.split("T")[0] ?? "",
+          }));
+          if (myProfile && !realUsers.some((u) => u.email === myProfile.email)) {
+            realUsers.unshift({
               id: 0,
+              backendId: myProfile.id,
               name: myProfile.full_name || myProfile.email.split("@")[0],
               email: myProfile.email,
               role: ROLE_MAP_TAB[myProfile.role] ?? myProfile.role,
@@ -488,11 +454,68 @@ function UsersTab() {
               lastLogin: myProfile.updated_at?.split("T")[0] ?? myProfile.created_at?.split("T")[0] ?? "",
             });
           }
-          setUsers(demoWithUser);
+          setUsers(realUsers);
+          return;
         }
-      } catch { /* keep demo */ }
-    })();
+      } catch {
+        // Admin API not available, fall back
+      }
+
+      // Fallback: merge provider/nurse/admin data
+      const [providerList, nurseList, adminList] = await Promise.all([
+        fetchProviders().catch(() => []),
+        fetchNurses().catch(() => []),
+        fetchOfficeAdmins().catch(() => []),
+      ]);
+      const apiUsers: User[] = [];
+      let idx = 100;
+
+      if (myProfile) {
+        apiUsers.push({
+          id: idx++,
+          backendId: myProfile.id,
+          name: myProfile.full_name || myProfile.email.split("@")[0],
+          email: myProfile.email,
+          role: ROLE_MAP_TAB[myProfile.role] ?? myProfile.role,
+          department: myProfile.role === "clinician" ? "Clinical" : myProfile.role === "admin" ? "IT" : "General",
+          status: myProfile.is_active ? "active" : "inactive",
+          lastLogin: myProfile.updated_at?.split("T")[0] ?? myProfile.created_at?.split("T")[0] ?? "",
+        });
+      }
+
+      for (const p of providerList) {
+        apiUsers.push({ id: idx++, name: p.user_id.slice(0, 8), email: `${p.user_id.slice(0, 8)}@eminence.health`, role: "Physician", department: p.specialty, status: p.is_active ? "active" : "inactive", lastLogin: p.created_at?.split("T")[0] ?? "" });
+      }
+      for (const n of nurseList) {
+        apiUsers.push({ id: idx++, name: n.user_id.slice(0, 8), email: `${n.user_id.slice(0, 8)}@eminence.health`, role: "Nurse", department: n.specialty, status: n.is_active ? "active" : "inactive", lastLogin: n.created_at?.split("T")[0] ?? "" });
+      }
+      for (const a of adminList) {
+        apiUsers.push({ id: idx++, name: a.user_id.slice(0, 8), email: `${a.user_id.slice(0, 8)}@eminence.health`, role: "Admin", department: a.position, status: a.is_active ? "active" : "inactive", lastLogin: a.created_at?.split("T")[0] ?? "" });
+      }
+
+      if (apiUsers.length > 0) {
+        setUsers(apiUsers);
+      } else if (myProfile) {
+        const demoWithUser = [...INITIAL_USERS];
+        if (!demoWithUser.some((u) => u.email === myProfile.email)) {
+          demoWithUser.unshift({
+            id: 0,
+            backendId: myProfile.id,
+            name: myProfile.full_name || myProfile.email.split("@")[0],
+            email: myProfile.email,
+            role: ROLE_MAP_TAB[myProfile.role] ?? myProfile.role,
+            department: myProfile.role === "clinician" ? "Clinical" : myProfile.role === "admin" ? "IT" : "General",
+            status: myProfile.is_active ? "active" : "inactive",
+            lastLogin: myProfile.updated_at?.split("T")[0] ?? myProfile.created_at?.split("T")[0] ?? "",
+          });
+        }
+        setUsers(demoWithUser);
+      }
+    } catch { /* keep demo */ }
   }, []);
+
+  useEffect(() => { loadUsers(); }, [loadUsers]);
+
   const [filterRole, setFilterRole] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterDept, setFilterDept] = useState("All");
@@ -504,6 +527,7 @@ function UsersTab() {
   /* Form state */
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
+  const [formPassword, setFormPassword] = useState("");
   const [formRole, setFormRole] = useState("");
   const [formDept, setFormDept] = useState("");
 
@@ -560,23 +584,75 @@ function UsersTab() {
     }
   };
 
-  const handleAddUser = () => {
-    if (!formName || !formEmail || !formRole || !formDept) return;
-    const newUser: User = {
-      id: Math.max(...users.map((u) => u.id)) + 1,
-      name: formName,
-      email: formEmail,
-      role: formRole,
-      department: formDept,
-      status: "active",
-      lastLogin: "Never",
-    };
-    setUsers((prev) => [...prev, newUser]);
-    setFormName("");
-    setFormEmail("");
-    setFormRole("");
-    setFormDept("");
-    setShowAddForm(false);
+  const handleAddUser = async () => {
+    if (!formName || !formEmail || !formPassword || !formRole) return;
+    setError("");
+    setSaving(true);
+    try {
+      const backendRole = ROLE_REVERSE_MAP[formRole] ?? "read_only";
+      await createAdminUser({
+        email: formEmail,
+        password: formPassword,
+        full_name: formName,
+        role: backendRole,
+      });
+      // Reload users from backend to get the persisted data
+      await loadUsers();
+      setFormName("");
+      setFormEmail("");
+      setFormPassword("");
+      setFormRole("");
+      setFormDept("");
+      setShowAddForm(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create user");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setEditName(user.name);
+    setEditRole(user.role);
+    setEditPhone("");
+    setError("");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingUser?.backendId) {
+      setError("Cannot edit this user — no backend ID available");
+      return;
+    }
+    setError("");
+    setSaving(true);
+    try {
+      const backendRole = ROLE_REVERSE_MAP[editRole] ?? undefined;
+      await updateAdminUser(editingUser.backendId, {
+        full_name: editName || undefined,
+        role: backendRole,
+        phone: editPhone || undefined,
+      });
+      await loadUsers();
+      setEditingUser(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update user");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeactivate = async (user: User) => {
+    if (!user.backendId) return;
+    setSaving(true);
+    try {
+      await deactivateAdminUser(user.backendId);
+      await loadUsers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to deactivate user");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const sortIndicator = (field: keyof User) => {
@@ -586,6 +662,51 @@ function UsersTab() {
 
   return (
     <div className="card p-6">
+      {/* Error Banner */}
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError("")} className="text-red-500 hover:text-red-700 font-bold ml-4">&times;</button>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Edit User</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Email</label>
+                <input value={editingUser.email} disabled className="input w-full opacity-60 cursor-not-allowed" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Full Name</label>
+                <input value={editName} onChange={(e) => setEditName(e.target.value)} className="input w-full" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Role</label>
+                <select value={editRole} onChange={(e) => setEditRole(e.target.value)} className="select w-full">
+                  {roleNames.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Phone (optional)</label>
+                <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="+1 555-0123" className="input w-full" />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end mt-6">
+              <button onClick={handleSaveEdit} disabled={saving} className="btn-primary">
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+              <button onClick={() => setEditingUser(null)} className="btn-secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
         <input
@@ -619,7 +740,7 @@ function UsersTab() {
               Bulk Deactivate ({selectedUsers.size})
             </button>
           )}
-          <button onClick={() => setShowAddForm(!showAddForm)} className="btn-primary whitespace-nowrap">
+          <button onClick={() => { setShowAddForm(!showAddForm); setError(""); }} className="btn-primary whitespace-nowrap">
             + Add User
           </button>
         </div>
@@ -629,14 +750,18 @@ function UsersTab() {
       {showAddForm && (
         <div className="card-hover p-5 mb-6 border border-blue-200 dark:border-blue-800 rounded-lg">
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-3">New User</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
             <div>
               <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Full Name</label>
               <input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Jane Doe" className="input w-full" />
             </div>
             <div>
               <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Email</label>
-              <input value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="j.doe@eminence.health" className="input w-full" />
+              <input value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="j.doe@eminence.health" type="email" className="input w-full" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Password</label>
+              <input value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder="Min 8 characters" type="password" className="input w-full" />
             </div>
             <div>
               <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Role</label>
@@ -653,7 +778,9 @@ function UsersTab() {
             </div>
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={handleAddUser} className="btn-primary">Save User</button>
+            <button onClick={handleAddUser} disabled={saving || !formName || !formEmail || !formPassword || !formRole} className="btn-primary disabled:opacity-50">
+              {saving ? "Creating..." : "Save User"}
+            </button>
             <button onClick={() => setShowAddForm(false)} className="btn-secondary">Cancel</button>
           </div>
         </div>
@@ -728,8 +855,8 @@ function UsersTab() {
                 <td className="p-3 text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{user.lastLogin}</td>
                 <td className="p-3 text-right">
                   <div className="flex justify-end gap-2">
-                    <button className="btn-secondary text-xs px-2 py-1" title="Edit user">Edit</button>
-                    <button className="btn-danger text-xs px-2 py-1" title="Deactivate user">Deactivate</button>
+                    <button onClick={() => handleEditUser(user)} className="btn-secondary text-xs px-2 py-1" title="Edit user">Edit</button>
+                    <button onClick={() => handleDeactivate(user)} disabled={saving} className="btn-danger text-xs px-2 py-1" title="Deactivate user">Deactivate</button>
                     <button className="btn-secondary text-xs px-2 py-1" title="Reset password">Reset PW</button>
                   </div>
                 </td>
