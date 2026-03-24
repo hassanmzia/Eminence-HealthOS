@@ -124,6 +124,7 @@ export default function RegisterPage() {
                 <option value="care_manager">Care Manager</option>
                 <option value="lab_tech">Lab Technician</option>
                 <option value="pharmacist">Pharmacist</option>
+                <option value="billing">Billing</option>
                 <option value="patient">Patient</option>
               </select>
             </div>

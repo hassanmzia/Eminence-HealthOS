@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { fetchMyProfile, type UserProfile } from "@/lib/api";
 
 // Mirror backend role/permission definitions
-export type Role = "admin" | "clinician" | "care_manager" | "nurse" | "office_admin" | "patient" | "lab_tech" | "pharmacist";
+export type Role = "admin" | "clinician" | "care_manager" | "nurse" | "office_admin" | "patient" | "lab_tech" | "pharmacist" | "billing";
 
 export type Permission =
   | "patient:read" | "patient:write" | "patient:delete"
@@ -124,15 +124,23 @@ const ROLE_PERMISSIONS: Record<Role, Set<Permission>> = {
     "devices:read",
     "provider:read", "hospital:read",
   ]),
+  billing: new Set([
+    "patient:read",
+    "encounters:read",
+    "billing:read", "billing:write", "billing:manage",
+    "messages:read", "messages:write", "notifications:read",
+    "analytics:read",
+    "provider:read", "hospital:read",
+  ]),
 };
 
 // Route → allowed roles mapping for frontend route guards
 export const ROUTE_ACCESS: Record<string, Role[]> = {
-  "/dashboard": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist"],
+  "/dashboard": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing"],
   "/clinical-workspace": ["admin", "clinician", "care_manager", "nurse"],
-  "/patients": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist"],
-  "/alerts": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist"],
-  "/messaging": ["admin", "clinician", "care_manager", "nurse", "office_admin", "patient", "lab_tech", "pharmacist"],
+  "/patients": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing"],
+  "/alerts": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing"],
+  "/messaging": ["admin", "clinician", "care_manager", "nurse", "office_admin", "patient", "lab_tech", "pharmacist", "billing"],
   "/rpm": ["admin", "clinician", "care_manager", "nurse"],
   "/telehealth": ["admin", "clinician", "care_manager", "nurse"],
   "/ambient-ai": ["admin", "clinician"],
@@ -152,9 +160,9 @@ export const ROUTE_ACCESS: Record<string, Role[]> = {
   "/fairness": ["admin"],
   "/ai-explainability": ["admin", "clinician", "care_manager"],
   "/operations": ["admin", "office_admin", "clinician"],
-  "/rcm": ["admin", "office_admin"],
-  "/analytics": ["admin", "office_admin", "clinician"],
-  "/compliance": ["admin", "office_admin"],
+  "/rcm": ["admin", "office_admin", "billing"],
+  "/analytics": ["admin", "office_admin", "clinician", "billing"],
+  "/compliance": ["admin", "office_admin", "billing"],
   "/ehr-connect": ["admin"],
   "/audit-log": ["admin", "office_admin"],
   "/admin": ["admin"],
@@ -162,7 +170,7 @@ export const ROUTE_ACCESS: Record<string, Role[]> = {
   "/patient-engagement": ["admin", "clinician"],
   "/marketplace": ["admin", "clinician"],
   "/simulator": ["admin", "clinician"],
-  "/profile": ["admin", "clinician", "care_manager", "nurse", "office_admin", "patient", "lab_tech", "pharmacist"],
+  "/profile": ["admin", "clinician", "care_manager", "nurse", "office_admin", "patient", "lab_tech", "pharmacist", "billing"],
   "/patient-portal": ["patient"],
 };
 
@@ -197,6 +205,7 @@ interface AuthContextValue {
   isCareManager: boolean;
   isLabTech: boolean;
   isPharmacist: boolean;
+  isBilling: boolean;
   refreshUser: () => Promise<void>;
 }
 
@@ -249,6 +258,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isCareManager: role === "care_manager",
     isLabTech: role === "lab_tech",
     isPharmacist: role === "pharmacist",
+    isBilling: role === "billing",
     refreshUser,
   };
 
