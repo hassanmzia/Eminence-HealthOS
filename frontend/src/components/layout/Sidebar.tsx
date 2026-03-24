@@ -9,7 +9,7 @@ import { useAuth, type Role } from "@/contexts/AuthContext";
 type NavItem = { href: string; label: string; icon: string; roles?: Role[] };
 type NavSection = { label: string; items: NavItem[]; roles?: Role[] };
 
-const STAFF_ROLES: Role[] = ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing"];
+const STAFF_ROLES: Role[] = ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing", "read_only"];
 const CLINICAL_ROLES: Role[] = ["admin", "clinician", "care_manager", "nurse"];
 const CLINICAL_WRITE_ROLES: Role[] = ["admin", "clinician"];
 
@@ -27,13 +27,13 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: "Clinical",
-    roles: [...CLINICAL_ROLES, "lab_tech", "pharmacist"],
+    roles: [...CLINICAL_ROLES, "lab_tech", "pharmacist", "read_only"],
     items: [
       { href: "/rpm", label: "RPM", icon: "activity", roles: CLINICAL_ROLES },
       { href: "/telehealth", label: "Telehealth", icon: "video", roles: CLINICAL_ROLES },
       { href: "/ambient-ai", label: "Ambient AI", icon: "mic", roles: CLINICAL_WRITE_ROLES },
-      { href: "/pharmacy", label: "Pharmacy", icon: "pill", roles: [...CLINICAL_ROLES, "pharmacist"] },
-      { href: "/labs", label: "Labs", icon: "flask", roles: [...CLINICAL_ROLES, "lab_tech", "pharmacist"] },
+      { href: "/pharmacy", label: "Pharmacy", icon: "pill", roles: [...CLINICAL_ROLES, "pharmacist", "read_only"] },
+      { href: "/labs", label: "Labs", icon: "flask", roles: [...CLINICAL_ROLES, "lab_tech", "pharmacist", "read_only"] },
       { href: "/imaging", label: "Imaging", icon: "scan", roles: [...CLINICAL_WRITE_ROLES, "lab_tech"] },
       { href: "/mental-health", label: "Mental Health", icon: "heart", roles: CLINICAL_ROLES },
       { href: "/sdoh", label: "SDOH", icon: "home", roles: CLINICAL_ROLES },
@@ -57,14 +57,14 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: "Operations",
-    roles: ["admin", "office_admin", "clinician", "billing"],
+    roles: ["admin", "office_admin", "clinician", "billing", "read_only"],
     items: [
       { href: "/operations", label: "Operations", icon: "clipboard", roles: ["admin", "office_admin", "clinician"] },
       { href: "/rcm", label: "Revenue Cycle", icon: "dollar", roles: ["admin", "office_admin", "billing"] },
-      { href: "/analytics", label: "Analytics", icon: "chart", roles: ["admin", "office_admin", "clinician", "billing"] },
-      { href: "/compliance", label: "Compliance", icon: "shield", roles: ["admin", "office_admin", "billing"] },
+      { href: "/analytics", label: "Analytics", icon: "chart", roles: ["admin", "office_admin", "clinician", "billing", "read_only"] },
+      { href: "/compliance", label: "Compliance", icon: "shield", roles: ["admin", "office_admin", "billing", "read_only"] },
       { href: "/ehr-connect", label: "EHR Connect", icon: "link", roles: ["admin"] },
-      { href: "/audit-log", label: "Audit Log", icon: "document", roles: ["admin", "office_admin"] },
+      { href: "/audit-log", label: "Audit Log", icon: "document", roles: ["admin", "office_admin", "read_only"] },
       { href: "/admin", label: "Admin", icon: "settings", roles: ["admin"] },
     ],
   },
