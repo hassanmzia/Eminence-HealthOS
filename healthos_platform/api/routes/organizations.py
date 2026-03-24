@@ -251,6 +251,72 @@ async def create_organization(
     )
 
 
+# ── Org Admin: Get own organization settings ─────────────────────────────────
+# NOTE: /me/* routes MUST come before /{org_id} to avoid FastAPI matching "me" as a UUID
+
+@router.get("/me/settings")
+async def get_my_org_settings(
+    ctx: TenantContext = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get the current user's organization settings (org admin only)."""
+    result = await db.execute(select(Organization).where(Organization.id == ctx.org_id))
+    org = result.scalar_one_or_none()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    user_count = (await db.execute(
+        select(func.count(User.id)).where(User.org_id == org.id)
+    )).scalar() or 0
+
+    return {
+        "id": str(org.id),
+        "name": org.name,
+        "slug": org.slug,
+        "tier": org.tier,
+        "hipaa_baa_signed": org.hipaa_baa_signed,
+        "settings": org.settings or {},
+        "user_count": user_count,
+        "created_at": org.created_at.isoformat() if org.created_at else "",
+    }
+
+
+# ── Org Admin: Update own organization settings ──────────────────────────────
+
+@router.patch("/me/settings")
+async def update_my_org_settings(
+    req: OrgUpdateRequest,
+    ctx: TenantContext = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update the current user's organization settings (org admin only).
+    Note: tier changes require super_admin — ignored here."""
+    result = await db.execute(select(Organization).where(Organization.id == ctx.org_id))
+    org = result.scalar_one_or_none()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    if req.name is not None:
+        org.name = req.name
+    if req.hipaa_baa_signed is not None:
+        org.hipaa_baa_signed = req.hipaa_baa_signed
+    if req.settings is not None:
+        org.settings = {**(org.settings or {}), **req.settings}
+    # tier change ignored — requires super_admin
+
+    await db.flush()
+    await db.refresh(org)
+
+    return {
+        "id": str(org.id),
+        "name": org.name,
+        "slug": org.slug,
+        "tier": org.tier,
+        "hipaa_baa_signed": org.hipaa_baa_signed,
+        "settings": org.settings or {},
+    }
+
+
 # ── Super-Admin: Get specific organization ───────────────────────────────────
 
 @router.get("/{org_id}", response_model=OrgResponse)
@@ -322,68 +388,3 @@ async def update_organization(
         patient_count=0,
         created_at=org.created_at.isoformat() if org.created_at else "",
     )
-
-
-# ── Org Admin: Get own organization settings ─────────────────────────────────
-
-@router.get("/me/settings")
-async def get_my_org_settings(
-    ctx: TenantContext = Depends(require_admin),
-    db: AsyncSession = Depends(get_db),
-):
-    """Get the current user's organization settings (org admin only)."""
-    result = await db.execute(select(Organization).where(Organization.id == ctx.org_id))
-    org = result.scalar_one_or_none()
-    if not org:
-        raise HTTPException(status_code=404, detail="Organization not found")
-
-    user_count = (await db.execute(
-        select(func.count(User.id)).where(User.org_id == org.id)
-    )).scalar() or 0
-
-    return {
-        "id": str(org.id),
-        "name": org.name,
-        "slug": org.slug,
-        "tier": org.tier,
-        "hipaa_baa_signed": org.hipaa_baa_signed,
-        "settings": org.settings or {},
-        "user_count": user_count,
-        "created_at": org.created_at.isoformat() if org.created_at else "",
-    }
-
-
-# ── Org Admin: Update own organization settings ──────────────────────────────
-
-@router.patch("/me/settings")
-async def update_my_org_settings(
-    req: OrgUpdateRequest,
-    ctx: TenantContext = Depends(require_admin),
-    db: AsyncSession = Depends(get_db),
-):
-    """Update the current user's organization settings (org admin only).
-    Note: tier changes require super_admin — ignored here."""
-    result = await db.execute(select(Organization).where(Organization.id == ctx.org_id))
-    org = result.scalar_one_or_none()
-    if not org:
-        raise HTTPException(status_code=404, detail="Organization not found")
-
-    if req.name is not None:
-        org.name = req.name
-    if req.hipaa_baa_signed is not None:
-        org.hipaa_baa_signed = req.hipaa_baa_signed
-    if req.settings is not None:
-        org.settings = {**(org.settings or {}), **req.settings}
-    # tier change ignored — requires super_admin
-
-    await db.flush()
-    await db.refresh(org)
-
-    return {
-        "id": str(org.id),
-        "name": org.name,
-        "slug": org.slug,
-        "tier": org.tier,
-        "hipaa_baa_signed": org.hipaa_baa_signed,
-        "settings": org.settings or {},
-    }
