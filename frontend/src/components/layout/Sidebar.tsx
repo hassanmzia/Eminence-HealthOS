@@ -9,7 +9,7 @@ import { useAuth, type Role } from "@/contexts/AuthContext";
 type NavItem = { href: string; label: string; icon: string; roles?: Role[] };
 type NavSection = { label: string; items: NavItem[]; roles?: Role[] };
 
-const STAFF_ROLES: Role[] = ["admin", "clinician", "care_manager", "nurse", "office_admin"];
+const STAFF_ROLES: Role[] = ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist"];
 const CLINICAL_ROLES: Role[] = ["admin", "clinician", "care_manager", "nurse"];
 const CLINICAL_WRITE_ROLES: Role[] = ["admin", "clinician"];
 
@@ -27,17 +27,17 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: "Clinical",
-    roles: CLINICAL_ROLES,
+    roles: [...CLINICAL_ROLES, "lab_tech", "pharmacist"],
     items: [
-      { href: "/rpm", label: "RPM", icon: "activity" },
-      { href: "/telehealth", label: "Telehealth", icon: "video" },
+      { href: "/rpm", label: "RPM", icon: "activity", roles: CLINICAL_ROLES },
+      { href: "/telehealth", label: "Telehealth", icon: "video", roles: CLINICAL_ROLES },
       { href: "/ambient-ai", label: "Ambient AI", icon: "mic", roles: CLINICAL_WRITE_ROLES },
-      { href: "/pharmacy", label: "Pharmacy", icon: "pill" },
-      { href: "/labs", label: "Labs", icon: "flask" },
-      { href: "/imaging", label: "Imaging", icon: "scan", roles: CLINICAL_WRITE_ROLES },
-      { href: "/mental-health", label: "Mental Health", icon: "heart" },
-      { href: "/sdoh", label: "SDOH", icon: "home" },
-      { href: "/patient-timeline", label: "Timeline", icon: "clock" },
+      { href: "/pharmacy", label: "Pharmacy", icon: "pill", roles: [...CLINICAL_ROLES, "pharmacist"] },
+      { href: "/labs", label: "Labs", icon: "flask", roles: [...CLINICAL_ROLES, "lab_tech", "pharmacist"] },
+      { href: "/imaging", label: "Imaging", icon: "scan", roles: [...CLINICAL_WRITE_ROLES, "lab_tech"] },
+      { href: "/mental-health", label: "Mental Health", icon: "heart", roles: CLINICAL_ROLES },
+      { href: "/sdoh", label: "SDOH", icon: "home", roles: CLINICAL_ROLES },
+      { href: "/patient-timeline", label: "Timeline", icon: "clock", roles: CLINICAL_ROLES },
       { href: "/clinical-assessment", label: "Clinical AI", icon: "stethoscope", roles: CLINICAL_WRITE_ROLES },
     ],
   },
