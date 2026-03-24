@@ -15,7 +15,6 @@ class Role(str, Enum):
     CARE_MANAGER = "care_manager"
     NURSE = "nurse"
     OFFICE_ADMIN = "office_admin"
-    PATIENT = "patient"
     SYSTEM = "system"  # For agent-to-agent and internal operations
 
 
@@ -194,22 +193,6 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.HOSPITAL_MANAGE,
         Permission.USERS_MANAGE,
         Permission.AUDIT_READ,
-    },
-    Role.PATIENT: {
-        Permission.VITALS_READ,
-        Permission.ALERTS_READ,
-        Permission.ENCOUNTERS_READ,
-        Permission.CARE_PLANS_READ,
-        Permission.DIAGNOSIS_READ,
-        Permission.PRESCRIPTION_READ,
-        Permission.ALLERGY_READ,
-        Permission.LAB_READ,
-        Permission.MESSAGES_READ,
-        Permission.MESSAGES_WRITE,
-        Permission.NOTIFICATIONS_READ,
-        Permission.BILLING_READ,
-        Permission.DEVICES_READ,
-        Permission.PROVIDER_READ,
     },
     Role.SYSTEM: set(Permission),  # Internal system has full access
 }

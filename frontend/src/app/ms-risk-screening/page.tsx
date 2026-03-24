@@ -712,7 +712,7 @@ function NotificationsTab() {
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{String(n.title ?? n.message ?? "Notification")}</span>
                   <span className="text-[11px] text-gray-500 dark:text-gray-400">{n.created_at ? new Date(String(n.created_at)).toLocaleString() : ""}</span>
                 </div>
-                {n.message && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{String(n.message)}</p>}
+                {n.message ? <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{String(n.message)}</p> : null}
               </div>
             ))}
           </div>

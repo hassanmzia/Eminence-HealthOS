@@ -598,7 +598,7 @@ export default function OperationsPage() {
                     </div>
                   ))}
                 </div>
-                {verificationResult.benefits && Array.isArray(verificationResult.benefits) && (
+                {Array.isArray(verificationResult.benefits) && verificationResult.benefits.length > 0 && (
                   <div className="mt-4 border-t border-green-200 pt-4">
                     <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Benefits Summary</p>
                     <ul className="grid grid-cols-1 gap-1 sm:grid-cols-2">

@@ -425,7 +425,7 @@ export default function AnalyticsPage() {
     const { generatePDF } = await import("@/lib/pdf-export");
     await generatePDF({
       title: "Analytics Report",
-      subtitle: `${activeTab === "executive" ? "Executive Dashboard" : activeTab === "cost" ? "Cost & Risk Analysis" : activeTab === "population" ? "Population Health" : "Cohort Builder"} — ${new Date().toLocaleDateString()}`,
+      subtitle: `${activeTab === "executive" ? "Executive Dashboard" : activeTab === "cost-risk" ? "Cost & Risk Analysis" : activeTab === "population" ? "Population Health" : activeTab === "outcomes" ? "Outcomes Tracking" : "Cohort Builder"} — ${new Date().toLocaleDateString()}`,
       generatedBy: "Eminence HealthOS",
       filename: `analytics-report-${new Date().toISOString().split("T")[0]}.pdf`,
       sections: [

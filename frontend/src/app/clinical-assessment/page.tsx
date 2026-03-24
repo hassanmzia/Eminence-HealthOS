@@ -293,7 +293,7 @@ const PATIENT_CLINICAL_DATA: Record<string, Record<string, any>> = {
 };
 
 function buildDemoAssessment(patient: typeof DEMO_PATIENTS[0]): ClinicalAssessment {
-  const conditionData: Record<string, { findings: ClinicalAssessment["assessment"] extends { findings?: infer F } ? F : never; diagnoses: ClinicalAssessment["assessment"] extends { diagnoses?: infer D } ? D : never; treatments: ClinicalAssessment["assessment"] extends { treatments?: infer T } ? T : never }> = {
+  const conditionData: Record<string, { findings: NonNullable<NonNullable<ClinicalAssessment["assessment"]>["findings"]>; diagnoses: NonNullable<NonNullable<ClinicalAssessment["assessment"]>["diagnoses"]>; treatments: NonNullable<NonNullable<ClinicalAssessment["assessment"]>["treatments"]> }> = {
     Hypertension: {
       findings: [
         { category: "Vitals", finding: "Blood pressure 158/94 mmHg", status: "abnormal", interpretation: "Stage 2 hypertension — above target 130/80 for diabetic patients" },
