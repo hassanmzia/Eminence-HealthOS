@@ -390,10 +390,57 @@ function UsersTab() {
   const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [search, setSearch] = useState("");
 
-  // Load real provider/nurse/admin data
+  const ROLE_MAP_TAB: Record<string, string> = {
+    admin: "Super Admin",
+    super_admin: "Super Admin",
+    clinician: "Physician",
+    nurse: "Nurse",
+    care_manager: "Admin",
+    lab_tech: "Lab Tech",
+    pharmacist: "Pharmacist",
+    billing: "Billing",
+    read_only: "Read Only",
+  };
+
+  // Load real user data — always include current logged-in user
   useEffect(() => {
     (async () => {
       try {
+        // Always fetch the current user's profile
+        const myProfile = await fetchMyProfile().catch(() => null);
+
+        // Try admin users API first
+        try {
+          const adminData = await fetchAdminUsers({ page: 1, page_size: 100 });
+          if (adminData.users.length > 0) {
+            const realUsers: User[] = adminData.users.map((u: AdminUserResponse, idx: number) => ({
+              id: idx + 1,
+              name: u.full_name || u.email.split("@")[0],
+              email: u.email,
+              role: ROLE_MAP_TAB[u.role] ?? u.role,
+              department: u.role === "clinician" ? "Clinical" : u.role === "admin" ? "IT" : "General",
+              status: u.is_active ? "active" as const : "inactive" as const,
+              lastLogin: u.updated_at?.split("T")[0] ?? u.created_at?.split("T")[0] ?? "",
+            }));
+            if (myProfile && !realUsers.some((u) => u.email === myProfile.email)) {
+              realUsers.unshift({
+                id: 0,
+                name: myProfile.full_name || myProfile.email.split("@")[0],
+                email: myProfile.email,
+                role: ROLE_MAP_TAB[myProfile.role] ?? myProfile.role,
+                department: myProfile.role === "clinician" ? "Clinical" : myProfile.role === "admin" ? "IT" : "General",
+                status: myProfile.is_active ? "active" : "inactive",
+                lastLogin: myProfile.updated_at?.split("T")[0] ?? myProfile.created_at?.split("T")[0] ?? "",
+              });
+            }
+            setUsers(realUsers);
+            return;
+          }
+        } catch {
+          // Admin API not available, fall back
+        }
+
+        // Fallback: merge provider/nurse/admin data
         const [providerList, nurseList, adminList] = await Promise.all([
           fetchProviders().catch(() => []),
           fetchNurses().catch(() => []),
@@ -401,6 +448,20 @@ function UsersTab() {
         ]);
         const apiUsers: User[] = [];
         let idx = 100;
+
+        // Always include the logged-in user first
+        if (myProfile) {
+          apiUsers.push({
+            id: idx++,
+            name: myProfile.full_name || myProfile.email.split("@")[0],
+            email: myProfile.email,
+            role: ROLE_MAP_TAB[myProfile.role] ?? myProfile.role,
+            department: myProfile.role === "clinician" ? "Clinical" : myProfile.role === "admin" ? "IT" : "General",
+            status: myProfile.is_active ? "active" : "inactive",
+            lastLogin: myProfile.updated_at?.split("T")[0] ?? myProfile.created_at?.split("T")[0] ?? "",
+          });
+        }
+
         for (const p of providerList) {
           apiUsers.push({ id: idx++, name: p.user_id.slice(0, 8), email: `${p.user_id.slice(0, 8)}@eminence.health`, role: "Physician", department: p.specialty, status: p.is_active ? "active" : "inactive", lastLogin: p.created_at?.split("T")[0] ?? "" });
         }
@@ -410,7 +471,25 @@ function UsersTab() {
         for (const a of adminList) {
           apiUsers.push({ id: idx++, name: a.user_id.slice(0, 8), email: `${a.user_id.slice(0, 8)}@eminence.health`, role: "Admin", department: a.position, status: a.is_active ? "active" : "inactive", lastLogin: a.created_at?.split("T")[0] ?? "" });
         }
-        if (apiUsers.length > 0) setUsers(apiUsers);
+
+        if (apiUsers.length > 0) {
+          setUsers(apiUsers);
+        } else if (myProfile) {
+          // Show current user + demo data
+          const demoWithUser = [...INITIAL_USERS];
+          if (!demoWithUser.some((u) => u.email === myProfile.email)) {
+            demoWithUser.unshift({
+              id: 0,
+              name: myProfile.full_name || myProfile.email.split("@")[0],
+              email: myProfile.email,
+              role: ROLE_MAP_TAB[myProfile.role] ?? myProfile.role,
+              department: myProfile.role === "clinician" ? "Clinical" : myProfile.role === "admin" ? "IT" : "General",
+              status: myProfile.is_active ? "active" : "inactive",
+              lastLogin: myProfile.updated_at?.split("T")[0] ?? myProfile.created_at?.split("T")[0] ?? "",
+            });
+          }
+          setUsers(demoWithUser);
+        }
       } catch { /* keep demo */ }
     })();
   }, []);
