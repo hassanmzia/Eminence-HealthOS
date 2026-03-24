@@ -57,20 +57,28 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: "Operations",
-    roles: ["admin", "office_admin", "clinician", "billing", "read_only"],
+    roles: ["super_admin", "admin", "office_admin", "clinician", "billing", "read_only"],
     items: [
-      { href: "/operations", label: "Operations", icon: "clipboard", roles: ["admin", "office_admin", "clinician"] },
-      { href: "/rcm", label: "Revenue Cycle", icon: "dollar", roles: ["admin", "office_admin", "billing"] },
-      { href: "/analytics", label: "Analytics", icon: "chart", roles: ["admin", "office_admin", "clinician", "billing", "read_only"] },
-      { href: "/compliance", label: "Compliance", icon: "shield", roles: ["admin", "office_admin", "billing", "read_only"] },
-      { href: "/ehr-connect", label: "EHR Connect", icon: "link", roles: ["admin"] },
-      { href: "/audit-log", label: "Audit Log", icon: "document", roles: ["admin", "office_admin", "read_only"] },
-      { href: "/admin", label: "Admin", icon: "settings", roles: ["admin"] },
+      { href: "/operations", label: "Operations", icon: "clipboard", roles: ["super_admin", "admin", "office_admin", "clinician"] },
+      { href: "/rcm", label: "Revenue Cycle", icon: "dollar", roles: ["super_admin", "admin", "office_admin", "billing"] },
+      { href: "/analytics", label: "Analytics", icon: "chart", roles: ["super_admin", "admin", "office_admin", "clinician", "billing", "read_only"] },
+      { href: "/compliance", label: "Compliance", icon: "shield", roles: ["super_admin", "admin", "office_admin", "billing", "read_only"] },
+      { href: "/ehr-connect", label: "EHR Connect", icon: "link", roles: ["super_admin", "admin"] },
+      { href: "/audit-log", label: "Audit Log", icon: "document", roles: ["super_admin", "admin", "office_admin", "read_only"] },
+      { href: "/org-settings", label: "Org Settings", icon: "settings", roles: ["super_admin", "admin"] },
+      { href: "/admin", label: "Admin", icon: "settings", roles: ["super_admin", "admin"] },
+    ],
+  },
+  {
+    label: "Platform",
+    roles: ["super_admin"],
+    items: [
+      { href: "/platform-admin", label: "Organizations", icon: "grid", roles: ["super_admin"] },
     ],
   },
   {
     label: "Advanced",
-    roles: ["admin", "clinician"],
+    roles: ["super_admin", "admin", "clinician"],
     items: [
       { href: "/research-genomics", label: "Research", icon: "dna" },
       { href: "/patient-engagement", label: "Engagement", icon: "handshake" },

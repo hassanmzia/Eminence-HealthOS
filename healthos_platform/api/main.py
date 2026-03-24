@@ -31,6 +31,7 @@ from healthos_platform.api.routes import (
     knowledge_graph,
     messaging,
     ml,
+    organizations,
     patient_portal,
     patients,
     profile,
@@ -404,6 +405,9 @@ def create_app() -> FastAPI:
 
     # Admin User Management
     app.include_router(admin_users.router, prefix=api_prefix)
+
+    # Organization Management (self-service signup + super-admin CRUD)
+    app.include_router(organizations.router, prefix=api_prefix)
 
     # Treatment Plans — AI-proposed and doctor-created
     app.include_router(treatment_plans.router, prefix=api_prefix)

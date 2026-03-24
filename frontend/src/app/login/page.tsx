@@ -138,6 +138,12 @@ export default function LoginPage() {
               Register
             </Link>
           </p>
+          <p className="mt-2 text-center text-sm text-slate-400">
+            Setting up a new organization?{" "}
+            <Link href="/signup" className="text-teal-400 hover:text-teal-300">
+              Create Organization
+            </Link>
+          </p>
 
           <p className="mt-3 text-center text-xs text-slate-500">
             Protected health information (PHI) access is logged and audited.
