@@ -6,15 +6,29 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ToastProvider } from "@/contexts/ToastContext";
-import { AuthProvider, useAuth, canAccessRoute } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth, canAccessRoute, type Role } from "@/contexts/AuthContext";
 import { CommandPalette } from "@/components/shared/CommandPalette";
 
 const PUBLIC_ROUTES = ["/login", "/register"];
 
+/** Return the correct home page for a given role. */
+function getHomePage(role: Role): string {
+  switch (role) {
+    case "patient":
+      return "/patient-portal";
+    case "clinician":
+      return "/clinical-workspace";
+    case "office_admin":
+      return "/operations";
+    default:
+      return "/dashboard";
+  }
+}
+
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, loading } = useAuth();
+  const { role, loading, isPatient } = useAuth();
 
   // Still loading user data — show nothing yet
   if (loading) {
@@ -28,8 +42,17 @@ function RouteGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Patient users trying to access staff routes → redirect to patient portal
+  if (isPatient && pathname && !pathname.startsWith("/patient-portal") && pathname !== "/messaging" && pathname !== "/profile") {
+    if (typeof window !== "undefined") {
+      router.replace("/patient-portal");
+    }
+    return null;
+  }
+
   // Check route-level access
   if (role && pathname && !canAccessRoute(pathname, role)) {
+    const home = getHomePage(role);
     return (
       <div className="flex h-full items-center justify-center p-8">
         <div className="max-w-md text-center">
@@ -43,10 +66,10 @@ function RouteGuard({ children }: { children: React.ReactNode }) {
             Your role <span className="font-semibold capitalize text-gray-700 dark:text-gray-300">{role?.replace("_", " ")}</span> does not have permission to access this page.
           </p>
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push(home)}
             className="mt-4 inline-flex items-center gap-2 rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-healthos-700"
           >
-            Go to Dashboard
+            Go to Home
           </button>
         </div>
       </div>

@@ -264,7 +264,7 @@ function NavIcon({ icon }: { icon: string }) {
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
   const pathname = usePathname();
-  const { role } = useAuth();
+  const { role, isPatient } = useAuth();
 
   // Filter sections and items by the current user's role — hide everything if no role
   const visibleSections = !role
@@ -276,6 +276,77 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
           items: section.items.filter((item) => !item.roles || item.roles.includes(role)),
         }))
         .filter((section) => section.items.length > 0);
+
+  // Patient users get a minimal sidebar with patient-portal links only
+  if (isPatient) {
+    const patientNav = [
+      { href: "/patient-portal", label: "My Dashboard", icon: "grid" },
+      { href: "/patient-portal/health", label: "My Health", icon: "activity" },
+      { href: "/patient-portal/appointments", label: "Appointments", icon: "clock" },
+      { href: "/messaging", label: "Messages", icon: "chat" },
+      { href: "/profile", label: "Profile", icon: "settings" },
+    ];
+    return (
+      <aside className="flex h-full w-64 flex-col border-r border-gray-200/80 bg-white dark:border-gray-700/80 dark:bg-gray-900">
+        <div className="flex h-16 items-center gap-3 border-b border-gray-200/80 px-5 dark:border-gray-700/80">
+          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-healthos-500 to-healthos-700 text-sm font-bold text-white shadow-sm">
+            E
+            <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-gray-900" />
+          </div>
+          <div>
+            <span className="text-base font-bold text-gray-900 dark:text-gray-100">Eminence</span>
+            <span className="ml-1 text-[11px] font-semibold uppercase tracking-wider text-healthos-600 dark:text-healthos-400">HealthOS</span>
+          </div>
+        </div>
+        <div className="px-5 py-2 border-b border-gray-200/80 dark:border-gray-700/80">
+          <span className="inline-block rounded-full bg-healthos-50 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-healthos-700 ring-1 ring-inset ring-healthos-500/20 dark:bg-healthos-950/50 dark:text-healthos-400">
+            patient
+          </span>
+        </div>
+        <nav className="flex-1 overflow-y-auto px-3 py-3">
+          <div className="mb-4">
+            <p className="mb-1 px-3 text-[11px] font-bold uppercase tracking-[0.08em] text-gray-400 dark:text-gray-500">
+              My Health
+            </p>
+            <div className="space-y-0.5">
+              {patientNav.map((item) => {
+                const isActive = item.href === "/patient-portal"
+                  ? pathname === "/patient-portal"
+                  : pathname?.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onNavigate}
+                    className={clsx(
+                      "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150",
+                      isActive
+                        ? "bg-healthos-50 text-healthos-700 shadow-sm ring-1 ring-inset ring-healthos-500/10 dark:bg-healthos-950/50 dark:text-healthos-400 dark:ring-healthos-500/20"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                    )}
+                  >
+                    <span className={clsx(
+                      "transition-colors",
+                      isActive ? "text-healthos-600 dark:text-healthos-400" : "text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400"
+                    )}>
+                      <NavIcon icon={item.icon} />
+                    </span>
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </nav>
+        <div className="border-t border-gray-200/80 px-5 py-3 dark:border-gray-700/80">
+          <div className="flex items-center gap-2">
+            <span className="status-dot-healthy" />
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">All Systems Operational</span>
+          </div>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-gray-200/80 bg-white dark:border-gray-700/80 dark:bg-gray-900">

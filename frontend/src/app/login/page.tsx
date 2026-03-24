@@ -3,6 +3,27 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { fetchMyProfile } from "@/lib/api";
+
+/** Return the correct landing page for each role. */
+function getLandingPage(role: string): string {
+  switch (role) {
+    case "patient":
+      return "/patient-portal";
+    case "admin":
+      return "/dashboard";
+    case "clinician":
+      return "/clinical-workspace";
+    case "nurse":
+      return "/dashboard";
+    case "care_manager":
+      return "/dashboard";
+    case "office_admin":
+      return "/operations";
+    default:
+      return "/dashboard";
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,7 +54,16 @@ export default function LoginPage() {
       const data = await res.json();
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("refresh_token", data.refresh_token);
-      router.push("/dashboard");
+
+      // Fetch user profile to get the role, then redirect to role-specific page
+      try {
+        const profile = await fetchMyProfile();
+        const landing = getLandingPage(profile.role);
+        router.push(landing);
+      } catch {
+        // Fallback to dashboard if profile fetch fails
+        router.push("/dashboard");
+      }
     } catch {
       setError("Unable to connect to server");
       setLoading(false);
