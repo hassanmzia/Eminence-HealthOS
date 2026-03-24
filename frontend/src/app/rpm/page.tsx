@@ -6,6 +6,7 @@ import {
   fetchDevices,
   fetchDeviceAlertRules,
   registerDevice,
+  createDeviceAlertRule,
   type DeviceInfoResponse,
   type DeviceAlertRuleResponse,
 } from "@/lib/platform-api";
@@ -188,6 +189,14 @@ export default function RPMPage() {
 
   const [realDevices, setRealDevices] = useState<DeviceInfoResponse[]>([]);
   const [alertRules, setAlertRules] = useState<DeviceAlertRuleResponse[]>([]);
+  const [devicesLoading, setDevicesLoading] = useState(true);
+  const [alertRulesLoading, setAlertRulesLoading] = useState(true);
+  const [provisioning, setProvisioning] = useState(false);
+  const [provisionError, setProvisionError] = useState<string | null>(null);
+  const [showAlertRuleModal, setShowAlertRuleModal] = useState(false);
+  const [alertRuleForm, setAlertRuleForm] = useState({ rule_name: "", metric_name: "heart_rate", condition: ">", threshold_value: "", alert_level: "warning", alert_message: "" });
+  const [creatingAlertRule, setCreatingAlertRule] = useState(false);
+  const [alertRuleError, setAlertRuleError] = useState<string | null>(null);
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -206,11 +215,13 @@ export default function RPMPage() {
     // Load real device list from Phase 4 /device/manage/list
     fetchDevices()
       .then((devices) => setRealDevices(devices))
-      .catch(() => { /* keep demo */ });
+      .catch(() => { /* keep demo fallback */ })
+      .finally(() => setDevicesLoading(false));
 
     fetchDeviceAlertRules()
       .then((rules) => setAlertRules(rules))
-      .catch(() => { /* keep demo */ });
+      .catch(() => { /* keep demo fallback */ })
+      .finally(() => setAlertRulesLoading(false));
   }, [loadDashboard]);
 
   const handleIngest = async (e: React.FormEvent) => {
@@ -660,8 +671,14 @@ export default function RPMPage() {
          ══════════════════════════════════════════════════════════════════════ */}
       {tab === "Device Management" && (
         <div className="space-y-4 animate-fade-in-up">
-          {/* Provision Button */}
-          <div className="flex justify-end">
+          {/* Provision & Alert Rule Buttons */}
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setShowAlertRuleModal(true)}
+              className="rounded-lg border border-healthos-300 bg-healthos-50 px-4 py-2 text-sm font-medium text-healthos-700 hover:bg-healthos-100 transition-colors"
+            >
+              Create Alert Rule
+            </button>
             <button
               onClick={() => setShowProvisionModal(true)}
               className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 transition-colors"
@@ -670,8 +687,60 @@ export default function RPMPage() {
             </button>
           </div>
 
-          {/* Device Registry Table */}
+          {/* Real Devices from API */}
+          {realDevices.length > 0 && (
+            <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Registered Devices (API)</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                      {["Device ID", "Name", "Type", "Status", "Battery", "Last Sync", "Firmware"].map((h) => (
+                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {realDevices.map((d) => {
+                      const sc = deviceStatusColors[d.status] ?? deviceStatusColors.inactive;
+                      return (
+                        <tr key={d.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                          <td className="px-4 py-3 font-mono text-xs font-medium text-gray-900 dark:text-gray-100">{d.device_unique_id}</td>
+                          <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{d.device_name}</td>
+                          <td className="px-4 py-3">
+                            <span className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-700 dark:text-gray-300">{d.device_type}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className={`h-2 w-2 rounded-full ${sc.dot}`} />
+                              <span className={`text-xs font-medium capitalize ${sc.text}`}>{d.status}</span>
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">{d.battery_level != null ? <BatteryBar level={d.battery_level} /> : <span className="text-xs text-gray-400">N/A</span>}</td>
+                          <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">{d.last_sync ? new Date(d.last_sync).toLocaleString() : "Never"}</td>
+                          <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">{d.firmware_version ?? "—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table></div>
+              </div>
+            </div>
+          )}
+
+          {devicesLoading && (
+            <div className="flex items-center justify-center h-16">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-healthos-600" />
+            </div>
+          )}
+
+          {/* Demo Device Registry Table (fallback) */}
           <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{realDevices.length > 0 ? "Demo Devices (Reference)" : "Device Registry"}</h3>
+            </div>
             <div className="overflow-x-auto">
               <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-800">
@@ -707,6 +776,54 @@ export default function RPMPage() {
                 </tbody>
               </table></div>
             </div>
+          </div>
+
+          {/* Alert Rules Section */}
+          <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Alert Rules</h3>
+            </div>
+            {alertRulesLoading ? (
+              <div className="flex items-center justify-center h-16">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-healthos-600" />
+              </div>
+            ) : alertRules.length === 0 ? (
+              <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                No alert rules configured. Click &quot;Create Alert Rule&quot; to add one.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                      {["Rule Name", "Metric", "Condition", "Threshold", "Alert Level", "Active"].map((h) => (
+                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {alertRules.map((r) => (
+                      <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <td className="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{r.rule_name}</td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{r.metric_name}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300">{r.condition}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300">{r.threshold_value}</td>
+                        <td className="px-4 py-3">
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase ${
+                            r.alert_level === "critical" ? "bg-red-100 text-red-800" :
+                            r.alert_level === "warning" ? "bg-yellow-100 text-yellow-800" :
+                            "bg-blue-100 text-blue-800"
+                          }`}>{r.alert_level}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`h-2 w-2 inline-block rounded-full ${r.is_active ? "bg-green-500" : "bg-gray-400"}`} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -789,10 +906,29 @@ export default function RPMPage() {
               <button onClick={() => setShowProvisionModal(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                setShowProvisionModal(false);
-                setProvisionForm({ deviceId: "", type: "Wearable", model: "", assignedPatient: "" });
+                setProvisioning(true);
+                setProvisionError(null);
+                try {
+                  await registerDevice({
+                    patient_id: provisionForm.assignedPatient || "unassigned",
+                    device_unique_id: provisionForm.deviceId,
+                    device_name: provisionForm.model,
+                    device_type: provisionForm.type,
+                    manufacturer: "",
+                    model_number: provisionForm.model,
+                  });
+                  // Refresh device list after successful registration
+                  const devices = await fetchDevices().catch(() => []);
+                  setRealDevices(devices);
+                  setShowProvisionModal(false);
+                  setProvisionForm({ deviceId: "", type: "Wearable", model: "", assignedPatient: "" });
+                } catch (err) {
+                  setProvisionError(err instanceof Error ? err.message : "Failed to register device");
+                } finally {
+                  setProvisioning(false);
+                }
               }}
               className="space-y-4"
             >
@@ -845,10 +981,142 @@ export default function RPMPage() {
                   ))}
                 </select>
               </div>
+              {provisionError && (
+                <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                  {provisionError}
+                </div>
+              )}
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowProvisionModal(false)} className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
-                <button type="submit" className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700">
-                  Provision Device
+                <button type="submit" disabled={provisioning} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50">
+                  {provisioning ? "Registering..." : "Provision Device"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          Create Alert Rule Modal
+         ══════════════════════════════════════════════════════════════════════ */}
+      {showAlertRuleModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4" onClick={() => setShowAlertRuleModal(false)}>
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Create Alert Rule</h2>
+              <button onClick={() => setShowAlertRuleModal(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setCreatingAlertRule(true);
+                setAlertRuleError(null);
+                try {
+                  await createDeviceAlertRule({
+                    rule_name: alertRuleForm.rule_name,
+                    metric_name: alertRuleForm.metric_name,
+                    condition: alertRuleForm.condition,
+                    threshold_value: parseFloat(alertRuleForm.threshold_value),
+                    alert_level: alertRuleForm.alert_level,
+                    alert_message: alertRuleForm.alert_message,
+                  });
+                  // Refresh alert rules after creation
+                  const rules = await fetchDeviceAlertRules().catch(() => []);
+                  setAlertRules(rules);
+                  setShowAlertRuleModal(false);
+                  setAlertRuleForm({ rule_name: "", metric_name: "heart_rate", condition: ">", threshold_value: "", alert_level: "warning", alert_message: "" });
+                } catch (err) {
+                  setAlertRuleError(err instanceof Error ? err.message : "Failed to create alert rule");
+                } finally {
+                  setCreatingAlertRule(false);
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rule Name</label>
+                <input
+                  required
+                  value={alertRuleForm.rule_name}
+                  onChange={(e) => setAlertRuleForm({ ...alertRuleForm, rule_name: e.target.value })}
+                  placeholder="e.g. High Heart Rate Alert"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                />
+              </div>
+              <div className="grid grid-cols-1 xs:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Metric</label>
+                  <select
+                    value={alertRuleForm.metric_name}
+                    onChange={(e) => setAlertRuleForm({ ...alertRuleForm, metric_name: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  >
+                    <option value="heart_rate">Heart Rate</option>
+                    <option value="blood_pressure">Blood Pressure</option>
+                    <option value="spo2">SpO2</option>
+                    <option value="temperature">Temperature</option>
+                    <option value="glucose">Glucose</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Condition</label>
+                  <select
+                    value={alertRuleForm.condition}
+                    onChange={(e) => setAlertRuleForm({ ...alertRuleForm, condition: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  >
+                    <option value=">">Greater than (&gt;)</option>
+                    <option value="<">Less than (&lt;)</option>
+                    <option value=">=">Greater or equal (&gt;=)</option>
+                    <option value="<=">Less or equal (&lt;=)</option>
+                    <option value="==">Equal to (==)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Threshold</label>
+                  <input
+                    required
+                    type="number"
+                    step="any"
+                    value={alertRuleForm.threshold_value}
+                    onChange={(e) => setAlertRuleForm({ ...alertRuleForm, threshold_value: e.target.value })}
+                    placeholder="e.g. 100"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alert Level</label>
+                <select
+                  value={alertRuleForm.alert_level}
+                  onChange={(e) => setAlertRuleForm({ ...alertRuleForm, alert_level: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                >
+                  <option value="info">Info</option>
+                  <option value="warning">Warning</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alert Message</label>
+                <input
+                  required
+                  value={alertRuleForm.alert_message}
+                  onChange={(e) => setAlertRuleForm({ ...alertRuleForm, alert_message: e.target.value })}
+                  placeholder="e.g. Heart rate exceeded safe threshold"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
+                />
+              </div>
+              {alertRuleError && (
+                <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                  {alertRuleError}
+                </div>
+              )}
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowAlertRuleModal(false)} className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
+                <button type="submit" disabled={creatingAlertRule} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50">
+                  {creatingAlertRule ? "Creating..." : "Create Rule"}
                 </button>
               </div>
             </form>

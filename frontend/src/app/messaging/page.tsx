@@ -237,6 +237,8 @@ export default function SecureMessagingPage() {
   const [modalSubject, setModalSubject] = useState("");
   const [modalPriority, setModalPriority] = useState<Priority>("normal");
   const [modalBody, setModalBody] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
@@ -301,6 +303,8 @@ export default function SecureMessagingPage() {
         }
       } catch {
         // API unavailable — keep demo data
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
@@ -310,6 +314,60 @@ export default function SecureMessagingPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messageList.length]);
+
+  /* ── Select conversation & mark as read ── */
+
+  const selectConversation = useCallback(
+    (convId: string) => {
+      setSelectedId(convId);
+
+      // Attempt to fetch full thread from API
+      fetchMessageThread(convId)
+        .then((threadMsgs) => {
+          if (threadMsgs.length > 0) {
+            setMessages((prev) => ({
+              ...prev,
+              [convId]: threadMsgs.map((m) => ({
+                id: m.id,
+                senderId: m.sender_id,
+                senderName: m.sender_id === "me" ? "You" : m.sender_id.slice(0, 8),
+                content: m.subject ? `[${m.subject}] ${m.body}` : m.body,
+                timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                isRead: m.is_read,
+              })),
+            }));
+          }
+        })
+        .catch(() => {
+          /* offline/demo — keep existing local messages */
+        });
+
+      const conv = conversations.find((c) => c.id === convId);
+      if (conv && conv.unreadCount > 0) {
+        // Mark unread messages in this thread as read via API
+        const threadMessages = messages[convId] ?? [];
+        const unreadIds = threadMessages
+          .filter((m) => !m.isRead && m.senderId !== CURRENT_USER_ID)
+          .map((m) => m.id);
+
+        for (const msgId of unreadIds) {
+          markMessageRead(msgId).catch(() => {
+            /* offline/demo */
+          });
+        }
+
+        // Optimistically update local state
+        setConversations((prev) =>
+          prev.map((c) => (c.id === convId ? { ...c, unreadCount: 0 } : c))
+        );
+        setMessages((prev) => ({
+          ...prev,
+          [convId]: (prev[convId] ?? []).map((m) => ({ ...m, isRead: true })),
+        }));
+      }
+    },
+    [conversations, messages],
+  );
 
   /* ── Toggles ── */
 
@@ -336,7 +394,8 @@ export default function SecureMessagingPage() {
   /* ── Send message ── */
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !selectedId) return;
+    if (!newMessage.trim() || !selectedId || sending) return;
+    setSending(true);
     const msg: Message = {
       id: `m-${Date.now()}`,
       senderId: CURRENT_USER_ID,
@@ -372,13 +431,16 @@ export default function SecureMessagingPage() {
       }
     } catch {
       // Offline/demo mode — message already shown locally
+    } finally {
+      setSending(false);
     }
   };
 
   /* ── New message modal send ── */
 
   const handleModalSend = async () => {
-    if (!modalRecipient || !modalBody.trim()) return;
+    if (!modalRecipient || !modalBody.trim() || sending) return;
+    setSending(true);
 
     // Fire-and-forget real API send
     sendSecureMessage({
@@ -417,6 +479,7 @@ export default function SecureMessagingPage() {
     setModalSubject("");
     setModalPriority("normal");
     setModalBody("");
+    setSending(false);
   };
 
   /* ── Filtering ── */
@@ -537,13 +600,19 @@ export default function SecureMessagingPage() {
 
           {/* Conversation List */}
           <div className="flex-1 overflow-y-auto">
-            {filteredConversations.length === 0 && (
+            {loading && (
+              <div className="p-6 text-center">
+                <div className="inline-block w-6 h-6 border-2 border-healthos-600 border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Loading messages...</p>
+              </div>
+            )}
+            {!loading && filteredConversations.length === 0 && (
               <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">No conversations found.</div>
             )}
             {filteredConversations.map((conv) => (
               <button
                 key={conv.id}
-                onClick={() => setSelectedId(conv.id)}
+                onClick={() => selectConversation(conv.id)}
                 className={`w-full text-left p-4 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
                   selectedId === conv.id ? "bg-healthos-50 border-l-[3px] border-l-healthos-500" : ""
                 }`}
@@ -738,12 +807,16 @@ export default function SecureMessagingPage() {
                   </div>
                   <button
                     onClick={handleSend}
-                    disabled={!newMessage.trim()}
+                    disabled={!newMessage.trim() || sending}
                     className="p-2.5 bg-healthos-600 text-white rounded-xl hover:bg-healthos-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
                   >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
+                    {sending ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                    )}
                   </button>
                 </div>
                 <div className="flex items-center justify-center gap-1.5 mt-2">
@@ -904,10 +977,13 @@ export default function SecureMessagingPage() {
                   </button>
                   <button
                     onClick={handleModalSend}
-                    disabled={!modalRecipient || !modalBody.trim()}
-                    className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled={!modalRecipient || !modalBody.trim() || sending}
+                    className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    Send Message
+                    {sending && (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    )}
+                    {sending ? "Sending..." : "Send Message"}
                   </button>
                 </div>
               </div>

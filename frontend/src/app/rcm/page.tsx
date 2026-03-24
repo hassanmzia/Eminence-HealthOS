@@ -9,6 +9,14 @@ import {
   appealDenial,
   verifyRevenueIntegrity,
 } from "@/lib/api";
+import {
+  fetchInvoices,
+  createInvoice,
+  fetchPayments,
+  createPayment,
+  type BillingResponse,
+  type PaymentResponse,
+} from "@/lib/platform-api";
 
 /* ──────────────────────────── Demo Data ──────────────────────────── */
 
@@ -137,7 +145,9 @@ export default function RCMPage() {
   const [cleanClaimRate, setCleanClaimRate] = useState(94.8);
 
   // Claims & Billing state
-  const [claims] = useState(DEMO_CLAIMS);
+  const [claims, setClaims] = useState(DEMO_CLAIMS);
+  const [invoices, setInvoices] = useState<BillingResponse[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(true);
   const [optimizingClaim, setOptimizingClaim] = useState<string | null>(null);
   const [showChargeForm, setShowChargeForm] = useState(false);
   const [chargeForm, setChargeForm] = useState({ patient: "", payer: "", codes: "", amount: "", diagnosis: "" });
@@ -155,6 +165,8 @@ export default function RCMPage() {
   const [scanComplete, setScanComplete] = useState(true);
 
   // Payments & AR state
+  const [payments, setPayments] = useState<PaymentResponse[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(true);
   const [paymentForm, setPaymentForm] = useState({ claimId: "", amount: "", method: "eft", reference: "" });
   const [postingPayment, setPostingPayment] = useState(false);
 
@@ -168,6 +180,49 @@ export default function RCMPage() {
       })
       .catch(() => { /* use demo data */ });
   }, []);
+
+  // Load real invoices from billing API
+  const loadInvoices = useCallback(async () => {
+    setLoadingInvoices(true);
+    try {
+      const data = await fetchInvoices({ page: 1, page_size: 50 });
+      setInvoices(data);
+      // Map invoices to claims format for the table
+      if (data.length > 0) {
+        setClaims(data.map((inv) => ({
+          id: inv.invoice_number,
+          patient: inv.patient_id,
+          codes: [] as string[],
+          amount: inv.total_amount,
+          payer: "—",
+          status: inv.status,
+          date: inv.billing_date,
+        })));
+      }
+    } catch {
+      // Keep DEMO_CLAIMS as fallback
+    } finally {
+      setLoadingInvoices(false);
+    }
+  }, []);
+
+  // Load real payments from billing API
+  const loadPayments = useCallback(async () => {
+    setLoadingPayments(true);
+    try {
+      const data = await fetchPayments();
+      setPayments(data);
+    } catch {
+      // Keep demo data as fallback
+    } finally {
+      setLoadingPayments(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadInvoices();
+    loadPayments();
+  }, [loadInvoices, loadPayments]);
 
   // ── Handlers ──
 
@@ -186,21 +241,45 @@ export default function RCMPage() {
     e.preventDefault();
     setSubmittingCharge(true);
     try {
-      await captureCharges({
-        patient_name: chargeForm.patient,
-        payer: chargeForm.payer,
-        codes: chargeForm.codes.split(",").map((c) => c.trim()),
-        amount: parseFloat(chargeForm.amount) || 0,
-        diagnosis: chargeForm.diagnosis,
+      // Try creating a real invoice via the billing API
+      const codes = chargeForm.codes.split(",").map((c) => c.trim()).filter(Boolean);
+      const amount = parseFloat(chargeForm.amount) || 0;
+      const today = new Date().toISOString().split("T")[0];
+      const dueDate = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
+      await createInvoice({
+        patient_id: chargeForm.patient,
+        invoice_number: `INV-${Date.now()}`,
+        billing_date: today,
+        due_date: dueDate,
+        items: codes.map((code) => ({
+          service_code: code,
+          service_description: `Service ${code}`,
+          quantity: 1,
+          unit_price: amount / (codes.length || 1),
+        })),
+        notes: chargeForm.diagnosis ? `Dx: ${chargeForm.diagnosis}` : undefined,
       });
+      // Reload invoices after successful creation
+      loadInvoices();
     } catch {
-      /* demo mode */
+      // Fall back to the AI charge capture endpoint
+      try {
+        await captureCharges({
+          patient_name: chargeForm.patient,
+          payer: chargeForm.payer,
+          codes: chargeForm.codes.split(",").map((c) => c.trim()),
+          amount: parseFloat(chargeForm.amount) || 0,
+          diagnosis: chargeForm.diagnosis,
+        });
+      } catch {
+        /* demo mode */
+      }
     } finally {
       setSubmittingCharge(false);
       setShowChargeForm(false);
       setChargeForm({ patient: "", payer: "", codes: "", amount: "", diagnosis: "" });
     }
-  }, [chargeForm]);
+  }, [chargeForm, loadInvoices]);
 
   const handleAnalyzeDenial = useCallback(async (denialId: string, claimId: string) => {
     setAnalyzingDenial(denialId);
@@ -259,14 +338,29 @@ export default function RCMPage() {
     e.preventDefault();
     setPostingPayment(true);
     try {
-      await captureCharges({ type: "payment_posting", claim_id: paymentForm.claimId, amount: parseFloat(paymentForm.amount), method: paymentForm.method, reference: paymentForm.reference });
+      // Try posting payment via the real billing API
+      await createPayment({
+        billing_id: paymentForm.claimId,
+        patient_id: "", // The backend may resolve this from billing_id
+        amount: parseFloat(paymentForm.amount) || 0,
+        payment_method: paymentForm.method,
+        transaction_id: paymentForm.reference || undefined,
+      });
+      // Reload payments and invoices after successful creation
+      loadPayments();
+      loadInvoices();
     } catch {
-      /* demo mode */
+      // Fall back to the AI endpoint
+      try {
+        await captureCharges({ type: "payment_posting", claim_id: paymentForm.claimId, amount: parseFloat(paymentForm.amount), method: paymentForm.method, reference: paymentForm.reference });
+      } catch {
+        /* demo mode */
+      }
     } finally {
       setPostingPayment(false);
       setPaymentForm({ claimId: "", amount: "", method: "eft", reference: "" });
     }
-  }, [paymentForm]);
+  }, [paymentForm, loadPayments, loadInvoices]);
 
   // ── Computed metrics ──
   const totalAR = DEMO_AR_BUCKETS.reduce((s, b) => s + b.amount, 0);
@@ -361,6 +455,12 @@ export default function RCMPage() {
                 </button>
               </div>
               <div className="overflow-x-auto">
+                {loadingInvoices && (
+                  <div className="flex items-center justify-center py-8 gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" /><path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" strokeLinecap="round" className="opacity-75" /></svg>
+                    Loading invoices...
+                  </div>
+                )}
                 <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-100">
                   <thead>
                     <tr className="bg-gray-50/50">
@@ -664,6 +764,12 @@ export default function RCMPage() {
       {/* ══════════════════ TAB 4: Payments & AR ══════════════════ */}
       {activeTab === "payments" && (
         <div className="space-y-6 animate-fade-in-up">
+          {loadingPayments && (
+            <div className="flex items-center justify-center py-4 gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" /><path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" strokeLinecap="round" className="opacity-75" /></svg>
+              Loading payment data...
+            </div>
+          )}
           {/* Collections summary */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="card card-hover p-5">
@@ -778,6 +884,40 @@ export default function RCMPage() {
               </div>
             </div>
           </div>
+
+          {/* Recent Payments from API */}
+          {payments.length > 0 && (
+            <div className="card p-5">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Payments</h3>
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <table className="min-w-full divide-y divide-gray-100">
+                  <thead>
+                    <tr className="bg-gray-50/50">
+                      {["Payment ID", "Invoice", "Amount", "Method", "Status", "Date"].map((h) => (
+                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {payments.slice(0, 10).map((p) => (
+                      <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-4 py-3 text-sm font-mono text-healthos-600">{p.id.slice(0, 8)}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{p.billing_id.slice(0, 8)}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100">${p.amount.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 capitalize">{p.payment_method}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_COLORS[p.status] || "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>
+                            {p.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{p.payment_date}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
