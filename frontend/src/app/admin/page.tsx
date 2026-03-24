@@ -95,6 +95,9 @@ const ROLES: Role[] = [
   { id: 6, name: "Pharmacist", description: "Medication dispensing and interaction checks", color: "teal", userCount: 2, permissions: ["patients:read", "pharmacy:read", "pharmacy:write", "labs:read", "ai_models:read", "analytics:read"] },
   { id: 7, name: "Billing", description: "Financial operations and claims management", color: "yellow", userCount: 2, permissions: ["patients:read", "billing:read", "billing:write", "analytics:read"] },
   { id: 8, name: "Read Only", description: "View-only access for auditors and compliance", color: "gray", userCount: 1, permissions: ["patients:read", "labs:read", "pharmacy:read", "billing:read", "compliance:read", "analytics:read"] },
+  { id: 9, name: "Patient", description: "Patient portal access for personal health records", color: "cyan", userCount: 0, permissions: ["patients:read"] },
+  { id: 10, name: "Office Admin", description: "Office administration and scheduling management", color: "indigo", userCount: 0, permissions: ["patients:read", "patients:write", "billing:read", "billing:write", "analytics:read"] },
+  { id: 11, name: "Care Manager", description: "Care coordination and patient follow-up management", color: "pink", userCount: 0, permissions: ["patients:read", "patients:write", "labs:read", "pharmacy:read", "analytics:read"] },
 ];
 
 const PERMISSION_CATEGORIES: Permission[] = [
@@ -177,11 +180,13 @@ export default function AdminPage() {
     super_admin: "Super Admin",
     clinician: "Physician",
     nurse: "Nurse",
-    care_manager: "Admin",
+    care_manager: "Care Manager",
     lab_tech: "Lab Tech",
     pharmacist: "Pharmacist",
     billing: "Billing",
     read_only: "Read Only",
+    patient: "Patient",
+    office_admin: "Office Admin",
   };
 
   // Convert a profile to a User entry for the table
@@ -408,22 +413,27 @@ function UsersTab() {
     super_admin: "Super Admin",
     clinician: "Physician",
     nurse: "Nurse",
-    care_manager: "Admin",
+    care_manager: "Care Manager",
     lab_tech: "Lab Tech",
     pharmacist: "Pharmacist",
     billing: "Billing",
     read_only: "Read Only",
+    patient: "Patient",
+    office_admin: "Office Admin",
   };
 
   const ROLE_REVERSE_MAP: Record<string, string> = {
     "Super Admin": "admin",
     Physician: "clinician",
     Nurse: "nurse",
-    Admin: "care_manager",
+    Admin: "admin",
     "Lab Tech": "lab_tech",
     Pharmacist: "pharmacist",
     Billing: "billing",
     "Read Only": "read_only",
+    Patient: "patient",
+    "Office Admin": "office_admin",
+    "Care Manager": "care_manager",
   };
 
   // Load real user data — always include current logged-in user
