@@ -1031,3 +1031,71 @@ export async function revokeAllSessions() {
     method: "POST",
   });
 }
+
+// ── Admin User Management ─────────────────────────────────────────────────────
+
+export interface AdminUserResponse {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  org_id: string;
+  is_active: boolean;
+  mfa_enabled: boolean;
+  phone: string | null;
+  avatar_url: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface AdminUserListResponse {
+  users: AdminUserResponse[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export async function fetchAdminUsers(params?: {
+  page?: number;
+  page_size?: number;
+  role?: string;
+  is_active?: boolean;
+  search?: string;
+}) {
+  const qs = new URLSearchParams();
+  if (params?.page) qs.set("page", String(params.page));
+  if (params?.page_size) qs.set("page_size", String(params.page_size));
+  if (params?.role) qs.set("role", params.role);
+  if (params?.is_active !== undefined) qs.set("is_active", String(params.is_active));
+  if (params?.search) qs.set("search", params.search);
+  const query = qs.toString() ? `?${qs.toString()}` : "";
+  return request<AdminUserListResponse>(`/admin/users${query}`);
+}
+
+export async function createAdminUser(body: {
+  email: string;
+  password: string;
+  full_name: string;
+  role?: string;
+}) {
+  return request<AdminUserResponse>("/admin/users", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function updateAdminUser(
+  userId: string,
+  body: { full_name?: string; role?: string; is_active?: boolean; phone?: string }
+) {
+  return request<AdminUserResponse>(`/admin/users/${userId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deactivateAdminUser(userId: string) {
+  return request<{ message: string }>(`/admin/users/${userId}`, {
+    method: "DELETE",
+  });
+}
