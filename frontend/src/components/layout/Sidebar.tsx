@@ -398,23 +398,6 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
         ))}
       </nav>
 
-      {/* Patient Portal link — only for staff (not patients, they have their own sidebar) */}
-      <div className="border-t border-gray-200/80 px-3 py-3 dark:border-gray-700/80">
-        <Link
-          href="/patient-portal"
-          onClick={onNavigate}
-          className={clsx(
-            "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-all",
-            pathname?.startsWith("/patient-portal")
-              ? "bg-healthos-50 text-healthos-700 dark:bg-healthos-950/50 dark:text-healthos-400"
-              : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-          )}
-        >
-          <NavIcon icon="portal" />
-          Patient Portal
-        </Link>
-      </div>
-
       {/* System Status */}
       <div className="border-t border-gray-200/80 px-5 py-3 dark:border-gray-700/80">
         <div className="flex items-center gap-2">

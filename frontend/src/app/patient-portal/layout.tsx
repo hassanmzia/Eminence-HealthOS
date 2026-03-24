@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PORTAL_NAV = [
   { href: "/patient-portal", label: "Home", icon: "home" },
@@ -61,6 +62,15 @@ export default function PatientPortalLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  const displayName = user?.full_name || "Patient";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950">
@@ -105,10 +115,10 @@ export default function PatientPortalLayout({
           {/* User menu */}
           <div className="flex items-center gap-3">
             <div className="hidden items-center gap-2 sm:flex">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-healthos-100 text-sm font-medium text-healthos-700">
-                <PortalIcon icon="user" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-healthos-100 text-sm font-bold text-healthos-700">
+                {initials}
               </div>
-              <span className="text-sm font-medium text-gray-700">Patient</span>
+              <span className="text-sm font-medium text-gray-700">{displayName}</span>
             </div>
             <button
               onClick={handleLogout}
@@ -148,13 +158,13 @@ export default function PatientPortalLayout({
       </header>
 
       {/* Content */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-4 sm:px-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
         {children}
       </main>
 
       {/* Footer */}
       <footer className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-4 sm:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <p className="text-center text-xs text-gray-400">
             Eminence HealthOS Patient Portal &mdash; Your health data is protected under HIPAA.
           </p>

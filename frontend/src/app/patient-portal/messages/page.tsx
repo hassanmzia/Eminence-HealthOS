@@ -94,7 +94,16 @@ export default function MessagesPage() {
                 <p className="text-sm text-gray-500 dark:text-gray-400">No messages yet.</p>
               </div>
             ) : (
-              <ul className="divide-y divide-gray-100"> {messages.map((msg) => ( <li key={msg.id}> <button onClick={() { setSelectedMessage(msg); setShowCompose(false); }} className={`w-full px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${ selectedMessage?.id === msg.id ?"bg-healthos-50" : ""
+              <ul className="divide-y divide-gray-100">
+                {messages.map((msg) => (
+                  <li key={msg.id}>
+                    <button
+                      onClick={() => {
+                        setSelectedMessage(msg);
+                        setShowCompose(false);
+                      }}
+                      className={`w-full px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                        selectedMessage?.id === msg.id ? "bg-healthos-50" : ""
                       }`}
                     >
                       <div className="flex items-center gap-2">

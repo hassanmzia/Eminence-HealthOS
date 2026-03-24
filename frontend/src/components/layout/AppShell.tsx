@@ -9,7 +9,7 @@ import { ToastProvider } from "@/contexts/ToastContext";
 import { AuthProvider, useAuth, canAccessRoute } from "@/contexts/AuthContext";
 import { CommandPalette } from "@/components/shared/CommandPalette";
 
-const PUBLIC_ROUTES = ["/login", "/register", "/patient-portal"];
+const PUBLIC_ROUTES = ["/login", "/register"];
 
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -67,10 +67,11 @@ function RouteGuard({ children }: { children: React.ReactNode }) {
 function AppShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isPublic = PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
+  const isPatientPortal = pathname?.startsWith("/patient-portal");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isPatient, loading } = useAuth();
 
-  // Public routes: no shell (login, register), also patient-portal on public access
+  // Public routes: no shell (login, register)
   if (isPublic) {
     return <>{children}</>;
   }
@@ -85,6 +86,11 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
+  }
+
+  // Patient portal: uses its own layout (header/nav) but still enforces RouteGuard
+  if (isPatientPortal) {
+    return <RouteGuard>{children}</RouteGuard>;
   }
 
   return (

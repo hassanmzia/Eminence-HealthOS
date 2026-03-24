@@ -145,7 +145,7 @@ export const ROUTE_ACCESS: Record<string, Role[]> = {
   "/marketplace": ["admin", "clinician"],
   "/simulator": ["admin", "clinician"],
   "/profile": ["admin", "clinician", "care_manager", "nurse", "office_admin", "patient"],
-  "/patient-portal": ["admin", "clinician", "care_manager", "nurse", "office_admin", "patient"],
+  "/patient-portal": ["patient"],
 };
 
 /**
