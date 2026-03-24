@@ -276,11 +276,11 @@ export default function ImagingPage() {
           {
             id: `AI-${Date.now()}`,
             studyId: selectedStudyForAI,
-            description: (result as Record<string, unknown>).finding as string || "Analysis complete",
-            confidence: (result as Record<string, unknown>).confidence as number || 0.85,
-            severity: ((result as Record<string, unknown>).severity as Severity) || "normal",
-            recommendedAction: (result as Record<string, unknown>).action as string || "Review findings",
-            model: (result as Record<string, unknown>).model as string || "HealthOS-AI",
+            description: (result as unknown as Record<string, unknown>).finding as string || "Analysis complete",
+            confidence: (result as unknown as Record<string, unknown>).confidence as number || 0.85,
+            severity: ((result as unknown as Record<string, unknown>).severity as Severity) || "normal",
+            recommendedAction: (result as unknown as Record<string, unknown>).action as string || "Review findings",
+            model: (result as unknown as Record<string, unknown>).model as string || "HealthOS-AI",
             bodyPart: "—",
           },
         ]);

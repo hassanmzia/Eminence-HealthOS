@@ -147,7 +147,7 @@ export default function LabsPage() {
   const [apiError, setApiError] = useState<string | null>(null);
 
   /* Lab Orders state */
-  const [labOrders, setLabOrders] = useState(DEMO_LAB_ORDERS);
+  const [labOrders, setLabOrders] = useState<Array<{ id: string; patient: string; patient_id: string; panels: string[]; priority: string; status: string; ordered: string; provider: string }>>(DEMO_LAB_ORDERS);
   const [showCreateOrder, setShowCreateOrder] = useState(false);
   const [newOrder, setNewOrder] = useState({ patient_id: "", panels: [] as string[], priority: "routine", notes: "" });
   const [orderSubmitting, setOrderSubmitting] = useState(false);
@@ -203,11 +203,11 @@ export default function LabsPage() {
           // Populate orders table
           setLabOrders(
             labs.map((l: LabTestResponse) => {
-              const s =
-                l.status === "Completed" ? ("completed" as const)
-                : l.status === "In Progress" ? ("processing" as const)
-                : l.status === "Collected" ? ("collected" as const)
-                : ("ordered" as const);
+              const s: "completed" | "processing" | "collected" | "ordered" =
+                l.status === "Completed" ? "completed"
+                : l.status === "In Progress" ? "processing"
+                : l.status === "Collected" ? "collected"
+                : "ordered";
               return {
                 id: l.id,
                 patient: l.patient_id.slice(0, 8),

@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { fetchMyProfile, type UserProfile } from "@/lib/api";
 
 // Mirror backend role/permission definitions
-export type Role = "admin" | "clinician" | "care_manager" | "nurse" | "office_admin" | "patient" | "system";
+export type Role = "admin" | "clinician" | "care_manager" | "nurse" | "office_admin";
 
 export type Permission =
   | "patient:read" | "patient:write" | "patient:delete"
@@ -97,15 +97,6 @@ const ROLE_PERMISSIONS: Record<Role, Set<Permission>> = {
     "hospital:read", "hospital:manage",
     "users:manage", "audit:read",
   ]),
-  patient: new Set([
-    "vitals:read", "alerts:read",
-    "encounters:read", "care_plans:read",
-    "diagnosis:read", "prescription:read",
-    "allergy:read", "lab:read",
-    "messages:read", "messages:write", "notifications:read",
-    "billing:read", "devices:read", "provider:read",
-  ]),
-  system: new Set(ALL_PERMISSIONS),
 };
 
 // Route → allowed roles mapping for frontend route guards
@@ -114,7 +105,7 @@ export const ROUTE_ACCESS: Record<string, Role[]> = {
   "/clinical-workspace": ["admin", "clinician", "care_manager", "nurse"],
   "/patients": ["admin", "clinician", "care_manager", "nurse", "office_admin"],
   "/alerts": ["admin", "clinician", "care_manager", "nurse", "office_admin"],
-  "/messaging": ["admin", "clinician", "care_manager", "nurse", "office_admin", "patient"],
+  "/messaging": ["admin", "clinician", "care_manager", "nurse", "office_admin"],
   "/rpm": ["admin", "clinician", "care_manager", "nurse"],
   "/telehealth": ["admin", "clinician", "care_manager", "nurse"],
   "/ambient-ai": ["admin", "clinician"],
@@ -144,15 +135,13 @@ export const ROUTE_ACCESS: Record<string, Role[]> = {
   "/patient-engagement": ["admin", "clinician"],
   "/marketplace": ["admin", "clinician"],
   "/simulator": ["admin", "clinician"],
-  "/profile": ["admin", "clinician", "care_manager", "nurse", "office_admin", "patient"],
-  "/patient-portal": ["patient"],
+  "/profile": ["admin", "clinician", "care_manager", "nurse", "office_admin"],
 };
 
 /**
  * Check if a role is allowed to access a given pathname.
- * Returns true if:
- * - the route is not in ROUTE_ACCESS (default allow), or
- * - the role is in the allowed list
+ * Only allows access if the route is explicitly listed and the role is included.
+ * Unlisted routes default to deny for safety.
  */
 export function canAccessRoute(pathname: string, role: Role | null): boolean {
   if (!role) return false;
@@ -160,7 +149,7 @@ export function canAccessRoute(pathname: string, role: Role | null): boolean {
   const matchingRoute = Object.keys(ROUTE_ACCESS)
     .filter((r) => pathname.startsWith(r))
     .sort((a, b) => b.length - a.length)[0];
-  if (!matchingRoute) return true; // no rule = allow
+  if (!matchingRoute) return false; // no rule = deny by default
   return ROUTE_ACCESS[matchingRoute].includes(role);
 }
 
@@ -175,7 +164,6 @@ interface AuthContextValue {
   isAdmin: boolean;
   isClinician: boolean;
   isNurse: boolean;
-  isPatient: boolean;
   isOfficeAdmin: boolean;
   isCareManager: boolean;
   refreshUser: () => Promise<void>;
@@ -225,7 +213,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin: role === "admin",
     isClinician: role === "clinician",
     isNurse: role === "nurse",
-    isPatient: role === "patient",
     isOfficeAdmin: role === "office_admin",
     isCareManager: role === "care_manager",
     refreshUser,

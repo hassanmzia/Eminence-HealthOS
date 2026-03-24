@@ -14,7 +14,7 @@ const PUBLIC_ROUTES = ["/login", "/register"];
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, loading, isPatient } = useAuth();
+  const { role, loading } = useAuth();
 
   // Still loading user data — show nothing yet
   if (loading) {
@@ -26,14 +26,6 @@ function RouteGuard({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
-  }
-
-  // Patient users trying to access non-patient routes → redirect to patient portal
-  if (isPatient && pathname && !pathname.startsWith("/patient-portal") && pathname !== "/messaging" && pathname !== "/profile") {
-    if (typeof window !== "undefined") {
-      router.replace("/patient-portal");
-    }
-    return null;
   }
 
   // Check route-level access
@@ -67,9 +59,8 @@ function RouteGuard({ children }: { children: React.ReactNode }) {
 function AppShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isPublic = PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
-  const isPatientPortal = pathname?.startsWith("/patient-portal");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isPatient, loading } = useAuth();
+  const { loading } = useAuth();
 
   // Public routes: no shell (login, register)
   if (isPublic) {
@@ -86,11 +77,6 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
-  }
-
-  // Patient portal: uses its own layout (header/nav) but still enforces RouteGuard
-  if (isPatientPortal) {
-    return <RouteGuard>{children}</RouteGuard>;
   }
 
   return (
