@@ -3,21 +3,15 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { fetchMyProfile } from "@/lib/api";
+import { useAuth, type Role } from "@/contexts/AuthContext";
 
 /** Return the correct landing page for each role. */
 function getLandingPage(role: string): string {
   switch (role) {
     case "patient":
       return "/patient-portal";
-    case "admin":
-      return "/dashboard";
     case "clinician":
       return "/clinical-workspace";
-    case "nurse":
-      return "/dashboard";
-    case "care_manager":
-      return "/dashboard";
     case "office_admin":
       return "/operations";
     default:
@@ -27,6 +21,7 @@ function getLandingPage(role: string): string {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -55,13 +50,16 @@ export default function LoginPage() {
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("refresh_token", data.refresh_token);
 
-      // Fetch user profile to get the role, then redirect to role-specific page
+      // Fetch user profile into AuthContext so role is available immediately
+      await refreshUser();
+
+      // Read the role from the JWT payload to determine landing page
+      // (refreshUser populates the context, but we need the role for redirect)
       try {
-        const profile = await fetchMyProfile();
-        const landing = getLandingPage(profile.role);
+        const payload = JSON.parse(atob(data.access_token.split(".")[1]));
+        const landing = getLandingPage(payload.role || "");
         router.push(landing);
       } catch {
-        // Fallback to dashboard if profile fetch fails
         router.push("/dashboard");
       }
     } catch {
