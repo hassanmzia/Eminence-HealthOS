@@ -2,6 +2,13 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { fetchPatients } from "@/lib/api";
+import {
+  fetchDiagnoses,
+  fetchPrescriptions,
+  fetchLabTests,
+  fetchAllergies,
+  fetchMedicalHistory,
+} from "@/lib/platform-api";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -436,7 +443,8 @@ const DEMO_TIMELINE: TimelineEvent[] = [
 export default function PatientTimelinePage() {
   const [patients, setPatients] = useState<Patient[]>(DEMO_PATIENTS);
   const [selectedPatientId, setSelectedPatientId] = useState<string>(DEMO_PATIENTS[0].id);
-  const [events] = useState<TimelineEvent[]>(DEMO_TIMELINE);
+  const [events, setEvents] = useState<TimelineEvent[]>(DEMO_TIMELINE);
+  const [loadingEvents, setLoadingEvents] = useState(false);
 
   // Filters
   const [activeTypes, setActiveTypes] = useState<Set<EventType>>(
@@ -471,6 +479,121 @@ export default function PatientTimelinePage() {
       cancelled = true;
     };
   }, []);
+
+  /* Fetch clinical data from real APIs when a patient is selected */
+  useEffect(() => {
+    if (!selectedPatientId) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingEvents(true);
+      try {
+        const [diagnoses, prescriptions, labs, allergies, medHistory] = await Promise.allSettled([
+          fetchDiagnoses(selectedPatientId),
+          fetchPrescriptions(selectedPatientId),
+          fetchLabTests(selectedPatientId),
+          fetchAllergies(selectedPatientId),
+          fetchMedicalHistory(selectedPatientId),
+        ]);
+
+        if (cancelled) return;
+
+        const timeline: TimelineEvent[] = [];
+
+        // Map diagnoses to encounter events
+        if (diagnoses.status === "fulfilled" && diagnoses.value.length > 0) {
+          for (const d of diagnoses.value) {
+            timeline.push({
+              id: `diag-${d.id}`,
+              date: d.diagnosed_at?.split("T")[0] ?? d.created_at.split("T")[0],
+              time: d.diagnosed_at?.split("T")[1]?.slice(0, 5) ?? "00:00",
+              type: "encounter",
+              title: `Diagnosis: ${d.diagnosis_description}`,
+              description: `${d.diagnosis_type} — ${d.status}${d.icd10_code ? ` (ICD-10: ${d.icd10_code})` : ""}`,
+              provider: d.diagnosed_by ?? "Provider",
+              details: d.notes ?? undefined,
+            });
+          }
+        }
+
+        // Map prescriptions to medication events
+        if (prescriptions.status === "fulfilled" && prescriptions.value.length > 0) {
+          for (const rx of prescriptions.value) {
+            timeline.push({
+              id: `rx-${rx.id}`,
+              date: rx.start_date,
+              time: "00:00",
+              type: "medication",
+              title: `${rx.status === "Active" ? "New" : rx.status} Prescription: ${rx.medication_name}`,
+              description: `${rx.dosage}, ${rx.frequency}${rx.route ? ` (${rx.route})` : ""}. Refills: ${rx.refills}.`,
+              provider: rx.provider_id ?? "Provider",
+              details: rx.instructions ?? undefined,
+            });
+          }
+        }
+
+        // Map lab tests
+        if (labs.status === "fulfilled" && labs.value.length > 0) {
+          for (const lab of labs.value) {
+            timeline.push({
+              id: `lab-${lab.id}`,
+              date: (lab.result_date ?? lab.ordered_date).split("T")[0],
+              time: (lab.result_date ?? lab.ordered_date).split("T")[1]?.slice(0, 5) ?? "00:00",
+              type: "lab",
+              title: lab.test_name,
+              description: `Status: ${lab.status}${lab.result_value ? ` — Result: ${lab.result_value} ${lab.result_unit ?? ""}` : ""}${lab.abnormal_flag ? " (ABNORMAL)" : ""}`,
+              provider: lab.provider_id ?? "Lab",
+              details: lab.interpretation ?? undefined,
+            });
+          }
+        }
+
+        // Map allergies to alert events
+        if (allergies.status === "fulfilled" && allergies.value.length > 0) {
+          for (const a of allergies.value) {
+            timeline.push({
+              id: `allergy-${a.id}`,
+              date: a.onset_date ?? a.created_at.split("T")[0],
+              time: "00:00",
+              type: "alert",
+              title: `Allergy: ${a.allergen}`,
+              description: `${a.allergy_type} — Severity: ${a.severity}`,
+              provider: "Clinical Record",
+              details: a.reaction ?? undefined,
+            });
+          }
+        }
+
+        // Map medical history to note events
+        if (medHistory.status === "fulfilled" && medHistory.value.length > 0) {
+          for (const mh of medHistory.value) {
+            timeline.push({
+              id: `mh-${mh.id}`,
+              date: mh.diagnosis_date ?? mh.created_at.split("T")[0],
+              time: "00:00",
+              type: "note",
+              title: `Medical History: ${mh.condition}`,
+              description: `Status: ${mh.status}${mh.resolution_date ? ` — Resolved: ${mh.resolution_date}` : ""}`,
+              provider: "Clinical Record",
+              details: mh.treatment_notes ?? undefined,
+            });
+          }
+        }
+
+        if (timeline.length > 0) {
+          setEvents(timeline);
+        } else {
+          setEvents(DEMO_TIMELINE);
+        }
+      } catch {
+        setEvents(DEMO_TIMELINE);
+      } finally {
+        setLoadingEvents(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPatientId]);
 
   /* Toggle helpers */
   const toggleType = (t: EventType) => {

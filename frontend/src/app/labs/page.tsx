@@ -142,6 +142,10 @@ function criticalStatusBadge(s: string) {
 export default function LabsPage() {
   const [tab, setTab] = useState<Tab>("Lab Orders");
 
+  /* Loading / error state */
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
+
   /* Lab Orders state */
   const [labOrders, setLabOrders] = useState(DEMO_LAB_ORDERS);
   const [showCreateOrder, setShowCreateOrder] = useState(false);
@@ -167,31 +171,43 @@ export default function LabsPage() {
   /* Pending count for header badge */
   const pendingCount = labOrders.filter((o) => o.status !== "completed").length;
 
-  /* ── API calls with fallback ──────────────────────────────────────────────── */
+  /* ── Fetch real data on mount with demo-data fallback ─────────────────────── */
   useEffect(() => {
-    fetchLabOrderStatus("all").then(() => {/* use API data if available */}).catch(() => {/* keep demo */});
+    let cancelled = false;
 
-    // Load real EHR lab tests from /clinical/labs if available
-    (async () => {
+    async function loadLabData() {
+      setLoading(true);
+      setApiError(null);
+
+      // Fire both legacy and platform-api calls in parallel
+      const legacyP = fetchLabOrderStatus("all").catch(() => null);
+
       try {
-        // Try to load labs for a known patient — fallback on error
         const labs = await fetchLabTests("all");
-        if (labs.length > 0) {
-          setLabResults(
-            labs
-              .filter((l: LabTestResponse) => l.result_value != null)
-              .map((l: LabTestResponse) => ({
-                test: l.test_name,
-                value: parseFloat(l.result_value ?? "0"),
-                unit: l.result_unit ?? "",
-                range: l.reference_range ?? "",
-                flag: (l.abnormal_flag ? "high" : "normal") as "high" | "normal" | "low" | "critical",
-                date: l.result_date?.split("T")[0] ?? l.ordered_date.split("T")[0],
-              })),
-          );
+        if (cancelled) return;
+
+        if (labs && labs.length > 0) {
+          // Populate results table from labs that have result values
+          const results = labs
+            .filter((l: LabTestResponse) => l.result_value != null)
+            .map((l: LabTestResponse) => ({
+              test: l.test_name,
+              value: parseFloat(l.result_value ?? "0"),
+              unit: l.result_unit ?? "",
+              range: l.reference_range ?? "",
+              flag: (l.abnormal_flag ? "high" : "normal") as "high" | "normal" | "low" | "critical",
+              date: l.result_date?.split("T")[0] ?? l.ordered_date.split("T")[0],
+            }));
+          if (results.length > 0) setLabResults(results);
+
+          // Populate orders table
           setLabOrders(
             labs.map((l: LabTestResponse) => {
-              const s = l.status === "Completed" ? "completed" as const : l.status === "In Progress" ? "processing" as const : "ordered" as const;
+              const s =
+                l.status === "Completed" ? ("completed" as const)
+                : l.status === "In Progress" ? ("processing" as const)
+                : l.status === "Collected" ? ("collected" as const)
+                : ("ordered" as const);
               return {
                 id: l.id,
                 patient: l.patient_id.slice(0, 8),
@@ -200,30 +216,75 @@ export default function LabsPage() {
                 priority: "routine" as const,
                 status: s,
                 ordered: l.ordered_date.split("T")[0],
-                provider: l.provider_id?.slice(0, 8) ?? "—",
+                provider: l.provider_id?.slice(0, 8) ?? "\u2014",
               };
             }),
           );
         }
+        // If labs is empty, keep demo data (no error)
       } catch {
-        // keep demo data
+        if (!cancelled) {
+          // Keep demo data as fallback — show a subtle warning
+          setApiError("Could not reach lab API \u2014 showing demo data.");
+        }
+      } finally {
+        await legacyP; // ensure legacy call settles
+        if (!cancelled) setLoading(false);
       }
-    })();
+    }
+
+    loadLabData();
+    return () => { cancelled = true; };
   }, []);
 
   const handleCreateOrder = useCallback(async () => {
     if (!newOrder.patient_id || newOrder.panels.length === 0) return;
     setOrderSubmitting(true);
+    setApiError(null);
     try {
-      const result = await createLabOrder({
+      // Create a lab test per panel via the platform API, plus the legacy order
+      const platformResults = await Promise.allSettled(
+        newOrder.panels.map((panel) =>
+          createLabTest({
+            patient_id: newOrder.patient_id,
+            test_name: panel,
+            status: "Ordered",
+            notes: newOrder.notes || undefined,
+          }),
+        ),
+      );
+
+      // Also fire legacy createLabOrder for backward compat
+      const legacyResult = await createLabOrder({
         patient_id: newOrder.patient_id,
         panels: newOrder.panels,
         priority: newOrder.priority,
         clinical_notes: newOrder.notes,
-      });
-      if (result?.id) {
+      }).catch(() => null);
+
+      // Build local rows from platform API responses (or legacy fallback)
+      const newRows: typeof labOrders = [];
+      for (const [i, r] of platformResults.entries()) {
+        if (r.status === "fulfilled" && r.value?.id) {
+          newRows.push({
+            id: r.value.id,
+            patient: `Patient ${newOrder.patient_id}`,
+            patient_id: newOrder.patient_id,
+            panels: [newOrder.panels[i]],
+            priority: newOrder.priority as "routine",
+            status: "ordered" as const,
+            ordered: new Date().toISOString().split("T")[0],
+            provider: "Current User",
+          });
+        }
+      }
+
+      if (newRows.length > 0) {
+        setLabOrders((prev) => [...newRows, ...prev]);
+      } else if (legacyResult?.id) {
+        // Platform calls failed but legacy succeeded
         setLabOrders((prev) => [{
-          id: result.id,
+          id: legacyResult.id,
           patient: `Patient ${newOrder.patient_id}`,
           patient_id: newOrder.patient_id,
           panels: newOrder.panels,
@@ -232,9 +293,11 @@ export default function LabsPage() {
           ordered: new Date().toISOString().split("T")[0],
           provider: "Current User",
         }, ...prev]);
+      } else {
+        throw new Error("All API calls failed");
       }
     } catch {
-      // Fallback: add locally
+      // Fallback: add locally with a generated ID
       const fakeId = `LO-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`;
       setLabOrders((prev) => [{
         id: fakeId,
@@ -246,12 +309,65 @@ export default function LabsPage() {
         ordered: new Date().toISOString().split("T")[0],
         provider: "Current User",
       }, ...prev]);
+      setApiError("Order saved locally \u2014 API unavailable.");
     } finally {
       setOrderSubmitting(false);
       setShowCreateOrder(false);
       setNewOrder({ patient_id: "", panels: [], priority: "routine", notes: "" });
     }
   }, [newOrder]);
+
+  /* ── Update a lab result via the platform API ──────────────────────────────── */
+  const handleUpdateResult = useCallback(async (labId: string, body: {
+    status?: string;
+    result_value?: string;
+    result_unit?: string;
+    reference_range?: string;
+    abnormal_flag?: boolean;
+    interpretation?: string;
+    notes?: string;
+  }) => {
+    setApiError(null);
+    try {
+      const updated = await updateLabTest(labId, body);
+      // Refresh the matching order row
+      setLabOrders((prev) =>
+        prev.map((o) => {
+          if (o.id !== labId) return o;
+          const s =
+            updated.status === "Completed" ? ("completed" as const)
+            : updated.status === "In Progress" ? ("processing" as const)
+            : updated.status === "Collected" ? ("collected" as const)
+            : ("ordered" as const);
+          return { ...o, status: s };
+        }),
+      );
+      // If a result_value came back, update the results table too
+      if (updated.result_value != null) {
+        setLabResults((prev) => {
+          const existing = prev.findIndex((r) => r.test === updated.test_name);
+          const newRow = {
+            test: updated.test_name,
+            value: parseFloat(updated.result_value ?? "0"),
+            unit: updated.result_unit ?? "",
+            range: updated.reference_range ?? "",
+            flag: (updated.abnormal_flag ? "high" : "normal") as "high" | "normal" | "low" | "critical",
+            date: updated.result_date?.split("T")[0] ?? updated.ordered_date.split("T")[0],
+          };
+          if (existing >= 0) {
+            const copy = [...prev];
+            copy[existing] = newRow;
+            return copy;
+          }
+          return [newRow, ...prev];
+        });
+      }
+      return updated;
+    } catch (err) {
+      setApiError("Failed to update lab result \u2014 please try again.");
+      throw err;
+    }
+  }, []);
 
   const handleInterpret = useCallback(async () => {
     setInterpreting(true);
@@ -363,6 +479,25 @@ export default function LabsPage() {
           New Order
         </button>
       </div>
+
+      {/* ── Loading / Error Banner ────────────────────────────────────────────── */}
+      {loading && (
+        <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+          <svg className="h-5 w-5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          Loading lab data from EHR...
+        </div>
+      )}
+      {apiError && !loading && (
+        <div className="flex items-center justify-between rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
+          <span>{apiError}</span>
+          <button onClick={() => setApiError(null)} className="ml-4 text-yellow-600 hover:text-yellow-800">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      )}
 
       {/* ── Stats Bar ──────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
@@ -505,7 +640,7 @@ export default function LabsPage() {
               <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
-                    {["Order ID", "Patient", "Panels", "Priority", "Status", "Ordered", "Provider"].map((h) => (
+                    {["Order ID", "Patient", "Panels", "Priority", "Status", "Ordered", "Provider", "Actions"].map((h) => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
                     ))}
                   </tr>
@@ -536,6 +671,16 @@ export default function LabsPage() {
                       </td>
                       <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{o.ordered}</td>
                       <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{o.provider}</td>
+                      <td className="px-4 py-3">
+                        {o.status !== "completed" && (
+                          <button
+                            onClick={() => handleUpdateResult(o.id, { status: "Completed" }).catch(() => {})}
+                            className="rounded bg-green-100 px-2 py-1 text-[11px] font-medium text-green-800 hover:bg-green-200 transition-colors"
+                          >
+                            Mark Complete
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

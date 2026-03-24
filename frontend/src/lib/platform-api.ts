@@ -342,6 +342,15 @@ export async function createDiagnosis(body: {
 }
 
 // Clinical - Prescriptions
+export async function fetchAllPrescriptions(status?: string) {
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  const qs = params.toString();
+  return request<PrescriptionResponse[]>(
+    `/clinical/prescriptions/all${qs ? `?${qs}` : ""}`,
+  );
+}
+
 export async function fetchPrescriptions(patientId: string, status?: string) {
   const params = new URLSearchParams();
   if (status) params.set("status", status);
@@ -462,6 +471,15 @@ export async function createFamilyHistory(body: {
 }
 
 // Clinical - Lab Tests
+export async function fetchAllLabTests(status?: string) {
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  const qs = params.toString();
+  return request<LabTestResponse[]>(
+    `/clinical/labs/all${qs ? `?${qs}` : ""}`,
+  );
+}
+
 export async function fetchLabTests(patientId: string, status?: string) {
   const params = new URLSearchParams();
   if (status) params.set("status", status);

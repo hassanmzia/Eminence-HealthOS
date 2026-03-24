@@ -264,6 +264,7 @@ def _register_agents() -> None:
         ("modules.patient_engagement.agents", "register_patient_engagement_agents"),
         ("modules.pharmacy.agents", "register_pharmacy_agents"),
         ("modules.rcm.agents", "register_rcm_agents"),
+        ("modules.sdoh.agents", "register_sdoh_agents"),
     ]
     for module_path, func_name in _optional_agent_modules:
         try:
@@ -456,6 +457,7 @@ def create_app() -> FastAPI:
         "modules.patient_engagement.routes",
         "modules.pharmacy.routes",
         "modules.rcm.routes",
+        "modules.sdoh.routes",
     ]
     for route_module in _optional_route_modules:
         try:

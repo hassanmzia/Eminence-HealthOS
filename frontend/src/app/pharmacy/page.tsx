@@ -9,7 +9,7 @@ import {
   trackMedicationAdherence,
   processRefill,
 } from "@/lib/api";
-import { fetchPrescriptions, createPrescriptionRecord, type PrescriptionResponse } from "@/lib/platform-api";
+import { fetchAllPrescriptions, createPrescriptionRecord, type PrescriptionResponse } from "@/lib/platform-api";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 
@@ -190,6 +190,7 @@ export default function PharmacyPage() {
 
   // Prescriptions state
   const [prescriptions, setPrescriptions] = useState<Prescription[]>(DEMO_PRESCRIPTIONS);
+  const [rxLoading, setRxLoading] = useState(true);
   const [showNewRxModal, setShowNewRxModal] = useState(false);
   const [rxForm, setRxForm] = useState({ patient_id: "", medication: "", dosage: "", frequency: "", duration: "", notes: "" });
   const [rxSubmitting, setRxSubmitting] = useState(false);
@@ -217,10 +218,11 @@ export default function PharmacyPage() {
   /* ── Load data on mount ──────────────────────────────────────────────── */
 
   useEffect(() => {
-    // Try real EHR prescriptions from /clinical/prescriptions
+    // Try real EHR prescriptions from /clinical/prescriptions/all
     (async () => {
+      setRxLoading(true);
       try {
-        const rxList = await fetchPrescriptions("all");
+        const rxList = await fetchAllPrescriptions();
         if (rxList.length > 0) {
           setPrescriptions(
             rxList.map((rx: PrescriptionResponse) => ({
@@ -237,6 +239,7 @@ export default function PharmacyPage() {
             })),
           );
         }
+        // If rxList is empty, DEMO_PRESCRIPTIONS remains as fallback
       } catch {
         // Fall back to agent API
         fetchPrescriptionHistory("all")
@@ -244,6 +247,8 @@ export default function PharmacyPage() {
             if (Array.isArray(data) && data.length > 0) setPrescriptions(data as unknown as Prescription[]);
           })
           .catch(() => { /* keep demo data */ });
+      } finally {
+        setRxLoading(false);
       }
     })();
 
@@ -261,27 +266,43 @@ export default function PharmacyPage() {
   const handleCreatePrescription = useCallback(async () => {
     if (!rxForm.patient_id || !rxForm.medication || !rxForm.dosage || !rxForm.frequency) return;
     setRxSubmitting(true);
+    let savedRx: PrescriptionResponse | null = null;
     try {
-      await createPrescription({
+      // Try the real platform API first
+      savedRx = await createPrescriptionRecord({
         patient_id: rxForm.patient_id,
-        medication: rxForm.medication,
+        medication_name: rxForm.medication,
         dosage: rxForm.dosage,
         frequency: rxForm.frequency,
-        duration: rxForm.duration,
-        notes: rxForm.notes,
+        start_date: new Date().toISOString().slice(0, 10),
+        end_date: rxForm.duration || undefined,
+        instructions: rxForm.notes || undefined,
+        status: "pending",
       });
     } catch {
-      /* offline — add to local list */
+      // Fall back to agent API
+      try {
+        await createPrescription({
+          patient_id: rxForm.patient_id,
+          medication: rxForm.medication,
+          dosage: rxForm.dosage,
+          frequency: rxForm.frequency,
+          duration: rxForm.duration,
+          notes: rxForm.notes,
+        });
+      } catch {
+        /* offline — add to local list only */
+      }
     }
     const newRx: Prescription = {
-      id: `RX-2026-${String(510 + prescriptions.length).padStart(4, "0")}`,
+      id: savedRx?.id ?? `RX-2026-${String(510 + prescriptions.length).padStart(4, "0")}`,
       patient_id: rxForm.patient_id,
       medication: rxForm.medication,
       dosage: rxForm.dosage,
       frequency: rxForm.frequency,
       status: "pending",
-      prescriber: "Current User",
-      date: new Date().toISOString().slice(0, 10),
+      prescriber: savedRx?.provider_id?.slice(0, 8) ?? "Current User",
+      date: savedRx?.start_date ?? new Date().toISOString().slice(0, 10),
       duration: rxForm.duration,
       notes: rxForm.notes,
     };
@@ -450,6 +471,14 @@ export default function PharmacyPage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {activeTab === "Prescriptions" && (
         <div className="card rounded-xl overflow-hidden animate-fade-in-up">
+          {rxLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-healthos-600" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">Loading prescriptions...</p>
+              </div>
+            </div>
+          ) : (
           <div className="overflow-x-auto">
             <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
               <thead className="bg-gray-50 dark:bg-gray-800">
@@ -479,6 +508,7 @@ export default function PharmacyPage() {
               </tbody>
             </table></div>
           </div>
+          )}
         </div>
       )}
 
