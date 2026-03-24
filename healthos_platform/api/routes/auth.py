@@ -55,16 +55,24 @@ async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db))
 @router.post("/login", response_model=TokenResponse)
 async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
     """Authenticate and return JWT tokens."""
-    result = await db.execute(select(User).where(User.email == request.email))
-    user = result.scalar_one_or_none()
+    # Use .all() instead of scalar_one_or_none to handle multiple users
+    # across orgs with the same email (unique constraint is per org).
+    result = await db.execute(
+        select(User).where(User.email == request.email, User.is_active == True)
+    )
+    users = result.scalars().all()
 
-    if not user or not verify_password(request.password, user.hashed_password):
+    # Try each matching user (across orgs) until password matches
+    matched_user = None
+    for u in users:
+        if verify_password(request.password, u.hashed_password):
+            matched_user = u
+            break
+
+    if not matched_user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="Account disabled")
-
-    tokens = create_tokens(user.id, user.org_id, user.role)
+    tokens = create_tokens(matched_user.id, matched_user.org_id, matched_user.role)
     return TokenResponse(
         access_token=tokens.access_token,
         refresh_token=tokens.refresh_token,
