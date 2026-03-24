@@ -20,6 +20,7 @@ import {
   type SessionResponse,
   type AdminUserResponse,
 } from "@/lib/platform-api";
+import { fetchMyProfile, type UserProfile } from "@/lib/api";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -169,11 +170,40 @@ export default function AdminPage() {
   const lockedUsers = users.filter((u) => u.status === "locked").length;
   const totalPermissions = PERMISSION_CATEGORIES.reduce((sum, c) => sum + c.actions.length, 0) * ROLES.length;
 
-  // Load real data from APIs — prefer admin user management endpoint
+  const ROLE_MAP: Record<string, string> = {
+    admin: "Super Admin",
+    super_admin: "Super Admin",
+    clinician: "Physician",
+    nurse: "Nurse",
+    care_manager: "Admin",
+    lab_tech: "Lab Tech",
+    pharmacist: "Pharmacist",
+    billing: "Billing",
+    read_only: "Read Only",
+  };
+
+  // Convert a profile to a User entry for the table
+  function profileToUser(profile: UserProfile, id: number): User {
+    return {
+      id,
+      name: profile.full_name || profile.email.split("@")[0],
+      email: profile.email,
+      role: ROLE_MAP[profile.role] ?? profile.role,
+      department: profile.role === "clinician" ? "Clinical" : profile.role === "admin" ? "IT" : "General",
+      status: profile.is_active ? "active" : "inactive",
+      lastLogin: profile.updated_at?.split("T")[0] ?? profile.created_at?.split("T")[0] ?? "",
+    };
+  }
+
+  // Load real data from APIs — always include the logged-in user
   useEffect(() => {
     (async () => {
       try {
         const isAdmin = getUserRole() === "admin";
+
+        // Always fetch the current user's profile
+        const myProfile = await fetchMyProfile().catch(() => null);
+
         const [hospitalList, configList, sessionList] = await Promise.all([
           fetchHospitals().catch(() => []),
           isAdmin ? fetchAuthConfigs().catch(() => []) : Promise.resolve([]),
@@ -187,17 +217,6 @@ export default function AdminPage() {
         try {
           const adminData = await fetchAdminUsers({ page: 1, page_size: 100 });
           if (adminData.users.length > 0) {
-            const ROLE_MAP: Record<string, string> = {
-              admin: "Super Admin",
-              super_admin: "Super Admin",
-              clinician: "Physician",
-              nurse: "Nurse",
-              care_manager: "Admin",
-              lab_tech: "Lab Tech",
-              pharmacist: "Pharmacist",
-              billing: "Billing",
-              read_only: "Read Only",
-            };
             const realUsers: User[] = adminData.users.map((u: AdminUserResponse, idx: number) => ({
               id: idx + 1,
               name: u.full_name || u.email.split("@")[0],
@@ -207,11 +226,15 @@ export default function AdminPage() {
               status: u.is_active ? "active" as const : "inactive" as const,
               lastLogin: u.updated_at?.split("T")[0] ?? u.created_at?.split("T")[0] ?? "",
             }));
+            // Ensure current user is in the list
+            if (myProfile && !realUsers.some((u) => u.email === myProfile.email)) {
+              realUsers.unshift(profileToUser(myProfile, 0));
+            }
             setUsers(realUsers);
             return;
           }
         } catch {
-          // Admin API not available, fall back to provider/nurse/admin endpoints
+          // Admin API not available, fall back
         }
 
         // Fallback: merge provider/nurse/admin data into user list
@@ -222,6 +245,12 @@ export default function AdminPage() {
         ]);
         const apiUsers: User[] = [];
         let idx = 100;
+
+        // Always include the logged-in user first
+        if (myProfile) {
+          apiUsers.push(profileToUser(myProfile, idx++));
+        }
+
         for (const p of providerList) {
           apiUsers.push({
             id: idx++,
@@ -256,7 +285,16 @@ export default function AdminPage() {
           });
         }
 
-        if (apiUsers.length > 0) setUsers(apiUsers);
+        if (apiUsers.length > 0) {
+          setUsers(apiUsers);
+        } else if (myProfile) {
+          // Even if all API calls return empty, show the current user + demo data
+          const demoWithCurrentUser = [...INITIAL_USERS];
+          if (!demoWithCurrentUser.some((u) => u.email === myProfile.email)) {
+            demoWithCurrentUser.unshift(profileToUser(myProfile, 0));
+          }
+          setUsers(demoWithCurrentUser);
+        }
       } catch {
         // Keep demo data
       }
