@@ -9,7 +9,7 @@ import { useAuth, type Role } from "@/contexts/AuthContext";
 type NavItem = { href: string; label: string; icon: string; roles?: Role[] };
 type NavSection = { label: string; items: NavItem[]; roles?: Role[] };
 
-const STAFF_ROLES: Role[] = ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist"];
+const STAFF_ROLES: Role[] = ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing"];
 const CLINICAL_ROLES: Role[] = ["admin", "clinician", "care_manager", "nurse"];
 const CLINICAL_WRITE_ROLES: Role[] = ["admin", "clinician"];
 
@@ -57,12 +57,12 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: "Operations",
-    roles: ["admin", "office_admin", "clinician"],
+    roles: ["admin", "office_admin", "clinician", "billing"],
     items: [
-      { href: "/operations", label: "Operations", icon: "clipboard" },
-      { href: "/rcm", label: "Revenue Cycle", icon: "dollar", roles: ["admin", "office_admin"] },
-      { href: "/analytics", label: "Analytics", icon: "chart" },
-      { href: "/compliance", label: "Compliance", icon: "shield", roles: ["admin", "office_admin"] },
+      { href: "/operations", label: "Operations", icon: "clipboard", roles: ["admin", "office_admin", "clinician"] },
+      { href: "/rcm", label: "Revenue Cycle", icon: "dollar", roles: ["admin", "office_admin", "billing"] },
+      { href: "/analytics", label: "Analytics", icon: "chart", roles: ["admin", "office_admin", "clinician", "billing"] },
+      { href: "/compliance", label: "Compliance", icon: "shield", roles: ["admin", "office_admin", "billing"] },
       { href: "/ehr-connect", label: "EHR Connect", icon: "link", roles: ["admin"] },
       { href: "/audit-log", label: "Audit Log", icon: "document", roles: ["admin", "office_admin"] },
       { href: "/admin", label: "Admin", icon: "settings", roles: ["admin"] },

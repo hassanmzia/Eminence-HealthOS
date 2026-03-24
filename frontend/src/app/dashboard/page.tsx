@@ -8,6 +8,7 @@ import { NurseDashboard } from "@/components/dashboard/NurseDashboard";
 import { OfficeAdminDashboard } from "@/components/dashboard/OfficeAdminDashboard";
 import { LabTechDashboard } from "@/components/dashboard/LabTechDashboard";
 import { PharmacistDashboard } from "@/components/dashboard/PharmacistDashboard";
+import { BillingDashboard } from "@/components/dashboard/BillingDashboard";
 
 export default function DashboardPage() {
   const { role, user, loading } = useAuth();
@@ -36,6 +37,8 @@ export default function DashboardPage() {
       return <LabTechDashboard />;
     case "pharmacist":
       return <PharmacistDashboard />;
+    case "billing":
+      return <BillingDashboard />;
     case "patient":
       // Patient shouldn't be on /dashboard — RouteGuard handles redirect
       router.replace("/patient-portal");
