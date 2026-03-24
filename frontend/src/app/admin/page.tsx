@@ -12,6 +12,7 @@ import {
   createAdminUser,
   updateAdminUser,
   deactivateAdminUser,
+  promoteSelfToAdmin,
   unlockAccount,
   getUserRole,
   type HospitalResponse,
@@ -393,6 +394,8 @@ function UsersTab() {
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [isAdmin, setIsAdmin] = useState(() => getUserRole() === "admin" || getUserRole() === "super_admin");
+  const [promoting, setPromoting] = useState(false);
 
   // Edit modal state
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -655,6 +658,24 @@ function UsersTab() {
     }
   };
 
+  const handlePromoteSelf = async () => {
+    setPromoting(true);
+    setError("");
+    try {
+      await promoteSelfToAdmin();
+      // Update local role state — user needs to re-login for new JWT
+      setIsAdmin(true);
+      // Force re-login to get updated JWT with admin role
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      window.location.href = "/login?promoted=1";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to promote. An admin may already exist.");
+    } finally {
+      setPromoting(false);
+    }
+  };
+
   const sortIndicator = (field: keyof User) => {
     if (sortField !== field) return null;
     return <span className="ml-1 text-blue-500">{sortDir === "asc" ? "\u2191" : "\u2193"}</span>;
@@ -662,6 +683,28 @@ function UsersTab() {
 
   return (
     <div className="card p-6">
+      {/* Admin role required banner */}
+      {!isAdmin && (
+        <div className="mb-4 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="font-semibold text-amber-800 dark:text-amber-200">Admin access required</h4>
+              <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                Your account has a <strong>{getUserRole() || "non-admin"}</strong> role. User management requires admin privileges.
+                If no admin exists in your organization, you can promote yourself.
+              </p>
+            </div>
+            <button
+              onClick={handlePromoteSelf}
+              disabled={promoting}
+              className="btn-primary whitespace-nowrap ml-4"
+            >
+              {promoting ? "Promoting..." : "Become Admin"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Error Banner */}
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm flex items-center justify-between">
