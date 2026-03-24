@@ -26,6 +26,56 @@ def _require_admin(ctx: TenantContext) -> None:
         raise HTTPException(status_code=403, detail="Admin access required")
 
 
+# ── Self-Promote (bootstrap) ───────────────────────────────────────────────
+
+
+@router.post("/promote-self", response_model=AdminUserResponse)
+async def promote_self_to_admin(
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Promote the current user to admin role.
+    Only allowed when no admin exists in the organization (bootstrap scenario).
+    """
+    # Check if any admin already exists in the org
+    admin_check = await db.execute(
+        select(func.count())
+        .select_from(User)
+        .where(User.org_id == ctx.org_id, User.role.in_(("admin", "super_admin")), User.is_active == True)
+    )
+    admin_count = admin_check.scalar() or 0
+    if admin_count > 0:
+        raise HTTPException(
+            status_code=403,
+            detail="An admin already exists in this organization. Ask an existing admin to update your role.",
+        )
+
+    # Promote the current user
+    result = await db.execute(select(User).where(User.id == ctx.user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.role = "admin"
+    await db.flush()
+    await db.refresh(user)
+
+    return AdminUserResponse(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role,
+        org_id=user.org_id,
+        is_active=user.is_active,
+        mfa_enabled=user.mfa_enabled,
+        phone=user.phone,
+        avatar_url=user.avatar_url,
+        created_at=user.created_at.isoformat() if user.created_at else None,
+        updated_at=user.updated_at.isoformat() if user.updated_at else None,
+    )
+
+
 # ── Schemas ──────────────────────────────────────────────────────────────────
 
 

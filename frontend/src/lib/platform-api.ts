@@ -1099,3 +1099,9 @@ export async function deactivateAdminUser(userId: string) {
     method: "DELETE",
   });
 }
+
+export async function promoteSelfToAdmin() {
+  return request<AdminUserResponse>("/admin/users/promote-self", {
+    method: "POST",
+  });
+}
