@@ -3,60 +3,73 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
+import { useAuth, type Role } from "@/contexts/AuthContext";
 
-const NAV_SECTIONS = [
+// Which roles can see each nav item. Omit = visible to all authenticated users.
+type NavItem = { href: string; label: string; icon: string; roles?: Role[] };
+type NavSection = { label: string; items: NavItem[]; roles?: Role[] };
+
+const STAFF_ROLES: Role[] = ["admin", "clinician", "care_manager", "nurse", "office_admin"];
+const CLINICAL_ROLES: Role[] = ["admin", "clinician", "care_manager", "nurse"];
+const CLINICAL_WRITE_ROLES: Role[] = ["admin", "clinician"];
+
+const NAV_SECTIONS: NavSection[] = [
   {
     label: "Overview",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: "grid" },
-      { href: "/clinical-workspace", label: "Workspace", icon: "clipboard" },
-      { href: "/patients", label: "Patients", icon: "users" },
-      { href: "/alerts", label: "Alerts", icon: "bell" },
+      { href: "/clinical-workspace", label: "Workspace", icon: "clipboard", roles: CLINICAL_ROLES },
+      { href: "/patients", label: "Patients", icon: "users", roles: STAFF_ROLES },
+      { href: "/alerts", label: "Alerts", icon: "bell", roles: STAFF_ROLES },
       { href: "/messaging", label: "Messaging", icon: "chat" },
     ],
   },
   {
     label: "Clinical",
+    roles: CLINICAL_ROLES,
     items: [
       { href: "/rpm", label: "RPM", icon: "activity" },
       { href: "/telehealth", label: "Telehealth", icon: "video" },
-      { href: "/ambient-ai", label: "Ambient AI", icon: "mic" },
+      { href: "/ambient-ai", label: "Ambient AI", icon: "mic", roles: CLINICAL_WRITE_ROLES },
       { href: "/pharmacy", label: "Pharmacy", icon: "pill" },
       { href: "/labs", label: "Labs", icon: "flask" },
-      { href: "/imaging", label: "Imaging", icon: "scan" },
+      { href: "/imaging", label: "Imaging", icon: "scan", roles: CLINICAL_WRITE_ROLES },
       { href: "/mental-health", label: "Mental Health", icon: "heart" },
       { href: "/sdoh", label: "SDOH", icon: "home" },
       { href: "/patient-timeline", label: "Timeline", icon: "clock" },
-      { href: "/clinical-assessment", label: "Clinical AI", icon: "stethoscope" },
+      { href: "/clinical-assessment", label: "Clinical AI", icon: "stethoscope", roles: CLINICAL_WRITE_ROLES },
     ],
   },
   {
     label: "AI & Intelligence",
+    roles: ["admin", "clinician", "care_manager"],
     items: [
       { href: "/clinical-intelligence", label: "Clinical RAG", icon: "search" },
       { href: "/knowledge-graph", label: "Knowledge Graph", icon: "graph" },
-      { href: "/ml-models", label: "ML Models", icon: "brain" },
+      { href: "/ml-models", label: "ML Models", icon: "brain", roles: ["admin", "clinician"] },
       { href: "/agents", label: "AI Orchestration", icon: "cpu" },
-      { href: "/digital-twin", label: "Digital Twin", icon: "twin" },
+      { href: "/digital-twin", label: "Digital Twin", icon: "twin", roles: ["admin", "clinician"] },
       { href: "/ms-risk-screening", label: "MS Screening", icon: "ms_screen" },
-      { href: "/fairness", label: "AI Fairness", icon: "scale" },
+      { href: "/fairness", label: "AI Fairness", icon: "scale", roles: ["admin"] },
       { href: "/ai-explainability", label: "Explainability", icon: "explain" },
     ],
   },
   {
     label: "Operations",
+    roles: ["admin", "office_admin", "clinician"],
     items: [
       { href: "/operations", label: "Operations", icon: "clipboard" },
-      { href: "/rcm", label: "Revenue Cycle", icon: "dollar" },
+      { href: "/rcm", label: "Revenue Cycle", icon: "dollar", roles: ["admin", "office_admin"] },
       { href: "/analytics", label: "Analytics", icon: "chart" },
-      { href: "/compliance", label: "Compliance", icon: "shield" },
-      { href: "/ehr-connect", label: "EHR Connect", icon: "link" },
-      { href: "/audit-log", label: "Audit Log", icon: "document" },
-      { href: "/admin", label: "Admin", icon: "settings" },
+      { href: "/compliance", label: "Compliance", icon: "shield", roles: ["admin", "office_admin"] },
+      { href: "/ehr-connect", label: "EHR Connect", icon: "link", roles: ["admin"] },
+      { href: "/audit-log", label: "Audit Log", icon: "document", roles: ["admin", "office_admin"] },
+      { href: "/admin", label: "Admin", icon: "settings", roles: ["admin"] },
     ],
   },
   {
     label: "Advanced",
+    roles: ["admin", "clinician"],
     items: [
       { href: "/research-genomics", label: "Research", icon: "dna" },
       { href: "/patient-engagement", label: "Engagement", icon: "handshake" },
@@ -64,7 +77,7 @@ const NAV_SECTIONS = [
       { href: "/simulator", label: "Simulator", icon: "beaker" },
     ],
   },
-] as const;
+];
 
 // Simple SVG icons to avoid external dependency
 function NavIcon({ icon }: { icon: string }) {
@@ -250,6 +263,80 @@ function NavIcon({ icon }: { icon: string }) {
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
   const pathname = usePathname();
+  const { role, isPatient } = useAuth();
+
+  // Filter sections and items by the current user's role
+  const visibleSections = NAV_SECTIONS
+    .filter((section) => !section.roles || (role && section.roles.includes(role)))
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.roles || (role && item.roles.includes(role))),
+    }))
+    .filter((section) => section.items.length > 0);
+
+  // Patient users get a minimal sidebar with just patient-portal
+  if (isPatient) {
+    return (
+      <aside className="flex h-full w-64 flex-col border-r border-gray-200/80 bg-white dark:border-gray-700/80 dark:bg-gray-900">
+        <div className="flex h-16 items-center gap-3 border-b border-gray-200/80 px-5 dark:border-gray-700/80">
+          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-healthos-500 to-healthos-700 text-sm font-bold text-white shadow-sm">
+            E
+            <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-gray-900" />
+          </div>
+          <div>
+            <span className="text-base font-bold text-gray-900 dark:text-gray-100">Eminence</span>
+            <span className="ml-1 text-[11px] font-semibold uppercase tracking-wider text-healthos-600 dark:text-healthos-400">HealthOS</span>
+          </div>
+        </div>
+        <nav className="flex-1 overflow-y-auto px-3 py-3">
+          <div className="mb-4">
+            <p className="mb-1 px-3 text-[11px] font-bold uppercase tracking-[0.08em] text-gray-400 dark:text-gray-500">
+              My Health
+            </p>
+            <div className="space-y-0.5">
+              {[
+                { href: "/patient-portal", label: "My Dashboard", icon: "grid" },
+                { href: "/patient-portal/vitals", label: "My Vitals", icon: "activity" },
+                { href: "/patient-portal/medications", label: "Medications", icon: "pill" },
+                { href: "/patient-portal/appointments", label: "Appointments", icon: "clock" },
+                { href: "/patient-portal/labs", label: "Lab Results", icon: "flask" },
+                { href: "/messaging", label: "Messages", icon: "chat" },
+              ].map((item) => {
+                const isActive = pathname?.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onNavigate}
+                    className={clsx(
+                      "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150",
+                      isActive
+                        ? "bg-healthos-50 text-healthos-700 shadow-sm ring-1 ring-inset ring-healthos-500/10 dark:bg-healthos-950/50 dark:text-healthos-400 dark:ring-healthos-500/20"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                    )}
+                  >
+                    <span className={clsx(
+                      "transition-colors",
+                      isActive ? "text-healthos-600 dark:text-healthos-400" : "text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400"
+                    )}>
+                      <NavIcon icon={item.icon} />
+                    </span>
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </nav>
+        <div className="border-t border-gray-200/80 px-5 py-3 dark:border-gray-700/80">
+          <div className="flex items-center gap-2">
+            <span className="status-dot-healthy" />
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">All Systems Operational</span>
+          </div>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-gray-200/80 bg-white dark:border-gray-700/80 dark:bg-gray-900">
@@ -265,9 +352,18 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
         </div>
       </div>
 
+      {/* Role badge */}
+      {role && (
+        <div className="px-5 py-2 border-b border-gray-200/80 dark:border-gray-700/80">
+          <span className="inline-block rounded-full bg-healthos-50 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-healthos-700 ring-1 ring-inset ring-healthos-500/20 dark:bg-healthos-950/50 dark:text-healthos-400">
+            {role.replace("_", " ")}
+          </span>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-3">
-        {NAV_SECTIONS.map((section) => (
+        {visibleSections.map((section) => (
           <div key={section.label} className="mb-4">
             <p className="mb-1 px-3 text-[11px] font-bold uppercase tracking-[0.08em] text-gray-400 dark:text-gray-500">
               {section.label}
@@ -302,7 +398,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void } = {}) {
         ))}
       </nav>
 
-      {/* Patient Portal link */}
+      {/* Patient Portal link — only for staff (not patients, they have their own sidebar) */}
       <div className="border-t border-gray-200/80 px-3 py-3 dark:border-gray-700/80">
         <Link
           href="/patient-portal"

@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { fetchMyProfile, type UserProfile } from "@/lib/api";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Command Center",
@@ -35,13 +35,9 @@ export function TopBar({ onMenuToggle }: { onMenuToggle?: () => void } = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const { resolvedTheme, toggleTheme } = useTheme();
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const { user, isAdmin, isOfficeAdmin } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    fetchMyProfile().then(setUser).catch(() => {});
-  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -183,15 +179,17 @@ export function TopBar({ onMenuToggle }: { onMenuToggle?: () => void } = {}) {
                   </svg>
                   Security Settings
                 </button>
-                <button
-                  onClick={() => { setDropdownOpen(false); router.push("/admin"); }}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
-                >
-                  <svg className="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-                  </svg>
-                  Admin Panel
-                </button>
+                {(isAdmin || isOfficeAdmin) && (
+                  <button
+                    onClick={() => { setDropdownOpen(false); router.push("/admin"); }}
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    <svg className="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+                    </svg>
+                    Admin Panel
+                  </button>
+                )}
               </div>
 
               <div className="divider" />

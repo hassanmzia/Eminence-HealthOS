@@ -242,6 +242,7 @@ async def list_diagnoses(
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    ctx.require_permission(Permission.DIAGNOSIS_READ)
     result = await db.execute(
         select(Diagnosis)
         .where(Diagnosis.patient_id == patient_id, Diagnosis.org_id == ctx.org_id)
@@ -274,6 +275,7 @@ async def list_all_prescriptions(
     db: AsyncSession = Depends(get_db),
 ):
     """List all prescriptions across all patients for this org."""
+    ctx.require_permission(Permission.PRESCRIPTION_READ)
     q = select(Prescription).where(Prescription.org_id == ctx.org_id)
     if status:
         q = q.where(Prescription.status == status)
@@ -288,6 +290,7 @@ async def list_prescriptions(
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    ctx.require_permission(Permission.PRESCRIPTION_READ)
     q = select(Prescription).where(
         Prescription.patient_id == patient_id, Prescription.org_id == ctx.org_id
     )
@@ -320,6 +323,7 @@ async def list_allergies(
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    ctx.require_permission(Permission.ALLERGY_READ)
     result = await db.execute(
         select(Allergy)
         .where(Allergy.patient_id == patient_id, Allergy.org_id == ctx.org_id, Allergy.is_active.is_(True))
@@ -352,6 +356,7 @@ async def list_medical_history(
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    ctx.require_permission(Permission.DIAGNOSIS_READ)
     result = await db.execute(
         select(MedicalHistory)
         .where(MedicalHistory.patient_id == patient_id, MedicalHistory.org_id == ctx.org_id)
@@ -383,6 +388,7 @@ async def list_social_history(
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    ctx.require_permission(Permission.DIAGNOSIS_READ)
     result = await db.execute(
         select(SocialHistory)
         .where(SocialHistory.patient_id == patient_id, SocialHistory.org_id == ctx.org_id)
@@ -414,6 +420,7 @@ async def list_family_history(
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    ctx.require_permission(Permission.DIAGNOSIS_READ)
     result = await db.execute(
         select(FamilyHistory)
         .where(FamilyHistory.patient_id == patient_id, FamilyHistory.org_id == ctx.org_id)
@@ -445,6 +452,7 @@ async def list_all_lab_tests(
     db: AsyncSession = Depends(get_db),
 ):
     """List all lab tests across all patients for this org."""
+    ctx.require_permission(Permission.LAB_READ)
     q = select(LabTest).where(LabTest.org_id == ctx.org_id)
     if status:
         q = q.where(LabTest.status == status)
@@ -459,6 +467,7 @@ async def list_lab_tests(
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    ctx.require_permission(Permission.LAB_READ)
     q = select(LabTest).where(LabTest.patient_id == patient_id, LabTest.org_id == ctx.org_id)
     if status:
         q = q.where(LabTest.status == status)
