@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { fetchMyProfile, type UserProfile } from "@/lib/api";
 
 // Mirror backend role/permission definitions
-export type Role = "admin" | "clinician" | "care_manager" | "nurse" | "office_admin" | "patient" | "lab_tech" | "pharmacist" | "billing";
+export type Role = "admin" | "clinician" | "care_manager" | "nurse" | "office_admin" | "patient" | "lab_tech" | "pharmacist" | "billing" | "read_only";
 
 export type Permission =
   | "patient:read" | "patient:write" | "patient:delete"
@@ -132,20 +132,32 @@ const ROLE_PERMISSIONS: Record<Role, Set<Permission>> = {
     "analytics:read",
     "provider:read", "hospital:read",
   ]),
+  read_only: new Set([
+    "patient:read", "vitals:read",
+    "alerts:read",
+    "encounters:read", "care_plans:read",
+    "diagnosis:read", "prescription:read",
+    "allergy:read", "lab:read",
+    "billing:read",
+    "notifications:read",
+    "analytics:read",
+    "devices:read",
+    "provider:read", "hospital:read",
+  ]),
 };
 
 // Route → allowed roles mapping for frontend route guards
 export const ROUTE_ACCESS: Record<string, Role[]> = {
-  "/dashboard": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing"],
+  "/dashboard": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing", "read_only"],
   "/clinical-workspace": ["admin", "clinician", "care_manager", "nurse"],
-  "/patients": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing"],
-  "/alerts": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing"],
+  "/patients": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing", "read_only"],
+  "/alerts": ["admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing", "read_only"],
   "/messaging": ["admin", "clinician", "care_manager", "nurse", "office_admin", "patient", "lab_tech", "pharmacist", "billing"],
   "/rpm": ["admin", "clinician", "care_manager", "nurse"],
   "/telehealth": ["admin", "clinician", "care_manager", "nurse"],
   "/ambient-ai": ["admin", "clinician"],
-  "/pharmacy": ["admin", "clinician", "care_manager", "nurse", "pharmacist"],
-  "/labs": ["admin", "clinician", "care_manager", "nurse", "lab_tech", "pharmacist"],
+  "/pharmacy": ["admin", "clinician", "care_manager", "nurse", "pharmacist", "read_only"],
+  "/labs": ["admin", "clinician", "care_manager", "nurse", "lab_tech", "pharmacist", "read_only"],
   "/imaging": ["admin", "clinician", "lab_tech"],
   "/mental-health": ["admin", "clinician", "care_manager", "nurse"],
   "/sdoh": ["admin", "clinician", "care_manager", "nurse"],
@@ -161,16 +173,16 @@ export const ROUTE_ACCESS: Record<string, Role[]> = {
   "/ai-explainability": ["admin", "clinician", "care_manager"],
   "/operations": ["admin", "office_admin", "clinician"],
   "/rcm": ["admin", "office_admin", "billing"],
-  "/analytics": ["admin", "office_admin", "clinician", "billing"],
-  "/compliance": ["admin", "office_admin", "billing"],
+  "/analytics": ["admin", "office_admin", "clinician", "billing", "read_only"],
+  "/compliance": ["admin", "office_admin", "billing", "read_only"],
   "/ehr-connect": ["admin"],
-  "/audit-log": ["admin", "office_admin"],
+  "/audit-log": ["admin", "office_admin", "read_only"],
   "/admin": ["admin"],
   "/research-genomics": ["admin", "clinician"],
   "/patient-engagement": ["admin", "clinician"],
   "/marketplace": ["admin", "clinician"],
   "/simulator": ["admin", "clinician"],
-  "/profile": ["admin", "clinician", "care_manager", "nurse", "office_admin", "patient", "lab_tech", "pharmacist", "billing"],
+  "/profile": ["admin", "clinician", "care_manager", "nurse", "office_admin", "patient", "lab_tech", "pharmacist", "billing", "read_only"],
   "/patient-portal": ["patient"],
 };
 
@@ -206,6 +218,7 @@ interface AuthContextValue {
   isLabTech: boolean;
   isPharmacist: boolean;
   isBilling: boolean;
+  isReadOnly: boolean;
   refreshUser: () => Promise<void>;
 }
 
@@ -259,6 +272,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLabTech: role === "lab_tech",
     isPharmacist: role === "pharmacist",
     isBilling: role === "billing",
+    isReadOnly: role === "read_only",
     refreshUser,
   };
 

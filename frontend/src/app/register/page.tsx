@@ -125,6 +125,7 @@ export default function RegisterPage() {
                 <option value="lab_tech">Lab Technician</option>
                 <option value="pharmacist">Pharmacist</option>
                 <option value="billing">Billing</option>
+                <option value="read_only">Read Only</option>
                 <option value="patient">Patient</option>
               </select>
             </div>
