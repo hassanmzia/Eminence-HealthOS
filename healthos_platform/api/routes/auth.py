@@ -55,26 +55,38 @@ async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db))
 @router.post("/login", response_model=TokenResponse)
 async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
     """Authenticate and return JWT tokens."""
-    # Use .all() instead of scalar_one_or_none to handle multiple users
-    # across orgs with the same email (unique constraint is per org).
-    result = await db.execute(
-        select(User).where(User.email == request.email, User.is_active == True)
-    )
-    users = result.scalars().all()
+    import traceback as _tb
+
+    try:
+        result = await db.execute(
+            select(User).where(User.email == request.email, User.is_active == True)
+        )
+        users = result.scalars().all()
+    except Exception as exc:
+        print(f"[LOGIN ERROR] DB query failed: {exc}\n{''.join(_tb.format_exception(exc))}")
+        raise HTTPException(status_code=500, detail=f"DB error: {exc}")
 
     # Try each matching user (across orgs) until password matches
     matched_user = None
     for u in users:
-        if verify_password(request.password, u.hashed_password):
-            matched_user = u
-            break
+        try:
+            if verify_password(request.password, u.hashed_password):
+                matched_user = u
+                break
+        except Exception as exc:
+            print(f"[LOGIN ERROR] verify_password failed for user {u.id}: {exc}")
+            continue
 
     if not matched_user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    tokens = create_tokens(matched_user.id, matched_user.org_id, matched_user.role)
-    return TokenResponse(
-        access_token=tokens.access_token,
-        refresh_token=tokens.refresh_token,
-        expires_in=tokens.expires_in,
-    )
+    try:
+        tokens = create_tokens(matched_user.id, matched_user.org_id, matched_user.role)
+        return TokenResponse(
+            access_token=tokens.access_token,
+            refresh_token=tokens.refresh_token,
+            expires_in=tokens.expires_in,
+        )
+    except Exception as exc:
+        print(f"[LOGIN ERROR] Token creation failed: {exc}\n{''.join(_tb.format_exception(exc))}")
+        raise HTTPException(status_code=500, detail=f"Token error: {exc}")
