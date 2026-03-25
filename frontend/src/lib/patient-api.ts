@@ -170,3 +170,106 @@ export async function requestAppointment(body: {
     body: JSON.stringify(body),
   });
 }
+
+// ── My Account / Profile ────────────────────────────────────────────────────
+
+export interface PatientDemographics {
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
+  sex: string;
+  gender_identity: string | null;
+  race: string | null;
+  ethnicity: string | null;
+  preferred_language: string | null;
+  email: string | null;
+  phone: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
+  country: string | null;
+}
+
+export interface EmergencyContact {
+  name: string | null;
+  phone: string | null;
+  relationship: string | null;
+}
+
+export interface InsuranceInfo {
+  provider: string | null;
+  member_id: string | null;
+  group_number: string | null;
+}
+
+export interface PatientAccountDetails {
+  id: string;
+  mrn: string | null;
+  demographics: PatientDemographics;
+  emergency_contact: EmergencyContact;
+  insurance: InsuranceInfo;
+  blood_type: string | null;
+  allergies: PatientAllergy[];
+}
+
+export interface PatientAllergy {
+  id: string;
+  allergen: string;
+  allergy_type: string;
+  severity: string;
+  reaction: string | null;
+  onset_date: string | null;
+  is_active: boolean;
+}
+
+export async function fetchMyAccount(): Promise<PatientAccountDetails> {
+  return request<PatientAccountDetails>("/me/account");
+}
+
+export async function updateMyDemographics(
+  data: Partial<PatientDemographics>,
+): Promise<PatientAccountDetails> {
+  return request<PatientAccountDetails>("/me/demographics", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateMyEmergencyContact(
+  data: EmergencyContact,
+): Promise<PatientAccountDetails> {
+  return request<PatientAccountDetails>("/me/emergency-contact", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateMyInsurance(
+  data: InsuranceInfo,
+): Promise<PatientAccountDetails> {
+  return request<PatientAccountDetails>("/me/insurance", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function addMyAllergy(body: {
+  allergen: string;
+  allergy_type: string;
+  severity: string;
+  reaction?: string;
+  onset_date?: string;
+}): Promise<PatientAllergy> {
+  return request<PatientAllergy>("/me/allergies", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function removeMyAllergy(allergyId: string): Promise<void> {
+  return request<void>(`/me/allergies/${allergyId}`, {
+    method: "DELETE",
+  });
+}

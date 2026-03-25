@@ -121,7 +121,7 @@ export default function PatientPortalHome() {
         <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
           Quick Actions
         </h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <QuickAction
             href="/patient-portal/appointments"
             label="Schedule Appointment"
@@ -136,6 +136,11 @@ export default function PatientPortalHome() {
             href="/patient-portal/health"
             label="View Vitals"
             description="See your health data and trends"
+          />
+          <QuickAction
+            href="/patient-portal/account"
+            label="Update My Info"
+            description="Edit demographics, allergies, and contacts"
           />
         </div>
       </section>
