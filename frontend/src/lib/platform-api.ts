@@ -1077,6 +1077,15 @@ export async function createAdminUser(body: {
   password: string;
   full_name: string;
   role?: string;
+  hospital_id?: string;
+  department_id?: string;
+  // Provider-specific
+  specialty?: string;
+  npi?: string;
+  license_number?: string;
+  // Office-admin-specific
+  position?: string;
+  employee_id?: string;
 }) {
   return request<AdminUserResponse>("/admin/users", {
     method: "POST",
@@ -1086,7 +1095,19 @@ export async function createAdminUser(body: {
 
 export async function updateAdminUser(
   userId: string,
-  body: { full_name?: string; role?: string; is_active?: boolean; phone?: string }
+  body: {
+    full_name?: string;
+    role?: string;
+    is_active?: boolean;
+    phone?: string;
+    hospital_id?: string;
+    department_id?: string;
+    specialty?: string;
+    npi?: string;
+    license_number?: string;
+    position?: string;
+    employee_id?: string;
+  }
 ) {
   return request<AdminUserResponse>(`/admin/users/${userId}`, {
     method: "PATCH",

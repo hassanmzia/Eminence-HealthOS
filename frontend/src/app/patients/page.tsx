@@ -2,6 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { fetchPatients, createPatient, type PatientData } from "@/lib/api";
+import {
+  fetchHospitals,
+  fetchDepartments,
+  fetchProviders,
+  type HospitalResponse,
+  type DepartmentResponse,
+  type ProviderProfileResponse,
+} from "@/lib/platform-api";
 
 const RISK_BADGE: Record<string, { class: string; dot: string }> = {
   critical: { class: "badge-critical", dot: "bg-red-500" },
@@ -31,10 +39,38 @@ export default function PatientsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showAdd, setShowAdd] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [addForm, setAddForm] = useState({ firstName: "", lastName: "", dob: "", gender: "male", mrn: "" });
+  const [addForm, setAddForm] = useState({
+    firstName: "", lastName: "", dob: "", gender: "male", mrn: "",
+    hospitalId: "", departmentId: "", primaryProviderId: "",
+  });
+
+  // Hierarchy data
+  const [hospitals, setHospitals] = useState<HospitalResponse[]>([]);
+  const [departments, setDepartments] = useState<DepartmentResponse[]>([]);
+  const [providers, setProviders] = useState<ProviderProfileResponse[]>([]);
+
+  useEffect(() => {
+    fetchHospitals().then(setHospitals).catch(() => {});
+    fetchProviders().then(setProviders).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (addForm.hospitalId) {
+      fetchDepartments(addForm.hospitalId).then(setDepartments).catch(() => setDepartments([]));
+      setAddForm((f) => ({ ...f, departmentId: "" }));
+    } else {
+      setDepartments([]);
+    }
+  }, [addForm.hospitalId]);
+
+  // Filter providers by selected hospital
+  const filteredProviders = addForm.hospitalId
+    ? providers.filter((p) => !p.hospital_id || p.hospital_id === addForm.hospitalId)
+    : providers;
 
   const handleAddPatient = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!addForm.hospitalId || !addForm.departmentId) return;
     setAdding(true);
     try {
       await createPatient({
@@ -47,9 +83,12 @@ export default function PatientsPage() {
         },
         conditions: [],
         medications: [],
+        hospital_id: addForm.hospitalId || undefined,
+        department_id: addForm.departmentId || undefined,
+        primary_provider_id: addForm.primaryProviderId || undefined,
       });
       setShowAdd(false);
-      setAddForm({ firstName: "", lastName: "", dob: "", gender: "male", mrn: "" });
+      setAddForm({ firstName: "", lastName: "", dob: "", gender: "male", mrn: "", hospitalId: "", departmentId: "", primaryProviderId: "" });
       setLoading(true);
       fetchPatients({ page: 1 }).then((res) => setPatients(res.patients)).catch(() => {}).finally(() => setLoading(false));
     } catch {
@@ -78,6 +117,8 @@ export default function PatientsPage() {
     acc[p.risk_level] = (acc[p.risk_level] || 0) + 1;
     return acc;
   }, {});
+
+  const canSubmitPatient = addForm.firstName && addForm.lastName && addForm.dob && addForm.hospitalId && addForm.departmentId;
 
   return (
     <div className="space-y-6 bg-mesh min-h-full">
@@ -329,6 +370,7 @@ export default function PatientsPage() {
               <button onClick={() => setShowAdd(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
             <form onSubmit={handleAddPatient} className="space-y-4">
+              {/* Name fields */}
               <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name *</label>
@@ -339,6 +381,8 @@ export default function PatientsPage() {
                   <input required value={addForm.lastName} onChange={(e) => setAddForm({ ...addForm, lastName: e.target.value })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
                 </div>
               </div>
+
+              {/* DOB + Gender */}
               <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date of Birth *</label>
@@ -353,13 +397,62 @@ export default function PatientsPage() {
                   </select>
                 </div>
               </div>
+
+              {/* MRN */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">MRN</label>
                 <input value={addForm.mrn} onChange={(e) => setAddForm({ ...addForm, mrn: e.target.value })} placeholder="e.g. MRN-10042" className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500" />
               </div>
+
+              {/* Hospital + Department (required) */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider">Assignment</p>
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hospital *</label>
+                    <select required value={addForm.hospitalId} onChange={(e) => setAddForm({ ...addForm, hospitalId: e.target.value, departmentId: "", primaryProviderId: "" })} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500">
+                      <option value="">Select hospital</option>
+                      {hospitals.map((h) => (
+                        <option key={h.id} value={h.id}>{h.name}</option>
+                      ))}
+                    </select>
+                    {hospitals.length === 0 && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">No hospitals found. Create one in Org Settings.</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department *</label>
+                    <select required value={addForm.departmentId} onChange={(e) => setAddForm({ ...addForm, departmentId: e.target.value })} disabled={!addForm.hospitalId} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500 disabled:opacity-50">
+                      <option value="">Select department</option>
+                      {departments.map((d) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Primary Provider */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Primary Provider</label>
+                <select value={addForm.primaryProviderId} onChange={(e) => setAddForm({ ...addForm, primaryProviderId: e.target.value })} disabled={!addForm.hospitalId} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500 disabled:opacity-50">
+                  <option value="">No primary provider</option>
+                  {filteredProviders.map((p) => (
+                    <option key={p.id} value={p.id}>{p.specialty} — {p.user_id.slice(0, 8)}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Validation notice */}
+              {(!addForm.hospitalId || !addForm.departmentId) && (
+                <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+                  Patients must be assigned to a Hospital and Department.
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowAdd(false)} className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
-                <button type="submit" disabled={adding} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50">{adding ? "Adding..." : "Add Patient"}</button>
+                <button type="submit" disabled={adding || !canSubmitPatient} className="rounded-lg bg-healthos-600 px-4 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50">{adding ? "Adding..." : "Add Patient"}</button>
               </div>
             </form>
           </div>
