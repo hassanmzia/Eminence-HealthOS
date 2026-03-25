@@ -48,9 +48,19 @@ export default function OrgSignupPage() {
 
       clearTimeout(timeout);
 
+      const contentType = res.headers.get("content-type") || "";
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+        const data = contentType.includes("application/json")
+          ? await res.json().catch(() => ({}))
+          : {};
         setError(data.detail || `Signup failed (${res.status})`);
+        setLoading(false);
+        return;
+      }
+
+      if (!contentType.includes("application/json")) {
+        setError("Unexpected response from server — please try again later");
         setLoading(false);
         return;
       }
