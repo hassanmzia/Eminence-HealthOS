@@ -147,6 +147,9 @@ async def create_patient(
     patient = Patient(
         org_id=ctx.org_id,
         mrn=request.mrn,
+        hospital_id=request.hospital_id,
+        department_id=request.department_id,
+        primary_provider_id=request.primary_provider_id,
         demographics=request.demographics,
         conditions=request.conditions,
         medications=request.medications,
@@ -180,6 +183,12 @@ async def update_patient(
     patient.medications = request.medications
     if request.mrn:
         patient.mrn = request.mrn
+    if request.hospital_id is not None:
+        patient.hospital_id = request.hospital_id
+    if request.department_id is not None:
+        patient.department_id = request.department_id
+    if request.primary_provider_id is not None:
+        patient.primary_provider_id = request.primary_provider_id
 
     await db.flush()
     await db.refresh(patient)

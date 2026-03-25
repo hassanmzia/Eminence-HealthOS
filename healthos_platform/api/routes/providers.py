@@ -20,7 +20,7 @@ from healthos_platform.api.middleware.tenant import (
     require_clinical_staff,
 )
 from healthos_platform.database import get_db
-from healthos_platform.models import NurseProfile, OfficeAdminProfile, ProviderProfile, User
+from healthos_platform.models import Department, Hospital, NurseProfile, OfficeAdminProfile, ProviderProfile, User
 
 router = APIRouter(prefix="/providers", tags=["providers"])
 
@@ -40,11 +40,14 @@ class ProviderProfileCreate(BaseModel):
 class ProviderProfileResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
+    full_name: str | None = None
     specialty: str
     npi: str
     license_number: str | None
     hospital_id: uuid.UUID | None
+    hospital_name: str | None = None
     department_id: uuid.UUID | None
+    department_name: str | None = None
     is_active: bool
     created_at: datetime
 
@@ -62,10 +65,13 @@ class NurseProfileCreate(BaseModel):
 class NurseProfileResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
+    full_name: str | None = None
     specialty: str
     license_number: str
     hospital_id: uuid.UUID | None
+    hospital_name: str | None = None
     department_id: uuid.UUID | None
+    department_name: str | None = None
     is_active: bool
     created_at: datetime
 
@@ -83,14 +89,38 @@ class OfficeAdminProfileCreate(BaseModel):
 class OfficeAdminProfileResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
+    full_name: str | None = None
     position: str
     employee_id: str
     hospital_id: uuid.UUID | None
+    hospital_name: str | None = None
     department_id: uuid.UUID | None
+    department_name: str | None = None
     is_active: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+async def _enrich_profile(profile, db: AsyncSession) -> dict:
+    """Add full_name, hospital_name, department_name to a profile object."""
+    data = {c.key: getattr(profile, c.key) for c in profile.__table__.columns}
+    # User full_name
+    user = (await db.execute(select(User).where(User.id == profile.user_id))).scalar_one_or_none()
+    data["full_name"] = user.full_name if user else None
+    # Hospital name
+    if profile.hospital_id:
+        h = (await db.execute(select(Hospital.name).where(Hospital.id == profile.hospital_id))).scalar()
+        data["hospital_name"] = h
+    else:
+        data["hospital_name"] = None
+    # Department name
+    if profile.department_id:
+        d = (await db.execute(select(Department.name).where(Department.id == profile.department_id))).scalar()
+        data["department_name"] = d
+    else:
+        data["department_name"] = None
+    return data
 
 
 # ── Role-Specific Dashboard ─────────────────────────────────────────────────
@@ -139,7 +169,8 @@ async def list_providers(
             ProviderProfile.org_id == ctx.org_id, ProviderProfile.is_active.is_(True)
         )
     )
-    return result.scalars().all()
+    profiles = result.scalars().all()
+    return [await _enrich_profile(p, db) for p in profiles]
 
 
 @router.post("", response_model=ProviderProfileResponse, status_code=201)
@@ -166,7 +197,8 @@ async def list_nurses(
     result = await db.execute(
         select(NurseProfile).where(NurseProfile.org_id == ctx.org_id, NurseProfile.is_active.is_(True))
     )
-    return result.scalars().all()
+    profiles = result.scalars().all()
+    return [await _enrich_profile(p, db) for p in profiles]
 
 
 @router.post("/nurses", response_model=NurseProfileResponse, status_code=201)
@@ -195,7 +227,8 @@ async def list_office_admins(
             OfficeAdminProfile.org_id == ctx.org_id, OfficeAdminProfile.is_active.is_(True)
         )
     )
-    return result.scalars().all()
+    profiles = result.scalars().all()
+    return [await _enrich_profile(p, db) for p in profiles]
 
 
 @router.post("/office-admins", response_model=OfficeAdminProfileResponse, status_code=201)
@@ -229,4 +262,4 @@ async def get_provider(
     profile = result.scalar_one_or_none()
     if not profile:
         raise HTTPException(404, "Provider not found")
-    return profile
+    return await _enrich_profile(profile, db)

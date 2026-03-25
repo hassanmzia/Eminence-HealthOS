@@ -115,6 +115,9 @@ class OrgResponse(BaseModel):
 
 class PatientCreateRequest(BaseModel):
     mrn: str | None = None
+    hospital_id: uuid.UUID | None = None
+    department_id: uuid.UUID | None = None
+    primary_provider_id: uuid.UUID | None = None
     demographics: dict[str, Any]  # name, dob, gender, contact
     conditions: list[dict[str, Any]] = []
     medications: list[dict[str, Any]] = []
@@ -123,6 +126,9 @@ class PatientCreateRequest(BaseModel):
 class PatientResponse(BaseModel):
     id: uuid.UUID
     mrn: str | None
+    hospital_id: uuid.UUID | None = None
+    department_id: uuid.UUID | None = None
+    primary_provider_id: uuid.UUID | None = None
     demographics: dict[str, Any]
     conditions: list
     medications: list
