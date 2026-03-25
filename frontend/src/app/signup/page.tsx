@@ -29,6 +29,9 @@ export default function OrgSignupPage() {
     setLoading(true);
 
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+
       const res = await fetch("/api/v1/organizations/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -40,11 +43,14 @@ export default function OrgSignupPage() {
           admin_password: password,
           admin_full_name: fullName,
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeout);
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.detail || "Signup failed");
+        setError(data.detail || `Signup failed (${res.status})`);
         setLoading(false);
         return;
       }
@@ -56,8 +62,12 @@ export default function OrgSignupPage() {
       localStorage.setItem("refresh_token", data.refresh_token);
 
       router.push("/dashboard");
-    } catch {
-      setError("Unable to connect to server");
+    } catch (err) {
+      setError(
+        err instanceof DOMException && err.name === "AbortError"
+          ? "Request timed out — please try again"
+          : "Unable to connect to server"
+      );
       setLoading(false);
     }
   }
