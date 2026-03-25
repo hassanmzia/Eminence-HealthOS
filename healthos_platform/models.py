@@ -49,7 +49,8 @@ class Organization(Base):
     )
 
     users: Mapped[list[User]] = relationship(back_populates="organization")
-    patients: Mapped[list[Patient]] = relationship(back_populates="organization")
+    patients: Mapped[list[Patient]] = relationship(back_populates="organization", foreign_keys="Patient.org_id")
+    hospitals: Mapped[list[Hospital]] = relationship(foreign_keys="Hospital.org_id")
 
 
 class User(Base):
@@ -106,6 +107,9 @@ class Patient(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    hospital_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("hospitals.id"))
+    department_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("departments.id"))
+    primary_provider_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     fhir_id: Mapped[str | None] = mapped_column(String(100))
     mrn: Mapped[str | None] = mapped_column(String(100))
     demographics: Mapped[dict] = mapped_column(JSONB, nullable=False)
@@ -119,6 +123,9 @@ class Patient(Base):
     )
 
     organization: Mapped[Organization] = relationship(back_populates="patients")
+    hospital: Mapped[Hospital | None] = relationship(foreign_keys=[hospital_id])
+    department: Mapped[Department | None] = relationship(foreign_keys=[department_id])
+    primary_provider: Mapped[User | None] = relationship(foreign_keys=[primary_provider_id])
     vitals: Mapped[list[Vital]] = relationship(back_populates="patient")
     anomalies: Mapped[list[Anomaly]] = relationship(back_populates="patient")
     alerts: Mapped[list[Alert]] = relationship(back_populates="patient")
@@ -236,6 +243,7 @@ class Encounter(Base):
     patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
     org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
     provider_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    department_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("departments.id"))
     encounter_type: Mapped[str] = mapped_column(String(50), nullable=False)
     status: Mapped[str] = mapped_column(String(30), default="scheduled")
     scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -250,6 +258,7 @@ class Encounter(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     patient: Mapped[Patient] = relationship(back_populates="encounters")
+    department: Mapped[Department | None] = relationship(foreign_keys=[department_id])
     care_plans: Mapped[list[CarePlan]] = relationship(back_populates="encounter")
 
 
@@ -551,6 +560,10 @@ class Hospital(Base):
     )
 
     departments: Mapped[list[Department]] = relationship(back_populates="hospital")
+    providers: Mapped[list[ProviderProfile]] = relationship(back_populates="hospital", foreign_keys="ProviderProfile.hospital_id")
+    nurses: Mapped[list[NurseProfile]] = relationship(back_populates="hospital", foreign_keys="NurseProfile.hospital_id")
+    office_admins: Mapped[list[OfficeAdminProfile]] = relationship(back_populates="hospital", foreign_keys="OfficeAdminProfile.hospital_id")
+    patients: Mapped[list[Patient]] = relationship(back_populates="hospital", foreign_keys="Patient.hospital_id")
 
 
 class Department(Base):
@@ -571,6 +584,11 @@ class Department(Base):
     )
 
     hospital: Mapped[Hospital] = relationship(back_populates="departments")
+    providers: Mapped[list[ProviderProfile]] = relationship(back_populates="department", foreign_keys="ProviderProfile.department_id")
+    nurses: Mapped[list[NurseProfile]] = relationship(back_populates="department", foreign_keys="NurseProfile.department_id")
+    office_admins: Mapped[list[OfficeAdminProfile]] = relationship(back_populates="department", foreign_keys="OfficeAdminProfile.department_id")
+    patients: Mapped[list[Patient]] = relationship(back_populates="department", foreign_keys="Patient.department_id")
+    encounters: Mapped[list[Encounter]] = relationship(back_populates="department", foreign_keys="Encounter.department_id")
 
 
 class ProviderProfile(Base):
@@ -595,6 +613,8 @@ class ProviderProfile(Base):
     )
 
     user: Mapped[User] = relationship(back_populates="provider_profile")
+    hospital: Mapped[Hospital | None] = relationship(back_populates="providers", foreign_keys=[hospital_id])
+    department: Mapped[Department | None] = relationship(back_populates="providers", foreign_keys=[department_id])
 
 
 class NurseProfile(Base):
@@ -618,6 +638,8 @@ class NurseProfile(Base):
     )
 
     user: Mapped[User] = relationship(back_populates="nurse_profile")
+    hospital: Mapped[Hospital | None] = relationship(back_populates="nurses", foreign_keys=[hospital_id])
+    department: Mapped[Department | None] = relationship(back_populates="nurses", foreign_keys=[department_id])
 
 
 class OfficeAdminProfile(Base):
@@ -640,6 +662,8 @@ class OfficeAdminProfile(Base):
     )
 
     user: Mapped[User] = relationship(back_populates="office_admin_profile")
+    hospital: Mapped[Hospital | None] = relationship(back_populates="office_admins", foreign_keys=[hospital_id])
+    department: Mapped[Department | None] = relationship(back_populates="office_admins", foreign_keys=[department_id])
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

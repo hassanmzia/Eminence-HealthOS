@@ -98,6 +98,12 @@ _MISSING_COLUMN_MIGRATIONS = [
     'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "email_verification_token" VARCHAR(255)',
     'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "auth_provider" VARCHAR(50)',
     'ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "external_id" VARCHAR(255)',
+    # InhealthUSA hierarchy: Patient → Hospital/Department/Provider
+    'ALTER TABLE "patients" ADD COLUMN IF NOT EXISTS "hospital_id" UUID REFERENCES hospitals(id)',
+    'ALTER TABLE "patients" ADD COLUMN IF NOT EXISTS "department_id" UUID REFERENCES departments(id)',
+    'ALTER TABLE "patients" ADD COLUMN IF NOT EXISTS "primary_provider_id" UUID REFERENCES users(id)',
+    # InhealthUSA hierarchy: Encounter → Department
+    'ALTER TABLE "encounters" ADD COLUMN IF NOT EXISTS "department_id" UUID REFERENCES departments(id)',
 ]
 
 
