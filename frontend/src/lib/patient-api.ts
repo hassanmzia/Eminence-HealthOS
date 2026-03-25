@@ -352,3 +352,23 @@ export async function updateQuestionnaire(
     body: JSON.stringify(body),
   });
 }
+
+// ── Devices ──────────────────────────────────────────────────────────────────
+
+export interface PatientDevice {
+  id: string;
+  device_name: string;
+  device_type: string;
+  device_unique_id: string;
+  manufacturer: string | null;
+  model_number: string | null;
+  firmware_version: string | null;
+  status: string;
+  battery_level: number | null;
+  last_sync: string | null;
+  created_at: string | null;
+}
+
+export async function fetchMyDevices(): Promise<PatientDevice[]> {
+  return request<PatientDevice[]>("/me/devices");
+}
