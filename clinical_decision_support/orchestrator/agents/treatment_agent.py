@@ -278,6 +278,12 @@ class TreatmentAgent(BaseAgent):
         if contraindicated:
             warnings.append(f"{len(contraindicated)} treatment(s) contraindicated and removed")
 
+        # Step 4b: Incorporate patient questionnaire data
+        if context.questionnaire_responses:
+            reasoning_steps.append("Step 4b: Reviewing patient questionnaire responses...")
+            q_warnings = self._check_questionnaire_factors(treatments, context.questionnaire_responses)
+            warnings.extend(q_warnings)
+
         # Prioritize treatments
         reasoning_steps.append("Step 5: Prioritizing treatment plan...")
         treatments.sort(key=lambda t: {"immediate": 0, "urgent": 1, "routine": 2}.get(t.priority, 3))
@@ -517,3 +523,82 @@ Return JSON with personalized recommendations:
                 contraindicated.append(tx)
 
         return safe, contraindicated
+
+    def _check_questionnaire_factors(
+        self,
+        treatments: List[TreatmentRecommendation],
+        questionnaires: List[dict],
+    ) -> List[str]:
+        """
+        Check patient questionnaire responses for factors that affect treatment.
+        Returns warnings for the treatment plan.
+        """
+        warnings: List[str] = []
+
+        for q in questionnaires:
+            responses = q.get("responses", {})
+            q_type = q.get("questionnaire_type", "")
+
+            if q_type == "pre_visit":
+                # High pain level — flag for pain management
+                pain = responses.get("pain_level")
+                if pain and str(pain).isdigit() and int(pain) >= 7:
+                    warnings.append(
+                        f"Patient reports high pain level ({pain}/10) — consider pain management in treatment plan"
+                    )
+
+                # Smoking status — affects treatment choices
+                smoking = responses.get("smoking_status", "")
+                if "current" in smoking.lower():
+                    warnings.append(
+                        "Patient is a current smoker — consider smoking cessation counseling and adjust treatments"
+                    )
+
+                # Heavy alcohol use — drug interaction risk
+                alcohol = responses.get("alcohol_use", "")
+                if "heavy" in alcohol.lower():
+                    warnings.append(
+                        "Patient reports heavy alcohol use — review hepatotoxic medications and interaction risks"
+                    )
+
+                # Mental health screening positive
+                for key, screen in [("feeling_down", "depression"), ("feeling_nervous", "anxiety")]:
+                    val = responses.get(key, "")
+                    if val in ("More than half the days", "Nearly every day"):
+                        warnings.append(
+                            f"Positive {screen} screening ({val}) — consider mental health referral"
+                        )
+
+                # Medication side effects reported
+                side_effects = responses.get("medication_side_effects", "")
+                if side_effects and side_effects.strip():
+                    warnings.append(
+                        f"Patient reports medication side effects: {side_effects[:200]}"
+                    )
+
+                # Functional status impairment
+                func_status = responses.get("functional_status", "")
+                if func_status in ("Requires Assistance", "Bed-bound"):
+                    warnings.append(
+                        f"Patient functional status: {func_status} — adjust treatment modalities accordingly"
+                    )
+
+            elif q_type == "review_of_systems":
+                # Count positive findings for acuity assessment
+                positive_count = sum(1 for v in responses.values() if v is True)
+                if positive_count >= 10:
+                    warnings.append(
+                        f"Patient reports {positive_count} positive Review of Systems findings — multisystem involvement, consider comprehensive evaluation"
+                    )
+
+                # Check for psych symptoms
+                psych_positive = any(
+                    responses.get(k) is True
+                    for k in ("psych_depression", "psych_anxiety", "psych_mood_changes", "psych_sleep_disturbances")
+                )
+                if psych_positive:
+                    warnings.append(
+                        "Patient endorses psychiatric symptoms in ROS — screen for mental health comorbidities"
+                    )
+
+        return warnings

@@ -89,6 +89,9 @@ class PatientContext(BaseModel):
     review_of_systems: Optional[dict] = None  # Symptom checklist by system
     physical_exam: Optional[dict] = None  # Physical examination findings
 
+    # Patient-submitted questionnaires (from InhealthUSA intake forms)
+    questionnaire_responses: Optional[List[dict]] = None  # Submitted questionnaire data
+
     # Additional context
     recent_procedures: Optional[List[dict]] = None
     imaging_results: Optional[List[dict]] = None

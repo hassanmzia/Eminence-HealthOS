@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -924,6 +924,7 @@ async def get_my_questionnaire(
 @router.post("/me/questionnaires")
 async def create_questionnaire(
     body: dict,
+    background_tasks: BackgroundTasks,
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -956,6 +957,15 @@ async def create_questionnaire(
     await db.commit()
     await db.refresh(questionnaire)
 
+    # Trigger AI pipeline on submission
+    if status == "submitted":
+        background_tasks.add_task(
+            _trigger_questionnaire_pipeline,
+            org_id=ctx.org_id,
+            patient_id=patient.id,
+            questionnaire_data=_serialize_questionnaire(questionnaire),
+        )
+
     return _serialize_questionnaire(questionnaire)
 
 
@@ -963,6 +973,7 @@ async def create_questionnaire(
 async def update_questionnaire(
     questionnaire_id: str,
     body: dict,
+    background_tasks: BackgroundTasks,
     ctx: TenantContext = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -983,6 +994,8 @@ async def update_questionnaire(
     if q.status == "reviewed":
         raise HTTPException(status_code=400, detail="Cannot edit a reviewed questionnaire")
 
+    was_draft = q.status != "submitted"
+
     if "responses" in body:
         q.responses = body["responses"]
 
@@ -996,7 +1009,53 @@ async def update_questionnaire(
     await db.commit()
     await db.refresh(q)
 
+    # Trigger AI pipeline when transitioning to submitted
+    if was_draft and q.status == "submitted":
+        background_tasks.add_task(
+            _trigger_questionnaire_pipeline,
+            org_id=ctx.org_id,
+            patient_id=patient.id,
+            questionnaire_data=_serialize_questionnaire(q),
+        )
+
     return _serialize_questionnaire(q)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# AI Pipeline Integration
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+async def _trigger_questionnaire_pipeline(
+    org_id: uuid.UUID,
+    patient_id: uuid.UUID,
+    questionnaire_data: dict,
+) -> None:
+    """
+    Background task: trigger the AI agent pipeline when a patient submits
+    a questionnaire so that agents (diagnostician, treatment, risk scoring)
+    can incorporate the patient-reported data into their recommendations.
+    """
+    try:
+        from healthos_platform.orchestrator.engine import ExecutionEngine
+
+        engine = ExecutionEngine()
+        await engine.execute_event(
+            event_type="questionnaire.submitted",
+            org_id=org_id,
+            patient_id=patient_id,
+            payload={
+                "questionnaire_responses": [questionnaire_data],
+                "trigger_source": "patient_portal",
+            },
+        )
+    except Exception:
+        # Pipeline errors should not affect the patient-facing response
+        import logging
+        logging.getLogger(__name__).exception(
+            "Failed to trigger AI pipeline for questionnaire submission "
+            f"(patient_id={patient_id})"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

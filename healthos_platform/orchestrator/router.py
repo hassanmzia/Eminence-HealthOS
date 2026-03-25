@@ -376,6 +376,17 @@ ROUTING_TABLE: dict[str, list[str]] = {
         "sdoh_screening",
         "community_resource",
     ],
+    # Patient questionnaire submitted (ROS, HPI, pre-visit)
+    "questionnaire.submitted": [
+        "context_assembly",
+        "risk_scoring",
+        "trend_analysis",
+    ],
+    # Questionnaire reviewed by provider — trigger recommendation pipeline
+    "questionnaire.reviewed": [
+        "context_assembly",
+        "policy_rules",
+    ],
     # Patient content adaptation
     "engagement.content.adapt": [
         "health_literacy",
