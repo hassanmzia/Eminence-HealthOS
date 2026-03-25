@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   fetchHospitals,
+  fetchDepartments,
   fetchProviders,
   fetchNurses,
   fetchOfficeAdmins,
@@ -10,12 +11,16 @@ import {
   fetchSessions,
   fetchAdminUsers,
   createAdminUser,
+  createProvider,
+  createNurse,
+  createOfficeAdmin,
   updateAdminUser,
   deactivateAdminUser,
   promoteSelfToAdmin,
   unlockAccount,
   getUserRole,
   type HospitalResponse,
+  type DepartmentResponse,
   type ProviderProfileResponse,
   type AuthConfigResponse,
   type SessionResponse,
@@ -33,6 +38,9 @@ interface User {
   email: string;
   role: string;
   department: string;
+  hospitalId?: string;
+  hospitalName?: string;
+  departmentId?: string;
   status: "active" | "inactive" | "locked";
   lastLogin: string;
   avatar?: string;
@@ -394,6 +402,15 @@ function UserAvatar({ name }: { name: string }) {
   );
 }
 
+/* Roles that require Hospital + Department assignment */
+const STAFF_ROLES = new Set(["Physician", "Nurse", "Office Admin", "Care Manager", "Lab Tech", "Pharmacist"]);
+/* Roles that need provider-specific fields (specialty, NPI, license) */
+const PROVIDER_ROLES = new Set(["Physician"]);
+/* Roles that need nurse-specific fields (specialty, license) */
+const NURSE_ROLES = new Set(["Nurse"]);
+/* Roles that need office-admin-specific fields (position, employee_id) */
+const OFFICE_ADMIN_ROLES = new Set(["Office Admin"]);
+
 function UsersTab() {
   const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [search, setSearch] = useState("");
@@ -407,6 +424,24 @@ function UsersTab() {
   const [editName, setEditName] = useState("");
   const [editRole, setEditRole] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const [editHospitalId, setEditHospitalId] = useState("");
+  const [editDeptId, setEditDeptId] = useState("");
+  const [editSpecialty, setEditSpecialty] = useState("");
+  const [editNPI, setEditNPI] = useState("");
+  const [editLicense, setEditLicense] = useState("");
+  const [editPosition, setEditPosition] = useState("");
+  const [editEmployeeId, setEditEmployeeId] = useState("");
+
+  const editRoleRequiresHospital = STAFF_ROLES.has(editRole);
+  const editRoleIsProvider = PROVIDER_ROLES.has(editRole);
+  const editRoleIsNurse = NURSE_ROLES.has(editRole);
+  const editRoleIsOfficeAdmin = OFFICE_ADMIN_ROLES.has(editRole);
+  const editDepartments = editHospitalId ? (departmentsByHospital[editHospitalId] || []) : [];
+
+  // Load departments when edit hospital changes
+  useEffect(() => {
+    if (editHospitalId) loadDepartmentsForHospital(editHospitalId);
+  }, [editHospitalId, loadDepartmentsForHospital]);
 
   const ROLE_MAP_TAB: Record<string, string> = {
     admin: "Super Admin",
@@ -537,14 +572,52 @@ function UsersTab() {
   const [sortField, setSortField] = useState<keyof User>("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
+  /* Hospital / Department data */
+  const [hospitals, setHospitals] = useState<HospitalResponse[]>([]);
+  const [departmentsByHospital, setDepartmentsByHospital] = useState<Record<string, DepartmentResponse[]>>({});
+
+  useEffect(() => {
+    fetchHospitals().then(setHospitals).catch(() => {});
+  }, []);
+
+  const loadDepartmentsForHospital = useCallback(async (hospitalId: string) => {
+    if (!hospitalId || departmentsByHospital[hospitalId]) return;
+    try {
+      const depts = await fetchDepartments(hospitalId);
+      setDepartmentsByHospital((prev) => ({ ...prev, [hospitalId]: depts }));
+    } catch { /* ignore */ }
+  }, [departmentsByHospital]);
+
   /* Form state */
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [formPassword, setFormPassword] = useState("");
   const [formRole, setFormRole] = useState("");
-  const [formDept, setFormDept] = useState("");
+  const [formHospitalId, setFormHospitalId] = useState("");
+  const [formDeptId, setFormDeptId] = useState("");
+  // Provider fields
+  const [formSpecialty, setFormSpecialty] = useState("");
+  const [formNPI, setFormNPI] = useState("");
+  const [formLicense, setFormLicense] = useState("");
+  // Office Admin fields
+  const [formPosition, setFormPosition] = useState("");
+  const [formEmployeeId, setFormEmployeeId] = useState("");
 
-  const departments = useMemo(() => Array.from(new Set(users.map((u) => u.department))).sort(), [users]);
+  const formDepartments = formHospitalId ? (departmentsByHospital[formHospitalId] || []) : [];
+  const formRoleRequiresHospital = STAFF_ROLES.has(formRole);
+  const formRoleIsProvider = PROVIDER_ROLES.has(formRole);
+  const formRoleIsNurse = NURSE_ROLES.has(formRole);
+  const formRoleIsOfficeAdmin = OFFICE_ADMIN_ROLES.has(formRole);
+
+  // Load departments when hospital changes
+  useEffect(() => {
+    if (formHospitalId) {
+      loadDepartmentsForHospital(formHospitalId);
+      setFormDeptId(""); // reset department when hospital changes
+    }
+  }, [formHospitalId, loadDepartmentsForHospital]);
+
+  const userDepartments = useMemo(() => Array.from(new Set(users.map((u) => u.department))).sort(), [users]);
   const roleNames = useMemo(() => Array.from(new Set(ROLES.map((r) => r.name))).sort(), []);
 
   const filtered = useMemo(() => {
@@ -597,25 +670,76 @@ function UsersTab() {
     }
   };
 
+  const resetAddForm = () => {
+    setFormName(""); setFormEmail(""); setFormPassword(""); setFormRole("");
+    setFormHospitalId(""); setFormDeptId(""); setFormSpecialty(""); setFormNPI("");
+    setFormLicense(""); setFormPosition(""); setFormEmployeeId("");
+  };
+
+  const canSubmitAddForm = () => {
+    if (!formName || !formEmail || !formPassword || !formRole) return false;
+    // Staff roles require hospital + department
+    if (formRoleRequiresHospital && (!formHospitalId || !formDeptId)) return false;
+    // Provider requires specialty + NPI
+    if (formRoleIsProvider && (!formSpecialty || !formNPI)) return false;
+    // Nurse requires license number
+    if (formRoleIsNurse && !formLicense) return false;
+    // Office Admin requires employee ID
+    if (formRoleIsOfficeAdmin && !formEmployeeId) return false;
+    return true;
+  };
+
   const handleAddUser = async () => {
-    if (!formName || !formEmail || !formPassword || !formRole) return;
+    if (!canSubmitAddForm()) return;
     setError("");
     setSaving(true);
     try {
       const backendRole = ROLE_REVERSE_MAP[formRole] ?? "read_only";
-      await createAdminUser({
+      // Step 1: Create the user account
+      const newUser = await createAdminUser({
         email: formEmail,
         password: formPassword,
         full_name: formName,
         role: backendRole,
+        hospital_id: formHospitalId || undefined,
+        department_id: formDeptId || undefined,
+        specialty: formSpecialty || undefined,
+        npi: formNPI || undefined,
+        license_number: formLicense || undefined,
+        position: formPosition || undefined,
+        employee_id: formEmployeeId || undefined,
       });
-      // Reload users from backend to get the persisted data
+
+      // Step 2: Create role-specific profile (provider/nurse/office-admin)
+      if (formRoleIsProvider && newUser?.id) {
+        await createProvider({
+          user_id: newUser.id,
+          specialty: formSpecialty,
+          npi: formNPI,
+          license_number: formLicense || undefined,
+          hospital_id: formHospitalId || undefined,
+          department_id: formDeptId || undefined,
+        }).catch(() => {}); // best-effort
+      } else if (formRoleIsNurse && newUser?.id) {
+        await createNurse({
+          user_id: newUser.id,
+          specialty: formSpecialty || undefined,
+          license_number: formLicense,
+          hospital_id: formHospitalId || undefined,
+          department_id: formDeptId || undefined,
+        }).catch(() => {});
+      } else if (formRoleIsOfficeAdmin && newUser?.id) {
+        await createOfficeAdmin({
+          user_id: newUser.id,
+          position: formPosition || undefined,
+          employee_id: formEmployeeId,
+          hospital_id: formHospitalId || undefined,
+          department_id: formDeptId || undefined,
+        }).catch(() => {});
+      }
+
       await loadUsers();
-      setFormName("");
-      setFormEmail("");
-      setFormPassword("");
-      setFormRole("");
-      setFormDept("");
+      resetAddForm();
       setShowAddForm(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create user");
@@ -629,12 +753,25 @@ function UsersTab() {
     setEditName(user.name);
     setEditRole(user.role);
     setEditPhone("");
+    setEditHospitalId(user.hospitalId || "");
+    setEditDeptId(user.departmentId || "");
+    setEditSpecialty("");
+    setEditNPI("");
+    setEditLicense("");
+    setEditPosition("");
+    setEditEmployeeId("");
     setError("");
+    if (user.hospitalId) loadDepartmentsForHospital(user.hospitalId);
   };
 
   const handleSaveEdit = async () => {
     if (!editingUser?.backendId) {
       setError("Cannot edit this user — no backend ID available");
+      return;
+    }
+    // Validate hierarchy for staff roles
+    if (editRoleRequiresHospital && (!editHospitalId || !editDeptId)) {
+      setError(`${editRole} accounts must be assigned to a Hospital and Department.`);
       return;
     }
     setError("");
@@ -645,6 +782,13 @@ function UsersTab() {
         full_name: editName || undefined,
         role: backendRole,
         phone: editPhone || undefined,
+        hospital_id: editHospitalId || undefined,
+        department_id: editDeptId || undefined,
+        specialty: editSpecialty || undefined,
+        npi: editNPI || undefined,
+        license_number: editLicense || undefined,
+        position: editPosition || undefined,
+        employee_id: editEmployeeId || undefined,
       });
       await loadUsers();
       setEditingUser(null);
@@ -725,9 +869,12 @@ function UsersTab() {
 
       {/* Edit Modal */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Edit User</h3>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-t-2xl sm:rounded-xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto mx-0 sm:mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Edit User</h3>
+              <button onClick={() => setEditingUser(null)} className="text-zinc-400 hover:text-zinc-600 text-xl leading-none">&times;</button>
+            </div>
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Email</label>
@@ -739,7 +886,7 @@ function UsersTab() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Role</label>
-                <select value={editRole} onChange={(e) => setEditRole(e.target.value)} className="select w-full">
+                <select value={editRole} onChange={(e) => { setEditRole(e.target.value); setEditHospitalId(""); setEditDeptId(""); }} className="select w-full">
                   {roleNames.map((r) => (
                     <option key={r} value={r}>{r}</option>
                   ))}
@@ -749,6 +896,83 @@ function UsersTab() {
                 <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Phone (optional)</label>
                 <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="+1 555-0123" className="input w-full" />
               </div>
+
+              {/* Hospital + Department for staff roles */}
+              {editRoleRequiresHospital && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Hospital *</label>
+                    <select value={editHospitalId} onChange={(e) => { setEditHospitalId(e.target.value); setEditDeptId(""); }} className="select w-full">
+                      <option value="">Select hospital</option>
+                      {hospitals.map((h) => (
+                        <option key={h.id} value={h.id}>{h.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Department *</label>
+                    <select value={editDeptId} onChange={(e) => setEditDeptId(e.target.value)} disabled={!editHospitalId} className="select w-full disabled:opacity-50">
+                      <option value="">Select department</option>
+                      {editDepartments.map((d) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {/* Provider fields */}
+              {editRoleIsProvider && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Specialty</label>
+                    <input value={editSpecialty} onChange={(e) => setEditSpecialty(e.target.value)} placeholder="e.g. Cardiology" className="input w-full" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">NPI Number</label>
+                    <input value={editNPI} onChange={(e) => setEditNPI(e.target.value)} placeholder="10-digit NPI" className="input w-full" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">License Number</label>
+                    <input value={editLicense} onChange={(e) => setEditLicense(e.target.value)} className="input w-full" />
+                  </div>
+                </>
+              )}
+
+              {/* Nurse fields */}
+              {editRoleIsNurse && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">License Number</label>
+                    <input value={editLicense} onChange={(e) => setEditLicense(e.target.value)} placeholder="Nursing license #" className="input w-full" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Specialty</label>
+                    <input value={editSpecialty} onChange={(e) => setEditSpecialty(e.target.value)} placeholder="e.g. ICU, Pediatrics" className="input w-full" />
+                  </div>
+                </>
+              )}
+
+              {/* Office Admin fields */}
+              {editRoleIsOfficeAdmin && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Employee ID</label>
+                    <input value={editEmployeeId} onChange={(e) => setEditEmployeeId(e.target.value)} placeholder="EMP-0001" className="input w-full" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Position</label>
+                    <input value={editPosition} onChange={(e) => setEditPosition(e.target.value)} placeholder="e.g. Office Manager" className="input w-full" />
+                  </div>
+                </>
+              )}
+
+              {/* Hierarchy validation notice */}
+              {editRoleRequiresHospital && (!editHospitalId || !editDeptId) && (
+                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs">
+                  <strong>{editRole}</strong> accounts must be assigned to a Hospital and Department.
+                </div>
+              )}
             </div>
             <div className="flex gap-2 justify-end mt-6">
               <button onClick={handleSaveEdit} disabled={saving} className="btn-primary">
@@ -783,7 +1007,7 @@ function UsersTab() {
         </select>
         <select value={filterDept} onChange={(e) => setFilterDept(e.target.value)} className="select">
           <option value="All">All Departments</option>
-          {departments.map((d) => (
+          {userDepartments.map((d) => (
             <option key={d} value={d}>{d}</option>
           ))}
         </select>
@@ -803,38 +1027,126 @@ function UsersTab() {
       {showAddForm && (
         <div className="card-hover p-5 mb-6 border border-blue-200 dark:border-blue-800 rounded-lg">
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-3">New User</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+
+          {/* Row 1: Basic info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Full Name</label>
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Full Name *</label>
               <input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Jane Doe" className="input w-full" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Email</label>
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Email *</label>
               <input value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="j.doe@eminence.health" type="email" className="input w-full" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Password</label>
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Password *</label>
               <input value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder="Min 8 characters" type="password" className="input w-full" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Role</label>
-              <select value={formRole} onChange={(e) => setFormRole(e.target.value)} className="select w-full">
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Role *</label>
+              <select value={formRole} onChange={(e) => { setFormRole(e.target.value); setFormHospitalId(""); setFormDeptId(""); setFormSpecialty(""); setFormNPI(""); setFormLicense(""); setFormPosition(""); setFormEmployeeId(""); }} className="select w-full">
                 <option value="" disabled>Select role</option>
                 {roleNames.map((r) => (
                   <option key={r} value={r}>{r}</option>
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Department</label>
-              <input value={formDept} onChange={(e) => setFormDept(e.target.value)} placeholder="Department" className="input w-full" />
-            </div>
           </div>
+
+          {/* Row 2: Hospital + Department (for staff roles) */}
+          {formRoleRequiresHospital && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                  Hospital *
+                  <span className="text-zinc-400 dark:text-zinc-500 font-normal ml-1">(required for {formRole})</span>
+                </label>
+                <select value={formHospitalId} onChange={(e) => setFormHospitalId(e.target.value)} className="select w-full">
+                  <option value="">Select hospital</option>
+                  {hospitals.map((h) => (
+                    <option key={h.id} value={h.id}>{h.name}</option>
+                  ))}
+                </select>
+                {hospitals.length === 0 && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">No hospitals found. Create a hospital in Org Settings first.</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                  Department *
+                  <span className="text-zinc-400 dark:text-zinc-500 font-normal ml-1">(select hospital first)</span>
+                </label>
+                <select value={formDeptId} onChange={(e) => setFormDeptId(e.target.value)} disabled={!formHospitalId} className="select w-full disabled:opacity-50">
+                  <option value="">Select department</option>
+                  {formDepartments.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+                {formHospitalId && formDepartments.length === 0 && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">No departments in this hospital. Create one first.</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Row 3: Provider-specific fields */}
+          {formRoleIsProvider && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Specialty *</label>
+                <input value={formSpecialty} onChange={(e) => setFormSpecialty(e.target.value)} placeholder="e.g. Cardiology" className="input w-full" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">NPI Number *</label>
+                <input value={formNPI} onChange={(e) => setFormNPI(e.target.value)} placeholder="10-digit NPI" className="input w-full" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">License Number</label>
+                <input value={formLicense} onChange={(e) => setFormLicense(e.target.value)} placeholder="Optional" className="input w-full" />
+              </div>
+            </div>
+          )}
+
+          {/* Row 3: Nurse-specific fields */}
+          {formRoleIsNurse && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">License Number *</label>
+                <input value={formLicense} onChange={(e) => setFormLicense(e.target.value)} placeholder="Nursing license #" className="input w-full" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Specialty</label>
+                <input value={formSpecialty} onChange={(e) => setFormSpecialty(e.target.value)} placeholder="e.g. ICU, Pediatrics" className="input w-full" />
+              </div>
+            </div>
+          )}
+
+          {/* Row 3: Office Admin-specific fields */}
+          {formRoleIsOfficeAdmin && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Employee ID *</label>
+                <input value={formEmployeeId} onChange={(e) => setFormEmployeeId(e.target.value)} placeholder="EMP-0001" className="input w-full" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Position</label>
+                <input value={formPosition} onChange={(e) => setFormPosition(e.target.value)} placeholder="e.g. Office Manager" className="input w-full" />
+              </div>
+            </div>
+          )}
+
+          {/* Validation summary */}
+          {formRole && formRoleRequiresHospital && (!formHospitalId || !formDeptId) && (
+            <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs">
+              <strong>{formRole}</strong> accounts must be assigned to a Hospital and Department per the organizational hierarchy.
+            </div>
+          )}
+
           <div className="flex gap-2 justify-end">
-            <button onClick={handleAddUser} disabled={saving || !formName || !formEmail || !formPassword || !formRole} className="btn-primary disabled:opacity-50">
+            <button onClick={handleAddUser} disabled={saving || !canSubmitAddForm()} className="btn-primary disabled:opacity-50">
               {saving ? "Creating..." : "Save User"}
             </button>
-            <button onClick={() => setShowAddForm(false)} className="btn-secondary">Cancel</button>
+            <button onClick={() => { setShowAddForm(false); resetAddForm(); }} className="btn-secondary">Cancel</button>
           </div>
         </div>
       )}

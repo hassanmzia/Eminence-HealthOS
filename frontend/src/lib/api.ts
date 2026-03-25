@@ -183,6 +183,9 @@ export interface PatientCreatePayload {
   demographics: Record<string, unknown>;
   conditions?: Array<Record<string, unknown>>;
   medications?: Array<Record<string, unknown>>;
+  hospital_id?: string;
+  department_id?: string;
+  primary_provider_id?: string;
 }
 
 export async function createPatient(data: PatientCreatePayload) {
