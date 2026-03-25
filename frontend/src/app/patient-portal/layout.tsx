@@ -10,6 +10,7 @@ const PORTAL_NAV = [
   { href: "/patient-portal/health", label: "My Health", icon: "heart" },
   { href: "/patient-portal/appointments", label: "Appointments", icon: "calendar" },
   { href: "/patient-portal/messages", label: "Messages", icon: "mail" },
+  { href: "/patient-portal/account", label: "My Account", icon: "user" },
 ] as const;
 
 function PortalIcon({ icon }: { icon: string }) {
