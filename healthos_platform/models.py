@@ -1320,3 +1320,43 @@ class DoctorTreatmentPlan(Base):
         Index("ix_doctor_plan_patient_status", "patient_id", "status"),
         Index("ix_doctor_plan_provider", "provider_id", "status"),
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PATIENT QUESTIONNAIRES (imported from InhealthUSA clinical documentation)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class PatientQuestionnaire(Base):
+    """
+    Patient-submitted pre-visit questionnaires.
+    Mirrors InhealthUSA clinical documentation tables:
+    - Review of Systems (ROS)
+    - History of Presenting Illness (HPI)
+    - Nursing intake evaluation
+    """
+    __tablename__ = "patient_questionnaires"
+    __table_args__ = (
+        Index("idx_questionnaire_patient", "patient_id"),
+        Index("idx_questionnaire_type", "org_id", "questionnaire_type", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("encounters.id"))
+
+    questionnaire_type: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # review_of_systems, history_presenting_illness, nursing_intake, pre_visit
+
+    status: Mapped[str] = mapped_column(String(20), default="draft")  # draft, submitted, reviewed
+    responses: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reviewer_notes: Mapped[str | None] = mapped_column(Text)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now())

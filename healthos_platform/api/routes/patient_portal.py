@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from healthos_platform.api.middleware.tenant import TenantContext, get_current_user
 from healthos_platform.config.database import get_db as get_shared_db
 from healthos_platform.database import get_db
-from healthos_platform.models import Alert, Allergy, CarePlan, Encounter, Patient, Vital
+from healthos_platform.models import Alert, Allergy, CarePlan, Encounter, Patient, PatientQuestionnaire, Vital
 from healthos_platform.security.rbac import Permission
 from shared.models.portal_message import PortalMessage
 
@@ -611,6 +611,392 @@ async def remove_my_allergy(
     await db.commit()
 
     return {"detail": "Allergy removed"}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Patient Questionnaires (imported from InhealthUSA clinical documentation)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Questionnaire definitions matching InhealthUSA schema
+QUESTIONNAIRE_TEMPLATES: dict[str, dict] = {
+    "review_of_systems": {
+        "title": "Review of Systems",
+        "description": "Please check any symptoms you are currently experiencing or have experienced recently.",
+        "sections": [
+            {
+                "key": "general",
+                "label": "General / Constitutional",
+                "fields": [
+                    {"key": "general_fever", "label": "Fever", "type": "boolean"},
+                    {"key": "general_weight_loss", "label": "Unintentional weight loss", "type": "boolean"},
+                    {"key": "general_fatigue", "label": "Fatigue", "type": "boolean"},
+                    {"key": "general_night_sweats", "label": "Night sweats", "type": "boolean"},
+                    {"key": "general_chills", "label": "Chills", "type": "boolean"},
+                    {"key": "general_notes", "label": "Additional notes", "type": "text"},
+                ],
+            },
+            {
+                "key": "cardio",
+                "label": "Cardiovascular",
+                "fields": [
+                    {"key": "cardio_chest_pain", "label": "Chest pain", "type": "boolean"},
+                    {"key": "cardio_palpitations", "label": "Palpitations", "type": "boolean"},
+                    {"key": "cardio_orthopnea", "label": "Difficulty breathing when lying flat", "type": "boolean"},
+                    {"key": "cardio_edema", "label": "Swelling in legs/ankles", "type": "boolean"},
+                    {"key": "cardio_notes", "label": "Additional notes", "type": "text"},
+                ],
+            },
+            {
+                "key": "respiratory",
+                "label": "Respiratory",
+                "fields": [
+                    {"key": "resp_cough", "label": "Cough", "type": "boolean"},
+                    {"key": "resp_shortness_of_breath", "label": "Shortness of breath", "type": "boolean"},
+                    {"key": "resp_wheezing", "label": "Wheezing", "type": "boolean"},
+                    {"key": "resp_hemoptysis", "label": "Coughing up blood", "type": "boolean"},
+                    {"key": "resp_notes", "label": "Additional notes", "type": "text"},
+                ],
+            },
+            {
+                "key": "gi",
+                "label": "Gastrointestinal",
+                "fields": [
+                    {"key": "gi_nausea", "label": "Nausea", "type": "boolean"},
+                    {"key": "gi_vomiting", "label": "Vomiting", "type": "boolean"},
+                    {"key": "gi_diarrhea", "label": "Diarrhea", "type": "boolean"},
+                    {"key": "gi_constipation", "label": "Constipation", "type": "boolean"},
+                    {"key": "gi_abdominal_pain", "label": "Abdominal pain", "type": "boolean"},
+                    {"key": "gi_notes", "label": "Additional notes", "type": "text"},
+                ],
+            },
+            {
+                "key": "gu",
+                "label": "Genitourinary",
+                "fields": [
+                    {"key": "gu_dysuria", "label": "Painful urination", "type": "boolean"},
+                    {"key": "gu_hematuria", "label": "Blood in urine", "type": "boolean"},
+                    {"key": "gu_frequency", "label": "Frequent urination", "type": "boolean"},
+                    {"key": "gu_incontinence", "label": "Incontinence", "type": "boolean"},
+                    {"key": "gu_notes", "label": "Additional notes", "type": "text"},
+                ],
+            },
+            {
+                "key": "musculo",
+                "label": "Musculoskeletal",
+                "fields": [
+                    {"key": "musculo_joint_pain", "label": "Joint pain", "type": "boolean"},
+                    {"key": "musculo_swelling", "label": "Joint swelling", "type": "boolean"},
+                    {"key": "musculo_stiffness", "label": "Stiffness", "type": "boolean"},
+                    {"key": "musculo_notes", "label": "Additional notes", "type": "text"},
+                ],
+            },
+            {
+                "key": "neuro",
+                "label": "Neurological",
+                "fields": [
+                    {"key": "neuro_headaches", "label": "Headaches", "type": "boolean"},
+                    {"key": "neuro_dizziness", "label": "Dizziness", "type": "boolean"},
+                    {"key": "neuro_fainting", "label": "Fainting", "type": "boolean"},
+                    {"key": "neuro_numbness", "label": "Numbness / tingling", "type": "boolean"},
+                    {"key": "neuro_weakness", "label": "Weakness", "type": "boolean"},
+                    {"key": "neuro_notes", "label": "Additional notes", "type": "text"},
+                ],
+            },
+            {
+                "key": "endo",
+                "label": "Endocrine",
+                "fields": [
+                    {"key": "endo_polyuria", "label": "Excessive urination", "type": "boolean"},
+                    {"key": "endo_polydipsia", "label": "Excessive thirst", "type": "boolean"},
+                    {"key": "endo_heat_intolerance", "label": "Heat intolerance", "type": "boolean"},
+                    {"key": "endo_weight_changes", "label": "Unexplained weight changes", "type": "boolean"},
+                    {"key": "endo_notes", "label": "Additional notes", "type": "text"},
+                ],
+            },
+            {
+                "key": "integ",
+                "label": "Skin (Integumentary)",
+                "fields": [
+                    {"key": "integ_rashes", "label": "Rashes", "type": "boolean"},
+                    {"key": "integ_itching", "label": "Itching", "type": "boolean"},
+                    {"key": "integ_skin_changes", "label": "Skin changes or lesions", "type": "boolean"},
+                    {"key": "integ_notes", "label": "Additional notes", "type": "text"},
+                ],
+            },
+            {
+                "key": "psych",
+                "label": "Psychiatric / Mental Health",
+                "fields": [
+                    {"key": "psych_depression", "label": "Feeling depressed or hopeless", "type": "boolean"},
+                    {"key": "psych_anxiety", "label": "Anxiety or excessive worry", "type": "boolean"},
+                    {"key": "psych_mood_changes", "label": "Mood changes", "type": "boolean"},
+                    {"key": "psych_sleep_disturbances", "label": "Sleep disturbances", "type": "boolean"},
+                    {"key": "psych_notes", "label": "Additional notes", "type": "text"},
+                ],
+            },
+            {
+                "key": "hema",
+                "label": "Hematologic / Lymphatic",
+                "fields": [
+                    {"key": "hema_easy_bruising", "label": "Easy bruising", "type": "boolean"},
+                    {"key": "hema_bleeding", "label": "Unusual bleeding", "type": "boolean"},
+                    {"key": "hema_lymphadenopathy", "label": "Swollen lymph nodes", "type": "boolean"},
+                    {"key": "hema_notes", "label": "Additional notes", "type": "text"},
+                ],
+            },
+        ],
+    },
+    "history_presenting_illness": {
+        "title": "History of Presenting Illness",
+        "description": "Please describe your current symptoms and why you are seeking care today.",
+        "sections": [
+            {
+                "key": "hpi",
+                "label": "Current Symptoms",
+                "fields": [
+                    {"key": "chief_complaint", "label": "What is your main reason for this visit?", "type": "textarea"},
+                    {"key": "onset", "label": "When did it start?", "type": "text"},
+                    {"key": "location", "label": "Where is the problem located?", "type": "text"},
+                    {"key": "duration", "label": "How long does it last?", "type": "text"},
+                    {"key": "characteristics", "label": "Describe the symptoms (sharp, dull, constant, etc.)", "type": "textarea"},
+                    {"key": "severity", "label": "Severity", "type": "select", "options": ["Mild", "Moderate", "Severe"]},
+                    {"key": "aggravating_factors", "label": "What makes it worse?", "type": "textarea"},
+                    {"key": "relieving_factors", "label": "What makes it better?", "type": "textarea"},
+                    {"key": "associated_symptoms", "label": "Any other symptoms?", "type": "textarea"},
+                    {"key": "prior_treatments", "label": "Have you tried any treatments or medications for this?", "type": "textarea"},
+                    {"key": "context", "label": "Any other context (travel, exposures, recent illness, etc.)?", "type": "textarea"},
+                ],
+            },
+        ],
+    },
+    "pre_visit": {
+        "title": "Pre-Visit Health Questionnaire",
+        "description": "Complete this questionnaire before your upcoming appointment to help your provider prepare.",
+        "sections": [
+            {
+                "key": "reason",
+                "label": "Visit Reason",
+                "fields": [
+                    {"key": "visit_reason", "label": "Main reason for your visit", "type": "textarea"},
+                    {"key": "symptom_duration", "label": "How long have you had these symptoms?", "type": "text"},
+                ],
+            },
+            {
+                "key": "pain",
+                "label": "Pain Assessment",
+                "fields": [
+                    {"key": "pain_level", "label": "Current pain level (0 = none, 10 = worst)", "type": "select", "options": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]},
+                    {"key": "pain_location", "label": "Where is the pain?", "type": "text"},
+                    {"key": "pain_description", "label": "Describe the pain", "type": "textarea"},
+                ],
+            },
+            {
+                "key": "functional",
+                "label": "Functional Status",
+                "fields": [
+                    {"key": "functional_status", "label": "Current mobility", "type": "select", "options": ["Independent", "Ambulatory", "Requires Assistance", "Bed-bound"]},
+                    {"key": "daily_activity_impact", "label": "How does this affect your daily activities?", "type": "textarea"},
+                ],
+            },
+            {
+                "key": "medications",
+                "label": "Current Medications",
+                "fields": [
+                    {"key": "current_medications", "label": "List all medications you are currently taking (including over-the-counter and supplements)", "type": "textarea"},
+                    {"key": "medication_changes", "label": "Any recent changes to your medications?", "type": "textarea"},
+                    {"key": "medication_side_effects", "label": "Are you experiencing any medication side effects?", "type": "textarea"},
+                ],
+            },
+            {
+                "key": "lifestyle",
+                "label": "Lifestyle",
+                "fields": [
+                    {"key": "smoking_status", "label": "Smoking status", "type": "select", "options": ["Never", "Former", "Current - occasional", "Current - daily"]},
+                    {"key": "alcohol_use", "label": "Alcohol use", "type": "select", "options": ["None", "Occasional (1-2/week)", "Moderate (3-7/week)", "Heavy (8+/week)"]},
+                    {"key": "exercise", "label": "Exercise frequency", "type": "select", "options": ["None", "1-2 times/week", "3-4 times/week", "5+ times/week"]},
+                    {"key": "diet_notes", "label": "Any dietary restrictions or concerns?", "type": "text"},
+                    {"key": "sleep_quality", "label": "Sleep quality", "type": "select", "options": ["Good", "Fair", "Poor"]},
+                ],
+            },
+            {
+                "key": "mental_health",
+                "label": "Mental Health Screening",
+                "fields": [
+                    {"key": "feeling_down", "label": "Over the past 2 weeks, how often have you felt down, depressed, or hopeless?", "type": "select", "options": ["Not at all", "Several days", "More than half the days", "Nearly every day"]},
+                    {"key": "little_interest", "label": "Over the past 2 weeks, how often have you had little interest or pleasure in doing things?", "type": "select", "options": ["Not at all", "Several days", "More than half the days", "Nearly every day"]},
+                    {"key": "feeling_nervous", "label": "Over the past 2 weeks, how often have you felt nervous, anxious, or on edge?", "type": "select", "options": ["Not at all", "Several days", "More than half the days", "Nearly every day"]},
+                    {"key": "worry_control", "label": "Over the past 2 weeks, how often have you been unable to stop or control worrying?", "type": "select", "options": ["Not at all", "Several days", "More than half the days", "Nearly every day"]},
+                ],
+            },
+            {
+                "key": "additional",
+                "label": "Additional Information",
+                "fields": [
+                    {"key": "questions_for_provider", "label": "Questions you'd like to discuss with your provider", "type": "textarea"},
+                    {"key": "additional_concerns", "label": "Any other concerns?", "type": "textarea"},
+                ],
+            },
+        ],
+    },
+}
+
+
+def _serialize_questionnaire(q: PatientQuestionnaire) -> dict:
+    return {
+        "id": str(q.id),
+        "questionnaire_type": q.questionnaire_type,
+        "status": q.status,
+        "responses": q.responses,
+        "submitted_at": q.submitted_at.isoformat() if q.submitted_at else None,
+        "reviewed_at": q.reviewed_at.isoformat() if q.reviewed_at else None,
+        "reviewer_notes": q.reviewer_notes,
+        "created_at": q.created_at.isoformat() if q.created_at else None,
+    }
+
+
+@router.get("/me/questionnaires/templates")
+async def get_questionnaire_templates(
+    ctx: TenantContext = Depends(get_current_user),
+):
+    """Return available questionnaire templates with their field definitions."""
+    return {
+        "templates": [
+            {"type": k, "title": v["title"], "description": v["description"], "sections": v["sections"]}
+            for k, v in QUESTIONNAIRE_TEMPLATES.items()
+        ]
+    }
+
+
+@router.get("/me/questionnaires")
+async def list_my_questionnaires(
+    status: str | None = None,
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List the patient's submitted and draft questionnaires."""
+    patient = await _get_patient_for_user(ctx, db)
+
+    query = (
+        select(PatientQuestionnaire)
+        .where(
+            PatientQuestionnaire.patient_id == patient.id,
+            PatientQuestionnaire.org_id == ctx.org_id,
+        )
+        .order_by(PatientQuestionnaire.created_at.desc())
+        .limit(50)
+    )
+    if status:
+        query = query.where(PatientQuestionnaire.status == status)
+
+    result = await db.execute(query)
+    questionnaires = result.scalars().all()
+
+    return [_serialize_questionnaire(q) for q in questionnaires]
+
+
+@router.get("/me/questionnaires/{questionnaire_id}")
+async def get_my_questionnaire(
+    questionnaire_id: str,
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get a specific questionnaire by ID."""
+    patient = await _get_patient_for_user(ctx, db)
+
+    result = await db.execute(
+        select(PatientQuestionnaire).where(
+            PatientQuestionnaire.id == uuid.UUID(questionnaire_id),
+            PatientQuestionnaire.patient_id == patient.id,
+            PatientQuestionnaire.org_id == ctx.org_id,
+        )
+    )
+    q = result.scalar_one_or_none()
+    if not q:
+        raise HTTPException(status_code=404, detail="Questionnaire not found")
+
+    template = QUESTIONNAIRE_TEMPLATES.get(q.questionnaire_type)
+    return {
+        **_serialize_questionnaire(q),
+        "template": template,
+    }
+
+
+@router.post("/me/questionnaires")
+async def create_questionnaire(
+    body: dict,
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create or save a questionnaire (draft or submitted)."""
+    patient = await _get_patient_for_user(ctx, db)
+
+    q_type = body.get("questionnaire_type", "").strip()
+    if q_type not in QUESTIONNAIRE_TEMPLATES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid questionnaire type. Must be one of: {', '.join(QUESTIONNAIRE_TEMPLATES.keys())}",
+        )
+
+    responses = body.get("responses", {})
+    status = body.get("status", "draft")
+    if status not in ("draft", "submitted"):
+        status = "draft"
+
+    questionnaire = PatientQuestionnaire(
+        id=uuid.uuid4(),
+        org_id=ctx.org_id,
+        patient_id=patient.id,
+        encounter_id=uuid.UUID(body["encounter_id"]) if body.get("encounter_id") else None,
+        questionnaire_type=q_type,
+        status=status,
+        responses=responses,
+        submitted_at=datetime.now(timezone.utc) if status == "submitted" else None,
+    )
+    db.add(questionnaire)
+    await db.commit()
+    await db.refresh(questionnaire)
+
+    return _serialize_questionnaire(questionnaire)
+
+
+@router.patch("/me/questionnaires/{questionnaire_id}")
+async def update_questionnaire(
+    questionnaire_id: str,
+    body: dict,
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update a draft questionnaire or submit it."""
+    patient = await _get_patient_for_user(ctx, db)
+
+    result = await db.execute(
+        select(PatientQuestionnaire).where(
+            PatientQuestionnaire.id == uuid.UUID(questionnaire_id),
+            PatientQuestionnaire.patient_id == patient.id,
+            PatientQuestionnaire.org_id == ctx.org_id,
+        )
+    )
+    q = result.scalar_one_or_none()
+    if not q:
+        raise HTTPException(status_code=404, detail="Questionnaire not found")
+
+    if q.status == "reviewed":
+        raise HTTPException(status_code=400, detail="Cannot edit a reviewed questionnaire")
+
+    if "responses" in body:
+        q.responses = body["responses"]
+
+    new_status = body.get("status")
+    if new_status == "submitted" and q.status != "submitted":
+        q.status = "submitted"
+        q.submitted_at = datetime.now(timezone.utc)
+    elif new_status == "draft":
+        q.status = "draft"
+
+    await db.commit()
+    await db.refresh(q)
+
+    return _serialize_questionnaire(q)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
