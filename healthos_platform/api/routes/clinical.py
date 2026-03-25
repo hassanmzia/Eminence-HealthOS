@@ -8,7 +8,7 @@ Imported from InhealthUSA clinical models.
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -29,6 +29,7 @@ from healthos_platform.models import (
     FamilyHistory,
     LabTest,
     MedicalHistory,
+    PatientQuestionnaire,
     Prescription,
     SocialHistory,
 )
@@ -511,3 +512,136 @@ async def update_lab_test(
 
     await db.flush()
     return lab
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PATIENT QUESTIONNAIRES (clinician view)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class QuestionnaireResponse(BaseModel):
+    id: uuid.UUID
+    questionnaire_type: str
+    status: str
+    responses: dict[str, Any]
+    submitted_at: datetime | None
+    reviewed_at: datetime | None
+    reviewer_notes: str | None
+    created_at: datetime | None
+    ai_insights: dict[str, Any] | None = None
+    model_config = {"from_attributes": True}
+
+
+def _extract_ai_insights(responses: dict[str, Any], q_type: str) -> dict[str, Any]:
+    """Extract AI-relevant insights from questionnaire responses for clinician view."""
+    insights: dict[str, Any] = {}
+    if not responses:
+        return insights
+
+    if q_type == "history_presenting_illness":
+        if responses.get("chief_complaint"):
+            insights["chief_complaint"] = responses["chief_complaint"]
+        hpi_parts = []
+        for key in ["onset", "location", "duration", "characteristics",
+                     "severity", "aggravating_factors", "relieving_factors",
+                     "associated_symptoms", "prior_treatments", "context"]:
+            val = responses.get(key)
+            if val:
+                hpi_parts.append(f"{key.replace('_', ' ').title()}: {val}")
+        if hpi_parts:
+            insights["history_present_illness"] = "\n".join(hpi_parts)
+
+    elif q_type == "review_of_systems":
+        ros: dict[str, list[str]] = {}
+        symptoms: list[str] = []
+        for key, val in responses.items():
+            if val is True:
+                parts = key.split("_", 1)
+                system = parts[0] if len(parts) > 1 else "general"
+                symptom = parts[1].replace("_", " ") if len(parts) > 1 else key
+                ros.setdefault(system, []).append(symptom)
+                symptoms.append(symptom)
+        if ros:
+            insights["review_of_systems"] = ros
+        if symptoms:
+            insights["patient_reported_symptoms"] = symptoms
+
+    elif q_type == "pre_visit":
+        if responses.get("visit_reason"):
+            insights["chief_complaint"] = responses["visit_reason"]
+        social: dict[str, str] = {}
+        for key in ["smoking_status", "alcohol_use", "exercise", "sleep_quality"]:
+            if responses.get(key):
+                social[key] = str(responses[key])
+        if social:
+            insights["social_history"] = social
+        symptoms = []
+        mental_items = ["feeling_down", "little_interest", "feeling_nervous", "worry_control"]
+        for item in mental_items:
+            if responses.get(item) and responses[item] != "Not at all":
+                symptoms.append(f"{item.replace('_', ' ')}: {responses[item]}")
+        if responses.get("pain_level") and responses["pain_level"] not in ("0", ""):
+            symptoms.append(f"pain level {responses['pain_level']}/10")
+        if symptoms:
+            insights["patient_reported_symptoms"] = symptoms
+
+    return insights
+
+
+@router.get("/questionnaires/{patient_id}", response_model=list[QuestionnaireResponse])
+async def get_patient_questionnaires(
+    patient_id: uuid.UUID,
+    status: str | None = Query(None),
+    ctx: TenantContext = Depends(require_clinician),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get all questionnaires for a patient (clinician view with AI insights)."""
+    stmt = select(PatientQuestionnaire).where(
+        PatientQuestionnaire.patient_id == patient_id,
+        PatientQuestionnaire.org_id == ctx.org_id,
+    )
+    if status:
+        stmt = stmt.where(PatientQuestionnaire.status == status)
+    stmt = stmt.order_by(PatientQuestionnaire.created_at.desc())
+
+    result = await db.execute(stmt)
+    questionnaires = result.scalars().all()
+
+    out = []
+    for q in questionnaires:
+        data = QuestionnaireResponse.model_validate(q).model_dump()
+        data["ai_insights"] = _extract_ai_insights(
+            q.responses or {}, q.questionnaire_type
+        )
+        out.append(data)
+    return out
+
+
+@router.post("/questionnaires/{questionnaire_id}/review", response_model=QuestionnaireResponse)
+async def review_questionnaire(
+    questionnaire_id: uuid.UUID,
+    body: dict[str, Any],
+    ctx: TenantContext = Depends(require_clinician),
+    db: AsyncSession = Depends(get_db),
+):
+    """Mark a questionnaire as reviewed by clinician."""
+    result = await db.execute(
+        select(PatientQuestionnaire).where(
+            PatientQuestionnaire.id == questionnaire_id,
+            PatientQuestionnaire.org_id == ctx.org_id,
+        )
+    )
+    q = result.scalar_one_or_none()
+    if not q:
+        raise HTTPException(404, "Questionnaire not found")
+
+    from datetime import datetime, timezone
+    q.status = "reviewed"
+    q.reviewed_by = ctx.user_id
+    q.reviewed_at = datetime.now(timezone.utc)
+    q.reviewer_notes = body.get("notes", "")
+    await db.flush()
+
+    data = QuestionnaireResponse.model_validate(q).model_dump()
+    data["ai_insights"] = _extract_ai_insights(q.responses or {}, q.questionnaire_type)
+    return data
