@@ -273,3 +273,82 @@ export async function removeMyAllergy(allergyId: string): Promise<void> {
     method: "DELETE",
   });
 }
+
+// ── Questionnaires ──────────────────────────────────────────────────────────
+
+export interface QuestionnaireField {
+  key: string;
+  label: string;
+  type: "boolean" | "text" | "textarea" | "select";
+  options?: string[];
+}
+
+export interface QuestionnaireSection {
+  key: string;
+  label: string;
+  fields: QuestionnaireField[];
+}
+
+export interface QuestionnaireTemplate {
+  type: string;
+  title: string;
+  description: string;
+  sections: QuestionnaireSection[];
+}
+
+export interface QuestionnaireRecord {
+  id: string;
+  questionnaire_type: string;
+  status: "draft" | "submitted" | "reviewed";
+  responses: Record<string, unknown>;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  reviewer_notes: string | null;
+  created_at: string | null;
+  template?: QuestionnaireTemplate;
+}
+
+export async function fetchQuestionnaireTemplates(): Promise<{
+  templates: QuestionnaireTemplate[];
+}> {
+  return request<{ templates: QuestionnaireTemplate[] }>(
+    "/me/questionnaires/templates",
+  );
+}
+
+export async function fetchMyQuestionnaires(
+  status?: string,
+): Promise<QuestionnaireRecord[]> {
+  const qs = status ? `?status=${status}` : "";
+  return request<QuestionnaireRecord[]>(`/me/questionnaires${qs}`);
+}
+
+export async function fetchQuestionnaire(
+  id: string,
+): Promise<QuestionnaireRecord> {
+  return request<QuestionnaireRecord>(`/me/questionnaires/${id}`);
+}
+
+export async function createQuestionnaire(body: {
+  questionnaire_type: string;
+  responses: Record<string, unknown>;
+  status: "draft" | "submitted";
+}): Promise<QuestionnaireRecord> {
+  return request<QuestionnaireRecord>("/me/questionnaires", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function updateQuestionnaire(
+  id: string,
+  body: {
+    responses?: Record<string, unknown>;
+    status?: "draft" | "submitted";
+  },
+): Promise<QuestionnaireRecord> {
+  return request<QuestionnaireRecord>(`/me/questionnaires/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
