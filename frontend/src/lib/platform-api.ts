@@ -583,6 +583,72 @@ export async function fetchDeviceAlertRules() {
   return request<DeviceAlertRuleResponse[]>("/device/alert-rules");
 }
 
+// ── Patient Questionnaires (clinician view) ─────────────────────────────────
+
+export interface PatientQuestionnaireResponse {
+  id: string;
+  questionnaire_type: string;
+  status: string;
+  responses: Record<string, unknown>;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  reviewer_notes: string | null;
+  created_at: string | null;
+  ai_insights?: {
+    chief_complaint?: string;
+    review_of_systems?: Record<string, string[]>;
+    patient_reported_symptoms?: string[];
+    social_history?: Record<string, string>;
+    history_present_illness?: string;
+  };
+}
+
+export async function fetchPatientQuestionnaires(
+  patientId: string,
+  status?: string,
+) {
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  const qs = params.toString();
+  return request<PatientQuestionnaireResponse[]>(
+    `/clinical/questionnaires/${patientId}${qs ? `?${qs}` : ""}`,
+  );
+}
+
+export async function reviewQuestionnaire(
+  questionnaireId: string,
+  notes: string,
+) {
+  return request<PatientQuestionnaireResponse>(
+    `/clinical/questionnaires/${questionnaireId}/review`,
+    { method: "POST", body: JSON.stringify({ notes }) },
+  );
+}
+
+// ── Patient Devices (assignment) ────────────────────────────────────────────
+
+export async function fetchPatientDevices(patientId: string) {
+  return request<DeviceInfoResponse[]>(
+    `/device/manage/patient/${patientId}`,
+  );
+}
+
+export async function assignDeviceToPatient(body: {
+  patient_id: string;
+  device_id: string;
+}) {
+  return request<DeviceInfoResponse>("/device/manage/assign", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function unassignDevice(deviceId: string) {
+  return request<{ detail: string }>(`/device/manage/${deviceId}/unassign`, {
+    method: "POST",
+  });
+}
+
 export async function createDeviceAlertRule(body: {
   device_id?: string;
   patient_id?: string;

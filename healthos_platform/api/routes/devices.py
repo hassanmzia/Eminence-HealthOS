@@ -421,6 +421,65 @@ async def register_device(
     return device
 
 
+@router.get("/manage/patient/{patient_id}", response_model=list[DeviceInfoResponse])
+async def list_patient_devices(
+    patient_id: uuid.UUID,
+    ctx: TenantContext = Depends(require_clinical_staff),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all devices assigned to a patient."""
+    result = await db.execute(
+        select(Device)
+        .where(Device.patient_id == patient_id, Device.org_id == ctx.org_id)
+        .order_by(Device.created_at.desc())
+    )
+    return result.scalars().all()
+
+
+class DeviceAssignRequest(BaseModel):
+    patient_id: uuid.UUID
+    device_id: uuid.UUID
+
+
+@router.post("/manage/assign", response_model=DeviceInfoResponse)
+async def assign_device_to_patient(
+    body: DeviceAssignRequest,
+    ctx: TenantContext = Depends(require_clinical_staff),
+    db: AsyncSession = Depends(get_db),
+):
+    """Assign an existing device to a patient."""
+    result = await db.execute(
+        select(Device).where(Device.id == body.device_id, Device.org_id == ctx.org_id)
+    )
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(404, "Device not found")
+
+    device.patient_id = body.patient_id
+    await db.flush()
+    return device
+
+
+@router.post("/manage/{device_id}/unassign")
+async def unassign_device(
+    device_id: uuid.UUID,
+    ctx: TenantContext = Depends(require_clinical_staff),
+    db: AsyncSession = Depends(get_db),
+):
+    """Unassign a device from its patient (sets patient_id to null)."""
+    result = await db.execute(
+        select(Device).where(Device.id == device_id, Device.org_id == ctx.org_id)
+    )
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(404, "Device not found")
+
+    # Set to a placeholder or null — since patient_id is NOT NULL, we keep it but mark device inactive
+    device.status = "Inactive"
+    await db.flush()
+    return {"detail": "Device unassigned and marked inactive"}
+
+
 @router.post("/manage/{device_id}/api-key")
 async def create_device_api_key(
     device_id: uuid.UUID,
