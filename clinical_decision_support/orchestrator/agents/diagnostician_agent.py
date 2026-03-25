@@ -76,7 +76,7 @@ class DiagnosticianAgent(BaseAgent):
         findings = []
         warnings = []
 
-        # Step 0: Review chief complaint and physician notes
+        # Step 0: Review chief complaint, physician notes, and patient questionnaires
         if context.chief_complaint:
             reasoning_steps.append(f"Chief Complaint: {context.chief_complaint}")
             findings.append(ClinicalFinding(
@@ -109,6 +109,12 @@ class DiagnosticianAgent(BaseAgent):
                 interpretation=context.history_present_illness,
                 source="Clinical History"
             ))
+
+        # Step 0b: Process patient-submitted questionnaire data
+        if context.questionnaire_responses:
+            reasoning_steps.append(f"Reviewing {len(context.questionnaire_responses)} patient questionnaire(s)...")
+            q_findings = self._analyze_questionnaires(context.questionnaire_responses)
+            findings.extend(q_findings)
 
         # Step 1: Analyze vitals
         reasoning_steps.append("Step 1: Analyzing vital signs...")
@@ -593,6 +599,9 @@ Past Medical History:
 Family History:
 {', '.join(context.family_history or []) or 'Not documented'}
 
+Patient-Reported Symptoms (from questionnaires):
+{self._format_questionnaire_data(context)}
+
 Please provide:
 1. Primary diagnosis with ICD-10 code and confidence (0-1)
 2. Up to 3 differential diagnoses with ICD-10 codes
@@ -689,3 +698,121 @@ Format your response as JSON:
             status_emoji = "🔴" if f.status == "critical" else "🟡" if f.status == "abnormal" else "🟢"
             lines.append(f"{status_emoji} {f.name}: {f.value} {f.unit or ''} - {f.interpretation}")
         return "\n".join(lines) if lines else "No significant findings"
+
+    def _analyze_questionnaires(self, questionnaires: Optional[List[dict]]) -> List[ClinicalFinding]:
+        """Extract clinical findings from patient-submitted questionnaires."""
+        findings = []
+        if not questionnaires:
+            return findings
+
+        for q in questionnaires:
+            q_type = q.get("questionnaire_type", "")
+            responses = q.get("responses", {})
+            if not responses:
+                continue
+
+            if q_type == "review_of_systems":
+                # Extract positive ROS findings
+                positive_symptoms = []
+                for key, val in responses.items():
+                    if val is True:
+                        symptom = key.replace("_", " ")
+                        positive_symptoms.append(symptom)
+                if positive_symptoms:
+                    findings.append(ClinicalFinding(
+                        type="questionnaire",
+                        name="Review of Systems - Positive",
+                        value=", ".join(positive_symptoms),
+                        status="abnormal" if len(positive_symptoms) > 5 else "normal",
+                        interpretation=f"Patient reports {len(positive_symptoms)} positive ROS finding(s): {', '.join(positive_symptoms[:10])}",
+                        source="Patient Questionnaire"
+                    ))
+
+            elif q_type == "history_presenting_illness":
+                if responses.get("chief_complaint"):
+                    findings.append(ClinicalFinding(
+                        type="questionnaire",
+                        name="Patient-Reported Chief Complaint",
+                        value=responses["chief_complaint"],
+                        status="normal",
+                        interpretation=f"Patient reports: {responses['chief_complaint']}",
+                        source="Patient Questionnaire"
+                    ))
+                severity = responses.get("severity")
+                if severity and severity in ("Moderate", "Severe"):
+                    findings.append(ClinicalFinding(
+                        type="questionnaire",
+                        name="Patient-Reported Severity",
+                        value=severity,
+                        status="abnormal" if severity == "Severe" else "normal",
+                        interpretation=f"Patient rates symptom severity as {severity}",
+                        source="Patient Questionnaire"
+                    ))
+
+            elif q_type == "pre_visit":
+                pain = responses.get("pain_level")
+                if pain and str(pain) not in ("0", ""):
+                    pain_val = int(pain) if str(pain).isdigit() else 0
+                    findings.append(ClinicalFinding(
+                        type="questionnaire",
+                        name="Patient-Reported Pain Level",
+                        value=f"{pain}/10",
+                        status="critical" if pain_val >= 8 else "abnormal" if pain_val >= 5 else "normal",
+                        interpretation=f"Patient reports pain level {pain}/10",
+                        source="Patient Questionnaire"
+                    ))
+                # PHQ-2/GAD-2 mental health screening
+                for key, label in [("feeling_down", "Depression screen"), ("feeling_nervous", "Anxiety screen")]:
+                    val = responses.get(key)
+                    if val and val != "Not at all":
+                        findings.append(ClinicalFinding(
+                            type="questionnaire",
+                            name=f"Mental Health - {label}",
+                            value=val,
+                            status="abnormal" if val in ("More than half the days", "Nearly every day") else "normal",
+                            interpretation=f"{label}: {val}",
+                            source="Patient Questionnaire"
+                        ))
+
+        return findings
+
+    def _format_questionnaire_data(self, context: PatientContext) -> str:
+        """Format questionnaire data for LLM prompt."""
+        if not context.questionnaire_responses:
+            return "No patient questionnaires submitted"
+
+        parts = []
+        for q in context.questionnaire_responses:
+            q_type = q.get("questionnaire_type", "unknown")
+            responses = q.get("responses", {})
+
+            if q_type == "review_of_systems":
+                positive = [k.replace("_", " ") for k, v in responses.items() if v is True]
+                if positive:
+                    parts.append(f"Review of Systems - Positive findings: {', '.join(positive)}")
+                notes = [f"{k}: {v}" for k, v in responses.items() if isinstance(v, str) and v.strip() and k.endswith("_notes")]
+                if notes:
+                    parts.append(f"ROS Notes: {'; '.join(notes)}")
+
+            elif q_type == "history_presenting_illness":
+                for key in ["chief_complaint", "onset", "duration", "severity",
+                            "characteristics", "aggravating_factors", "relieving_factors",
+                            "associated_symptoms", "prior_treatments"]:
+                    val = responses.get(key)
+                    if val:
+                        parts.append(f"HPI {key.replace('_', ' ')}: {val}")
+
+            elif q_type == "pre_visit":
+                for key in ["visit_reason", "pain_level", "pain_description",
+                            "functional_status", "current_medications",
+                            "smoking_status", "alcohol_use"]:
+                    val = responses.get(key)
+                    if val:
+                        parts.append(f"{key.replace('_', ' ').title()}: {val}")
+                # Mental health items
+                for key in ["feeling_down", "little_interest", "feeling_nervous", "worry_control"]:
+                    val = responses.get(key)
+                    if val and val != "Not at all":
+                        parts.append(f"{key.replace('_', ' ').title()}: {val}")
+
+        return "\n".join(parts) if parts else "No significant questionnaire data"

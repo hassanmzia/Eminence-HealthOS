@@ -30,12 +30,14 @@ DEFAULT_FEATURE_GROUPS = [
     "demographics",
     "utilization",
     "devices",
+    "questionnaires",
 ]
 
 # Maximum recent items to include per category
 MAX_RECENT_VITALS = 50
 MAX_RECENT_ANOMALIES = 20
 MAX_RECENT_RISK_SCORES = 10
+MAX_RECENT_QUESTIONNAIRES = 10
 
 
 class ContextAssemblyAgent(BaseAgent):
@@ -117,10 +119,29 @@ class ContextAssemblyAgent(BaseAgent):
             for r in state.risk_assessments[:MAX_RECENT_RISK_SCORES]
         ]
 
-        # 5. Compute summary statistics
+        # 5. Patient-submitted questionnaires (pre-visit, ROS, HPI)
+        context["questionnaire_responses"] = existing.get("questionnaire_responses", [])
+
+        # If questionnaire data not already in context, try to extract
+        # structured clinical data from submitted questionnaires for agents
+        if context["questionnaire_responses"]:
+            extracted = self._extract_clinical_from_questionnaires(context["questionnaire_responses"])
+            # Populate clinical note fields from questionnaire answers
+            if extracted.get("chief_complaint") and not context.get("chief_complaint"):
+                context["chief_complaint"] = extracted["chief_complaint"]
+            if extracted.get("history_present_illness") and not context.get("history_present_illness"):
+                context["history_present_illness"] = extracted["history_present_illness"]
+            if extracted.get("review_of_systems") and not context.get("review_of_systems"):
+                context["review_of_systems"] = extracted["review_of_systems"]
+            if extracted.get("social_history"):
+                context.setdefault("social_history", {}).update(extracted["social_history"])
+            if extracted.get("patient_reported_symptoms"):
+                context["patient_reported_symptoms"] = extracted["patient_reported_symptoms"]
+
+        # 6. Compute summary statistics
         context["summary"] = self._compute_summary(context)
 
-        # 6. Merge assembled context into pipeline state
+        # 7. Merge assembled context into pipeline state
         state.patient_context = context
 
         # Track execution
@@ -147,9 +168,82 @@ class ContextAssemblyAgent(BaseAgent):
             "recent_vitals": context.get("normalized_vitals", [])[:MAX_RECENT_VITALS],
             "active_anomalies": context.get("anomalies", [])[:MAX_RECENT_ANOMALIES],
             "risk_assessments": context.get("risk_assessments", [])[:MAX_RECENT_RISK_SCORES],
+            "questionnaire_responses": context.get("questionnaire_responses", [])[:MAX_RECENT_QUESTIONNAIRES],
         }
         assembled["summary"] = self._compute_summary(assembled)
         return assembled
+
+    def _extract_clinical_from_questionnaires(
+        self, questionnaires: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        """
+        Extract structured clinical data from patient-submitted questionnaires
+        (InhealthUSA-style ROS, HPI, pre-visit forms) into fields agents can use.
+        """
+        extracted: dict[str, Any] = {}
+        symptoms: list[str] = []
+
+        for q in questionnaires:
+            q_type = q.get("questionnaire_type", "")
+            responses = q.get("responses", {})
+            if not responses:
+                continue
+
+            if q_type == "history_presenting_illness":
+                if responses.get("chief_complaint"):
+                    extracted["chief_complaint"] = responses["chief_complaint"]
+                hpi_parts = []
+                for key in ["onset", "location", "duration", "characteristics",
+                            "severity", "aggravating_factors", "relieving_factors",
+                            "associated_symptoms", "prior_treatments", "context"]:
+                    val = responses.get(key)
+                    if val:
+                        hpi_parts.append(f"{key.replace('_', ' ').title()}: {val}")
+                if hpi_parts:
+                    extracted["history_present_illness"] = "\n".join(hpi_parts)
+
+            elif q_type == "review_of_systems":
+                ros: dict[str, Any] = {}
+                for key, val in responses.items():
+                    if val is True:
+                        # e.g. "cardio_chest_pain" → system="cardio", symptom="chest pain"
+                        parts = key.split("_", 1)
+                        system = parts[0] if len(parts) > 1 else "general"
+                        symptom = parts[1].replace("_", " ") if len(parts) > 1 else key
+                        ros.setdefault(system, []).append(symptom)
+                        symptoms.append(symptom)
+                    elif isinstance(val, str) and val.strip() and key.endswith("_notes"):
+                        system = key.rsplit("_notes", 1)[0]
+                        ros.setdefault(system, []).append(f"Notes: {val}")
+                if ros:
+                    extracted["review_of_systems"] = ros
+
+            elif q_type == "pre_visit":
+                if responses.get("visit_reason"):
+                    extracted.setdefault("chief_complaint", responses["visit_reason"])
+
+                social: dict[str, Any] = {}
+                for key in ["smoking_status", "alcohol_use", "exercise", "sleep_quality"]:
+                    if responses.get(key):
+                        social[key] = responses[key]
+                if social:
+                    extracted["social_history"] = social
+
+                # Mental health screening (PHQ-2/GAD-2 items)
+                mental_items = ["feeling_down", "little_interest", "feeling_nervous", "worry_control"]
+                for item in mental_items:
+                    if responses.get(item) and responses[item] != "Not at all":
+                        symptoms.append(f"{item.replace('_', ' ')}: {responses[item]}")
+
+                if responses.get("pain_level") and responses["pain_level"] not in ("0", ""):
+                    symptoms.append(f"pain level {responses['pain_level']}/10")
+                if responses.get("current_medications"):
+                    extracted.setdefault("patient_reported_medications", responses["current_medications"])
+
+        if symptoms:
+            extracted["patient_reported_symptoms"] = symptoms
+
+        return extracted
 
     def _compute_summary(self, context: dict[str, Any]) -> dict[str, Any]:
         """Compute summary statistics for the assembled context."""
@@ -180,6 +274,8 @@ class ContextAssemblyAgent(BaseAgent):
             "highest_risk_score": round(max_risk, 4),
             "highest_risk_type": max_risk_type,
             "has_care_team": len(context.get("care_team", [])) > 0,
+            "total_questionnaires": len(context.get("questionnaire_responses", [])),
+            "has_patient_reported_symptoms": len(context.get("patient_reported_symptoms", [])) > 0,
         }
 
     def _compute_completeness(self, context: dict[str, Any]) -> float:
@@ -199,6 +295,15 @@ class ContextAssemblyAgent(BaseAgent):
         # Has medications list?
         scores.append(1.0 if context.get("medications") is not None else 0.5)
 
+        # Has questionnaire data? (boosts completeness)
+        questionnaires = context.get("questionnaire_responses", [])
+        if questionnaires:
+            scores.append(1.0)
+        elif context.get("chief_complaint") or context.get("review_of_systems"):
+            scores.append(0.7)  # partial — clinical notes but no questionnaire
+        else:
+            scores.append(0.3)
+
         return round(sum(scores) / len(scores), 2) if scores else 0.5
 
     def _build_rationale(self, context: dict[str, Any]) -> str:
@@ -214,4 +319,7 @@ class ContextAssemblyAgent(BaseAgent):
             parts.append(
                 f"highest risk {summary['highest_risk_score']:.2f} ({summary.get('highest_risk_type', 'unknown')})"
             )
+        q_count = summary.get("total_questionnaires", 0)
+        if q_count > 0:
+            parts.append(f"{q_count} patient questionnaire(s)")
         return ", ".join(parts)
