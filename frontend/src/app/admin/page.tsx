@@ -419,6 +419,22 @@ function UsersTab() {
   const [isAdmin, setIsAdmin] = useState(() => getUserRole() === "admin" || getUserRole() === "super_admin");
   const [promoting, setPromoting] = useState(false);
 
+  /* Hospital / Department data (must be declared early — used by both edit + add forms) */
+  const [hospitals, setHospitals] = useState<HospitalResponse[]>([]);
+  const [departmentsByHospital, setDepartmentsByHospital] = useState<Record<string, DepartmentResponse[]>>({});
+
+  useEffect(() => {
+    fetchHospitals().then(setHospitals).catch(() => {});
+  }, []);
+
+  const loadDepartmentsForHospital = useCallback(async (hospitalId: string) => {
+    if (!hospitalId || departmentsByHospital[hospitalId]) return;
+    try {
+      const depts = await fetchDepartments(hospitalId);
+      setDepartmentsByHospital((prev) => ({ ...prev, [hospitalId]: depts }));
+    } catch { /* ignore */ }
+  }, [departmentsByHospital]);
+
   // Edit modal state
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editName, setEditName] = useState("");
@@ -571,22 +587,6 @@ function UsersTab() {
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
   const [sortField, setSortField] = useState<keyof User>("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-
-  /* Hospital / Department data */
-  const [hospitals, setHospitals] = useState<HospitalResponse[]>([]);
-  const [departmentsByHospital, setDepartmentsByHospital] = useState<Record<string, DepartmentResponse[]>>({});
-
-  useEffect(() => {
-    fetchHospitals().then(setHospitals).catch(() => {});
-  }, []);
-
-  const loadDepartmentsForHospital = useCallback(async (hospitalId: string) => {
-    if (!hospitalId || departmentsByHospital[hospitalId]) return;
-    try {
-      const depts = await fetchDepartments(hospitalId);
-      setDepartmentsByHospital((prev) => ({ ...prev, [hospitalId]: depts }));
-    } catch { /* ignore */ }
-  }, [departmentsByHospital]);
 
   /* Form state */
   const [formName, setFormName] = useState("");
