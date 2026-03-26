@@ -674,6 +674,439 @@ export default function ClinicalAssessmentPage() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   WORKFLOW PIPELINE — Post-Approval Workflow with expandable detail panels
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function WorkflowPipeline({
+  workflowResult, reviewDecisions, allDiagnoses, allTreatments,
+  expandedSteps, setExpandedSteps, generatingDoc, setGeneratingDoc,
+  clinicalDocHtml, setClinicalDocHtml, assessment, physicianName, selectedPatient,
+}: {
+  workflowResult: Record<string, any> | null;
+  reviewDecisions: Record<string, "approve" | "reject" | "modify">;
+  allDiagnoses: NonNullable<ClinicalAssessment["assessment"]>["diagnoses"];
+  allTreatments: NonNullable<ClinicalAssessment["assessment"]>["treatments"];
+  expandedSteps: Record<number, boolean>;
+  setExpandedSteps: (v: Record<number, boolean>) => void;
+  generatingDoc: boolean;
+  setGeneratingDoc: (v: boolean) => void;
+  clinicalDocHtml: string | null;
+  setClinicalDocHtml: (v: string | null) => void;
+  assessment: ClinicalAssessment | null;
+  physicianName: string;
+  selectedPatient: (typeof DEMO_PATIENTS)[0];
+}) {
+  const approvedDxIndices = Object.entries(reviewDecisions)
+    .filter(([k, v]) => k.startsWith("dx-") && v === "approve")
+    .map(([k]) => parseInt(k.replace("dx-", "")));
+  const rejectedDxIndices = Object.entries(reviewDecisions)
+    .filter(([k, v]) => k.startsWith("dx-") && v === "reject")
+    .map(([k]) => parseInt(k.replace("dx-", "")));
+  const approvedTxIndices = Object.entries(reviewDecisions)
+    .filter(([k, v]) => k.startsWith("tx-") && v === "approve")
+    .map(([k]) => parseInt(k.replace("tx-", "")));
+  const rejectedTxIndices = Object.entries(reviewDecisions)
+    .filter(([k, v]) => k.startsWith("tx-") && v === "reject")
+    .map(([k]) => parseInt(k.replace("tx-", "")));
+
+  const approvedDx = approvedDxIndices.map(i => allDiagnoses?.[i]).filter(Boolean);
+  const approvedTx = approvedTxIndices.map(i => allTreatments?.[i]).filter(Boolean);
+  const medTx = approvedTx.filter(t => ["medication", "anticoagulation", "antihypertensive", "statin", "diuretic"].some(k => t?.treatment_type?.toLowerCase().includes(k)));
+  const labTx = approvedTx.filter(t => ["lab", "diagnostic", "imaging", "test", "panel"].some(k => t?.treatment_type?.toLowerCase().includes(k)));
+  const procTx = approvedTx.filter(t => ["procedure", "referral", "consultation", "surgery"].some(k => t?.treatment_type?.toLowerCase().includes(k)));
+  const lifestyleTx = approvedTx.filter(t => ["lifestyle", "diet", "exercise", "counseling", "education"].some(k => t?.treatment_type?.toLowerCase().includes(k)));
+
+  const toggleStep = (i: number) => setExpandedSteps({ ...expandedSteps, [i]: !expandedSteps[i] });
+
+  const handleGenerateDoc = async () => {
+    setGeneratingDoc(true);
+    try {
+      const res = await fetch("/api/v1/clinical/documents/generate/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assessment_id: assessment?.assessment?.review_reason || "assessment",
+          patient_id: assessment?.patient_id || selectedPatient.id,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setClinicalDocHtml(data.content);
+      }
+    } catch {
+      // Demo fallback
+      setClinicalDocHtml(`<div style="font-family:system-ui;padding:24px;max-width:800px">
+        <h1 style="color:#0f766e;border-bottom:2px solid #0f766e;padding-bottom:8px">Clinical Assessment Summary</h1>
+        <p><strong>Patient:</strong> ${selectedPatient.name} &middot; <strong>MRN:</strong> ${selectedPatient.mrn} &middot; <strong>Age:</strong> ${selectedPatient.age}</p>
+        <p><strong>Reviewing Physician:</strong> ${physicianName} &middot; <strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+        <h2 style="color:#1e40af;margin-top:20px">Approved Diagnoses</h2>
+        <ul>${approvedDx.map(d => `<li><strong>${d?.diagnosis}</strong> (${d?.icd10_code}) — Confidence: ${((d?.confidence ?? 0) * 100).toFixed(0)}%</li>`).join("")}</ul>
+        <h2 style="color:#1e40af;margin-top:20px">Approved Treatments</h2>
+        <ul>${approvedTx.map(t => `<li>[${t?.priority?.toUpperCase()}] ${t?.description} (${t?.cpt_code})</li>`).join("")}</ul>
+        <hr style="margin-top:24px"/><p style="font-size:12px;color:#6b7280">Electronically signed by ${physicianName} on ${new Date().toLocaleString()}</p>
+      </div>`);
+    }
+    setGeneratingDoc(false);
+  };
+
+  const StepIcon = ({ done, skipped }: { done: boolean; skipped?: boolean }) => (
+    <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
+      done ? "bg-emerald-500" : skipped ? "bg-gray-300 dark:bg-gray-600" : "bg-amber-400"
+    }`}>
+      {done ? (
+        <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        </svg>
+      ) : skipped ? (
+        <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+        </svg>
+      ) : (
+        <svg className="h-3.5 w-3.5 text-white animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+        </svg>
+      )}
+    </div>
+  );
+
+  const Badge = ({ done, skipped }: { done: boolean; skipped?: boolean }) => (
+    <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+      done ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+      : skipped ? "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500"
+      : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+    }`}>
+      {done ? "Complete" : skipped ? "N/A" : "Processing"}
+    </span>
+  );
+
+  const StepHeader = ({ idx, label, done, skipped, detail }: { idx: number; label: string; done: boolean; skipped?: boolean; detail: string }) => (
+    <button onClick={() => toggleStep(idx)} className="w-full flex items-start gap-3 text-left group">
+      <StepIcon done={done} skipped={skipped} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className={`text-[13px] font-semibold ${done ? "text-emerald-700 dark:text-emerald-400" : skipped ? "text-gray-400" : "text-amber-700 dark:text-amber-400"}`}>
+            {label}
+          </p>
+          <Badge done={done} skipped={skipped} />
+          <svg className={`h-3.5 w-3.5 ml-auto text-gray-400 transition-transform ${expandedSteps[idx] ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+          </svg>
+        </div>
+        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{detail}</p>
+      </div>
+    </button>
+  );
+
+  const tpDone = workflowResult?.treatment_plan_created ?? true;
+  const pnDone = workflowResult?.patient_notified ?? true;
+  const rxDone = workflowResult?.pharmacy_ordered ?? false;
+  const rxSkipped = !rxDone && medTx.length === 0;
+  const ehrDone = (workflowResult?.orders_created ?? 0) > 0;
+  const ctDone = workflowResult?.workflow_status === "completed";
+  const insDone = workflowResult?.workflow_status === "completed";
+  const docDone = workflowResult?.workflow_status === "completed";
+
+  return (
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+        <svg className="h-4 w-4 text-healthos-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">Post-Approval Workflow</span>
+        <span className="ml-auto text-[10px] text-gray-400">{[tpDone, pnDone, rxDone || rxSkipped, ehrDone, ctDone, insDone, docDone].filter(Boolean).length}/7 steps</span>
+      </div>
+      <div className="p-4 space-y-4">
+
+        {/* ── Step 1: Treatment Plan ── */}
+        <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
+          <StepHeader idx={0} label="Treatment Plan Created" done={tpDone} detail={`${approvedDx.length} diagnoses, ${approvedTx.length} treatments approved — visible in Patient Portal`} />
+          {expandedSteps[0] && (
+            <div className="mt-3 ml-10 space-y-3 animate-fade-in-up">
+              {approvedDx.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 mb-1.5">Approved Diagnoses</p>
+                  <div className="space-y-1.5">
+                    {approvedDx.map((d, i) => (
+                      <div key={i} className="flex items-center gap-2 text-[12px] rounded-md bg-emerald-50 dark:bg-emerald-950/20 px-3 py-1.5">
+                        <span className="font-mono text-[10px] bg-emerald-200 dark:bg-emerald-800 px-1.5 py-0.5 rounded font-bold">{d?.icd10_code}</span>
+                        <span className="font-medium text-gray-800 dark:text-gray-200">{d?.diagnosis}</span>
+                        <span className="ml-auto text-emerald-600 font-semibold">{((d?.confidence ?? 0) * 100).toFixed(0)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {approvedTx.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 mb-1.5">Approved Treatments</p>
+                  <div className="space-y-1.5">
+                    {approvedTx.map((t, i) => (
+                      <div key={i} className="flex items-center gap-2 text-[12px] rounded-md bg-blue-50 dark:bg-blue-950/20 px-3 py-1.5">
+                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                          t?.priority === "high" || t?.priority === "urgent" ? "bg-red-100 text-red-700" : t?.priority === "medium" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"
+                        }`}>{t?.priority}</span>
+                        <span className="font-medium text-gray-800 dark:text-gray-200 flex-1">{t?.description}</span>
+                        {t?.cpt_code && <span className="font-mono text-[10px] bg-blue-200 dark:bg-blue-800 px-1.5 py-0.5 rounded">{t?.cpt_code}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {rejectedDxIndices.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-red-500 mb-1">Rejected Diagnoses</p>
+                  {rejectedDxIndices.map(idx => {
+                    const d = allDiagnoses?.[idx];
+                    return d ? <p key={idx} className="text-[11px] text-red-500 line-through">{d.diagnosis} ({d.icd10_code})</p> : null;
+                  })}
+                </div>
+              )}
+              <p className="text-[10px] text-gray-400 italic">Treatment plan visible to patient at Patient Portal &rarr; My Health &rarr; Care Plans</p>
+            </div>
+          )}
+        </div>
+
+        {/* ── Step 2: Patient Notification ── */}
+        <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
+          <StepHeader idx={1} label="Patient Notified" done={pnDone} detail="Patient notified via portal notification, SMS, and email" />
+          {expandedSteps[1] && (
+            <div className="mt-3 ml-10 space-y-2 animate-fade-in-up">
+              <div className="rounded-md bg-blue-50 dark:bg-blue-950/20 p-3 border border-blue-100 dark:border-blue-900">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 mb-2">Notification Preview</p>
+                <div className="text-[12px] text-gray-700 dark:text-gray-300 space-y-1">
+                  <p><strong>Subject:</strong> Your care plan has been updated</p>
+                  <p><strong>Message:</strong> Your physician has reviewed your clinical assessment and approved a treatment plan.
+                    {approvedDx.length > 0 && <> Diagnoses confirmed: {approvedDx.map(d => d?.diagnosis).join(", ")}.</>}
+                    {medTx.length > 0 && <> New medications have been prescribed.</>}
+                    {labTx.length > 0 && <> Lab orders have been placed.</>}
+                    Please log in to your patient portal to view the full care plan.</p>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  {["Portal", "Email", "SMS"].map(ch => (
+                    <span key={ch} className="text-[9px] font-bold uppercase bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">{ch}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Step 3: Pharmacy Orders ── */}
+        <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
+          <StepHeader idx={2} label="Pharmacy Orders Submitted" done={rxDone} skipped={rxSkipped}
+            detail={medTx.length > 0 ? `${medTx.length} e-prescription(s) transmitted to pharmacy` : "No medication orders in this assessment"} />
+          {expandedSteps[2] && (
+            <div className="mt-3 ml-10 space-y-2 animate-fade-in-up">
+              {medTx.length > 0 ? (
+                <div className="rounded-md border border-violet-100 dark:border-violet-900 overflow-hidden">
+                  <div className="bg-violet-50 dark:bg-violet-950/30 px-3 py-1.5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-violet-600">E-Prescriptions</p>
+                  </div>
+                  <div className="divide-y divide-violet-100 dark:divide-violet-900">
+                    {medTx.map((t, i) => (
+                      <div key={i} className="px-3 py-2 flex items-center gap-3 text-[12px]">
+                        <div className="h-8 w-8 rounded-full bg-violet-100 dark:bg-violet-800 flex items-center justify-center shrink-0">
+                          <svg className="h-4 w-4 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19 14.5" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-800 dark:text-gray-200">{t?.description}</p>
+                          <p className="text-[10px] text-gray-500">Type: {t?.treatment_type} &middot; Priority: {t?.priority} &middot; CPT: {t?.cpt_code || "—"}</p>
+                        </div>
+                        <span className="text-[9px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded">Transmitted</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[11px] text-gray-400 italic">No medications were included in the approved treatments. Pharmacy step skipped.</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Step 4: EHR Orders ── */}
+        <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
+          <StepHeader idx={3} label="EHR Orders Created" done={ehrDone}
+            detail={`${workflowResult?.orders_created ?? approvedTx.length} order(s) submitted to EHR system`} />
+          {expandedSteps[3] && (
+            <div className="mt-3 ml-10 space-y-2 animate-fade-in-up">
+              {labTx.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600 mb-1.5">Lab & Diagnostic Orders</p>
+                  {labTx.map((t, i) => (
+                    <div key={i} className="flex items-center gap-2 text-[12px] rounded-md bg-amber-50 dark:bg-amber-950/20 px-3 py-1.5 mb-1">
+                      <svg className="h-3.5 w-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5" />
+                      </svg>
+                      <span className="font-medium text-gray-800 dark:text-gray-200 flex-1">{t?.description}</span>
+                      {t?.cpt_code && <span className="font-mono text-[10px] bg-amber-200 dark:bg-amber-800 px-1.5 py-0.5 rounded">{t.cpt_code}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {procTx.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-cyan-600 mb-1.5">Procedures & Referrals</p>
+                  {procTx.map((t, i) => (
+                    <div key={i} className="flex items-center gap-2 text-[12px] rounded-md bg-cyan-50 dark:bg-cyan-950/20 px-3 py-1.5 mb-1">
+                      <svg className="h-3.5 w-3.5 text-cyan-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15" />
+                      </svg>
+                      <span className="font-medium text-gray-800 dark:text-gray-200 flex-1">{t?.description}</span>
+                      {t?.cpt_code && <span className="font-mono text-[10px] bg-cyan-200 dark:bg-cyan-800 px-1.5 py-0.5 rounded">{t.cpt_code}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {lifestyleTx.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-green-600 mb-1.5">Lifestyle & Counseling</p>
+                  {lifestyleTx.map((t, i) => (
+                    <div key={i} className="flex items-center gap-2 text-[12px] rounded-md bg-green-50 dark:bg-green-950/20 px-3 py-1.5 mb-1">
+                      <span className="font-medium text-gray-800 dark:text-gray-200">{t?.description}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {approvedTx.length === 0 && <p className="text-[11px] text-gray-400 italic">No orders to create — no treatments were approved.</p>}
+            </div>
+          )}
+        </div>
+
+        {/* ── Step 5: Care Team Notified ── */}
+        <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
+          <StepHeader idx={4} label="Care Team Notified" done={ctDone} detail="PCP, care manager, and nursing staff notified of plan changes" />
+          {expandedSteps[4] && (
+            <div className="mt-3 ml-10 space-y-2 animate-fade-in-up">
+              <div className="rounded-md bg-indigo-50 dark:bg-indigo-950/20 p-3 border border-indigo-100 dark:border-indigo-900">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 mb-2">Notifications Sent</p>
+                <div className="space-y-1.5">
+                  {[
+                    { role: "Reviewing Physician", name: physicianName, method: "In-app + Email", status: "Delivered" },
+                    { role: "Primary Care Provider", name: selectedPatient.name.includes("Martinez") ? "Dr. Rodriguez" : "Dr. Thompson", method: "EHR Alert", status: "Delivered" },
+                    { role: "Care Manager", name: "Care Management Team", method: "Dashboard Alert", status: "Delivered" },
+                    { role: "Nursing Staff", name: "Unit Nursing", method: "EHR Task Queue", status: "Queued" },
+                  ].map((n, i) => (
+                    <div key={i} className="flex items-center gap-3 text-[12px]">
+                      <div className="h-6 w-6 rounded-full bg-indigo-200 dark:bg-indigo-800 flex items-center justify-center text-[9px] font-bold text-indigo-700 dark:text-indigo-300">
+                        {n.role.charAt(0)}
+                      </div>
+                      <div className="flex-1">
+                        <span className="font-medium text-gray-800 dark:text-gray-200">{n.name}</span>
+                        <span className="text-gray-400 ml-1">({n.role})</span>
+                      </div>
+                      <span className="text-[9px] text-gray-400">{n.method}</span>
+                      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                        n.status === "Delivered" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                      }`}>{n.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Step 6: Insurance Pre-Auth ── */}
+        <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
+          <StepHeader idx={5} label="Insurance Pre-Authorization" done={insDone}
+            detail="Pre-auth requirements checked for procedures and high-cost medications" />
+          {expandedSteps[5] && (
+            <div className="mt-3 ml-10 space-y-2 animate-fade-in-up">
+              <div className="rounded-md bg-orange-50 dark:bg-orange-950/20 p-3 border border-orange-100 dark:border-orange-900">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-orange-600 mb-2">Pre-Authorization Status</p>
+                {procTx.length > 0 || medTx.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {procTx.map((t, i) => (
+                      <div key={`proc-${i}`} className="flex items-center gap-2 text-[12px]">
+                        <span className="font-medium text-gray-800 dark:text-gray-200 flex-1">{t?.description}</span>
+                        <span className="text-[9px] font-bold uppercase bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">Approved</span>
+                      </div>
+                    ))}
+                    {medTx.filter(t => t?.priority === "high" || t?.priority === "urgent").map((t, i) => (
+                      <div key={`med-${i}`} className="flex items-center gap-2 text-[12px]">
+                        <span className="font-medium text-gray-800 dark:text-gray-200 flex-1">{t?.description}</span>
+                        <span className="text-[9px] font-bold uppercase bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Pending Review</span>
+                      </div>
+                    ))}
+                    {medTx.filter(t => t?.priority !== "high" && t?.priority !== "urgent").length > 0 && (
+                      <p className="text-[11px] text-gray-500">{medTx.filter(t => t?.priority !== "high" && t?.priority !== "urgent").length} standard medication(s) — no pre-auth required</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-gray-500 italic">No items requiring pre-authorization in this assessment.</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Step 7: Clinical Document ── */}
+        <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
+          <StepHeader idx={6} label="Clinical Document Generated" done={docDone || clinicalDocHtml !== null}
+            detail="Assessment summary available for download and printing" />
+          {expandedSteps[6] && (
+            <div className="mt-3 ml-10 space-y-2 animate-fade-in-up">
+              {!clinicalDocHtml ? (
+                <button
+                  onClick={handleGenerateDoc}
+                  disabled={generatingDoc}
+                  className="flex items-center gap-2 rounded-lg bg-healthos-600 px-4 py-2 text-[12px] font-medium text-white hover:bg-healthos-700 disabled:opacity-50 transition-all"
+                >
+                  {generatingDoc ? (
+                    <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+                    </svg>
+                  ) : (
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                  )}
+                  {generatingDoc ? "Generating..." : "Generate Clinical Document"}
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded">Document Ready</span>
+                    <button
+                      onClick={() => {
+                        const win = window.open("", "_blank");
+                        if (win) { win.document.write(clinicalDocHtml); win.document.close(); }
+                      }}
+                      className="text-[11px] font-medium text-healthos-600 hover:text-healthos-700 underline"
+                    >
+                      Open in New Tab
+                    </button>
+                    <button
+                      onClick={() => {
+                        const blob = new Blob([clinicalDocHtml], { type: "text/html" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url; a.download = `clinical-assessment-${selectedPatient.id}-${new Date().toISOString().slice(0, 10)}.html`;
+                        a.click(); URL.revokeObjectURL(url);
+                      }}
+                      className="text-[11px] font-medium text-healthos-600 hover:text-healthos-700 underline"
+                    >
+                      Download HTML
+                    </button>
+                  </div>
+                  <div className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 p-3 max-h-60 overflow-auto">
+                    <div className="prose prose-xs dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: clinicalDocHtml }} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    ASSESSMENT TAB
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -705,6 +1138,9 @@ function AssessmentTab({
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reviewStartedAt] = useState(new Date().toISOString());
+  const [expandedSteps, setExpandedSteps] = useState<Record<number, boolean>>({});
+  const [generatingDoc, setGeneratingDoc] = useState(false);
+  const [clinicalDocHtml, setClinicalDocHtml] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [workflowResult, setWorkflowResult] = useState<Record<string, any> | null>(null);
 
@@ -1504,98 +1940,21 @@ function AssessmentTab({
                   </div>
 
                   {/* ── Post-Approval Workflow Pipeline ── */}
-                  <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                      <svg className="h-4 w-4 text-healthos-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                      </svg>
-                      <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">Post-Approval Workflow</span>
-                    </div>
-                    <div className="p-4 space-y-3">
-                      {[
-                        {
-                          label: "Treatment Plan Created",
-                          detail: "DoctorTreatmentPlan created from approved items, visible in Patient Portal",
-                          done: workflowResult?.treatment_plan_created ?? true,
-                          icon: "M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0118 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3l1.5 1.5 3-3.75",
-                        },
-                        {
-                          label: "Patient Notified",
-                          detail: "Patient notified via portal, SMS, and email per preferences",
-                          done: workflowResult?.patient_notified ?? true,
-                          icon: "M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0",
-                        },
-                        {
-                          label: "Pharmacy Orders Submitted",
-                          detail: workflowResult?.pharmacy_ordered
-                            ? "E-prescriptions created and transmitted to pharmacy"
-                            : "No medication orders in this assessment",
-                          done: workflowResult?.pharmacy_ordered ?? false,
-                          icon: "M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5",
-                          skipped: !workflowResult?.pharmacy_ordered && Object.values(reviewDecisions).some(d => d === "approve"),
-                        },
-                        {
-                          label: "EHR Orders Created",
-                          detail: `${workflowResult?.orders_created ?? 0} order(s) submitted to EHR system`,
-                          done: (workflowResult?.orders_created ?? 0) > 0,
-                          icon: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z",
-                        },
-                        {
-                          label: "Care Team Notified",
-                          detail: "PCP, care manager, and nursing staff notified of plan changes",
-                          done: workflowResult?.workflow_status === "completed",
-                          icon: "M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z",
-                        },
-                        {
-                          label: "Insurance Pre-Authorization",
-                          detail: "Pre-auth requirements checked for procedures and medications",
-                          done: workflowResult?.workflow_status === "completed",
-                          icon: "M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z",
-                        },
-                        {
-                          label: "Clinical Document Generated",
-                          detail: "Assessment summary available for download (PDF/HTML)",
-                          done: workflowResult?.workflow_status === "completed",
-                          icon: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z",
-                        },
-                      ].map((step, i) => (
-                        <div key={i} className="flex items-start gap-3">
-                          <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
-                            step.done ? "bg-emerald-500" : step.skipped ? "bg-gray-300 dark:bg-gray-600" : "bg-amber-400"
-                          }`}>
-                            {step.done ? (
-                              <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                              </svg>
-                            ) : step.skipped ? (
-                              <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
-                              </svg>
-                            ) : (
-                              <svg className="h-3.5 w-3.5 text-white animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
-                              </svg>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className={`text-[13px] font-semibold ${step.done ? "text-emerald-700 dark:text-emerald-400" : step.skipped ? "text-gray-400" : "text-amber-700 dark:text-amber-400"}`}>
-                                {step.label}
-                              </p>
-                              <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                                step.done ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                : step.skipped ? "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500"
-                                : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                              }`}>
-                                {step.done ? "Complete" : step.skipped ? "N/A" : "Processing"}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{step.detail}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <WorkflowPipeline
+                    workflowResult={workflowResult}
+                    reviewDecisions={reviewDecisions}
+                    allDiagnoses={allDiagnoses}
+                    allTreatments={allTreatments}
+                    expandedSteps={expandedSteps}
+                    setExpandedSteps={setExpandedSteps}
+                    generatingDoc={generatingDoc}
+                    setGeneratingDoc={setGeneratingDoc}
+                    clinicalDocHtml={clinicalDocHtml}
+                    setClinicalDocHtml={setClinicalDocHtml}
+                    assessment={assessment}
+                    physicianName={physicianName}
+                    selectedPatient={selectedPatient}
+                  />
 
                   {/* Electronic Signature Block */}
                   <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/50">
