@@ -861,7 +861,11 @@ function WorkflowPipeline({
                   })}
                 </div>
               )}
-              <p className="text-[10px] text-gray-400 italic">Treatment plan visible to patient at Patient Portal &rarr; My Health &rarr; Care Plans</p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <p className="text-[10px] text-gray-400 italic">Treatment plan visible to patient at Patient Portal &rarr; My Health</p>
+                <a href="/patient-portal/health" target="_blank" rel="noopener" className="text-[10px] font-semibold text-healthos-600 hover:text-healthos-700 underline">Open Patient Portal</a>
+                <a href="/pharmacy" target="_blank" rel="noopener" className="text-[10px] font-semibold text-violet-600 hover:text-violet-700 underline">Open Pharmacy</a>
+              </div>
             </div>
           )}
         </div>
