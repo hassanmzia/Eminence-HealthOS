@@ -1360,3 +1360,130 @@ class PatientQuestionnaire(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CLINICAL REVIEW & POST-APPROVAL WORKFLOW
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class ClinicalReview(Base):
+    """Physician review of an AI clinical assessment (HITL decision record)."""
+
+    __tablename__ = "clinical_reviews"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    assessment_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    physician_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    physician_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    physician_npi: Mapped[str | None] = mapped_column(String(20))
+    physician_specialty: Mapped[str | None] = mapped_column(String(100))
+
+    # Decision
+    decision: Mapped[str] = mapped_column(String(30), nullable=False)  # approved, approved_modified, rejected, deferred
+    approved_diagnoses: Mapped[list] = mapped_column(JSONB, default=list)
+    rejected_diagnoses: Mapped[list] = mapped_column(JSONB, default=list)
+    approved_treatments: Mapped[list] = mapped_column(JSONB, default=list)
+    rejected_treatments: Mapped[list] = mapped_column(JSONB, default=list)
+    modified_diagnoses: Mapped[list | None] = mapped_column(JSONB)
+    modified_treatments: Mapped[list | None] = mapped_column(JSONB)
+
+    # Final codes
+    final_icd10_codes: Mapped[list] = mapped_column(JSONB, default=list)
+    final_cpt_codes: Mapped[list] = mapped_column(JSONB, default=list)
+
+    # Notes & attestation
+    physician_notes: Mapped[str | None] = mapped_column(Text)
+    clinical_rationale: Mapped[str | None] = mapped_column(Text)
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
+    attested: Mapped[bool] = mapped_column(Boolean, default=False)
+    signature_datetime: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    # Timing
+    review_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    time_spent_seconds: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Post-approval workflow tracking
+    workflow_status: Mapped[str] = mapped_column(String(30), default="pending")  # pending, processing, completed, failed
+    treatment_plan_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("doctor_treatment_plans.id"))
+    patient_notified: Mapped[bool] = mapped_column(Boolean, default=False)
+    pharmacy_ordered: Mapped[bool] = mapped_column(Boolean, default=False)
+    labs_ordered: Mapped[bool] = mapped_column(Boolean, default=False)
+    followup_scheduled: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (
+        Index("ix_clinical_review_assessment", "assessment_id"),
+        Index("ix_clinical_review_patient", "patient_id", "created_at"),
+        Index("ix_clinical_review_physician", "physician_id", "created_at"),
+    )
+
+
+class ClinicalDocument(Base):
+    """Generated clinical documents (assessment summaries, reports, etc.)."""
+
+    __tablename__ = "clinical_documents"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    assessment_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    review_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("clinical_reviews.id"))
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+
+    document_type: Mapped[str] = mapped_column(String(50), nullable=False)  # assessment_summary, discharge_summary, referral_letter
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    format: Mapped[str] = mapped_column(String(10), default="html")  # html, pdf
+    status: Mapped[str] = mapped_column(String(20), default="final")  # draft, final
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_clinical_document_patient", "patient_id"),
+    )
+
+
+class ClinicalOrder(Base):
+    """EHR orders created from approved treatment recommendations."""
+
+    __tablename__ = "clinical_orders"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    review_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clinical_reviews.id"), nullable=False)
+    patient_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    ordering_physician_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    ordering_physician_name: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    order_type: Mapped[str] = mapped_column(String(50), nullable=False)  # medication, lab, procedure, referral, imaging, admission
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    cpt_code: Mapped[str | None] = mapped_column(String(20))
+    priority: Mapped[str] = mapped_column(String(20), default="routine")  # stat, urgent, routine, elective
+    status: Mapped[str] = mapped_column(String(30), default="submitted")  # submitted, pending, in_progress, completed, cancelled
+    ehr_order_id: Mapped[str | None] = mapped_column(String(100))  # External EHR system order ID
+
+    # Pharmacy-specific fields
+    medication_name: Mapped[str | None] = mapped_column(String(255))
+    dosage: Mapped[str | None] = mapped_column(String(100))
+    frequency: Mapped[str | None] = mapped_column(String(100))
+    pharmacy_transmitted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Scheduling-specific fields
+    scheduled_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    scheduled_provider: Mapped[str | None] = mapped_column(String(255))
+
+    notes: Mapped[str | None] = mapped_column(Text)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (
+        Index("ix_clinical_order_patient", "patient_id"),
+        Index("ix_clinical_order_review", "review_id"),
+        Index("ix_clinical_order_status", "status", "order_type"),
+    )

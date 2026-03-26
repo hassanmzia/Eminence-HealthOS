@@ -22,6 +22,7 @@ from healthos_platform.api.routes import (
     billing,
     clinical,
     clinical_assessment,
+    clinical_decisions,
     dashboard,
     devices,
     ehr_sync,
@@ -380,6 +381,7 @@ def create_app() -> FastAPI:
     app.include_router(patient_portal.router, prefix=api_prefix)
     app.include_router(profile.router, prefix=api_prefix)
     app.include_router(clinical_assessment.router, prefix=api_prefix)
+    app.include_router(clinical_decisions.router, prefix=api_prefix)
     app.include_router(rag.router, prefix=api_prefix)
     app.include_router(knowledge_graph.router, prefix=api_prefix)
     app.include_router(ml.router, prefix=api_prefix)
