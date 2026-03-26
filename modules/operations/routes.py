@@ -6,9 +6,18 @@ import logging
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from healthos_platform.agents.types import AgentInput, parse_patient_id
+from healthos_platform.database import get_db
+from healthos_platform.models import (
+    InsuranceVerification,
+    OperationalWorkflow,
+    PriorAuthorization,
+    Referral,
+)
 from services.api.middleware.auth import CurrentUser, require_auth, require_role
 from services.api.middleware.tenant import get_tenant_id
 
@@ -16,6 +25,157 @@ logger = logging.getLogger("healthos.routes.operations")
 router = APIRouter(prefix="/operations", tags=["operations"])
 
 DEFAULT_ORG = uuid.UUID("00000000-0000-0000-0000-000000000001")
+
+
+# ── List Endpoints (DB-backed) ──────────────────────────────────────────────
+
+
+@router.get("/prior-auth/list")
+async def list_prior_authorizations(
+    status: str | None = Query(None, description="Filter by status"),
+    limit: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(require_auth),
+):
+    """List prior authorization requests for the organization."""
+    q = select(PriorAuthorization).where(PriorAuthorization.org_id == DEFAULT_ORG)
+    if status:
+        q = q.where(PriorAuthorization.status == status)
+    q = q.order_by(PriorAuthorization.created_at.desc()).limit(limit)
+    result = await db.execute(q)
+    rows = result.scalars().all()
+    return {
+        "items": [
+            {
+                "id": str(r.id),
+                "auth_reference": r.auth_reference,
+                "patient_id": str(r.patient_id),
+                "payer": r.payer,
+                "status": r.status,
+                "cpt_codes": r.cpt_codes or [],
+                "diagnosis_codes": r.diagnosis_codes or [],
+                "clinical_summary": r.clinical_summary,
+                "estimated_cost": r.estimated_cost,
+                "submitted_at": r.submitted_at.isoformat() if r.submitted_at else None,
+                "decided_at": r.decided_at.isoformat() if r.decided_at else None,
+                "expires_at": r.expires_at.isoformat() if r.expires_at else None,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in rows
+        ],
+        "total": len(rows),
+    }
+
+
+@router.get("/insurance/list")
+async def list_insurance_verifications(
+    limit: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(require_auth),
+):
+    """List recent insurance verifications for the organization."""
+    q = (
+        select(InsuranceVerification)
+        .where(InsuranceVerification.org_id == DEFAULT_ORG)
+        .order_by(InsuranceVerification.verified_at.desc())
+        .limit(limit)
+    )
+    result = await db.execute(q)
+    rows = result.scalars().all()
+    return {
+        "items": [
+            {
+                "id": str(r.id),
+                "patient_id": str(r.patient_id),
+                "payer": r.payer,
+                "member_id": r.member_id,
+                "group_number": r.group_number,
+                "plan_name": r.plan_name,
+                "plan_type": r.plan_type,
+                "eligible": r.eligible,
+                "coverage_status": r.coverage_status,
+                "effective_date": r.effective_date.isoformat() if r.effective_date else None,
+                "termination_date": r.termination_date.isoformat() if r.termination_date else None,
+                "benefits": r.benefits or {},
+                "verified_at": r.verified_at.isoformat() if r.verified_at else None,
+            }
+            for r in rows
+        ],
+        "total": len(rows),
+    }
+
+
+@router.get("/referrals/list")
+async def list_referrals(
+    status: str | None = Query(None, description="Filter by status"),
+    limit: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(require_auth),
+):
+    """List referrals for the organization."""
+    q = select(Referral).where(Referral.org_id == DEFAULT_ORG)
+    if status:
+        q = q.where(Referral.status == status)
+    q = q.order_by(Referral.created_at.desc()).limit(limit)
+    result = await db.execute(q)
+    rows = result.scalars().all()
+    return {
+        "items": [
+            {
+                "id": str(r.id),
+                "referral_id": r.referral_id,
+                "patient_id": str(r.patient_id),
+                "specialty": r.specialty,
+                "urgency": r.urgency,
+                "reason": r.reason,
+                "status": r.status,
+                "clinical_notes": r.clinical_notes,
+                "specialist_notes": r.specialist_notes,
+                "outcome": r.outcome,
+                "target_date": r.target_date.isoformat() if r.target_date else None,
+                "scheduled_date": r.scheduled_date.isoformat() if r.scheduled_date else None,
+                "completed_at": r.completed_at.isoformat() if r.completed_at else None,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in rows
+        ],
+        "total": len(rows),
+    }
+
+
+@router.get("/workflows/list")
+async def list_operational_workflows(
+    status: str | None = Query(None, description="Filter by status"),
+    limit: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    user: CurrentUser = Depends(require_auth),
+):
+    """List operational workflows from the database."""
+    q = select(OperationalWorkflow).where(OperationalWorkflow.org_id == DEFAULT_ORG)
+    if status:
+        q = q.where(OperationalWorkflow.status == status)
+    q = q.order_by(OperationalWorkflow.created_at.desc()).limit(limit)
+    result = await db.execute(q)
+    rows = result.scalars().all()
+    return {
+        "items": [
+            {
+                "id": str(r.id),
+                "workflow_id": r.workflow_id,
+                "workflow_type": r.workflow_type,
+                "name": r.name,
+                "status": r.status,
+                "priority": r.priority,
+                "steps": r.steps or [],
+                "total_steps": r.total_steps,
+                "completed_steps": r.completed_steps,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+                "completed_at": r.completed_at.isoformat() if r.completed_at else None,
+            }
+            for r in rows
+        ],
+        "total": len(rows),
+    }
 
 
 # ── Prior Authorization ──────────────────────────────────────────────────────
