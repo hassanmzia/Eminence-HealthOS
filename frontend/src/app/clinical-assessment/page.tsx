@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    TYPES
@@ -493,6 +494,7 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 export default function ClinicalAssessmentPage() {
+  const { user } = useAuth();
   const [tab, setTab] = useState<TabKey>("assessment");
   const [selectedPatient, setSelectedPatient] = useState(DEMO_PATIENTS[0]);
   const [assessment, setAssessment] = useState<ClinicalAssessment | null>(null);
@@ -659,6 +661,8 @@ export default function ClinicalAssessmentPage() {
           loading={loading}
           error={error}
           onRunAssessment={runAssessment}
+          physicianName={user?.full_name || "Reviewing Physician"}
+          physicianEmail={user?.email}
         />
       )}
       {tab === "agents" && <AgentsTab agents={agents} />}
@@ -681,6 +685,8 @@ function AssessmentTab({
   loading,
   error,
   onRunAssessment,
+  physicianName,
+  physicianEmail,
 }: {
   patients: typeof DEMO_PATIENTS;
   selectedPatient: (typeof DEMO_PATIENTS)[0];
@@ -689,6 +695,8 @@ function AssessmentTab({
   loading: boolean;
   error: string | null;
   onRunAssessment: () => void;
+  physicianName: string;
+  physicianEmail?: string;
 }) {
   // HITL Review State
   const [reviewDecisions, setReviewDecisions] = useState<Record<string, "approve" | "reject" | "modify">>({});
@@ -759,7 +767,7 @@ function AssessmentTab({
         body: JSON.stringify({
           assessment_id: assessment?.assessment?.review_reason || assessment?.patient_id || "assessment",
           patient_id: assessment?.patient_id || "1",
-          physician_name: "Dr. Reviewing Physician",
+          physician_name: physicianName,
           physician_specialty: "Internal Medicine",
           decision,
           approved_diagnoses: approvedDx,
@@ -785,7 +793,7 @@ function AssessmentTab({
       setWorkflowResult({
         id: `review-${Date.now()}`,
         decision,
-        physician_name: "Dr. Reviewing Physician",
+        physician_name: physicianName,
         attested: attestChecked,
         signature_datetime: new Date().toISOString(),
         review_completed_at: new Date().toISOString(),
@@ -1598,11 +1606,13 @@ function AssessmentTab({
                       <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Electronic Signature</span>
                     </div>
                     <p className="text-[12px] text-gray-700 dark:text-gray-300 leading-relaxed">
-                      Reviewed and signed by attending physician. All AI-generated recommendations have been independently evaluated.
+                      Reviewed and electronically signed by <strong>{physicianName}</strong>.
+                      All AI-generated recommendations have been independently evaluated.
                       Clinical responsibility accepted for approved items per institutional HITL protocol.
                     </p>
                     <p className="text-[11px] text-gray-500 mt-2">
-                      Patient: <strong>{assessment.assessment?.patient_summary?.name ?? `ID ${assessment.patient_id}`}</strong>
+                      Physician: <strong>{physicianName}</strong>{physicianEmail && <>&nbsp;&middot;&nbsp;{physicianEmail}</>}
+                      &nbsp;&middot;&nbsp;Patient: <strong>{assessment.assessment?.patient_summary?.name ?? `ID ${assessment.patient_id}`}</strong>
                       &nbsp;&middot;&nbsp;Date: <strong>{new Date().toLocaleDateString()}</strong>
                       &nbsp;&middot;&nbsp;Time: <strong>{new Date().toLocaleTimeString()}</strong>
                       {workflowResult?.time_spent_seconds != null && (
