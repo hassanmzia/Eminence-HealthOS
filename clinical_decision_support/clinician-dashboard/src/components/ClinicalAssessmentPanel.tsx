@@ -879,183 +879,231 @@ function AssessmentResults({
 
       {/* Post-Review Actions Panel */}
       {reviewState.submittedReview && (
-        <div style={{ ...cardStyle, background: "#f0fdf4", border: "2px solid #22c55e" }}>
-          <h4 style={{ margin: "0 0 16px", color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
-            <span>✅</span> Review Submitted Successfully
-          </h4>
-
-          <div style={{ marginBottom: 16, fontSize: 13, color: "#475569" }}>
-            <div><strong>Review ID:</strong> {reviewState.submittedReview.id}</div>
-            <div><strong>Decision:</strong> {reviewState.submittedReview.decision}</div>
-            <div><strong>Attested:</strong> {reviewState.submittedReview.attested ? "Yes" : "No"}</div>
-            {reviewState.submittedReview.signature_datetime && (
-              <div><strong>Signed:</strong> {new Date(reviewState.submittedReview.signature_datetime).toLocaleString()}</div>
-            )}
+        <div style={{ ...sectionStyle, borderColor: "#22c55e", borderWidth: 2 }}>
+          <div style={{
+            ...sectionHeaderStyle,
+            background: "linear-gradient(135deg, #166534 0%, #059669 100%)",
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{
+                width: 24, height: 24, borderRadius: "50%", background: "rgba(255,255,255,0.2)",
+                display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+              }}>{"\u2713"}</span>
+              PHYSICIAN REVIEW COMPLETED
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 400, opacity: 0.9 }}>
+              {reviewState.submittedReview.review_completed_at
+                ? new Date(reviewState.submittedReview.review_completed_at).toLocaleString()
+                : new Date(reviewState.submittedReview.created_at).toLocaleString()}
+            </span>
           </div>
 
-          {/* Final Codes */}
-          {reviewState.submittedReview.final_icd10_codes?.length > 0 && (
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Final ICD-10 Codes:</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                {reviewState.submittedReview.final_icd10_codes.map((code, i) => (
-                  <span key={i} style={{ padding: "4px 8px", background: "#dbeafe", borderRadius: 4, fontSize: 11 }}>
-                    {code.code}
-                  </span>
-                ))}
+          <div style={sectionBodyStyle}>
+            {/* Review Summary Grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+              <div style={{ padding: 12, background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0", textAlign: "center" }}>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", marginBottom: 4 }}>Review ID</div>
+                <div style={{ fontSize: 12, fontWeight: 600, fontFamily: "monospace", color: "#0f172a" }}>{reviewState.submittedReview.id.slice(0, 12)}...</div>
               </div>
-            </div>
-          )}
-
-          {reviewState.submittedReview.final_cpt_codes?.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Final CPT Codes:</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                {reviewState.submittedReview.final_cpt_codes.map((code, i) => (
-                  <span key={i} style={{ padding: "4px 8px", background: "#dcfce7", borderRadius: 4, fontSize: 11 }}>
-                    {code.code}
-                  </span>
-                ))}
+              <div style={{ padding: 12, background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0", textAlign: "center" }}>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", marginBottom: 4 }}>Decision</div>
+                <div style={{
+                  fontSize: 12, fontWeight: 700, textTransform: "uppercase",
+                  color: reviewState.submittedReview.decision === "approved" ? "#059669"
+                    : reviewState.submittedReview.decision === "rejected" ? "#dc2626" : "#1e40af",
+                }}>{reviewState.submittedReview.decision.replace("_", " ")}</div>
               </div>
-            </div>
-          )}
-
-          {/* Post-Review Action Buttons */}
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <button
-              onClick={onGenerateDocument}
-              disabled={isGeneratingDocument}
-              style={{
-                padding: "10px 16px",
-                background: isGeneratingDocument ? "#94a3b8" : "#6366f1",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: 600,
-                cursor: isGeneratingDocument ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <span>📄</span>
-              {isGeneratingDocument ? "Generating..." : "Generate Clinical Document"}
-            </button>
-
-            <button
-              onClick={onCreateEHROrders}
-              disabled={isCreatingOrders || reviewState.submittedReview.decision === "rejected"}
-              style={{
-                padding: "10px 16px",
-                background: isCreatingOrders || reviewState.submittedReview.decision === "rejected" ? "#94a3b8" : "#0891b2",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: 600,
-                cursor: isCreatingOrders || reviewState.submittedReview.decision === "rejected" ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <span>🏥</span>
-              {isCreatingOrders ? "Creating Orders..." : "Create EHR Orders"}
-            </button>
-          </div>
-
-          {/* Generated Document Display */}
-          {reviewState.generatedDocument && (
-            <div style={{ marginTop: 16, padding: 12, background: "white", borderRadius: 6, border: "1px solid #e2e8f0" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <h5 style={{ margin: 0 }}>Generated Document: {reviewState.generatedDocument.title}</h5>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <button
-                    onClick={async () => {
-                      try {
-                        await downloadClinicalDocument(reviewState.generatedDocument!.id, reviewState.generatedDocument!.title, "pdf");
-                      } catch (err) {
-                        console.error("PDF download failed:", err);
-                        alert("Failed to download PDF. Please try again.");
-                      }
-                    }}
-                    style={{
-                      padding: "4px 10px",
-                      background: "#dc2626",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 4,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Download PDF
-                  </button>
-                  <button
-                    onClick={async () => {
-                      try {
-                        await downloadClinicalDocument(reviewState.generatedDocument!.id, reviewState.generatedDocument!.title, "html");
-                      } catch (err) {
-                        console.error("HTML download failed:", err);
-                        alert("Failed to download HTML. Please try again.");
-                      }
-                    }}
-                    style={{
-                      padding: "4px 10px",
-                      background: "#2563eb",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 4,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Download HTML
-                  </button>
-                  <span style={{
-                    padding: "2px 8px",
-                    background: reviewState.generatedDocument.status === "final" ? "#dcfce7" : "#fef3c7",
-                    borderRadius: 4,
-                    fontSize: 11,
-                    fontWeight: 600,
-                  }}>
-                    {reviewState.generatedDocument.status.toUpperCase()}
-                  </span>
+              <div style={{ padding: 12, background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0", textAlign: "center" }}>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", marginBottom: 4 }}>Attested</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: reviewState.submittedReview.attested ? "#059669" : "#dc2626" }}>
+                  {reviewState.submittedReview.attested ? "YES" : "NO"}
                 </div>
               </div>
-              <div
-                style={{ fontSize: 13, maxHeight: 300, overflow: "auto", background: "#f8fafc", padding: 12, borderRadius: 4 }}
-                dangerouslySetInnerHTML={{ __html: reviewState.generatedDocument.content }}
-              />
+              <div style={{ padding: 12, background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0", textAlign: "center" }}>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", marginBottom: 4 }}>Review Time</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>
+                  {reviewState.submittedReview.time_spent_seconds > 0
+                    ? `${Math.floor(reviewState.submittedReview.time_spent_seconds / 60)}m ${reviewState.submittedReview.time_spent_seconds % 60}s`
+                    : "N/A"}
+                </div>
+              </div>
             </div>
-          )}
 
-          {/* EHR Orders Display */}
-          {reviewState.ehrOrders && reviewState.ehrOrders.length > 0 && (
-            <div style={{ marginTop: 16, padding: 12, background: "white", borderRadius: 6, border: "1px solid #e2e8f0" }}>
-              <h5 style={{ margin: "0 0 8px" }}>EHR Orders Created ({reviewState.ehrOrders.length})</h5>
-              {reviewState.ehrOrders.map((order, i) => (
-                <div key={i} style={{ padding: 8, background: "#f0f9ff", borderRadius: 4, marginBottom: 4, fontSize: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontWeight: 600 }}>{order.description}</span>
+            {/* Physician Signature */}
+            {reviewState.submittedReview.signature_datetime && (
+              <div style={{ padding: "10px 14px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, marginBottom: 16, fontSize: 12 }}>
+                <strong>Electronically signed</strong> by {reviewState.submittedReview.physician_name}
+                {reviewState.submittedReview.physician_npi && <> (NPI: {reviewState.submittedReview.physician_npi})</>}
+                {reviewState.submittedReview.physician_specialty && <> &middot; {reviewState.submittedReview.physician_specialty}</>}
+                <> on {new Date(reviewState.submittedReview.signature_datetime).toLocaleString()}</>
+              </div>
+            )}
+
+            {/* Final Codes */}
+            {(reviewState.submittedReview.final_icd10_codes?.length > 0 || reviewState.submittedReview.final_cpt_codes?.length > 0) && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                {reviewState.submittedReview.final_icd10_codes?.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1e40af", textTransform: "uppercase", marginBottom: 6 }}>Final ICD-10 Codes</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {reviewState.submittedReview.final_icd10_codes.map((code, i) => (
+                        <span key={i} style={{ padding: "4px 10px", background: "#dbeafe", border: "1px solid #93c5fd", borderRadius: 4, fontSize: 11, fontWeight: 600, color: "#1e40af" }}>
+                          {code.code}
+                          {code.description && <span style={{ fontWeight: 400, color: "#64748b", marginLeft: 4 }}>{code.description}</span>}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {reviewState.submittedReview.final_cpt_codes?.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#059669", textTransform: "uppercase", marginBottom: 6 }}>Final CPT Codes</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {reviewState.submittedReview.final_cpt_codes.map((code, i) => (
+                        <span key={i} style={{ padding: "4px 10px", background: "#dcfce7", border: "1px solid #86efac", borderRadius: 4, fontSize: 11, fontWeight: 600, color: "#059669" }}>
+                          {code.code}
+                          {code.description && <span style={{ fontWeight: 400, color: "#64748b", marginLeft: 4 }}>{code.description}</span>}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Post-Review Action Buttons */}
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", padding: "16px 0 0", borderTop: "1px solid #e2e8f0" }}>
+              <button
+                onClick={onGenerateDocument}
+                disabled={isGeneratingDocument}
+                style={{
+                  padding: "10px 20px",
+                  background: isGeneratingDocument ? "#94a3b8" : "#4f46e5",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: isGeneratingDocument ? "not-allowed" : "pointer",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              >
+                {isGeneratingDocument ? "Generating..." : "Generate Clinical Document"}
+              </button>
+
+              <button
+                onClick={onCreateEHROrders}
+                disabled={isCreatingOrders || reviewState.submittedReview.decision === "rejected"}
+                style={{
+                  padding: "10px 20px",
+                  background: isCreatingOrders || reviewState.submittedReview.decision === "rejected" ? "#94a3b8" : "#0891b2",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: isCreatingOrders || reviewState.submittedReview.decision === "rejected" ? "not-allowed" : "pointer",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              >
+                {isCreatingOrders ? "Creating Orders..." : "Create EHR Orders"}
+              </button>
+            </div>
+
+            {/* Generated Document Display */}
+            {reviewState.generatedDocument && (
+              <div style={{ marginTop: 16, border: "1px solid #e2e8f0", borderRadius: 6, overflow: "hidden" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: "#0f172a" }}>{reviewState.generatedDocument.title}</div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await downloadClinicalDocument(reviewState.generatedDocument!.id, reviewState.generatedDocument!.title, "pdf");
+                        } catch (err) {
+                          console.error("PDF download failed:", err);
+                          alert("Failed to download PDF. Please try again.");
+                        }
+                      }}
+                      style={{
+                        padding: "4px 12px", background: "#dc2626", color: "white",
+                        border: "none", borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                      }}
+                    >
+                      PDF
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await downloadClinicalDocument(reviewState.generatedDocument!.id, reviewState.generatedDocument!.title, "html");
+                        } catch (err) {
+                          console.error("HTML download failed:", err);
+                          alert("Failed to download HTML. Please try again.");
+                        }
+                      }}
+                      style={{
+                        padding: "4px 12px", background: "#2563eb", color: "white",
+                        border: "none", borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                      }}
+                    >
+                      HTML
+                    </button>
                     <span style={{
-                      padding: "2px 6px",
-                      background: order.status === "submitted" ? "#dcfce7" : "#fef3c7",
-                      borderRadius: 4,
-                      fontSize: 10,
+                      padding: "3px 8px",
+                      background: reviewState.generatedDocument.status === "final" ? "#dcfce7" : "#fef3c7",
+                      color: reviewState.generatedDocument.status === "final" ? "#166534" : "#92400e",
+                      borderRadius: 4, fontSize: 10, fontWeight: 700, textTransform: "uppercase",
                     }}>
-                      {order.status.toUpperCase()}
+                      {reviewState.generatedDocument.status}
                     </span>
                   </div>
-                  <div style={{ color: "#64748b", marginTop: 4 }}>
-                    Type: {order.order_type} {order.cpt_code && `• CPT: ${order.cpt_code}`}
-                    {order.ehr_order_id && ` • EHR ID: ${order.ehr_order_id}`}
-                  </div>
                 </div>
-              ))}
-            </div>
-          )}
+                <div
+                  style={{ fontSize: 13, maxHeight: 300, overflow: "auto", background: "white", padding: 16 }}
+                  dangerouslySetInnerHTML={{ __html: reviewState.generatedDocument.content }}
+                />
+              </div>
+            )}
+
+            {/* EHR Orders Display */}
+            {reviewState.ehrOrders && reviewState.ehrOrders.length > 0 && (
+              <div style={{ marginTop: 16, border: "1px solid #e2e8f0", borderRadius: 6, overflow: "hidden" }}>
+                <div style={{ padding: "10px 14px", background: "#f0f9ff", borderBottom: "1px solid #e2e8f0", fontWeight: 600, fontSize: 13, color: "#0369a1" }}>
+                  EHR Orders Created ({reviewState.ehrOrders.length})
+                </div>
+                <div style={{ padding: 12 }}>
+                  {reviewState.ehrOrders.map((order, i) => (
+                    <div key={i} style={{
+                      padding: "10px 12px", background: "#fafbfc", borderRadius: 4,
+                      marginBottom: i < reviewState.ehrOrders!.length - 1 ? 6 : 0,
+                      border: "1px solid #e2e8f0", fontSize: 12,
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontWeight: 600, color: "#0f172a" }}>{order.description}</span>
+                        <span style={{
+                          padding: "2px 8px",
+                          background: order.status === "submitted" ? "#dcfce7" : "#fef3c7",
+                          color: order.status === "submitted" ? "#166534" : "#92400e",
+                          borderRadius: 4, fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+                        }}>
+                          {order.status}
+                        </span>
+                      </div>
+                      <div style={{ color: "#64748b", marginTop: 4, fontSize: 11 }}>
+                        Type: {order.order_type}
+                        {order.cpt_code && <> &middot; CPT: <strong>{order.cpt_code}</strong></>}
+                        {order.ehr_order_id && <> &middot; EHR ID: {order.ehr_order_id}</>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
