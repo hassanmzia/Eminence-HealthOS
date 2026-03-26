@@ -420,7 +420,12 @@ function PatientInfoSection({ patient, allergies, medications, diagnoses, medica
 // PLACEHOLDER: Assessment Results (will be filled in next parts)
 // ══════════════════════════════════════════════════════════════════════════════
 
-function AssessmentResultsSection(_props: {
+function AssessmentResultsSection({
+  assessment, llmProvider, showReasoning, onToggleReasoning,
+  reviewState, isReviewing, isSubmittingReview,
+  onStartReview, onToggleDiagnosis, onToggleTreatment, onSubmitReview,
+  onNotesChange, onGenerateDocument, onCreateOrders,
+}: {
   assessment: ClinicalAssessmentResult;
   llmProvider?: string;
   showReasoning: boolean;
@@ -436,7 +441,200 @@ function AssessmentResultsSection(_props: {
   onGenerateDocument: () => void;
   onCreateOrders: () => void;
 }) {
-  return <div>TODO: Assessment results placeholder</div>;
+  const statusCfg = {
+    pending: { border: "border-amber-400", bg: "bg-amber-50 dark:bg-amber-900/20", text: "text-amber-800 dark:text-amber-400", label: "PENDING PHYSICIAN REVIEW", dot: "bg-amber-500" },
+    approved: { border: "border-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/20", text: "text-emerald-800 dark:text-emerald-400", label: "PHYSICIAN APPROVED", dot: "bg-emerald-500" },
+    rejected: { border: "border-red-400", bg: "bg-red-50 dark:bg-red-900/20", text: "text-red-700 dark:text-red-400", label: "PHYSICIAN REJECTED", dot: "bg-red-500" },
+    modified: { border: "border-blue-400", bg: "bg-blue-50 dark:bg-blue-900/20", text: "text-blue-800 dark:text-blue-400", label: "APPROVED WITH MODIFICATIONS", dot: "bg-blue-500" },
+  };
+  const st = statusCfg[reviewState.reviewStatus];
+
+  return (
+    <div className="space-y-5">
+      {/* Status Banner */}
+      <div className={`rounded-lg border-2 ${st.border} overflow-hidden`}>
+        <div className={`px-5 py-4 ${st.bg} flex items-center justify-between`}>
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-full ${st.dot} flex items-center justify-center text-white text-base font-bold`}>
+              {reviewState.reviewStatus === "approved" ? "\u2713" : reviewState.reviewStatus === "rejected" ? "\u2717" : reviewState.reviewStatus === "modified" ? "\u270E" : "!"}
+            </div>
+            <div>
+              <p className={`font-bold text-sm ${st.text}`}>{st.label}</p>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                AI Confidence: <strong>{(assessment.confidence * 100).toFixed(0)}%</strong>
+                {llmProvider && <> &middot; Engine: {llmProvider}</>}
+                {assessment.assessment_id && <> &middot; ID: {assessment.assessment_id}</>}
+              </p>
+            </div>
+          </div>
+          {reviewState.reviewStatus === "pending" && (
+            <button
+              onClick={onStartReview}
+              disabled={isReviewing}
+              className={`px-5 py-2 rounded-md text-xs font-bold text-white shadow-sm transition ${
+                isReviewing ? "bg-gray-400 cursor-not-allowed" : assessment.requires_human_review ? "bg-red-600 hover:bg-red-700" : "bg-emerald-600 hover:bg-emerald-700"
+              }`}
+            >
+              {isReviewing ? "Review in Progress..." : assessment.requires_human_review ? "REVIEW REQUIRED" : "Begin Physician Review"}
+            </button>
+          )}
+        </div>
+        {(assessment.review_reason || assessment.warnings.length > 0) && (
+          <div className="px-5 py-3 space-y-2 border-t border-gray-200/50 dark:border-gray-700/50">
+            {assessment.review_reason && (
+              <div className="px-3 py-2 rounded bg-yellow-100 dark:bg-yellow-900/20 text-xs text-amber-800 dark:text-amber-300 font-medium">
+                Review Reason: {assessment.review_reason}
+              </div>
+            )}
+            {assessment.warnings.map((w, i) => (
+              <div key={i} className="px-3 py-2 rounded bg-red-100 dark:bg-red-900/20 text-xs text-red-700 dark:text-red-400">
+                <strong>WARNING:</strong> {w}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* HITL Review Panel */}
+      {isReviewing && (
+        <HITLReviewPanel
+          assessment={assessment}
+          reviewState={reviewState}
+          isSubmitting={isSubmittingReview}
+          onToggleDiagnosis={onToggleDiagnosis}
+          onToggleTreatment={onToggleTreatment}
+          onSubmitReview={onSubmitReview}
+          onNotesChange={onNotesChange}
+        />
+      )}
+
+      {/* Post-Review Panel */}
+      {reviewState.submittedReview && (
+        <PostReviewPanel
+          review={reviewState.submittedReview}
+          document={reviewState.generatedDocument}
+          ehrOrders={reviewState.ehrOrders}
+          onGenerateDocument={onGenerateDocument}
+          onCreateOrders={onCreateOrders}
+        />
+      )}
+
+      {/* Critical Findings */}
+      {assessment.critical_findings.length > 0 && (
+        <div className="rounded-lg border-2 border-red-500 dark:border-red-700 overflow-hidden">
+          <div className="px-4 py-2 bg-red-50 dark:bg-red-900/20 border-b border-red-300 dark:border-red-700 flex items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-red-700 dark:text-red-400">Critical Findings</span>
+            <span className="px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-bold">{assessment.critical_findings.length}</span>
+          </div>
+          <div className="p-4 space-y-2">
+            {assessment.critical_findings.map((f, i) => <FindingCard key={i} finding={f} />)}
+          </div>
+        </div>
+      )}
+
+      {/* Diagnoses */}
+      <Section title={`AI-Generated Diagnoses (${assessment.diagnoses.length})`}>
+        {assessment.diagnoses.length > 0 ? (
+          <div className="space-y-3">
+            {assessment.diagnoses.map((dx, i) => <DiagnosisCard key={i} diagnosis={dx} index={i + 1} />)}
+          </div>
+        ) : <p className="text-center text-xs text-gray-400 py-5">No diagnoses identified from available clinical data</p>}
+      </Section>
+
+      {/* Treatments */}
+      <Section title={`Treatment Recommendations (${assessment.treatments.length})`}>
+        {assessment.treatments.length > 0 ? (
+          <div className="space-y-3">
+            {assessment.treatments.map((tx, i) => <TreatmentCard key={i} treatment={tx} index={i + 1} />)}
+          </div>
+        ) : <p className="text-center text-xs text-gray-400 py-5">No specific treatments recommended</p>}
+      </Section>
+
+      {/* Clinical Codes */}
+      <Section title="Clinical Billing Codes">
+        <div className="grid grid-cols-2 gap-5">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 mb-2">ICD-10 Diagnosis Codes</p>
+            {assessment.icd10_codes.length > 0 ? (
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-1.5 px-2 text-gray-500 font-semibold">Code</th>
+                    <th className="text-left py-1.5 px-2 text-gray-500 font-semibold">Description</th>
+                    <th className="text-right py-1.5 px-2 text-gray-500 font-semibold">Conf.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assessment.icd10_codes.map((c, i) => (
+                    <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
+                      <td className="py-1.5 px-2 font-semibold text-blue-700 dark:text-blue-400">{c.code}</td>
+                      <td className="py-1.5 px-2 text-gray-700 dark:text-gray-300">{c.description}</td>
+                      <td className="py-1.5 px-2 text-right text-gray-500">{(c.confidence * 100).toFixed(0)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : <p className="text-[11px] text-gray-400">No ICD-10 codes suggested</p>}
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-2">CPT Procedure Codes</p>
+            {assessment.cpt_codes.length > 0 ? (
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-1.5 px-2 text-gray-500 font-semibold">Code</th>
+                    <th className="text-left py-1.5 px-2 text-gray-500 font-semibold">Description</th>
+                    <th className="text-left py-1.5 px-2 text-gray-500 font-semibold">Category</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assessment.cpt_codes.map((c, i) => (
+                    <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
+                      <td className="py-1.5 px-2 font-semibold text-emerald-700 dark:text-emerald-400">{c.code}</td>
+                      <td className="py-1.5 px-2 text-gray-700 dark:text-gray-300">{c.description}</td>
+                      <td className="py-1.5 px-2 text-gray-500 capitalize">{c.category}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : <p className="text-[11px] text-gray-400">No CPT codes suggested</p>}
+          </div>
+        </div>
+      </Section>
+
+      {/* Clinical Findings Grid */}
+      {assessment.findings.length > 0 && (
+        <Section title={`Clinical Findings (${assessment.findings.length})`}>
+          <div className="grid grid-cols-3 gap-2">
+            {assessment.findings.map((f, i) => <FindingCard key={i} finding={f} compact />)}
+          </div>
+        </Section>
+      )}
+
+      {/* AI Reasoning */}
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div
+          className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between cursor-pointer"
+          onClick={onToggleReasoning}
+        >
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+            AI Clinical Reasoning ({assessment.reasoning.length} steps)
+          </span>
+          <span className="text-[10px] text-gray-400">{showReasoning ? "Click to collapse" : "Click to expand"}</span>
+        </div>
+        {showReasoning && (
+          <div className="max-h-96 overflow-auto">
+            {assessment.reasoning.map((step, i) => (
+              <div key={i} className={`flex gap-3 px-4 py-2.5 text-xs font-mono leading-relaxed whitespace-pre-wrap ${i % 2 === 0 ? "bg-gray-50/50 dark:bg-gray-800/30" : ""} border-b border-gray-100 dark:border-gray-800`}>
+                <span className="text-gray-400 font-semibold min-w-[20px] text-right">{i + 1}.</span>
+                <span className="text-gray-700 dark:text-gray-300">{step}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
