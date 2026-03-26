@@ -641,151 +641,238 @@ function AssessmentResults({
         )}
       </div>
 
-      {/* Physician Review Panel */}
+      {/* HITL Physician Review Panel */}
       {isReviewing && (
-        <div style={{ ...cardStyle, background: "#eff6ff", border: "2px solid #3b82f6" }}>
-          <h4 style={{ margin: "0 0 16px", color: "#1e40af", display: "flex", alignItems: "center", gap: 8 }}>
-            <span>👨‍⚕️</span> Physician Review
-          </h4>
+        <div style={{ ...sectionStyle, borderColor: "#2563eb", borderWidth: 2 }}>
+          <div style={{
+            ...sectionHeaderStyle,
+            background: "linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%)",
+            color: "white",
+            fontSize: 14,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}>
+            <span style={{
+              width: 24, height: 24, borderRadius: "50%", background: "rgba(255,255,255,0.2)",
+              display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+            }}>&#9745;</span>
+            HUMAN-IN-THE-LOOP (HITL) PHYSICIAN REVIEW
+          </div>
 
-          {/* Review Diagnoses */}
-          <div style={{ marginBottom: 16 }}>
-            <h5 style={{ margin: "0 0 8px", fontSize: 14 }}>Review Diagnoses</h5>
-            {assessment.diagnoses.map((dx, i) => (
-              <label
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: 8,
-                  background: reviewState.approvedDiagnoses.has(i) ? "#dcfce7" : "#fee2e2",
-                  borderRadius: 6,
-                  marginBottom: 4,
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={reviewState.approvedDiagnoses.has(i)}
-                  onChange={() => onToggleDiagnosis(i)}
-                  style={{ width: 18, height: 18 }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500 }}>{dx.diagnosis}</div>
-                  <div style={{ fontSize: 12, color: "#64748b" }}>
-                    {dx.icd10_code} • Confidence: {(dx.confidence * 100).toFixed(0)}%
-                  </div>
-                </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: reviewState.approvedDiagnoses.has(i) ? "#166534" : "#dc2626" }}>
-                  {reviewState.approvedDiagnoses.has(i) ? "APPROVED" : "REJECTED"}
+          <div style={sectionBodyStyle}>
+            {/* HITL Info Banner */}
+            <div style={{
+              padding: "10px 14px",
+              background: "#eff6ff",
+              borderRadius: 6,
+              border: "1px solid #bfdbfe",
+              marginBottom: 20,
+              fontSize: 12,
+              color: "#1e40af",
+              lineHeight: 1.5,
+            }}>
+              <strong>Physician Attestation Required:</strong> As the reviewing physician, you are responsible for evaluating each AI-generated diagnosis and treatment recommendation below. Toggle items to approve or reject. Your clinical judgment supersedes AI recommendations. This review constitutes your clinical attestation per regulatory compliance requirements.
+            </div>
+
+            {/* Review Diagnoses */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span>Review AI Diagnoses</span>
+                <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", textTransform: "none" }}>
+                  {reviewState.approvedDiagnoses.size} of {assessment.diagnoses.length} approved
                 </span>
-              </label>
-            ))}
-          </div>
+              </div>
+              {assessment.diagnoses.map((dx, i) => {
+                const approved = reviewState.approvedDiagnoses.has(i);
+                return (
+                  <label
+                    key={i}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "10px 14px",
+                      background: approved ? "#f0fdf4" : "#fef2f2",
+                      border: `1px solid ${approved ? "#86efac" : "#fca5a5"}`,
+                      borderRadius: 6,
+                      marginBottom: 6,
+                      cursor: "pointer",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={approved}
+                      onChange={() => onToggleDiagnosis(i)}
+                      style={{ width: 18, height: 18, accentColor: approved ? "#059669" : "#dc2626" }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: "#0f172a" }}>{dx.diagnosis}</div>
+                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                        ICD-10: <strong>{dx.icd10_code}</strong> &middot; AI Confidence: {(dx.confidence * 100).toFixed(0)}%
+                      </div>
+                    </div>
+                    <span style={{
+                      padding: "4px 10px",
+                      borderRadius: 4,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      background: approved ? "#059669" : "#dc2626",
+                      color: "white",
+                      minWidth: 70,
+                      textAlign: "center",
+                    }}>
+                      {approved ? "APPROVED" : "REJECTED"}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
 
-          {/* Review Treatments */}
-          <div style={{ marginBottom: 16 }}>
-            <h5 style={{ margin: "0 0 8px", fontSize: 14 }}>Review Treatments</h5>
-            {assessment.treatments.map((tx, i) => (
-              <label
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: 8,
-                  background: reviewState.approvedTreatments.has(i) ? "#dcfce7" : "#fee2e2",
-                  borderRadius: 6,
-                  marginBottom: 4,
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={reviewState.approvedTreatments.has(i)}
-                  onChange={() => onToggleTreatment(i)}
-                  style={{ width: 18, height: 18 }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500 }}>{tx.description}</div>
-                  <div style={{ fontSize: 12, color: "#64748b" }}>
-                    {tx.treatment_type} • Priority: {tx.priority}
-                  </div>
-                </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: reviewState.approvedTreatments.has(i) ? "#166534" : "#dc2626" }}>
-                  {reviewState.approvedTreatments.has(i) ? "APPROVED" : "REJECTED"}
+            {/* Review Treatments */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span>Review Treatment Recommendations</span>
+                <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", textTransform: "none" }}>
+                  {reviewState.approvedTreatments.size} of {assessment.treatments.length} approved
                 </span>
-              </label>
-            ))}
-          </div>
+              </div>
+              {assessment.treatments.map((tx, i) => {
+                const approved = reviewState.approvedTreatments.has(i);
+                return (
+                  <label
+                    key={i}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "10px 14px",
+                      background: approved ? "#f0fdf4" : "#fef2f2",
+                      border: `1px solid ${approved ? "#86efac" : "#fca5a5"}`,
+                      borderRadius: 6,
+                      marginBottom: 6,
+                      cursor: "pointer",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={approved}
+                      onChange={() => onToggleTreatment(i)}
+                      style={{ width: 18, height: 18, accentColor: approved ? "#059669" : "#dc2626" }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: "#0f172a" }}>{tx.description}</div>
+                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                        Type: {tx.treatment_type} &middot; Priority: <strong style={{ textTransform: "capitalize" }}>{tx.priority}</strong>
+                        {tx.cpt_code && <> &middot; CPT: {tx.cpt_code}</>}
+                      </div>
+                    </div>
+                    <span style={{
+                      padding: "4px 10px",
+                      borderRadius: 4,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      background: approved ? "#059669" : "#dc2626",
+                      color: "white",
+                      minWidth: 70,
+                      textAlign: "center",
+                    }}>
+                      {approved ? "APPROVED" : "REJECTED"}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
 
-          {/* Physician Notes */}
-          <div style={{ marginBottom: 16 }}>
-            <h5 style={{ margin: "0 0 8px", fontSize: 14 }}>Physician Notes</h5>
-            <textarea
-              value={reviewState.physicianNotes}
-              onChange={(e) => onNotesChange(e.target.value)}
-              placeholder="Add clinical notes, modifications, or additional recommendations..."
-              style={{
-                width: "100%",
-                minHeight: 80,
-                padding: 12,
-                borderRadius: 6,
-                border: "1px solid #cbd5e1",
-                fontSize: 13,
-                resize: "vertical",
-              }}
-            />
-          </div>
+            {/* Physician Clinical Notes */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+                Physician Clinical Notes & Rationale
+              </div>
+              <textarea
+                value={reviewState.physicianNotes}
+                onChange={(e) => onNotesChange(e.target.value)}
+                placeholder="Document your clinical rationale, modifications, additional recommendations, or rejection reason. This note will be part of the permanent medical record."
+                style={{
+                  width: "100%",
+                  minHeight: 100,
+                  padding: 12,
+                  borderRadius: 6,
+                  border: "1px solid #cbd5e1",
+                  fontSize: 13,
+                  resize: "vertical",
+                  fontFamily: "inherit",
+                  lineHeight: 1.5,
+                }}
+              />
+            </div>
 
-          {/* Submit Buttons */}
-          <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-            <button
-              onClick={() => onSubmitReview("rejected")}
-              disabled={isSubmittingReview}
-              style={{
-                padding: "10px 20px",
-                background: isSubmittingReview ? "#94a3b8" : "#dc2626",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: 600,
-                cursor: isSubmittingReview ? "not-allowed" : "pointer",
-              }}
-            >
-              {isSubmittingReview ? "Submitting..." : "Reject Assessment"}
-            </button>
-            <button
-              onClick={() => onSubmitReview("modified")}
-              disabled={isSubmittingReview}
-              style={{
-                padding: "10px 20px",
-                background: isSubmittingReview ? "#94a3b8" : "#2563eb",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: 600,
-                cursor: isSubmittingReview ? "not-allowed" : "pointer",
-              }}
-            >
-              {isSubmittingReview ? "Submitting..." : "Approve with Modifications"}
-            </button>
-            <button
-              onClick={() => onSubmitReview("approved")}
-              disabled={isSubmittingReview}
-              style={{
-                padding: "10px 20px",
-                background: isSubmittingReview ? "#94a3b8" : "#059669",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: 600,
-                cursor: isSubmittingReview ? "not-allowed" : "pointer",
-              }}
-            >
-              {isSubmittingReview ? "Submitting..." : "Approve All"}
-            </button>
+            {/* Attestation & Submit */}
+            <div style={{
+              padding: "16px 20px",
+              background: "#f8fafc",
+              borderRadius: 6,
+              border: "1px solid #e2e8f0",
+            }}>
+              <div style={{ fontSize: 11, color: "#64748b", marginBottom: 12, lineHeight: 1.4 }}>
+                By submitting this review, I attest that I have personally reviewed the AI-generated clinical assessment, including all diagnoses, treatment recommendations, and supporting evidence. My decisions reflect my independent clinical judgment.
+              </div>
+              <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => onSubmitReview("rejected")}
+                  disabled={isSubmittingReview}
+                  style={{
+                    padding: "10px 24px",
+                    background: isSubmittingReview ? "#94a3b8" : "#dc2626",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: isSubmittingReview ? "not-allowed" : "pointer",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  {isSubmittingReview ? "Submitting..." : "Reject Assessment"}
+                </button>
+                <button
+                  onClick={() => onSubmitReview("modified")}
+                  disabled={isSubmittingReview}
+                  style={{
+                    padding: "10px 24px",
+                    background: isSubmittingReview ? "#94a3b8" : "#1e40af",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: isSubmittingReview ? "not-allowed" : "pointer",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  {isSubmittingReview ? "Submitting..." : "Approve with Modifications"}
+                </button>
+                <button
+                  onClick={() => onSubmitReview("approved")}
+                  disabled={isSubmittingReview}
+                  style={{
+                    padding: "10px 24px",
+                    background: isSubmittingReview ? "#94a3b8" : "#059669",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: isSubmittingReview ? "not-allowed" : "pointer",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  {isSubmittingReview ? "Submitting..." : "Approve All & Attest"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
