@@ -737,11 +737,113 @@ function AssessmentTab({
               )}
             </div>
 
+            {/* Patient Clinical Context */}
+            {(() => {
+              const pd = PATIENT_CLINICAL_DATA[assessment.patient_id];
+              if (!pd) return null;
+              return (
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                    <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                    <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">Patient Clinical Context</span>
+                  </div>
+                  <div className="p-4 grid grid-cols-2 gap-4 text-[12px]">
+                    <div>
+                      <p className="font-bold text-gray-900 dark:text-gray-100 text-sm">{pd.name}</p>
+                      <p className="text-gray-500 mt-0.5">{pd.age}y {pd.sex} &middot; DOB: {pd.date_of_birth}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">Chief Complaint</p>
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{pd.chief_complaint?.substring(0, 120)}{(pd.chief_complaint?.length ?? 0) > 120 ? "..." : ""}</p>
+                    </div>
+                    {pd.medications?.length > 0 && (
+                      <div>
+                        <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">Current Medications</p>
+                        <div className="flex flex-wrap gap-1">
+                          {pd.medications.map((m: { medication_name: string }, i: number) => (
+                            <span key={i} className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-[10px]">{m.medication_name}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {pd.allergies?.length > 0 && (
+                      <div>
+                        <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">Allergies</p>
+                        <div className="flex flex-wrap gap-1">
+                          {pd.allergies.map((a: { substance: string; severity: string }, i: number) => (
+                            <span key={i} className={`px-1.5 py-0.5 rounded text-[10px] ${a.severity === "severe" ? "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400" : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400"}`}>
+                              {a.substance} ({a.severity})
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {pd.conditions?.length > 0 && (
+                      <div className="col-span-2">
+                        <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">Active Conditions</p>
+                        <div className="flex flex-wrap gap-1">
+                          {pd.conditions.map((c: { code: string; display: string }, i: number) => (
+                            <span key={i} className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[10px]">
+                              <strong className="text-blue-700 dark:text-blue-400">{c.code}</strong> {c.display}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Findings Summary */}
+            {(assessment.assessment.findings?.length ?? 0) > 0 && (
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                  <svg className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                  </svg>
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">Clinical Findings ({assessment.assessment.findings!.length})</span>
+                </div>
+                <div className="p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {assessment.assessment.findings!.map((f, i) => {
+                      const statusColors: Record<string, string> = {
+                        abnormal: "border-l-red-500 bg-red-50/50 dark:bg-red-950/20",
+                        borderline: "border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20",
+                        critical: "border-l-red-600 bg-red-100/50 dark:bg-red-950/30",
+                        normal: "border-l-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/10",
+                      };
+                      const cls = statusColors[f.status] || statusColors.normal;
+                      return (
+                        <div key={i} className={`rounded-md border-l-[3px] px-3 py-2 ${cls}`}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{f.category}</span>
+                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                              f.status === "abnormal" || f.status === "critical" ? "bg-red-200 text-red-700 dark:bg-red-900/40 dark:text-red-400" :
+                              f.status === "borderline" ? "bg-amber-200 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" :
+                              "bg-emerald-200 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+                            }`}>{f.status}</span>
+                          </div>
+                          <p className="text-[12px] font-semibold text-gray-900 dark:text-gray-100 mt-0.5">{f.finding}</p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{f.interpretation}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Diagnoses */}
             {(assessment.assessment.diagnoses?.length ?? 0) > 0 && (
               <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-                  AI-Generated Diagnoses ({assessment.assessment.diagnoses!.length})
+                <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                  <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5" />
+                  </svg>
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">AI-Generated Diagnoses ({assessment.assessment.diagnoses!.length})</span>
                 </div>
                 <div className="p-4 space-y-3">
                   {assessment.assessment.diagnoses!.map((d, i) => {
@@ -769,8 +871,11 @@ function AssessmentTab({
             {/* Treatments */}
             {(assessment.assessment.treatments?.length ?? 0) > 0 && (
               <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-                  Treatment Recommendations ({assessment.assessment.treatments!.length})
+                <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                  <svg className="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                  </svg>
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">Treatment Recommendations ({assessment.assessment.treatments!.length})</span>
                 </div>
                 <div className="p-4 space-y-3">
                   {assessment.assessment.treatments!.map((t, i) => {
@@ -800,8 +905,11 @@ function AssessmentTab({
             {/* Billing Codes */}
             {((assessment.assessment.icd10_codes?.length ?? 0) > 0 || (assessment.assessment.cpt_codes?.length ?? 0) > 0) && (
               <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-                  Clinical Billing Codes
+                <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                  <svg className="h-4 w-4 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+                  </svg>
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">Clinical Billing Codes</span>
                 </div>
                 <div className="p-4 grid grid-cols-2 gap-5">
                   <div>
@@ -856,13 +964,21 @@ function AssessmentTab({
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const STEP_ICONS: Record<string, { icon: string; gradient: string }> = {
+  "Patient Intake":          { icon: "M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z", gradient: "from-slate-400 to-slate-600" },
   "Triage Assessment":       { icon: "M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z", gradient: "from-amber-400 to-orange-500" },
   "Diagnostic Analysis":     { icon: "M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z", gradient: "from-blue-400 to-indigo-500" },
-  "Treatment Planning":      { icon: "M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5", gradient: "from-emerald-400 to-teal-500" },
+  "Cardiology Review":       { icon: "M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z", gradient: "from-rose-400 to-red-500" },
+  "Pathology Review":        { icon: "M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-3 5.5H8L5 14.5", gradient: "from-pink-400 to-fuchsia-500" },
+  "Treatment Planning":      { icon: "M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0118 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3l1.5 1.5 3-3.75", gradient: "from-emerald-400 to-teal-500" },
   "Safety Validation":       { icon: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z", gradient: "from-red-400 to-rose-500" },
   "Clinical Coding":         { icon: "M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5", gradient: "from-violet-400 to-purple-500" },
   "Validation & Aggregation":{ icon: "M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75", gradient: "from-cyan-400 to-blue-500" },
   "Quality Check":           { icon: "M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z", gradient: "from-emerald-400 to-green-500" },
+  "Clinical Findings":       { icon: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9zm3.75 11.625a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z", gradient: "from-blue-400 to-indigo-500" },
+  "Differential Diagnosis":  { icon: "M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z", gradient: "from-indigo-400 to-blue-500" },
+  "Safety Check":            { icon: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z", gradient: "from-red-400 to-rose-500" },
+  "Final Review":            { icon: "M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0118 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3l1.5 1.5 3-3.75", gradient: "from-gray-400 to-slate-500" },
+  "Overview":                { icon: "M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25", gradient: "from-gray-400 to-gray-500" },
 };
 
 const AGENT_COLORS: Record<string, string> = {
@@ -870,6 +986,10 @@ const AGENT_COLORS: Record<string, string> = {
   Treatment: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
   Safety: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
   Coding: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
+  Cardiology: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+  Pathology: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300",
+  Supervisor: "bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300",
+  Triage: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
 };
 
 interface ReasoningSection {
@@ -901,57 +1021,76 @@ function parseReasoningSteps(steps: string[]): ReasoningSection[] {
 }
 
 function ReasoningLine({ line }: { line: string }) {
+  // Skip empty lines
+  if (!line.trim()) return null;
+
   // Agent step: [AgentName] Step N: Description
-  const agentMatch = line.match(/^\[(\w+)\]\s+Step\s+\d+:\s+(.+)$/);
-  if (agentMatch) {
-    const agentName = agentMatch[1];
-    const desc = agentMatch[2];
+  const agentStepMatch = line.match(/^\[(\w+)\]\s+Step\s+\d+:\s+(.+)$/);
+  if (agentStepMatch) {
+    const agentName = agentStepMatch[1];
+    const desc = agentStepMatch[2];
     const colorCls = AGENT_COLORS[agentName] || "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300";
     return (
-      <div className="flex items-start gap-2.5 py-1">
-        <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-[11px] font-semibold ${colorCls}`}>
+      <div className="flex items-start gap-2.5 py-1.5">
+        <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${colorCls}`}>
           {agentName}
         </span>
-        <span className="text-sm text-gray-600 dark:text-gray-300">{desc}</span>
+        <span className="text-[13px] text-gray-700 dark:text-gray-300">{desc}</span>
       </div>
     );
   }
 
-  // QC lines: QC PASS / QC FAIL / QC WARN / QC SKIP
-  const qcMatch = line.match(/^QC\s+(PASS|FAIL|WARN|SKIP):\s+(.+)$/);
+  // Specialist recommendation: [AgentName] Description or [AgentName] - Description
+  const specialistMatch = line.match(/^\[(\w+)\]\s+-?\s*(.+)$/);
+  if (specialistMatch) {
+    const agentName = specialistMatch[1];
+    const desc = specialistMatch[2];
+    const colorCls = AGENT_COLORS[agentName] || "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300";
+    const isRecommendation = desc.toLowerCase().includes("adding") || desc.toLowerCase().includes("recommend") || desc.toLowerCase().includes("initiat") || desc.toLowerCase().includes("prescri") || desc.toLowerCase().includes("order");
+    return (
+      <div className={`flex items-start gap-2.5 py-1.5 ${isRecommendation ? "pl-2 border-l-2 border-emerald-400 dark:border-emerald-600" : ""}`}>
+        <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${colorCls}`}>
+          {agentName}
+        </span>
+        <span className={`text-[13px] ${isRecommendation ? "text-emerald-700 dark:text-emerald-400 font-medium" : "text-gray-700 dark:text-gray-300"}`}>{desc}</span>
+      </div>
+    );
+  }
+
+  // QC lines: QC PASS / QC FAIL / QC WARN / QC SKIP / QC Result
+  const qcMatch = line.match(/^QC\s*(?:Result:\s*)?(PASS|FAIL|WARN|SKIP)[:\s—]+(.+)$/i);
   if (qcMatch) {
-    const type = qcMatch[1];
+    const type = qcMatch[1].toUpperCase();
     const msg = qcMatch[2];
-    const config: Record<string, { icon: string; cls: string; iconCls: string }> = {
-      PASS: { icon: "M4.5 12.75l6 6 9-13.5", cls: "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/40", iconCls: "text-emerald-500" },
-      FAIL: { icon: "M6 18L18 6M6 6l12 12", cls: "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/40", iconCls: "text-red-500" },
-      WARN: { icon: "M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z", cls: "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40", iconCls: "text-amber-500" },
-      SKIP: { icon: "M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12", cls: "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800", iconCls: "text-gray-400" },
+    const config: Record<string, { icon: string; bg: string; iconCls: string }> = {
+      PASS: { icon: "M4.5 12.75l6 6 9-13.5", bg: "bg-emerald-50 dark:bg-emerald-950/30", iconCls: "text-emerald-500" },
+      FAIL: { icon: "M6 18L18 6M6 6l12 12", bg: "bg-red-50 dark:bg-red-950/30", iconCls: "text-red-500" },
+      WARN: { icon: "M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z", bg: "bg-amber-50 dark:bg-amber-950/30", iconCls: "text-amber-500" },
+      SKIP: { icon: "M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12", bg: "bg-gray-50 dark:bg-gray-800/50", iconCls: "text-gray-400" },
     };
     const c = config[type] || config.SKIP;
     return (
-      <div className={`flex items-start gap-2.5 rounded-lg border p-2.5 ${c.cls}`}>
-        <svg className={`mt-0.5 h-4 w-4 shrink-0 ${c.iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div className={`flex items-center gap-2.5 rounded-md px-3 py-2 ${c.bg}`}>
+        <svg className={`h-4 w-4 shrink-0 ${c.iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d={c.icon} />
         </svg>
-        <div>
-          <span className={`text-xs font-bold uppercase tracking-wide ${c.iconCls}`}>{type}</span>
-          <p className="text-sm text-gray-700 dark:text-gray-300">{msg}</p>
-        </div>
+        <span className={`text-[10px] font-bold uppercase tracking-wide shrink-0 ${c.iconCls}`}>{type}</span>
+        <span className="text-[13px] text-gray-700 dark:text-gray-300">{msg}</span>
       </div>
     );
   }
 
   // Human review REQUIRED line
-  if (line.startsWith("Human review REQUIRED:")) {
+  if (line.startsWith("Human review REQUIRED:") || line.startsWith("Human review:")) {
+    const msg = line.replace(/^Human review\s*(?:REQUIRED)?:\s*/, "");
     return (
       <div className="flex items-start gap-2.5 rounded-lg border border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 p-3 dark:border-amber-700 dark:from-amber-950/40 dark:to-orange-950/30">
         <svg className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
         </svg>
         <div>
-          <span className="text-xs font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400">Physician Review Required</span>
-          <p className="text-sm font-medium text-amber-800 dark:text-amber-300">{line.replace("Human review REQUIRED: ", "")}</p>
+          <span className="text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400">Physician Review Required</span>
+          <p className="text-[13px] font-medium text-amber-800 dark:text-amber-300">{msg}</p>
         </div>
       </div>
     );
@@ -961,12 +1100,12 @@ function ReasoningLine({ line }: { line: string }) {
   if (line.startsWith("Agents consulted:")) {
     const agentList = line.replace("Agents consulted: ", "").split(", ");
     return (
-      <div className="flex flex-wrap items-center gap-2 py-1">
-        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Agents consulted:</span>
+      <div className="flex flex-wrap items-center gap-2 py-1.5">
+        <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Agents:</span>
         {agentList.map((a) => {
           const colorCls = AGENT_COLORS[a.charAt(0).toUpperCase() + a.slice(1)] || "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300";
           return (
-            <span key={a} className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${colorCls}`}>
+            <span key={a} className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide capitalize ${colorCls}`}>
               {a}
             </span>
           );
@@ -975,43 +1114,69 @@ function ReasoningLine({ line }: { line: string }) {
     );
   }
 
-  // Summary stats lines (Total findings, Treatment plan, Clinical codes, etc.)
-  const statsMatch = line.match(/^(Total findings|No diagnoses|Treatment plan|Clinical codes|Overall diagnostic confidence|Quality check complete)[:].+$/);
-  if (statsMatch) {
-    // Parse key:value
-    const colonIdx = line.indexOf(":");
-    const label = line.slice(0, colonIdx);
-    const value = line.slice(colonIdx + 1).trim();
-
-    const isWarning = line.includes("0%") || line.includes("No diagnoses") || line.includes("0 recommendation");
+  // Arrow-prefixed findings/recommendations (  → item or  ⚠ item)
+  const arrowMatch = line.match(/^\s*[→⚠►•]\s+(.+)$/);
+  if (arrowMatch) {
+    const isWarning = line.includes("⚠");
     return (
-      <div className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-800/60">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
-        <span className={`text-sm font-semibold tabular-nums ${isWarning ? "text-amber-600 dark:text-amber-400" : "text-gray-900 dark:text-gray-100"}`}>
-          {value}
-        </span>
+      <div className={`flex items-start gap-2 py-1 pl-2 ml-2 border-l-2 ${isWarning ? "border-amber-400 dark:border-amber-600" : "border-blue-300 dark:border-blue-700"}`}>
+        <span className={`mt-0.5 text-[11px] shrink-0 ${isWarning ? "text-amber-500" : "text-blue-500"}`}>{isWarning ? "⚠" : "→"}</span>
+        <span className={`text-[13px] ${isWarning ? "text-amber-700 dark:text-amber-400" : "text-gray-700 dark:text-gray-300"}`}>{arrowMatch[1]}</span>
       </div>
     );
   }
 
-  // Key: value pattern (e.g. "Urgency level: unknown")
+  // Summary stat lines — important metrics displayed as cards
+  const summaryKeywords = /^(Total findings|Primary diagnosis|Differential diagnoses|Treatment plan|Clinical codes|Overall diagnostic confidence|Quality check complete|No diagnoses|Total agents consulted|Confidence)/i;
+  if (summaryKeywords.test(line)) {
+    const colonIdx = line.indexOf(":");
+    if (colonIdx > 0) {
+      const label = line.slice(0, colonIdx).trim();
+      const value = line.slice(colonIdx + 1).trim();
+      const isHighlight = /diagnosis|treatment|confidence/i.test(label);
+      const isWarning = /0%|No diagnoses|0 recommendation/i.test(value);
+      return (
+        <div className={`flex items-center justify-between rounded-md px-3 py-2 ${isHighlight ? "bg-blue-50 dark:bg-blue-950/30" : "bg-gray-50 dark:bg-gray-800/50"}`}>
+          <span className={`text-[13px] font-medium ${isHighlight ? "text-blue-700 dark:text-blue-400" : "text-gray-600 dark:text-gray-400"}`}>{label}</span>
+          <span className={`text-[13px] font-bold tabular-nums ${isWarning ? "text-amber-600 dark:text-amber-400" : "text-gray-900 dark:text-gray-100"}`}>
+            {value}
+          </span>
+        </div>
+      );
+    }
+  }
+
+  // Urgency/status key-value (e.g. "Urgency level: high")
   const kvMatch = line.match(/^(.+?):\s+(.+)$/);
   if (kvMatch) {
+    const label = kvMatch[1].trim();
+    const value = kvMatch[2].trim();
+    // Highlight certain values
+    const urgencyColors: Record<string, string> = {
+      high: "text-red-600 dark:text-red-400", urgent: "text-red-600 dark:text-red-400",
+      immediate: "text-red-600 dark:text-red-400", critical: "text-red-600 dark:text-red-400",
+      moderate: "text-amber-600 dark:text-amber-400", medium: "text-amber-600 dark:text-amber-400",
+      low: "text-emerald-600 dark:text-emerald-400", routine: "text-emerald-600 dark:text-emerald-400",
+      normal: "text-emerald-600 dark:text-emerald-400",
+    };
+    const valueLower = value.toLowerCase();
+    const valueColor = urgencyColors[valueLower] || "text-gray-900 dark:text-gray-100";
     return (
-      <div className="flex items-center justify-between py-1">
-        <span className="text-sm text-gray-500 dark:text-gray-400">{kvMatch[1]}</span>
-        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{kvMatch[2]}</span>
+      <div className="flex items-center justify-between py-1 px-1">
+        <span className="text-[13px] text-gray-500 dark:text-gray-400">{label}</span>
+        <span className={`text-[13px] font-semibold ${valueColor}`}>{value}</span>
       </div>
     );
   }
 
-  // Default fallback
-  return <p className="py-0.5 text-sm text-gray-600 dark:text-gray-300">{line}</p>;
+  // Default fallback — styled as subtle log line
+  return <p className="py-0.5 pl-1 text-[13px] text-gray-500 dark:text-gray-400">{line}</p>;
 }
 
 function ReasoningChain({ steps }: { steps: string[] }) {
   const sections = parseReasoningSteps(steps);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(sections.map((s) => s.stepNum)));
+  const [isOpen, setIsOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
   const toggleSection = (stepNum: string) => {
     setExpandedSections((prev) => {
@@ -1022,80 +1187,143 @@ function ReasoningChain({ steps }: { steps: string[] }) {
     });
   };
 
+  const expandAll = () => setExpandedSections(new Set(sections.map((s) => s.stepNum)));
+  const collapseAll = () => setExpandedSections(new Set());
+
+  // Extract summary metrics from reasoning lines
+  const summaryMetrics: Array<{ label: string; value: string; highlight?: boolean }> = [];
+  for (const step of steps) {
+    const diagMatch = step.match(/Primary diagnosis:\s*(.+)/);
+    if (diagMatch) summaryMetrics.push({ label: "Primary Dx", value: diagMatch[1], highlight: true });
+    const txMatch = step.match(/Treatment plan:\s*(.+)/);
+    if (txMatch) summaryMetrics.push({ label: "Treatment Plan", value: txMatch[1], highlight: true });
+    const confMatch = step.match(/Overall diagnostic confidence:\s*(.+)/);
+    if (confMatch) summaryMetrics.push({ label: "Confidence", value: confMatch[1] });
+    const findMatch = step.match(/Total findings:\s*(.+)/);
+    if (findMatch) summaryMetrics.push({ label: "Findings", value: findMatch[1] });
+    const agentsMatch = step.match(/^Total agents consulted:\s*(.+)/);
+    if (agentsMatch) summaryMetrics.push({ label: "Agents", value: agentsMatch[1] });
+  }
+
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-healthos-400 to-healthos-600">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900 overflow-hidden">
+      {/* Header — always visible */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-healthos-400 to-healthos-600 shadow-sm">
             <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
             </svg>
           </div>
-          <div>
+          <div className="text-left">
             <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">AI Reasoning Chain</h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{sections.length} pipeline stages completed</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+              {sections.length} pipeline stages &middot; {steps.length} steps &middot; Click to {isOpen ? "collapse" : "expand"}
+            </p>
           </div>
         </div>
-        <span className="rounded-full bg-healthos-50 px-2.5 py-1 text-[11px] font-bold text-healthos-700 ring-1 ring-inset ring-healthos-500/20 dark:bg-healthos-950/50 dark:text-healthos-400 dark:ring-healthos-500/30">
-          {steps.length} steps
-        </span>
-      </div>
+        <div className="flex items-center gap-2">
+          <span className="hidden sm:inline-flex rounded-full bg-healthos-50 px-2.5 py-1 text-[10px] font-bold text-healthos-700 ring-1 ring-inset ring-healthos-500/20 dark:bg-healthos-950/50 dark:text-healthos-400 dark:ring-healthos-500/30">
+            {steps.length} steps
+          </span>
+          <svg
+            className={`h-5 w-5 text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+          </svg>
+        </div>
+      </button>
 
-      <div className="relative space-y-3">
-        {/* Vertical timeline line */}
-        <div className="absolute left-[15px] top-4 bottom-4 w-0.5 bg-gradient-to-b from-healthos-200 via-gray-200 to-gray-100 dark:from-healthos-800 dark:via-gray-700 dark:to-gray-800" />
+      {/* Summary metrics bar — always visible when there are metrics */}
+      {summaryMetrics.length > 0 && !isOpen && (
+        <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-3 flex flex-wrap gap-x-6 gap-y-1">
+          {summaryMetrics.slice(0, 4).map((m, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <span className="text-[11px] text-gray-400 dark:text-gray-500">{m.label}:</span>
+              <span className={`text-[11px] font-semibold ${m.highlight ? "text-blue-700 dark:text-blue-400" : "text-gray-700 dark:text-gray-300"}`}>{m.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
-        {sections.map((section, idx) => {
-          const stepConfig = STEP_ICONS[section.title] || { icon: "M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25", gradient: "from-gray-400 to-gray-500" };
-          const isExpanded = expandedSections.has(section.stepNum);
-          const isLast = idx === sections.length - 1;
+      {/* Expandable section */}
+      {isOpen && (
+        <div className="border-t border-gray-200 dark:border-gray-700">
+          {/* Controls */}
+          <div className="px-5 py-2 flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+            <button onClick={expandAll} className="text-[11px] font-medium text-healthos-600 dark:text-healthos-400 hover:underline">
+              Expand All
+            </button>
+            <span className="text-gray-300 dark:text-gray-600">|</span>
+            <button onClick={collapseAll} className="text-[11px] font-medium text-healthos-600 dark:text-healthos-400 hover:underline">
+              Collapse All
+            </button>
+          </div>
 
-          return (
-            <div key={section.stepNum} className="relative pl-10"> {/* Timeline dot */} <div className={`absolute left-0 top-0 flex h-[30px] w-[30px] items-center justify-center rounded-full bg-gradient-to-br ${stepConfig.gradient} shadow-sm ring-4 ring-white dark:ring-gray-900`}> <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d={stepConfig.icon} />
-                </svg>
-              </div>
+          <div className="relative px-5 py-4 space-y-2">
+            {/* Vertical timeline line */}
+            <div className="absolute left-[35px] top-6 bottom-6 w-0.5 bg-gradient-to-b from-healthos-200 via-gray-200 to-gray-100 dark:from-healthos-800 dark:via-gray-700 dark:to-gray-800" />
 
-              {/* Section card */}
-              <div className={`rounded-lg border transition-all ${isExpanded ? "border-gray-200 bg-gray-50/50 dark:border-gray-700 dark:bg-gray-800/50" : "border-transparent hover:border-gray-100 dark:hover:border-gray-800"}`}>
-                <button
-                  onClick={() => toggleSection(section.stepNum)}
-                  className="flex w-full items-center justify-between px-3 py-2 text-left"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 tabular-nums">
-                      {String(section.stepNum).padStart(2, "0")}
-                    </span>
-                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      {section.title}
-                    </span>
-                    {section.lines.length > 0 && (
-                      <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-                        {section.lines.length}
-                      </span>
+            {sections.map((section) => {
+              const stepConfig = STEP_ICONS[section.title] || { icon: "M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25", gradient: "from-gray-400 to-gray-500" };
+              const isExpanded = expandedSections.has(section.stepNum);
+              const nonEmptyLines = section.lines.filter(l => l.trim());
+
+              return (
+                <div key={section.stepNum} className="relative pl-10">
+                  {/* Timeline dot */}
+                  <div className={`absolute left-0 top-0.5 flex h-[28px] w-[28px] items-center justify-center rounded-full bg-gradient-to-br ${stepConfig.gradient} shadow-sm ring-4 ring-white dark:ring-gray-900`}>
+                    <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d={stepConfig.icon} />
+                    </svg>
+                  </div>
+
+                  {/* Section card */}
+                  <div className={`rounded-lg border transition-all ${isExpanded ? "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm" : "border-transparent hover:border-gray-200 dark:hover:border-gray-700"}`}>
+                    <button
+                      onClick={() => toggleSection(section.stepNum)}
+                      className="flex w-full items-center justify-between px-3 py-2 text-left"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 tabular-nums w-4 text-right">
+                          {String(section.stepNum).padStart(2, "0")}
+                        </span>
+                        <span className="text-[13px] font-semibold text-gray-900 dark:text-gray-100">
+                          {section.title}
+                        </span>
+                        {nonEmptyLines.length > 0 && (
+                          <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-semibold text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                            {nonEmptyLines.length}
+                          </span>
+                        )}
+                      </div>
+                      <svg
+                        className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                      </svg>
+                    </button>
+
+                    {isExpanded && nonEmptyLines.length > 0 && (
+                      <div className="space-y-1 px-3 pb-3">
+                        <div className="h-px bg-gray-100 dark:bg-gray-800" />
+                        {nonEmptyLines.map((line, i) => (
+                          <ReasoningLine key={i} line={line} />
+                        ))}
+                      </div>
                     )}
                   </div>
-                  <svg
-                    className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                  </svg>
-                </button>
-
-                {isExpanded && section.lines.length > 0 && (
-                  <div className="space-y-1.5 px-3 pb-3">
-                    <div className="h-px bg-gray-200 dark:bg-gray-700" />
-                    {section.lines.map((line, i) => (
-                      <ReasoningLine key={i} line={line} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
