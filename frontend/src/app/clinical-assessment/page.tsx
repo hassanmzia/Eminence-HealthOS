@@ -165,6 +165,18 @@ const PATIENT_CLINICAL_DATA: Record<string, Record<string, any>> = {
     allergies: [
       { substance: "Sulfonamides", reaction: "Rash", severity: "moderate" },
     ],
+    mental_health: {
+      screening: "PHQ-9",
+      score: 4,
+      severity: "minimal",
+      notes: "Patient denies depressive symptoms. Reports occasional stress related to managing chronic conditions. No suicidal ideation. Sleep quality adequate (6-7 hrs/night).",
+      last_screened: "2026-01-15",
+    },
+    ambient_ai_notes: "Ambient AI documentation captured during visit: Patient arrived ambulatory, well-groomed. Speech fluent and coherent. Discussed home BP readings averaging 155/92 over past 2 weeks. Patient expressed concern about increasing thirst and frequent urination. Reviewed medication adherence — reports taking Lisinopril daily but occasionally misses evening Metformin dose. Patient receptive to dietary counseling. Agreed to trial DASH diet and sodium restriction. Follow-up labs ordered. Return in 6 weeks.",
+    appointment_notes: [
+      { type: "telehealth", date: "2026-02-10", provider: "Dr. Sarah Chen", summary: "Virtual follow-up: BP 152/90 per home monitor. Reviewed labs from 01/15. HbA1c trending up. Discussed adding SGLT2 inhibitor. Patient to schedule in-person visit for foot exam." },
+      { type: "in-person", date: "2026-03-15", provider: "Dr. Sarah Chen", summary: "Office visit: BP 158/94. Weight 212 lbs (BMI 31.2). Comprehensive diabetic foot exam — monofilament intact, pedal pulses 2+ bilaterally. Fundoscopic exam normal. Current regimen inadequate. Plan to intensify therapy." },
+    ],
   },
   "2": {
     // Maria Garcia — 58F, AFib
@@ -202,6 +214,18 @@ const PATIENT_CLINICAL_DATA: Record<string, Record<string, any>> = {
       { medication_name: "Levothyroxine 75mcg", dosage: "75mcg daily", route: "oral" },
     ],
     allergies: [],
+    mental_health: {
+      screening: "GAD-7",
+      score: 8,
+      severity: "mild",
+      notes: "Patient reports mild anxiety related to new cardiac diagnosis. Some sleep disturbance (difficulty falling asleep, 2-3 nights/week). Denies panic attacks. No depressive symptoms on PHQ-2 (score 1). Coping well with social support.",
+      last_screened: "2026-03-20",
+    },
+    ambient_ai_notes: "Ambient AI documentation captured during visit: Patient presents with complaint of palpitations x3 days. Appears mildly anxious but cooperative. Heart rate noted to be irregular during examination. Patient describes episodes as 'heart racing and skipping beats,' worse at night when lying down. Reports reduced exercise tolerance — previously walked 2 miles, now limited to one block. No syncope or near-syncope. Discussed need for anticoagulation given CHA₂DS₂-VASc score. Patient has questions about long-term management and prognosis.",
+    appointment_notes: [
+      { type: "telehealth", date: "2026-03-18", provider: "Dr. Michael Rivera", summary: "Urgent virtual consult: Patient called reporting new-onset palpitations and dyspnea x1 day. HR 108 irregular on home device. Advised to come in for ECG. Prescribed short-term Metoprolol 25mg while awaiting visit." },
+      { type: "in-person", date: "2026-03-20", provider: "Dr. Michael Rivera", summary: "Urgent office visit: ECG confirms atrial fibrillation with RVR (HR 112). BNP 180. Troponin negative. TSH normal. Started Metoprolol succinate 50mg daily for rate control. Initiated Apixaban 5mg BID for stroke prevention (CHA₂DS₂-VASc=2). Echo ordered. Follow-up in 1 week." },
+    ],
   },
   "3": {
     // Robert Johnson — 65M, HF + CKD
@@ -246,6 +270,19 @@ const PATIENT_CLINICAL_DATA: Record<string, Record<string, any>> = {
     allergies: [
       { substance: "ACE inhibitor cough", reaction: "Persistent dry cough with Enalapril (tolerated Lisinopril)", severity: "mild" },
     ],
+    mental_health: {
+      screening: "PHQ-9",
+      score: 12,
+      severity: "moderate",
+      notes: "Patient endorses depressive symptoms: low mood, loss of interest in activities, fatigue, poor appetite. Reports feeling 'burdensome' to family due to illness limitations. Sleep disrupted by orthopnea. Denies suicidal ideation. Depression likely secondary to chronic illness burden. Consider referral to behavioral health.",
+      last_screened: "2026-03-10",
+    },
+    ambient_ai_notes: "Ambient AI documentation captured during visit: Patient arrived in wheelchair, mildly dyspneic at rest. Reports 4 lb weight gain over 5 days after attending family gathering with high-sodium food. Bilateral ankle swelling noted. Patient describes progressive SOB — now unable to walk to mailbox (50 ft). Sleeping with 3 pillows (baseline 1). Discussed dietary compliance — patient acknowledges difficulty maintaining 2g sodium restriction. Family member present, engaged in care discussion. Patient appears fatigued and somewhat withdrawn. Agreed to diuretic adjustment and GDMT optimization.",
+    appointment_notes: [
+      { type: "telehealth", date: "2026-02-28", provider: "Dr. Amanda Foster", summary: "Scheduled virtual check-in: Weight stable at 198 lbs. BP 112/70. Patient reports NYHA Class II symptoms. Taking all medications. Diet compliant. Continue current regimen. Follow-up in 4 weeks." },
+      { type: "in-person", date: "2026-03-12", provider: "Dr. Amanda Foster", summary: "Urgent visit: 4 lb weight gain, worsening dyspnea (NYHA III), bilateral edema. JVP elevated. Bibasilar crackles. S3 gallop. Acute decompensated HF from dietary indiscretion. IV Furosemide 40mg given. Transitioning to Sacubitril/Valsartan. Adding Spironolactone. Strict I&O. Daily weights. Consider admission if no improvement in 24h." },
+      { type: "in-person", date: "2026-03-14", provider: "Dr. Amanda Foster", summary: "Follow-up: Weight down 2 lbs. Improved dyspnea. Edema 1+ from 2+. Crackles resolving. Continue outpatient diuresis. Tolerating Sacubitril/Valsartan 24/26mg. K+ 4.8 — monitor closely with new MRA. Return in 3 days." },
+    ],
   },
   "4": {
     // Emily Davis — 45F, Asthma + Anxiety
@@ -288,6 +325,21 @@ const PATIENT_CLINICAL_DATA: Record<string, Record<string, any>> = {
       { substance: "Dust mites", reaction: "Rhinitis, wheezing", severity: "moderate" },
       { substance: "Tree pollen", reaction: "Rhinitis, eye irritation", severity: "moderate" },
       { substance: "NSAIDs", reaction: "Bronchospasm", severity: "severe" },
+    ],
+    mental_health: {
+      screening: "GAD-7",
+      score: 14,
+      severity: "moderate",
+      notes: "Generalized anxiety disorder — currently on Sertraline 100mg. Reports worsening anxiety over past week correlated with asthma exacerbation. Racing thoughts, difficulty concentrating at work, insomnia (3-4 hrs/night). PHQ-9 score 6 (mild). Reports breathing difficulty triggers panic-like episodes but denies true panic attacks. No suicidal ideation. Consider Sertraline dose adjustment or adjunct therapy. Referred to CBT.",
+      last_screened: "2026-03-22",
+      phq9_score: 6,
+      gad7_score: 14,
+    },
+    ambient_ai_notes: "Ambient AI documentation captured during visit: Patient appears anxious with rapid speech pattern. Audible wheezing at rest. Using accessory muscles minimally. Reports asthma worsening over 5 days coinciding with high pollen count. Using rescue inhaler 4-5x daily (baseline 1-2x/week). Waking 3 nights this week with wheezing. Reports anxiety significantly worse — difficulty separating respiratory symptoms from anxiety symptoms. Patient tearful when discussing impact on daily functioning. Currently unable to attend yoga classes. Work performance declining. Discussed step-up asthma therapy and mental health management. Patient agreeable to both adjustments.",
+    appointment_notes: [
+      { type: "telehealth", date: "2026-02-15", provider: "Dr. James Park", summary: "Routine virtual follow-up: Asthma well-controlled (ACT score 22). GAD-7 score 10 (moderate). Sertraline 100mg tolerated well. Reports occasional breakthrough anxiety. Continue current regimen. Follow-up in 6 weeks." },
+      { type: "telehealth", date: "2026-03-10", provider: "Dr. Lisa Wong (Psychiatry)", summary: "Telepsychiatry consult: GAD-7 14, PHQ-9 6. Anxiety worsening with seasonal triggers. Sleep impaired. Discussed Sertraline dose increase vs. adding Buspirone. Patient prefers non-pharmacologic first. Referred to CBT therapist. Follow-up in 4 weeks." },
+      { type: "in-person", date: "2026-03-22", provider: "Dr. James Park", summary: "Urgent visit: Asthma exacerbation with PEF 65% predicted. Bilateral wheezing. SpO2 95%. Step-up therapy: add Prednisone 40mg x5 days, increase ICS component. GAD-7 14 — anxiety significantly worse. Co-managing with psychiatry. Continue Sertraline. Start Buspirone 5mg BID if CBT insufficient. Return in 1 week or sooner if worsening." },
     ],
   },
 };
@@ -801,39 +853,116 @@ function AssessmentTab({
                     </svg>
                     <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">Patient Clinical Context</span>
                   </div>
-                  <div className="p-4 grid grid-cols-2 gap-4 text-[12px]">
-                    <div>
-                      <p className="font-bold text-gray-900 dark:text-gray-100 text-sm">{pd.name}</p>
-                      <p className="text-gray-500 mt-0.5">{pd.age}y {pd.sex} &middot; DOB: {pd.date_of_birth}</p>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">Chief Complaint</p>
-                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{pd.chief_complaint?.substring(0, 120)}{(pd.chief_complaint?.length ?? 0) > 120 ? "..." : ""}</p>
-                    </div>
-                    {pd.medications?.length > 0 && (
+                  <div className="p-4 space-y-4 text-[12px]">
+                    {/* Demographics + Chief Complaint */}
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">Current Medications</p>
-                        <div className="flex flex-wrap gap-1">
-                          {pd.medications.map((m: { medication_name: string }, i: number) => (
-                            <span key={i} className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-[10px]">{m.medication_name}</span>
+                        <p className="font-bold text-gray-900 dark:text-gray-100 text-sm">{pd.name}</p>
+                        <p className="text-gray-500 mt-0.5">{pd.age}y {pd.sex} &middot; DOB: {pd.date_of_birth}</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">Chief Complaint</p>
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{pd.chief_complaint}</p>
+                      </div>
+                    </div>
+
+                    {/* HPI */}
+                    {pd.history_present_illness && (
+                      <div>
+                        <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">History of Present Illness</p>
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{pd.history_present_illness}</p>
+                      </div>
+                    )}
+
+                    {/* Physician Notes */}
+                    {pd.physician_notes && (
+                      <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20 p-3">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <svg className="h-3.5 w-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                          </svg>
+                          <span className="font-bold text-blue-700 dark:text-blue-400 text-[10px] uppercase tracking-wide">Physician Notes</span>
+                        </div>
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{pd.physician_notes}</p>
+                      </div>
+                    )}
+
+                    {/* Ambient AI Notes */}
+                    {pd.ambient_ai_notes && (
+                      <div className="rounded-lg border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/20 p-3">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <svg className="h-3.5 w-3.5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+                          </svg>
+                          <span className="font-bold text-violet-700 dark:text-violet-400 text-[10px] uppercase tracking-wide">Ambient AI Clinical Documentation</span>
+                        </div>
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{pd.ambient_ai_notes}</p>
+                      </div>
+                    )}
+
+                    {/* Appointment Notes (Telehealth & In-Person) */}
+                    {pd.appointment_notes?.length > 0 && (
+                      <div>
+                        <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-2">Appointment History</p>
+                        <div className="space-y-2">
+                          {pd.appointment_notes.map((appt: { type: string; date: string; provider: string; summary: string }, i: number) => (
+                            <div key={i} className={`rounded-lg border p-3 ${
+                              appt.type === "telehealth"
+                                ? "border-cyan-200 dark:border-cyan-800 bg-cyan-50/30 dark:bg-cyan-950/10"
+                                : "border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-950/10"
+                            }`}>
+                              <div className="flex items-center gap-2 mb-1">
+                                {appt.type === "telehealth" ? (
+                                  <svg className="h-3.5 w-3.5 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                                  </svg>
+                                ) : (
+                                  <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" />
+                                  </svg>
+                                )}
+                                <span className={`text-[9px] font-bold uppercase tracking-wide ${
+                                  appt.type === "telehealth" ? "text-cyan-600 dark:text-cyan-400" : "text-emerald-600 dark:text-emerald-400"
+                                }`}>{appt.type === "telehealth" ? "Telehealth Visit" : "In-Person Visit"}</span>
+                                <span className="text-[10px] text-gray-500">{appt.date}</span>
+                                <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300 ml-auto">{appt.provider}</span>
+                              </div>
+                              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{appt.summary}</p>
+                            </div>
                           ))}
                         </div>
                       </div>
                     )}
-                    {pd.allergies?.length > 0 && (
-                      <div>
-                        <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">Allergies</p>
-                        <div className="flex flex-wrap gap-1">
-                          {pd.allergies.map((a: { substance: string; severity: string }, i: number) => (
-                            <span key={i} className={`px-1.5 py-0.5 rounded text-[10px] ${a.severity === "severe" ? "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400" : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400"}`}>
-                              {a.substance} ({a.severity})
-                            </span>
-                          ))}
+
+                    {/* Medications + Allergies row */}
+                    <div className="grid grid-cols-2 gap-4">
+                      {pd.medications?.length > 0 && (
+                        <div>
+                          <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">Current Medications</p>
+                          <div className="flex flex-wrap gap-1">
+                            {pd.medications.map((m: { medication_name: string }, i: number) => (
+                              <span key={i} className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-[10px]">{m.medication_name}</span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                      {pd.allergies?.length > 0 && (
+                        <div>
+                          <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">Allergies</p>
+                          <div className="flex flex-wrap gap-1">
+                            {pd.allergies.map((a: { substance: string; severity: string }, i: number) => (
+                              <span key={i} className={`px-1.5 py-0.5 rounded text-[10px] ${a.severity === "severe" ? "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400" : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400"}`}>
+                                {a.substance} ({a.severity})
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Active Conditions */}
                     {pd.conditions?.length > 0 && (
-                      <div className="col-span-2">
+                      <div>
                         <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">Active Conditions</p>
                         <div className="flex flex-wrap gap-1">
                           {pd.conditions.map((c: { code: string; display: string }, i: number) => (
@@ -842,6 +971,99 @@ function AssessmentTab({
                             </span>
                           ))}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Past Medical History + Family History + Social History */}
+                    <div className="grid grid-cols-3 gap-4">
+                      {pd.past_medical_history?.length > 0 && (
+                        <div>
+                          <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">Past Medical History</p>
+                          <ul className="space-y-0.5">
+                            {pd.past_medical_history.map((h: string, i: number) => (
+                              <li key={i} className="text-gray-700 dark:text-gray-300 text-[11px] leading-relaxed flex items-start gap-1">
+                                <span className="text-gray-400 mt-0.5 shrink-0">-</span> {h}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {pd.family_history?.length > 0 && (
+                        <div>
+                          <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">Family History</p>
+                          <ul className="space-y-0.5">
+                            {pd.family_history.map((h: string, i: number) => (
+                              <li key={i} className="text-gray-700 dark:text-gray-300 text-[11px] leading-relaxed flex items-start gap-1">
+                                <span className="text-gray-400 mt-0.5 shrink-0">-</span> {h}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {pd.social_history && (
+                        <div>
+                          <p className="font-semibold text-gray-600 dark:text-gray-400 text-[10px] uppercase tracking-wide mb-1">Social History</p>
+                          <ul className="space-y-0.5">
+                            {Object.entries(pd.social_history).map(([key, val]: [string, unknown]) => (
+                              <li key={key} className="text-[11px] leading-relaxed">
+                                <span className="font-medium text-gray-600 dark:text-gray-400 capitalize">{key}:</span>{" "}
+                                <span className="text-gray-700 dark:text-gray-300">{String(val)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Mental Health Screening */}
+                    {pd.mental_health && (
+                      <div className={`rounded-lg border p-3 ${
+                        pd.mental_health.severity === "moderate" || pd.mental_health.severity === "moderately severe"
+                          ? "border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20"
+                          : pd.mental_health.severity === "severe"
+                          ? "border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-950/20"
+                          : "border-purple-200 dark:border-purple-800 bg-purple-50/30 dark:bg-purple-950/10"
+                      }`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <svg className="h-3.5 w-3.5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
+                          </svg>
+                          <span className="font-bold text-purple-700 dark:text-purple-400 text-[10px] uppercase tracking-wide">Mental Health Screening</span>
+                          <span className={`ml-auto px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
+                            pd.mental_health.severity === "minimal" || pd.mental_health.severity === "none"
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                              : pd.mental_health.severity === "mild"
+                              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                              : pd.mental_health.severity === "moderate"
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                          }`}>
+                            {pd.mental_health.severity}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 mb-2">
+                          <div className="text-center p-2 rounded bg-white/60 dark:bg-gray-900/40">
+                            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{pd.mental_health.score}</p>
+                            <p className="text-[9px] font-semibold uppercase text-gray-500">{pd.mental_health.screening} Score</p>
+                          </div>
+                          {pd.mental_health.phq9_score != null && (
+                            <div className="text-center p-2 rounded bg-white/60 dark:bg-gray-900/40">
+                              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{pd.mental_health.phq9_score}</p>
+                              <p className="text-[9px] font-semibold uppercase text-gray-500">PHQ-9</p>
+                            </div>
+                          )}
+                          {pd.mental_health.gad7_score != null && (
+                            <div className="text-center p-2 rounded bg-white/60 dark:bg-gray-900/40">
+                              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{pd.mental_health.gad7_score}</p>
+                              <p className="text-[9px] font-semibold uppercase text-gray-500">GAD-7</p>
+                            </div>
+                          )}
+                          <div className="text-center p-2 rounded bg-white/60 dark:bg-gray-900/40">
+                            <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{pd.mental_health.last_screened}</p>
+                            <p className="text-[9px] font-semibold uppercase text-gray-500">Last Screened</p>
+                          </div>
+                        </div>
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{pd.mental_health.notes}</p>
                       </div>
                     )}
                   </div>
