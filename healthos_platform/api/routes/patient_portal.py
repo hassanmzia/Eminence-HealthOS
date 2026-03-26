@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from healthos_platform.api.middleware.tenant import TenantContext, get_current_user
 from healthos_platform.config.database import get_db as get_shared_db
 from healthos_platform.database import get_db
-from healthos_platform.models import Alert, Allergy, CarePlan, Encounter, Patient, PatientQuestionnaire, Vital
+from healthos_platform.models import Alert, Allergy, CarePlan, Device, Encounter, Patient, PatientQuestionnaire, Vital
 from healthos_platform.security.rbac import Permission
 from shared.models.portal_message import PortalMessage
 
@@ -1056,6 +1056,44 @@ async def _trigger_questionnaire_pipeline(
             "Failed to trigger AI pipeline for questionnaire submission "
             f"(patient_id={patient_id})"
         )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# My Devices
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@router.get("/me/devices")
+async def get_my_devices(
+    ctx: TenantContext = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get all devices assigned to the current patient."""
+    patient = await _get_patient_for_user(ctx, db)
+
+    result = await db.execute(
+        select(Device)
+        .where(Device.patient_id == patient.id, Device.org_id == ctx.org_id)
+        .order_by(Device.created_at.desc())
+    )
+    devices = result.scalars().all()
+
+    return [
+        {
+            "id": str(d.id),
+            "device_name": d.device_name,
+            "device_type": d.device_type,
+            "device_unique_id": d.device_unique_id,
+            "manufacturer": d.manufacturer,
+            "model_number": d.model_number,
+            "firmware_version": d.firmware_version,
+            "status": d.status,
+            "battery_level": d.battery_level,
+            "last_sync": d.last_sync.isoformat() if d.last_sync else None,
+            "created_at": d.created_at.isoformat() if d.created_at else None,
+        }
+        for d in devices
+    ]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
