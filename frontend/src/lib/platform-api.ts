@@ -1513,3 +1513,88 @@ export async function createEHROrders(
     }
   );
 }
+
+// ── Treatment Plans ──────────────────────────────────────────────────────────
+
+export interface DoctorTreatmentPlanResponse {
+  id: string;
+  patient_id: string;
+  provider_id: string | null;
+  plan_title: string;
+  status: string; // draft | active | completed | cancelled
+  treatment_goals: string | null;
+  medications: Record<string, unknown>[] | null;
+  procedures: Record<string, unknown>[] | null;
+  lifestyle_modifications: string[] | null;
+  dietary_recommendations: string | null;
+  exercise_recommendations: string | null;
+  follow_up_instructions: string | null;
+  warning_signs: string[] | null;
+  emergency_instructions: string | null;
+  is_visible_to_patient: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchDoctorTreatmentPlans(
+  patientId?: string,
+  status?: string,
+  page = 1,
+  pageSize = 20,
+): Promise<DoctorTreatmentPlanResponse[]> {
+  const params = new URLSearchParams();
+  if (patientId) params.set("patient_id", patientId);
+  if (status) params.set("status", status);
+  params.set("page", String(page));
+  params.set("page_size", String(pageSize));
+  return request<DoctorTreatmentPlanResponse[]>(`/treatment-plans/doctor-plans?${params}`);
+}
+
+export async function fetchDoctorTreatmentPlan(planId: string): Promise<DoctorTreatmentPlanResponse> {
+  return request<DoctorTreatmentPlanResponse>(`/treatment-plans/doctor-plans/${planId}`);
+}
+
+export async function publishTreatmentPlan(planId: string): Promise<{ status: string }> {
+  return request<{ status: string }>(`/treatment-plans/doctor-plans/${planId}/publish`, { method: "POST" });
+}
+
+export async function acknowledgeTreatmentPlan(planId: string): Promise<{ status: string }> {
+  return request<{ status: string }>(`/treatment-plans/doctor-plans/${planId}/acknowledge`, { method: "POST" });
+}
+
+// ── Workflow Status ──────────────────────────────────────────────────────────
+
+export interface WorkflowStatusResponse {
+  review_id: string;
+  workflow_status: string;
+  treatment_plan_created: boolean;
+  treatment_plan_id: string | null;
+  patient_notified: boolean;
+  pharmacy_ordered: boolean;
+  labs_ordered: boolean;
+  followup_scheduled: boolean;
+  orders: EHROrderResult[];
+  notifications_sent: number;
+}
+
+export async function fetchWorkflowStatus(reviewId: string): Promise<WorkflowStatusResponse> {
+  return request<WorkflowStatusResponse>(`/clinical/reviews/${reviewId}/workflow-status`);
+}
+
+// ── Clinical Orders (list for a review) ──────────────────────────────────────
+
+export interface ClinicalOrderResponse {
+  id: string;
+  order_type: string;
+  status: string;
+  description: string;
+  cpt_code: string | null;
+  medication_name: string | null;
+  dosage: string | null;
+  frequency: string | null;
+  pharmacy_transmitted: boolean;
+  ehr_order_id: string | null;
+  priority: string;
+  created_at: string;
+}
+
