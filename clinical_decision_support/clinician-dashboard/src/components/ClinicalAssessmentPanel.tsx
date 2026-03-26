@@ -253,59 +253,205 @@ export function ClinicalAssessmentPanel({ patientId, fhirId, patient, clinicalSu
     });
   };
 
-  const cardStyle = { border: "1px solid #eee", borderRadius: 12, padding: 16, marginBottom: 16 };
+  const sectionStyle: React.CSSProperties = {
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    marginBottom: 20,
+    overflow: "hidden",
+  };
+  const sectionHeaderStyle: React.CSSProperties = {
+    padding: "10px 16px",
+    background: "#f8fafc",
+    borderBottom: "1px solid #e2e8f0",
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#1e293b",
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+  };
+  const sectionBodyStyle: React.CSSProperties = { padding: 16 };
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ ...cardStyle, background: "#f0f9ff", border: "1px solid #bae6fd" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+      {/* Professional Report Header */}
+      <div style={{
+        background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)",
+        borderRadius: 10,
+        padding: "20px 24px",
+        marginBottom: 20,
+        color: "white",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <h3 style={{ margin: 0, color: "#0369a1" }}>AI Clinical Assessment</h3>
-            <p style={{ margin: "8px 0 0", fontSize: 13, color: "#64748b" }}>
-              Multi-agent system analyzes patient data to generate diagnoses and treatment recommendations
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.7, marginBottom: 4 }}>
+              Eminence HealthOS
+            </div>
+            <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>
+              AI Clinical Decision Support Report
+            </h3>
+            <p style={{ margin: "6px 0 0", fontSize: 13, opacity: 0.8 }}>
+              Multi-agent clinical analysis with physician Human-in-the-Loop (HITL) approval
             </p>
           </div>
-          <button
-            onClick={() => assessmentMutation.mutate()}
-            disabled={assessmentMutation.isPending || !fhirId}
-            style={{
-              padding: "12px 24px",
-              borderRadius: 8,
-              border: "none",
-              background: assessmentMutation.isPending ? "#94a3b8" : "#0284c7",
-              color: "white",
-              cursor: assessmentMutation.isPending || !fhirId ? "not-allowed" : "pointer",
-              fontWeight: 600,
-              fontSize: 14,
-            }}
-          >
-            {assessmentMutation.isPending ? "Analyzing..." : "Run Assessment"}
-          </button>
+          <div style={{ textAlign: "right", display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
+            <button
+              onClick={() => assessmentMutation.mutate()}
+              disabled={assessmentMutation.isPending || !fhirId}
+              style={{
+                padding: "10px 24px",
+                borderRadius: 6,
+                border: "2px solid rgba(255,255,255,0.3)",
+                background: assessmentMutation.isPending ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.15)",
+                color: "white",
+                cursor: assessmentMutation.isPending || !fhirId ? "not-allowed" : "pointer",
+                fontWeight: 600,
+                fontSize: 13,
+                backdropFilter: "blur(4px)",
+                transition: "all 0.2s",
+              }}
+            >
+              {assessmentMutation.isPending ? "Analyzing Patient Data..." : "Run AI Assessment"}
+            </button>
+            {llmStatusQuery.data && (
+              <div style={{ fontSize: 11, opacity: 0.7 }}>
+                AI Engine: {llmStatusQuery.data.primary_provider || "Not configured"}
+                {llmStatusQuery.data.config && ` / ${llmStatusQuery.data.config.claude_model || llmStatusQuery.data.config.ollama_model}`}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* LLM Status */}
-        {llmStatusQuery.data && (
-          <div style={{ marginTop: 12, display: "flex", gap: 16, fontSize: 12 }}>
-            <span style={{ color: "#64748b" }}>
-              LLM: <strong style={{ color: llmStatusQuery.data.status === "available" ? "#059669" : "#dc2626" }}>
-                {llmStatusQuery.data.primary_provider || "Not configured"}
-              </strong>
-            </span>
-            {llmStatusQuery.data.config && (
-              <span style={{ color: "#64748b" }}>
-                Model: <strong>{llmStatusQuery.data.config.claude_model || llmStatusQuery.data.config.ollama_model}</strong>
-              </span>
-            )}
+        {/* Patient Quick ID Banner */}
+        {patient && (
+          <div style={{
+            marginTop: 16,
+            padding: "10px 16px",
+            background: "rgba(255,255,255,0.1)",
+            borderRadius: 6,
+            display: "flex",
+            gap: 24,
+            fontSize: 13,
+            flexWrap: "wrap",
+          }}>
+            <span><strong>Patient:</strong> {patient.prefix ? `${patient.prefix} ` : ""}{patient.first_name} {patient.last_name}</span>
+            <span><strong>MRN:</strong> {patient.mrn}</span>
+            <span><strong>DOB:</strong> {patient.date_of_birth}</span>
+            <span><strong>Age:</strong> {patient.age ?? clinicalSummary?.age ?? "—"}</span>
+            <span><strong>Sex:</strong> {patient.gender}</span>
+            {patient.blood_type && <span><strong>Blood Type:</strong> {patient.blood_type}</span>}
           </div>
         )}
 
         {!fhirId && (
-          <div style={{ marginTop: 12, padding: 8, background: "#fef3c7", borderRadius: 6, fontSize: 13, color: "#92400e" }}>
+          <div style={{ marginTop: 12, padding: "8px 12px", background: "rgba(251,191,36,0.2)", borderRadius: 6, fontSize: 12, color: "#fde68a" }}>
             Patient must be synced to FHIR to run clinical assessment
           </div>
         )}
       </div>
+
+      {/* Patient Information Section — shown when assessment is available */}
+      {patient && assessment?.success && (
+        <div style={sectionStyle}>
+          <div style={sectionHeaderStyle}>Patient Information Summary</div>
+          <div style={sectionBodyStyle}>
+            {/* Demographics Row */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Demographics</div>
+                <div style={{ fontSize: 13 }}>
+                  <div><strong>Full Name:</strong> {patient.prefix ? `${patient.prefix} ` : ""}{patient.first_name} {patient.middle_name ? `${patient.middle_name} ` : ""}{patient.last_name}{patient.suffix ? ` ${patient.suffix}` : ""}</div>
+                  <div><strong>Date of Birth:</strong> {patient.date_of_birth}</div>
+                  <div><strong>Age:</strong> {patient.age ?? clinicalSummary?.age ?? "—"} years</div>
+                  <div><strong>Sex:</strong> {patient.gender}</div>
+                  {patient.blood_type && <div><strong>Blood Type:</strong> {patient.blood_type}</div>}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Contact Information</div>
+                <div style={{ fontSize: 13 }}>
+                  {patient.phone && <div><strong>Phone:</strong> {patient.phone}</div>}
+                  {patient.email && <div><strong>Email:</strong> {patient.email}</div>}
+                  {patient.address_line1 && <div><strong>Address:</strong> {patient.address_line1}{patient.address_line2 ? `, ${patient.address_line2}` : ""}</div>}
+                  {patient.city && <div>{patient.city}{patient.state ? `, ${patient.state}` : ""} {patient.postal_code || ""}</div>}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Emergency Contact & Insurance</div>
+                <div style={{ fontSize: 13 }}>
+                  {patient.emergency_contact_name && <div><strong>Emergency:</strong> {patient.emergency_contact_name} ({patient.emergency_contact_relationship || "N/A"})</div>}
+                  {patient.emergency_contact_phone && <div><strong>Phone:</strong> {patient.emergency_contact_phone}</div>}
+                  {patient.insurance_provider && <div><strong>Insurance:</strong> {patient.insurance_provider}</div>}
+                  {patient.insurance_policy_number && <div><strong>Policy #:</strong> {patient.insurance_policy_number}</div>}
+                  {patient.primary_care_physician && <div><strong>PCP:</strong> {patient.primary_care_physician}</div>}
+                </div>
+              </div>
+            </div>
+
+            {/* Medical Background Row */}
+            <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Allergies</div>
+                {(patient.allergies?.length || clinicalSummary?.allergies?.length) ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {(patient.allergies || clinicalSummary?.allergies || []).map((a, i) => (
+                      <span key={i} style={{ padding: "3px 8px", background: "#fee2e2", color: "#991b1b", borderRadius: 4, fontSize: 12, fontWeight: 500 }}>{a}</span>
+                    ))}
+                  </div>
+                ) : <div style={{ fontSize: 12, color: "#94a3b8" }}>NKDA</div>}
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Current Medications</div>
+                {(patient.medications?.length || clinicalSummary?.medications?.length) ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {(patient.medications || clinicalSummary?.medications || []).map((m, i) => (
+                      <span key={i} style={{ padding: "3px 8px", background: "#dbeafe", color: "#1e40af", borderRadius: 4, fontSize: 12, fontWeight: 500 }}>{m}</span>
+                    ))}
+                  </div>
+                ) : <div style={{ fontSize: 12, color: "#94a3b8" }}>None reported</div>}
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Medical Conditions</div>
+                {patient.medical_conditions?.length ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {patient.medical_conditions.map((c, i) => (
+                      <span key={i} style={{ padding: "3px 8px", background: "#fef3c7", color: "#92400e", borderRadius: 4, fontSize: 12, fontWeight: 500 }}>{c}</span>
+                    ))}
+                  </div>
+                ) : <div style={{ fontSize: 12, color: "#94a3b8" }}>None reported</div>}
+              </div>
+            </div>
+
+            {/* Medical History */}
+            {patient.medical_history && (
+              <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 16, marginTop: 16 }}>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Medical / Family History</div>
+                <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{patient.medical_history}</div>
+              </div>
+            )}
+
+            {/* Active Diagnoses from clinical summary */}
+            {clinicalSummary?.active_diagnoses && clinicalSummary.active_diagnoses.length > 0 && (
+              <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 16, marginTop: 16 }}>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Active Diagnoses (from EHR)</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {clinicalSummary.active_diagnoses.map((dx, i) => (
+                    <span key={i} style={{
+                      padding: "4px 10px",
+                      background: "#f0f9ff",
+                      border: "1px solid #bae6fd",
+                      borderRadius: 4,
+                      fontSize: 12,
+                    }}>
+                      <strong style={{ color: "#0369a1" }}>{dx.icd10_code}</strong>
+                      <span style={{ color: "#475569", marginLeft: 4 }}>{dx.description}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Error Display */}
       {assessmentMutation.isError && (
