@@ -1192,3 +1192,81 @@ export async function promoteSelfToAdmin() {
     method: "POST",
   });
 }
+
+// ── Operations ─────────────────────────────────────────────────────────────
+
+export async function fetchPriorAuthorizations(status?: string) {
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  const qs = params.toString();
+  return request<{ items: Record<string, unknown>[]; total: number }>(
+    `/operations/prior-auth/list${qs ? `?${qs}` : ""}`
+  );
+}
+
+export async function fetchInsuranceVerifications() {
+  return request<{ items: Record<string, unknown>[]; total: number }>(
+    "/operations/insurance/list"
+  );
+}
+
+export async function fetchReferrals(status?: string) {
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  const qs = params.toString();
+  return request<{ items: Record<string, unknown>[]; total: number }>(
+    `/operations/referrals/list${qs ? `?${qs}` : ""}`
+  );
+}
+
+export async function fetchOperationalWorkflows(status?: string) {
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  const qs = params.toString();
+  return request<{ items: Record<string, unknown>[]; total: number }>(
+    `/operations/workflows/list${qs ? `?${qs}` : ""}`
+  );
+}
+
+export async function fetchWorkflowTemplates() {
+  return request<{ templates: string[] }>("/operations/workflows/templates");
+}
+
+export async function createOperationalWorkflow(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/operations/workflows/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function completeWorkflowStep(
+  workflowId: string,
+  stepId: string,
+  output: Record<string, unknown> = {}
+) {
+  return request<Record<string, unknown>>(
+    `/operations/workflows/${workflowId}/steps/${stepId}/complete`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ output }),
+    }
+  );
+}
+
+export async function createOperationalTask(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/operations/tasks/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function submitPriorAuth(body: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/operations/prior-auth/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}

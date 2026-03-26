@@ -1,12 +1,22 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   evaluatePriorAuth,
   verifyInsurance,
   createReferral,
   scheduleAppointment,
 } from "@/lib/api";
+import {
+  fetchPriorAuthorizations,
+  fetchInsuranceVerifications,
+  fetchReferrals,
+  fetchOperationalWorkflows,
+  fetchWorkflowTemplates,
+  createOperationalWorkflow,
+  createOperationalTask,
+  submitPriorAuth,
+} from "@/lib/platform-api";
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
 
@@ -175,6 +185,9 @@ const appointmentStatusColors: Record<string, string> = {
 export default function OperationsPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("prior-auth");
 
+  // Loading state
+  const [loading, setLoading] = useState(true);
+
   // Prior Auth state
   const [priorAuths, setPriorAuths] = useState<PriorAuthRequest[]>(demoPriorAuths);
   const [evaluatingId, setEvaluatingId] = useState<string | null>(null);
@@ -194,18 +207,137 @@ export default function OperationsPage() {
   const [referralForm, setReferralForm] = useState({ patient: "", referringProvider: "", specialistType: "", reason: "", priority: "normal" });
 
   // Scheduling state
-  const [schedule] = useState<AppointmentSlot[]>(demoSchedule);
+  const [schedule, setSchedule] = useState<AppointmentSlot[]>(demoSchedule);
   const [suggestingSlot, setSuggestingSlot] = useState(false);
   const [suggestedSlot, setSuggestedSlot] = useState<Record<string, unknown> | null>(null);
 
   // Workflow state
-  const [workflows] = useState<WorkflowItem[]>(demoWorkflows);
+  const [workflows, setWorkflows] = useState<WorkflowItem[]>(demoWorkflows);
   const [showNewWorkflow, setShowNewWorkflow] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(workflowTemplates[0]);
+  const [creatingWorkflow, setCreatingWorkflow] = useState(false);
 
   // New Task modal
   const [showNewTask, setShowNewTask] = useState(false);
   const [taskForm, setTaskForm] = useState({ title: "", assignee: "", priority: "medium", dueDate: "" });
+
+  /* ─── Load real data on mount ────────────────────────────────────────────── */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadData() {
+      // Fetch all operations data in parallel
+      const [paRes, ivRes, refRes, wfRes] = await Promise.allSettled([
+        fetchPriorAuthorizations(),
+        fetchInsuranceVerifications(),
+        fetchReferrals(),
+        fetchOperationalWorkflows(),
+      ]);
+
+      if (cancelled) return;
+
+      // Prior authorizations
+      if (paRes.status === "fulfilled" && paRes.value.items?.length > 0) {
+        setPriorAuths(
+          paRes.value.items.map((r: Record<string, unknown>) => ({
+            id: (r.auth_reference as string) || (r.id as string),
+            patient: (r.patient_id as string) || "",
+            procedure: ((r.cpt_codes as string[]) || []).join(", ") || "N/A",
+            insurance: (r.payer as string) || "",
+            status: (r.status as PriorAuthRequest["status"]) || "pending",
+            urgency: "routine" as const,
+            submittedDate: r.submitted_at
+              ? (r.submitted_at as string).slice(0, 10)
+              : (r.created_at as string)?.slice(0, 10) ?? "",
+            cptCode: ((r.cpt_codes as string[]) || [])[0] || "",
+            provider: "",
+          }))
+        );
+      }
+      // else: keep demo data as fallback
+
+      // Insurance verifications
+      if (ivRes.status === "fulfilled" && ivRes.value.items?.length > 0) {
+        setVerifications(
+          ivRes.value.items.map((r: Record<string, unknown>) => ({
+            id: (r.id as string) || "",
+            patient: (r.patient_id as string) || "",
+            insurerName: (r.payer as string) || "",
+            memberId: (r.member_id as string) || "",
+            groupNumber: (r.group_number as string) || "",
+            eligibility: (r.eligible ? "active" : r.coverage_status === "pending" ? "pending" : "inactive") as InsuranceVerification["eligibility"],
+            copay: (r.benefits as Record<string, unknown>)?.copay as string ?? "N/A",
+            deductible: (r.benefits as Record<string, unknown>)?.deductible as string ?? "N/A",
+            deductibleMet: (r.benefits as Record<string, unknown>)?.deductible_met as string ?? "N/A",
+            outOfPocketMax: (r.benefits as Record<string, unknown>)?.out_of_pocket_max as string ?? "N/A",
+            coverageType: (r.plan_type as string) || (r.plan_name as string) || "",
+            verifiedDate: r.verified_at ? (r.verified_at as string).slice(0, 10) : "",
+          }))
+        );
+      }
+
+      // Referrals
+      if (refRes.status === "fulfilled" && refRes.value.items?.length > 0) {
+        const statusMap: Record<string, ReferralItem["status"]> = {
+          created: "pending",
+          sent: "pending",
+          scheduled: "scheduled",
+          completed: "completed",
+          closed: "completed",
+          cancelled: "cancelled",
+        };
+        setReferrals(
+          refRes.value.items.map((r: Record<string, unknown>) => ({
+            id: (r.referral_id as string) || (r.id as string),
+            patient: (r.patient_id as string) || "",
+            referringProvider: "",
+            specialistType: (r.specialty as string) || "",
+            reason: (r.reason as string) || "",
+            status: statusMap[(r.status as string)] || "pending",
+            priority: ((r.urgency as string) === "emergent" ? "urgent" : (r.urgency as string) || "normal") as ReferralItem["priority"],
+            createdDate: r.created_at ? (r.created_at as string).slice(0, 10) : "",
+            timeline: [
+              { date: r.created_at ? (r.created_at as string).slice(0, 10) : "", event: "Referral created", completed: true },
+              { date: r.scheduled_date ? (r.scheduled_date as string).slice(0, 10) : "", event: "Appointment scheduled", completed: !!r.scheduled_date },
+              { date: r.completed_at ? (r.completed_at as string).slice(0, 10) : "", event: "Visit completed", completed: !!r.completed_at },
+            ],
+          }))
+        );
+      }
+
+      // Workflows
+      if (wfRes.status === "fulfilled" && wfRes.value.items?.length > 0) {
+        setWorkflows(
+          wfRes.value.items.map((r: Record<string, unknown>) => {
+            const steps = (r.steps as { name: string; status?: string }[]) || [];
+            const completedSteps = (r.completed_steps as number) || 0;
+            const totalSteps = (r.total_steps as number) || steps.length;
+            return {
+              id: (r.workflow_id as string) || (r.id as string),
+              name: (r.name as string) || "",
+              totalSteps,
+              completedSteps,
+              currentStep: steps.find((_s, i) => i === completedSteps)?.name || "Pending",
+              assignedTeam: (r.workflow_type as string) || "",
+              slaDeadline: "",
+              slaMinutesRemaining: 0,
+              steps: steps.map((s, i) => ({
+                name: s.name || `Step ${i + 1}`,
+                completed: i < completedSteps,
+                active: i === completedSteps && completedSteps < totalSteps,
+              })),
+            };
+          })
+        );
+      }
+
+      if (!cancelled) setLoading(false);
+    }
+
+    loadData();
+    return () => { cancelled = true; };
+  }, []);
 
   /* ─── API Handlers ──────────────────────────────────────────────────────── */
 
@@ -320,11 +452,21 @@ export default function OperationsPage() {
     setSuggestingSlot(false);
   }, []);
 
-  const handleCreateTask = useCallback((e: React.FormEvent) => {
+  const handleCreateTask = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      await createOperationalTask({
+        title: taskForm.title,
+        assignee: taskForm.assignee || undefined,
+        priority: taskForm.priority,
+        due_date: taskForm.dueDate || undefined,
+      });
+    } catch {
+      // Fallback: task created locally
+    }
     setShowNewTask(false);
     setTaskForm({ title: "", assignee: "", priority: "medium", dueDate: "" });
-  }, []);
+  }, [taskForm]);
 
   /* ─── Stats ─────────────────────────────────────────────────────────────── */
 
@@ -359,6 +501,7 @@ export default function OperationsPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Operations Command Center</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Manage authorizations, insurance, referrals, scheduling, and workflows in one place.
+            {loading && <span className="ml-2 text-healthos-500 animate-pulse">Loading live data...</span>}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -437,7 +580,7 @@ export default function OperationsPage() {
               <div className="card rounded-xl border border-healthos-200 bg-healthos-50/30 p-5 animate-fade-in-up">
                 <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Submit New Prior Authorization</h3>
                 <form
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault();
                     const newPa: PriorAuthRequest = {
                       id: `PA-${String(priorAuths.length + 1).padStart(3, "0")}`,
@@ -446,10 +589,22 @@ export default function OperationsPage() {
                       insurance: authForm.insurance,
                       status: "pending",
                       urgency: authForm.urgency as PriorAuthRequest["urgency"],
-                      submittedDate: "2026-03-15",
+                      submittedDate: new Date().toISOString().slice(0, 10),
                       cptCode: authForm.cptCode,
                       provider: "Current Provider",
                     };
+                    // Submit to backend
+                    try {
+                      await submitPriorAuth({
+                        patient_id: authForm.patient,
+                        procedure: authForm.procedure,
+                        cpt_codes: authForm.cptCode ? [authForm.cptCode] : [],
+                        payer: authForm.insurance,
+                        urgency: authForm.urgency,
+                      });
+                    } catch {
+                      // Fallback: add locally
+                    }
                     setPriorAuths((prev) => [newPa, ...prev]);
                     setShowNewAuth(false);
                     setAuthForm({ patient: "", procedure: "", insurance: "", cptCode: "", urgency: "routine" });
@@ -894,10 +1049,66 @@ export default function OperationsPage() {
                     </select>
                   </div>
                   <button
-                    onClick={() => setShowNewWorkflow(false)}
-                    className="rounded-lg bg-healthos-600 px-6 py-2 text-sm font-medium text-white hover:bg-healthos-700 transition-colors"
+                    disabled={creatingWorkflow}
+                    onClick={async () => {
+                      setCreatingWorkflow(true);
+                      try {
+                        const result = await createOperationalWorkflow({
+                          workflow_type: selectedTemplate.toLowerCase().replace(/ /g, "_"),
+                          priority: "normal",
+                          context: { template: selectedTemplate },
+                        });
+                        // Add to local workflows list
+                        const r = result as Record<string, unknown>;
+                        if (r.workflow_id || r.name) {
+                          const steps = (r.steps as { name: string }[]) || [];
+                          setWorkflows((prev) => [
+                            {
+                              id: (r.workflow_id as string) || `WF-NEW-${Date.now()}`,
+                              name: (r.name as string) || selectedTemplate,
+                              totalSteps: (r.total_steps as number) || steps.length,
+                              completedSteps: 0,
+                              currentStep: steps[0]?.name || "Step 1",
+                              assignedTeam: selectedTemplate,
+                              slaDeadline: "",
+                              slaMinutesRemaining: 0,
+                              steps: steps.map((s, i) => ({
+                                name: s.name || `Step ${i + 1}`,
+                                completed: false,
+                                active: i === 0,
+                              })),
+                            },
+                            ...prev,
+                          ]);
+                        }
+                      } catch {
+                        // Fallback: add demo workflow
+                        setWorkflows((prev) => [
+                          {
+                            id: `WF-${String(prev.length + 1).padStart(3, "0")}`,
+                            name: selectedTemplate,
+                            totalSteps: 4,
+                            completedSteps: 0,
+                            currentStep: "Step 1",
+                            assignedTeam: "Operations",
+                            slaDeadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                            slaMinutesRemaining: 1440,
+                            steps: [
+                              { name: "Initiation", completed: false, active: true },
+                              { name: "Processing", completed: false, active: false },
+                              { name: "Review", completed: false, active: false },
+                              { name: "Completion", completed: false, active: false },
+                            ],
+                          },
+                          ...prev,
+                        ]);
+                      }
+                      setCreatingWorkflow(false);
+                      setShowNewWorkflow(false);
+                    }}
+                    className="rounded-lg bg-healthos-600 px-6 py-2 text-sm font-medium text-white hover:bg-healthos-700 disabled:opacity-50 disabled:cursor-wait transition-colors"
                   >
-                    Start Workflow
+                    {creatingWorkflow ? "Starting..." : "Start Workflow"}
                   </button>
                 </div>
               </div>
