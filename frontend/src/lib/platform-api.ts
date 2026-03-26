@@ -1270,3 +1270,246 @@ export async function submitPriorAuth(body: Record<string, unknown>) {
     body: JSON.stringify(body),
   });
 }
+
+// =============================================================================
+// Clinical AI Assessment API (HITL Workflow)
+// =============================================================================
+
+export interface ClinicalFinding {
+  type: string;
+  name: string;
+  value: string | number;
+  unit?: string;
+  status: "normal" | "abnormal" | "critical";
+  interpretation: string;
+  source: string;
+  reference_range?: string;
+}
+
+export interface AIDiagnosisRecommendation {
+  diagnosis: string;
+  icd10_code: string;
+  confidence: number;
+  supporting_findings: ClinicalFinding[];
+  rationale: string;
+  differential_diagnoses?: Array<{
+    diagnosis: string;
+    icd10: string;
+    confidence: number;
+    rationale: string;
+  }>;
+}
+
+export interface AITreatmentRecommendation {
+  treatment_type: string;
+  description: string;
+  priority: string;
+  rationale: string;
+  cpt_code?: string;
+  contraindications?: string[];
+  monitoring?: string[];
+}
+
+export interface ClinicalAssessmentResult {
+  patient_summary: {
+    patient_id: string;
+    name?: string;
+    age?: number;
+    sex?: string;
+  };
+  findings: ClinicalFinding[];
+  critical_findings: ClinicalFinding[];
+  diagnoses: AIDiagnosisRecommendation[];
+  treatments: AITreatmentRecommendation[];
+  icd10_codes: Array<{ code: string; description: string; category: string; confidence: number }>;
+  cpt_codes: Array<{ code: string; description: string; category: string }>;
+  confidence: number;
+  reasoning: string[];
+  warnings: string[];
+  requires_human_review: boolean;
+  review_reason?: string;
+  assessment_id?: string;
+  persisted_recommendation_id?: number;
+}
+
+export interface ClinicalAssessmentResponse {
+  success: boolean;
+  patient_id: string;
+  assessment?: ClinicalAssessmentResult;
+  error?: string;
+  llm_provider?: string;
+}
+
+export interface PhysicianReviewSubmission {
+  assessment_id: string;
+  physician_id: string;
+  physician_name: string;
+  physician_npi?: string;
+  physician_specialty?: string;
+  decision: "approved" | "approved_modified" | "rejected" | "deferred";
+  approved_diagnoses: number[];
+  rejected_diagnoses: number[];
+  approved_treatments: number[];
+  rejected_treatments: number[];
+  modified_diagnoses?: Array<Record<string, unknown>>;
+  modified_treatments?: Array<Record<string, unknown>>;
+  physician_notes?: string;
+  rejection_reason?: string;
+  clinical_rationale?: string;
+  attest: boolean;
+  review_started_at?: string;
+}
+
+export interface PhysicianReviewResult {
+  id: string;
+  assessment: string;
+  physician_id: string;
+  physician_name: string;
+  physician_npi?: string;
+  physician_specialty?: string;
+  decision: string;
+  approved_diagnoses: number[];
+  rejected_diagnoses: number[];
+  approved_treatments: number[];
+  rejected_treatments: number[];
+  final_icd10_codes: Array<{ code: string; description: string }>;
+  final_cpt_codes: Array<{ code: string; description: string }>;
+  physician_notes: string;
+  attested: boolean;
+  signature_datetime?: string;
+  review_completed_at?: string;
+  time_spent_seconds: number;
+  created_at: string;
+}
+
+export interface ClinicalDocumentResult {
+  id: string;
+  assessment: string;
+  document_type: string;
+  title: string;
+  format: string;
+  status: string;
+  content: string;
+  created_at: string;
+}
+
+export interface EHROrderResult {
+  id: string;
+  order_type: string;
+  status: string;
+  description: string;
+  cpt_code?: string;
+  ehr_order_id?: string;
+  created_at: string;
+}
+
+export interface LLMStatusResponse {
+  status: string;
+  primary_provider?: string;
+  available_providers?: string[];
+  config?: {
+    claude_model: string;
+    ollama_model: string;
+    ollama_base_url: string;
+    temperature: number;
+    max_tokens: number;
+  };
+  error?: string;
+}
+
+// Run comprehensive clinical assessment
+export async function runClinicalAssessment(
+  patientId: string,
+  fhirId?: string
+): Promise<ClinicalAssessmentResponse> {
+  return request<ClinicalAssessmentResponse>("/clinical-assessment/assess", {
+    method: "POST",
+    body: JSON.stringify({
+      patient_id: patientId,
+      fhir_id: fhirId,
+      include_diagnoses: true,
+      include_treatments: true,
+      include_codes: true,
+    }),
+  });
+}
+
+// Get LLM status
+export async function fetchLLMStatus(): Promise<LLMStatusResponse> {
+  return request<LLMStatusResponse>("/clinical-assessment/llm/status");
+}
+
+// Submit physician review (HITL)
+export async function submitPhysicianReview(
+  review: PhysicianReviewSubmission
+): Promise<PhysicianReviewResult> {
+  return request<PhysicianReviewResult>("/clinical/reviews/submit/", {
+    method: "POST",
+    body: JSON.stringify(review),
+  });
+}
+
+// Generate clinical document
+export async function generateClinicalDocument(
+  assessmentId: string,
+  reviewId?: string,
+  documentType = "assessment_summary",
+  format = "html",
+  includeReasoning = false
+): Promise<ClinicalDocumentResult> {
+  return request<ClinicalDocumentResult>("/clinical/documents/generate/", {
+    method: "POST",
+    body: JSON.stringify({
+      assessment_id: assessmentId,
+      review_id: reviewId,
+      document_type: documentType,
+      format,
+      include_reasoning: includeReasoning,
+      include_codes: true,
+    }),
+  });
+}
+
+// Download clinical document
+export async function downloadClinicalDocument(
+  documentId: string,
+  title: string,
+  format = "pdf"
+): Promise<void> {
+  const url = `${API_PREFIX}/clinical/documents/${documentId}/download/?download_format=${format}`;
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error("Download failed");
+  const blob = await res.blob();
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${title.replace(/\s+/g, "_").replace(/\//g, "-")}.${format === "pdf" ? "pdf" : "html"}`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}
+
+// Create EHR orders from approved treatments
+export async function createEHROrders(
+  assessmentId: string,
+  reviewId: string,
+  treatmentIndices: number[],
+  physicianId: string,
+  physicianName: string,
+  physicianNpi?: string
+): Promise<{ success: boolean; orders_created: number; orders: EHROrderResult[] }> {
+  return request<{ success: boolean; orders_created: number; orders: EHROrderResult[] }>(
+    "/clinical/orders/create/",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        assessment_id: assessmentId,
+        review_id: reviewId,
+        treatment_indices: treatmentIndices,
+        ordering_physician_id: physicianId,
+        ordering_physician_name: physicianName,
+        ordering_physician_npi: physicianNpi || "",
+      }),
+    }
+  );
+}
