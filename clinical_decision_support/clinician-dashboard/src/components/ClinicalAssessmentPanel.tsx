@@ -16,10 +16,14 @@ import {
   type ClinicalDocument,
   type EHROrder,
 } from "../lib/api";
+import type { Patient } from "../lib/patientApi";
+import type { PatientClinicalSummary } from "../lib/clinicalApi";
 
 type Props = {
   patientId: string;
   fhirId?: string;
+  patient?: Patient;
+  clinicalSummary?: PatientClinicalSummary | null;
 };
 
 type ReviewState = {
@@ -32,7 +36,7 @@ type ReviewState = {
   ehrOrders?: EHROrder[];
 };
 
-export function ClinicalAssessmentPanel({ patientId, fhirId }: Props) {
+export function ClinicalAssessmentPanel({ patientId, fhirId, patient, clinicalSummary }: Props) {
   const [assessment, setAssessment] = useState<AssessmentResponse | null>(null);
   const [showReasoning, setShowReasoning] = useState(false);
   const [reviewState, setReviewState] = useState<ReviewState>({
@@ -316,6 +320,8 @@ export function ClinicalAssessmentPanel({ patientId, fhirId }: Props) {
         <AssessmentResults
           assessment={assessment.assessment}
           llmProvider={assessment.llm_provider}
+          patient={patient}
+          clinicalSummary={clinicalSummary}
           showReasoning={showReasoning}
           onToggleReasoning={() => setShowReasoning(!showReasoning)}
           reviewState={reviewState}
@@ -347,6 +353,8 @@ export function ClinicalAssessmentPanel({ patientId, fhirId }: Props) {
 function AssessmentResults({
   assessment,
   llmProvider,
+  patient,
+  clinicalSummary,
   showReasoning,
   onToggleReasoning,
   reviewState,
@@ -364,6 +372,8 @@ function AssessmentResults({
 }: {
   assessment: ClinicalAssessment;
   llmProvider?: string;
+  patient?: Patient;
+  clinicalSummary?: PatientClinicalSummary | null;
   showReasoning: boolean;
   onToggleReasoning: () => void;
   reviewState: ReviewState;
