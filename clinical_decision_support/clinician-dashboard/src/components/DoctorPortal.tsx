@@ -289,6 +289,8 @@ export function DoctorPortal() {
               <ClinicalAssessmentPanel
                 patientId={String(selectedPatient.id)}
                 fhirId={selectedPatient.fhir_id}
+                patient={selectedPatient}
+                clinicalSummary={summaryQuery.data}
               />
             )}
 

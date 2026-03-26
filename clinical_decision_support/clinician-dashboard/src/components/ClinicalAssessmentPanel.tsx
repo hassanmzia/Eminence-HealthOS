@@ -16,10 +16,14 @@ import {
   type ClinicalDocument,
   type EHROrder,
 } from "../lib/api";
+import type { Patient } from "../lib/patientApi";
+import type { PatientClinicalSummary } from "../lib/clinicalApi";
 
 type Props = {
   patientId: string;
   fhirId?: string;
+  patient?: Patient;
+  clinicalSummary?: PatientClinicalSummary | null;
 };
 
 type ReviewState = {
@@ -32,7 +36,7 @@ type ReviewState = {
   ehrOrders?: EHROrder[];
 };
 
-export function ClinicalAssessmentPanel({ patientId, fhirId }: Props) {
+export function ClinicalAssessmentPanel({ patientId, fhirId, patient, clinicalSummary }: Props) {
   const [assessment, setAssessment] = useState<AssessmentResponse | null>(null);
   const [showReasoning, setShowReasoning] = useState(false);
   const [reviewState, setReviewState] = useState<ReviewState>({
@@ -249,65 +253,211 @@ export function ClinicalAssessmentPanel({ patientId, fhirId }: Props) {
     });
   };
 
-  const cardStyle = { border: "1px solid #eee", borderRadius: 12, padding: 16, marginBottom: 16 };
+  const sectionStyle: React.CSSProperties = {
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    marginBottom: 20,
+    overflow: "hidden",
+  };
+  const sectionHeaderStyle: React.CSSProperties = {
+    padding: "10px 16px",
+    background: "#f8fafc",
+    borderBottom: "1px solid #e2e8f0",
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#1e293b",
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+  };
+  const sectionBodyStyle: React.CSSProperties = { padding: 16 };
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ ...cardStyle, background: "#f0f9ff", border: "1px solid #bae6fd" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+      {/* Professional Report Header */}
+      <div style={{
+        background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)",
+        borderRadius: 10,
+        padding: "20px 24px",
+        marginBottom: 20,
+        color: "white",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <h3 style={{ margin: 0, color: "#0369a1" }}>AI Clinical Assessment</h3>
-            <p style={{ margin: "8px 0 0", fontSize: 13, color: "#64748b" }}>
-              Multi-agent system analyzes patient data to generate diagnoses and treatment recommendations
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.7, marginBottom: 4 }}>
+              Eminence HealthOS
+            </div>
+            <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>
+              AI Clinical Decision Support Report
+            </h3>
+            <p style={{ margin: "6px 0 0", fontSize: 13, opacity: 0.8 }}>
+              Multi-agent clinical analysis with physician Human-in-the-Loop (HITL) approval
             </p>
           </div>
-          <button
-            onClick={() => assessmentMutation.mutate()}
-            disabled={assessmentMutation.isPending || !fhirId}
-            style={{
-              padding: "12px 24px",
-              borderRadius: 8,
-              border: "none",
-              background: assessmentMutation.isPending ? "#94a3b8" : "#0284c7",
-              color: "white",
-              cursor: assessmentMutation.isPending || !fhirId ? "not-allowed" : "pointer",
-              fontWeight: 600,
-              fontSize: 14,
-            }}
-          >
-            {assessmentMutation.isPending ? "Analyzing..." : "Run Assessment"}
-          </button>
+          <div style={{ textAlign: "right", display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
+            <button
+              onClick={() => assessmentMutation.mutate()}
+              disabled={assessmentMutation.isPending || !fhirId}
+              style={{
+                padding: "10px 24px",
+                borderRadius: 6,
+                border: "2px solid rgba(255,255,255,0.3)",
+                background: assessmentMutation.isPending ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.15)",
+                color: "white",
+                cursor: assessmentMutation.isPending || !fhirId ? "not-allowed" : "pointer",
+                fontWeight: 600,
+                fontSize: 13,
+                backdropFilter: "blur(4px)",
+                transition: "all 0.2s",
+              }}
+            >
+              {assessmentMutation.isPending ? "Analyzing Patient Data..." : "Run AI Assessment"}
+            </button>
+            {llmStatusQuery.data && (
+              <div style={{ fontSize: 11, opacity: 0.7 }}>
+                AI Engine: {llmStatusQuery.data.primary_provider || "Not configured"}
+                {llmStatusQuery.data.config && ` / ${llmStatusQuery.data.config.claude_model || llmStatusQuery.data.config.ollama_model}`}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* LLM Status */}
-        {llmStatusQuery.data && (
-          <div style={{ marginTop: 12, display: "flex", gap: 16, fontSize: 12 }}>
-            <span style={{ color: "#64748b" }}>
-              LLM: <strong style={{ color: llmStatusQuery.data.status === "available" ? "#059669" : "#dc2626" }}>
-                {llmStatusQuery.data.primary_provider || "Not configured"}
-              </strong>
-            </span>
-            {llmStatusQuery.data.config && (
-              <span style={{ color: "#64748b" }}>
-                Model: <strong>{llmStatusQuery.data.config.claude_model || llmStatusQuery.data.config.ollama_model}</strong>
-              </span>
-            )}
+        {/* Patient Quick ID Banner */}
+        {patient && (
+          <div style={{
+            marginTop: 16,
+            padding: "10px 16px",
+            background: "rgba(255,255,255,0.1)",
+            borderRadius: 6,
+            display: "flex",
+            gap: 24,
+            fontSize: 13,
+            flexWrap: "wrap",
+          }}>
+            <span><strong>Patient:</strong> {patient.prefix ? `${patient.prefix} ` : ""}{patient.first_name} {patient.last_name}</span>
+            <span><strong>MRN:</strong> {patient.mrn}</span>
+            <span><strong>DOB:</strong> {patient.date_of_birth}</span>
+            <span><strong>Age:</strong> {patient.age ?? clinicalSummary?.age ?? "—"}</span>
+            <span><strong>Sex:</strong> {patient.gender}</span>
+            {patient.blood_type && <span><strong>Blood Type:</strong> {patient.blood_type}</span>}
           </div>
         )}
 
         {!fhirId && (
-          <div style={{ marginTop: 12, padding: 8, background: "#fef3c7", borderRadius: 6, fontSize: 13, color: "#92400e" }}>
+          <div style={{ marginTop: 12, padding: "8px 12px", background: "rgba(251,191,36,0.2)", borderRadius: 6, fontSize: 12, color: "#fde68a" }}>
             Patient must be synced to FHIR to run clinical assessment
           </div>
         )}
       </div>
 
+      {/* Patient Information Section — shown when assessment is available */}
+      {patient && assessment?.success && (
+        <div style={sectionStyle}>
+          <div style={sectionHeaderStyle}>Patient Information Summary</div>
+          <div style={sectionBodyStyle}>
+            {/* Demographics Row */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Demographics</div>
+                <div style={{ fontSize: 13 }}>
+                  <div><strong>Full Name:</strong> {patient.prefix ? `${patient.prefix} ` : ""}{patient.first_name} {patient.middle_name ? `${patient.middle_name} ` : ""}{patient.last_name}{patient.suffix ? ` ${patient.suffix}` : ""}</div>
+                  <div><strong>Date of Birth:</strong> {patient.date_of_birth}</div>
+                  <div><strong>Age:</strong> {patient.age ?? clinicalSummary?.age ?? "—"} years</div>
+                  <div><strong>Sex:</strong> {patient.gender}</div>
+                  {patient.blood_type && <div><strong>Blood Type:</strong> {patient.blood_type}</div>}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Contact Information</div>
+                <div style={{ fontSize: 13 }}>
+                  {patient.phone && <div><strong>Phone:</strong> {patient.phone}</div>}
+                  {patient.email && <div><strong>Email:</strong> {patient.email}</div>}
+                  {patient.address_line1 && <div><strong>Address:</strong> {patient.address_line1}{patient.address_line2 ? `, ${patient.address_line2}` : ""}</div>}
+                  {patient.city && <div>{patient.city}{patient.state ? `, ${patient.state}` : ""} {patient.postal_code || ""}</div>}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Emergency Contact & Insurance</div>
+                <div style={{ fontSize: 13 }}>
+                  {patient.emergency_contact_name && <div><strong>Emergency:</strong> {patient.emergency_contact_name} ({patient.emergency_contact_relationship || "N/A"})</div>}
+                  {patient.emergency_contact_phone && <div><strong>Phone:</strong> {patient.emergency_contact_phone}</div>}
+                  {patient.insurance_provider && <div><strong>Insurance:</strong> {patient.insurance_provider}</div>}
+                  {patient.insurance_policy_number && <div><strong>Policy #:</strong> {patient.insurance_policy_number}</div>}
+                  {patient.primary_care_physician && <div><strong>PCP:</strong> {patient.primary_care_physician}</div>}
+                </div>
+              </div>
+            </div>
+
+            {/* Medical Background Row */}
+            <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Allergies</div>
+                {(patient.allergies?.length || clinicalSummary?.allergies?.length) ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {(patient.allergies || clinicalSummary?.allergies || []).map((a, i) => (
+                      <span key={i} style={{ padding: "3px 8px", background: "#fee2e2", color: "#991b1b", borderRadius: 4, fontSize: 12, fontWeight: 500 }}>{a}</span>
+                    ))}
+                  </div>
+                ) : <div style={{ fontSize: 12, color: "#94a3b8" }}>NKDA</div>}
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Current Medications</div>
+                {(patient.medications?.length || clinicalSummary?.medications?.length) ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {(patient.medications || clinicalSummary?.medications || []).map((m, i) => (
+                      <span key={i} style={{ padding: "3px 8px", background: "#dbeafe", color: "#1e40af", borderRadius: 4, fontSize: 12, fontWeight: 500 }}>{m}</span>
+                    ))}
+                  </div>
+                ) : <div style={{ fontSize: 12, color: "#94a3b8" }}>None reported</div>}
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Medical Conditions</div>
+                {patient.medical_conditions?.length ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {patient.medical_conditions.map((c, i) => (
+                      <span key={i} style={{ padding: "3px 8px", background: "#fef3c7", color: "#92400e", borderRadius: 4, fontSize: 12, fontWeight: 500 }}>{c}</span>
+                    ))}
+                  </div>
+                ) : <div style={{ fontSize: 12, color: "#94a3b8" }}>None reported</div>}
+              </div>
+            </div>
+
+            {/* Medical History */}
+            {patient.medical_history && (
+              <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 16, marginTop: 16 }}>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Medical / Family History</div>
+                <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{patient.medical_history}</div>
+              </div>
+            )}
+
+            {/* Active Diagnoses from clinical summary */}
+            {clinicalSummary?.active_diagnoses && clinicalSummary.active_diagnoses.length > 0 && (
+              <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 16, marginTop: 16 }}>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Active Diagnoses (from EHR)</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {clinicalSummary.active_diagnoses.map((dx, i) => (
+                    <span key={i} style={{
+                      padding: "4px 10px",
+                      background: "#f0f9ff",
+                      border: "1px solid #bae6fd",
+                      borderRadius: 4,
+                      fontSize: 12,
+                    }}>
+                      <strong style={{ color: "#0369a1" }}>{dx.icd10_code}</strong>
+                      <span style={{ color: "#475569", marginLeft: 4 }}>{dx.description}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Error Display */}
       {assessmentMutation.isError && (
-        <div style={{ ...cardStyle, background: "#fef2f2", border: "1px solid #fecaca" }}>
-          <h4 style={{ margin: 0, color: "#dc2626" }}>Assessment Failed</h4>
-          <p style={{ margin: "8px 0 0", color: "#7f1d1d" }}>{(assessmentMutation.error as Error).message}</p>
+        <div style={{ ...sectionStyle, borderColor: "#fecaca" }}>
+          <div style={{ ...sectionHeaderStyle, background: "#fef2f2", color: "#dc2626" }}>Assessment Failed</div>
+          <div style={{ ...sectionBodyStyle, color: "#7f1d1d", fontSize: 13 }}>{(assessmentMutation.error as Error).message}</div>
         </div>
       )}
 
@@ -316,6 +466,8 @@ export function ClinicalAssessmentPanel({ patientId, fhirId }: Props) {
         <AssessmentResults
           assessment={assessment.assessment}
           llmProvider={assessment.llm_provider}
+          patient={patient}
+          clinicalSummary={clinicalSummary}
           showReasoning={showReasoning}
           onToggleReasoning={() => setShowReasoning(!showReasoning)}
           reviewState={reviewState}
@@ -334,9 +486,9 @@ export function ClinicalAssessmentPanel({ patientId, fhirId }: Props) {
       )}
 
       {assessment && !assessment.success && (
-        <div style={{ ...cardStyle, background: "#fef2f2", border: "1px solid #fecaca" }}>
-          <h4 style={{ margin: 0, color: "#dc2626" }}>Assessment Error</h4>
-          <p style={{ margin: "8px 0 0", color: "#7f1d1d" }}>{assessment.error}</p>
+        <div style={{ ...sectionStyle, borderColor: "#fecaca" }}>
+          <div style={{ ...sectionHeaderStyle, background: "#fef2f2", color: "#dc2626" }}>Assessment Error</div>
+          <div style={{ ...sectionBodyStyle, color: "#7f1d1d", fontSize: 13 }}>{assessment.error}</div>
         </div>
       )}
     </div>
@@ -347,6 +499,8 @@ export function ClinicalAssessmentPanel({ patientId, fhirId }: Props) {
 function AssessmentResults({
   assessment,
   llmProvider,
+  patient,
+  clinicalSummary,
   showReasoning,
   onToggleReasoning,
   reviewState,
@@ -364,6 +518,8 @@ function AssessmentResults({
 }: {
   assessment: ClinicalAssessment;
   llmProvider?: string;
+  patient?: Patient;
+  clinicalSummary?: PatientClinicalSummary | null;
   showReasoning: boolean;
   onToggleReasoning: () => void;
   reviewState: ReviewState;
@@ -379,563 +535,734 @@ function AssessmentResults({
   isGeneratingDocument: boolean;
   isCreatingOrders: boolean;
 }) {
-  const cardStyle = { border: "1px solid #eee", borderRadius: 12, padding: 16, marginBottom: 16 };
+  const sectionStyle: React.CSSProperties = {
+    border: "1px solid #e2e8f0",
+    borderRadius: 8,
+    marginBottom: 20,
+    overflow: "hidden",
+  };
+  const sectionHeaderStyle: React.CSSProperties = {
+    padding: "10px 16px",
+    background: "#f8fafc",
+    borderBottom: "1px solid #e2e8f0",
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#1e293b",
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+  };
+  const sectionBodyStyle: React.CSSProperties = { padding: 16 };
 
   const reviewStatusColors = {
-    pending: { bg: "#fef3c7", text: "#92400e", label: "Pending Review" },
-    approved: { bg: "#dcfce7", text: "#166534", label: "Approved" },
-    rejected: { bg: "#fee2e2", text: "#dc2626", label: "Rejected" },
-    modified: { bg: "#dbeafe", text: "#1e40af", label: "Modified & Approved" },
+    pending: { bg: "#fef3c7", border: "#f59e0b", text: "#92400e", label: "PENDING PHYSICIAN REVIEW" },
+    approved: { bg: "#dcfce7", border: "#22c55e", text: "#166534", label: "PHYSICIAN APPROVED" },
+    rejected: { bg: "#fee2e2", border: "#ef4444", text: "#dc2626", label: "PHYSICIAN REJECTED" },
+    modified: { bg: "#dbeafe", border: "#3b82f6", text: "#1e40af", label: "APPROVED WITH MODIFICATIONS" },
   };
 
+  const currentStatus = reviewStatusColors[reviewState.reviewStatus];
+
   return (
-    <div>
-      {/* Summary Header */}
-      <div style={{ ...cardStyle, background: assessment.requires_human_review ? "#fef3c7" : "#f0fdf4" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 24 }}>{assessment.requires_human_review ? "⚠️" : "✅"}</span>
-              <h4 style={{ margin: 0 }}>Assessment Complete</h4>
+    <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+      {/* Assessment Status Banner */}
+      <div style={{
+        ...sectionStyle,
+        borderColor: currentStatus.border,
+        borderWidth: 2,
+      }}>
+        <div style={{
+          padding: "16px 20px",
+          background: currentStatus.bg,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              background: assessment.requires_human_review && reviewState.reviewStatus === "pending" ? "#dc2626" : currentStatus.border,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              fontSize: 18,
+              fontWeight: 700,
+            }}>
+              {reviewState.reviewStatus === "approved" ? "\u2713" : reviewState.reviewStatus === "rejected" ? "\u2717" : reviewState.reviewStatus === "modified" ? "\u270E" : "!"}
             </div>
-            <div style={{ marginTop: 8, fontSize: 13, color: "#64748b" }}>
-              Confidence: <strong>{(assessment.confidence * 100).toFixed(0)}%</strong>
-              {llmProvider && <span> • LLM: {llmProvider}</span>}
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: currentStatus.text }}>{currentStatus.label}</div>
+              <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                AI Confidence: <strong>{(assessment.confidence * 100).toFixed(0)}%</strong>
+                {llmProvider && <> &middot; Engine: {llmProvider}</>}
+                {assessment.assessment_id && <> &middot; ID: {assessment.assessment_id}</>}
+              </div>
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {reviewState.reviewStatus !== "pending" && (
-              <div style={{
-                padding: "6px 12px",
-                background: reviewStatusColors[reviewState.reviewStatus].bg,
-                color: reviewStatusColors[reviewState.reviewStatus].text,
-                borderRadius: 6,
-                fontSize: 12,
-                fontWeight: 600,
-              }}>
-                {reviewStatusColors[reviewState.reviewStatus].label}
-              </div>
-            )}
             {reviewState.reviewStatus === "pending" && (
               <button
                 onClick={onStartReview}
+                disabled={isReviewing}
                 style={{
-                  padding: "8px 16px",
+                  padding: "10px 20px",
                   background: isReviewing ? "#64748b" : assessment.requires_human_review ? "#dc2626" : "#059669",
                   color: "white",
                   border: "none",
                   borderRadius: 6,
                   fontSize: 13,
-                  fontWeight: 600,
-                  cursor: "pointer",
+                  fontWeight: 700,
+                  cursor: isReviewing ? "not-allowed" : "pointer",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                 }}
               >
-                {isReviewing ? "Reviewing..." : assessment.requires_human_review ? "Review Required" : "Start Review"}
+                {isReviewing ? "Review in Progress..." : assessment.requires_human_review ? "REVIEW REQUIRED" : "Begin Physician Review"}
               </button>
             )}
           </div>
         </div>
 
-        {assessment.review_reason && (
-          <div style={{ marginTop: 12, padding: 8, background: "#fef9c3", borderRadius: 6, fontSize: 13 }}>
-            {assessment.review_reason}
-          </div>
-        )}
-
-        {assessment.warnings.length > 0 && (
-          <div style={{ marginTop: 12 }}>
+        {/* Warnings & Review Reason */}
+        {(assessment.review_reason || assessment.warnings.length > 0) && (
+          <div style={{ padding: "12px 20px", borderTop: `1px solid ${currentStatus.border}33` }}>
+            {assessment.review_reason && (
+              <div style={{ padding: "8px 12px", background: "#fef9c3", borderRadius: 4, fontSize: 13, color: "#92400e", marginBottom: assessment.warnings.length > 0 ? 8 : 0, fontWeight: 500 }}>
+                Review Reason: {assessment.review_reason}
+              </div>
+            )}
             {assessment.warnings.map((warning, i) => (
-              <div key={i} style={{ padding: 8, background: "#fee2e2", borderRadius: 6, fontSize: 13, color: "#dc2626", marginBottom: 4 }}>
-                ⚠️ {warning}
+              <div key={i} style={{ padding: "8px 12px", background: "#fee2e2", borderRadius: 4, fontSize: 13, color: "#dc2626", marginBottom: i < assessment.warnings.length - 1 ? 4 : 0, display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontWeight: 700 }}>WARNING:</span> {warning}
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Physician Review Panel */}
+      {/* HITL Physician Review Panel */}
       {isReviewing && (
-        <div style={{ ...cardStyle, background: "#eff6ff", border: "2px solid #3b82f6" }}>
-          <h4 style={{ margin: "0 0 16px", color: "#1e40af", display: "flex", alignItems: "center", gap: 8 }}>
-            <span>👨‍⚕️</span> Physician Review
-          </h4>
+        <div style={{ ...sectionStyle, borderColor: "#2563eb", borderWidth: 2 }}>
+          <div style={{
+            ...sectionHeaderStyle,
+            background: "linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%)",
+            color: "white",
+            fontSize: 14,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}>
+            <span style={{
+              width: 24, height: 24, borderRadius: "50%", background: "rgba(255,255,255,0.2)",
+              display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+            }}>&#9745;</span>
+            HUMAN-IN-THE-LOOP (HITL) PHYSICIAN REVIEW
+          </div>
 
-          {/* Review Diagnoses */}
-          <div style={{ marginBottom: 16 }}>
-            <h5 style={{ margin: "0 0 8px", fontSize: 14 }}>Review Diagnoses</h5>
-            {assessment.diagnoses.map((dx, i) => (
-              <label
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: 8,
-                  background: reviewState.approvedDiagnoses.has(i) ? "#dcfce7" : "#fee2e2",
-                  borderRadius: 6,
-                  marginBottom: 4,
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={reviewState.approvedDiagnoses.has(i)}
-                  onChange={() => onToggleDiagnosis(i)}
-                  style={{ width: 18, height: 18 }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500 }}>{dx.diagnosis}</div>
-                  <div style={{ fontSize: 12, color: "#64748b" }}>
-                    {dx.icd10_code} • Confidence: {(dx.confidence * 100).toFixed(0)}%
-                  </div>
-                </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: reviewState.approvedDiagnoses.has(i) ? "#166534" : "#dc2626" }}>
-                  {reviewState.approvedDiagnoses.has(i) ? "APPROVED" : "REJECTED"}
+          <div style={sectionBodyStyle}>
+            {/* HITL Info Banner */}
+            <div style={{
+              padding: "10px 14px",
+              background: "#eff6ff",
+              borderRadius: 6,
+              border: "1px solid #bfdbfe",
+              marginBottom: 20,
+              fontSize: 12,
+              color: "#1e40af",
+              lineHeight: 1.5,
+            }}>
+              <strong>Physician Attestation Required:</strong> As the reviewing physician, you are responsible for evaluating each AI-generated diagnosis and treatment recommendation below. Toggle items to approve or reject. Your clinical judgment supersedes AI recommendations. This review constitutes your clinical attestation per regulatory compliance requirements.
+            </div>
+
+            {/* Review Diagnoses */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span>Review AI Diagnoses</span>
+                <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", textTransform: "none" }}>
+                  {reviewState.approvedDiagnoses.size} of {assessment.diagnoses.length} approved
                 </span>
-              </label>
-            ))}
-          </div>
+              </div>
+              {assessment.diagnoses.map((dx, i) => {
+                const approved = reviewState.approvedDiagnoses.has(i);
+                return (
+                  <label
+                    key={i}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "10px 14px",
+                      background: approved ? "#f0fdf4" : "#fef2f2",
+                      border: `1px solid ${approved ? "#86efac" : "#fca5a5"}`,
+                      borderRadius: 6,
+                      marginBottom: 6,
+                      cursor: "pointer",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={approved}
+                      onChange={() => onToggleDiagnosis(i)}
+                      style={{ width: 18, height: 18, accentColor: approved ? "#059669" : "#dc2626" }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: "#0f172a" }}>{dx.diagnosis}</div>
+                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                        ICD-10: <strong>{dx.icd10_code}</strong> &middot; AI Confidence: {(dx.confidence * 100).toFixed(0)}%
+                      </div>
+                    </div>
+                    <span style={{
+                      padding: "4px 10px",
+                      borderRadius: 4,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      background: approved ? "#059669" : "#dc2626",
+                      color: "white",
+                      minWidth: 70,
+                      textAlign: "center",
+                    }}>
+                      {approved ? "APPROVED" : "REJECTED"}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
 
-          {/* Review Treatments */}
-          <div style={{ marginBottom: 16 }}>
-            <h5 style={{ margin: "0 0 8px", fontSize: 14 }}>Review Treatments</h5>
-            {assessment.treatments.map((tx, i) => (
-              <label
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: 8,
-                  background: reviewState.approvedTreatments.has(i) ? "#dcfce7" : "#fee2e2",
-                  borderRadius: 6,
-                  marginBottom: 4,
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={reviewState.approvedTreatments.has(i)}
-                  onChange={() => onToggleTreatment(i)}
-                  style={{ width: 18, height: 18 }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500 }}>{tx.description}</div>
-                  <div style={{ fontSize: 12, color: "#64748b" }}>
-                    {tx.treatment_type} • Priority: {tx.priority}
-                  </div>
-                </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: reviewState.approvedTreatments.has(i) ? "#166534" : "#dc2626" }}>
-                  {reviewState.approvedTreatments.has(i) ? "APPROVED" : "REJECTED"}
+            {/* Review Treatments */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span>Review Treatment Recommendations</span>
+                <span style={{ fontSize: 11, fontWeight: 400, color: "#64748b", textTransform: "none" }}>
+                  {reviewState.approvedTreatments.size} of {assessment.treatments.length} approved
                 </span>
-              </label>
-            ))}
-          </div>
+              </div>
+              {assessment.treatments.map((tx, i) => {
+                const approved = reviewState.approvedTreatments.has(i);
+                return (
+                  <label
+                    key={i}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "10px 14px",
+                      background: approved ? "#f0fdf4" : "#fef2f2",
+                      border: `1px solid ${approved ? "#86efac" : "#fca5a5"}`,
+                      borderRadius: 6,
+                      marginBottom: 6,
+                      cursor: "pointer",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={approved}
+                      onChange={() => onToggleTreatment(i)}
+                      style={{ width: 18, height: 18, accentColor: approved ? "#059669" : "#dc2626" }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: "#0f172a" }}>{tx.description}</div>
+                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                        Type: {tx.treatment_type} &middot; Priority: <strong style={{ textTransform: "capitalize" }}>{tx.priority}</strong>
+                        {tx.cpt_code && <> &middot; CPT: {tx.cpt_code}</>}
+                      </div>
+                    </div>
+                    <span style={{
+                      padding: "4px 10px",
+                      borderRadius: 4,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      background: approved ? "#059669" : "#dc2626",
+                      color: "white",
+                      minWidth: 70,
+                      textAlign: "center",
+                    }}>
+                      {approved ? "APPROVED" : "REJECTED"}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
 
-          {/* Physician Notes */}
-          <div style={{ marginBottom: 16 }}>
-            <h5 style={{ margin: "0 0 8px", fontSize: 14 }}>Physician Notes</h5>
-            <textarea
-              value={reviewState.physicianNotes}
-              onChange={(e) => onNotesChange(e.target.value)}
-              placeholder="Add clinical notes, modifications, or additional recommendations..."
-              style={{
-                width: "100%",
-                minHeight: 80,
-                padding: 12,
-                borderRadius: 6,
-                border: "1px solid #cbd5e1",
-                fontSize: 13,
-                resize: "vertical",
-              }}
-            />
-          </div>
+            {/* Physician Clinical Notes */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+                Physician Clinical Notes & Rationale
+              </div>
+              <textarea
+                value={reviewState.physicianNotes}
+                onChange={(e) => onNotesChange(e.target.value)}
+                placeholder="Document your clinical rationale, modifications, additional recommendations, or rejection reason. This note will be part of the permanent medical record."
+                style={{
+                  width: "100%",
+                  minHeight: 100,
+                  padding: 12,
+                  borderRadius: 6,
+                  border: "1px solid #cbd5e1",
+                  fontSize: 13,
+                  resize: "vertical",
+                  fontFamily: "inherit",
+                  lineHeight: 1.5,
+                }}
+              />
+            </div>
 
-          {/* Submit Buttons */}
-          <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-            <button
-              onClick={() => onSubmitReview("rejected")}
-              disabled={isSubmittingReview}
-              style={{
-                padding: "10px 20px",
-                background: isSubmittingReview ? "#94a3b8" : "#dc2626",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: 600,
-                cursor: isSubmittingReview ? "not-allowed" : "pointer",
-              }}
-            >
-              {isSubmittingReview ? "Submitting..." : "Reject Assessment"}
-            </button>
-            <button
-              onClick={() => onSubmitReview("modified")}
-              disabled={isSubmittingReview}
-              style={{
-                padding: "10px 20px",
-                background: isSubmittingReview ? "#94a3b8" : "#2563eb",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: 600,
-                cursor: isSubmittingReview ? "not-allowed" : "pointer",
-              }}
-            >
-              {isSubmittingReview ? "Submitting..." : "Approve with Modifications"}
-            </button>
-            <button
-              onClick={() => onSubmitReview("approved")}
-              disabled={isSubmittingReview}
-              style={{
-                padding: "10px 20px",
-                background: isSubmittingReview ? "#94a3b8" : "#059669",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: 600,
-                cursor: isSubmittingReview ? "not-allowed" : "pointer",
-              }}
-            >
-              {isSubmittingReview ? "Submitting..." : "Approve All"}
-            </button>
+            {/* Attestation & Submit */}
+            <div style={{
+              padding: "16px 20px",
+              background: "#f8fafc",
+              borderRadius: 6,
+              border: "1px solid #e2e8f0",
+            }}>
+              <div style={{ fontSize: 11, color: "#64748b", marginBottom: 12, lineHeight: 1.4 }}>
+                By submitting this review, I attest that I have personally reviewed the AI-generated clinical assessment, including all diagnoses, treatment recommendations, and supporting evidence. My decisions reflect my independent clinical judgment.
+              </div>
+              <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => onSubmitReview("rejected")}
+                  disabled={isSubmittingReview}
+                  style={{
+                    padding: "10px 24px",
+                    background: isSubmittingReview ? "#94a3b8" : "#dc2626",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: isSubmittingReview ? "not-allowed" : "pointer",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  {isSubmittingReview ? "Submitting..." : "Reject Assessment"}
+                </button>
+                <button
+                  onClick={() => onSubmitReview("modified")}
+                  disabled={isSubmittingReview}
+                  style={{
+                    padding: "10px 24px",
+                    background: isSubmittingReview ? "#94a3b8" : "#1e40af",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: isSubmittingReview ? "not-allowed" : "pointer",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  {isSubmittingReview ? "Submitting..." : "Approve with Modifications"}
+                </button>
+                <button
+                  onClick={() => onSubmitReview("approved")}
+                  disabled={isSubmittingReview}
+                  style={{
+                    padding: "10px 24px",
+                    background: isSubmittingReview ? "#94a3b8" : "#059669",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: isSubmittingReview ? "not-allowed" : "pointer",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  {isSubmittingReview ? "Submitting..." : "Approve All & Attest"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* Post-Review Actions Panel */}
       {reviewState.submittedReview && (
-        <div style={{ ...cardStyle, background: "#f0fdf4", border: "2px solid #22c55e" }}>
-          <h4 style={{ margin: "0 0 16px", color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
-            <span>✅</span> Review Submitted Successfully
-          </h4>
-
-          <div style={{ marginBottom: 16, fontSize: 13, color: "#475569" }}>
-            <div><strong>Review ID:</strong> {reviewState.submittedReview.id}</div>
-            <div><strong>Decision:</strong> {reviewState.submittedReview.decision}</div>
-            <div><strong>Attested:</strong> {reviewState.submittedReview.attested ? "Yes" : "No"}</div>
-            {reviewState.submittedReview.signature_datetime && (
-              <div><strong>Signed:</strong> {new Date(reviewState.submittedReview.signature_datetime).toLocaleString()}</div>
-            )}
+        <div style={{ ...sectionStyle, borderColor: "#22c55e", borderWidth: 2 }}>
+          <div style={{
+            ...sectionHeaderStyle,
+            background: "linear-gradient(135deg, #166534 0%, #059669 100%)",
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{
+                width: 24, height: 24, borderRadius: "50%", background: "rgba(255,255,255,0.2)",
+                display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+              }}>{"\u2713"}</span>
+              PHYSICIAN REVIEW COMPLETED
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 400, opacity: 0.9 }}>
+              {reviewState.submittedReview.review_completed_at
+                ? new Date(reviewState.submittedReview.review_completed_at).toLocaleString()
+                : new Date(reviewState.submittedReview.created_at).toLocaleString()}
+            </span>
           </div>
 
-          {/* Final Codes */}
-          {reviewState.submittedReview.final_icd10_codes?.length > 0 && (
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Final ICD-10 Codes:</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                {reviewState.submittedReview.final_icd10_codes.map((code, i) => (
-                  <span key={i} style={{ padding: "4px 8px", background: "#dbeafe", borderRadius: 4, fontSize: 11 }}>
-                    {code.code}
-                  </span>
-                ))}
+          <div style={sectionBodyStyle}>
+            {/* Review Summary Grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+              <div style={{ padding: 12, background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0", textAlign: "center" }}>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", marginBottom: 4 }}>Review ID</div>
+                <div style={{ fontSize: 12, fontWeight: 600, fontFamily: "monospace", color: "#0f172a" }}>{reviewState.submittedReview.id.slice(0, 12)}...</div>
               </div>
-            </div>
-          )}
-
-          {reviewState.submittedReview.final_cpt_codes?.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Final CPT Codes:</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                {reviewState.submittedReview.final_cpt_codes.map((code, i) => (
-                  <span key={i} style={{ padding: "4px 8px", background: "#dcfce7", borderRadius: 4, fontSize: 11 }}>
-                    {code.code}
-                  </span>
-                ))}
+              <div style={{ padding: 12, background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0", textAlign: "center" }}>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", marginBottom: 4 }}>Decision</div>
+                <div style={{
+                  fontSize: 12, fontWeight: 700, textTransform: "uppercase",
+                  color: reviewState.submittedReview.decision === "approved" ? "#059669"
+                    : reviewState.submittedReview.decision === "rejected" ? "#dc2626" : "#1e40af",
+                }}>{reviewState.submittedReview.decision.replace("_", " ")}</div>
               </div>
-            </div>
-          )}
-
-          {/* Post-Review Action Buttons */}
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <button
-              onClick={onGenerateDocument}
-              disabled={isGeneratingDocument}
-              style={{
-                padding: "10px 16px",
-                background: isGeneratingDocument ? "#94a3b8" : "#6366f1",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: 600,
-                cursor: isGeneratingDocument ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <span>📄</span>
-              {isGeneratingDocument ? "Generating..." : "Generate Clinical Document"}
-            </button>
-
-            <button
-              onClick={onCreateEHROrders}
-              disabled={isCreatingOrders || reviewState.submittedReview.decision === "rejected"}
-              style={{
-                padding: "10px 16px",
-                background: isCreatingOrders || reviewState.submittedReview.decision === "rejected" ? "#94a3b8" : "#0891b2",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: 600,
-                cursor: isCreatingOrders || reviewState.submittedReview.decision === "rejected" ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <span>🏥</span>
-              {isCreatingOrders ? "Creating Orders..." : "Create EHR Orders"}
-            </button>
-          </div>
-
-          {/* Generated Document Display */}
-          {reviewState.generatedDocument && (
-            <div style={{ marginTop: 16, padding: 12, background: "white", borderRadius: 6, border: "1px solid #e2e8f0" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <h5 style={{ margin: 0 }}>Generated Document: {reviewState.generatedDocument.title}</h5>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <button
-                    onClick={async () => {
-                      try {
-                        await downloadClinicalDocument(reviewState.generatedDocument!.id, reviewState.generatedDocument!.title, "pdf");
-                      } catch (err) {
-                        console.error("PDF download failed:", err);
-                        alert("Failed to download PDF. Please try again.");
-                      }
-                    }}
-                    style={{
-                      padding: "4px 10px",
-                      background: "#dc2626",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 4,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Download PDF
-                  </button>
-                  <button
-                    onClick={async () => {
-                      try {
-                        await downloadClinicalDocument(reviewState.generatedDocument!.id, reviewState.generatedDocument!.title, "html");
-                      } catch (err) {
-                        console.error("HTML download failed:", err);
-                        alert("Failed to download HTML. Please try again.");
-                      }
-                    }}
-                    style={{
-                      padding: "4px 10px",
-                      background: "#2563eb",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 4,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Download HTML
-                  </button>
-                  <span style={{
-                    padding: "2px 8px",
-                    background: reviewState.generatedDocument.status === "final" ? "#dcfce7" : "#fef3c7",
-                    borderRadius: 4,
-                    fontSize: 11,
-                    fontWeight: 600,
-                  }}>
-                    {reviewState.generatedDocument.status.toUpperCase()}
-                  </span>
+              <div style={{ padding: 12, background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0", textAlign: "center" }}>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", marginBottom: 4 }}>Attested</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: reviewState.submittedReview.attested ? "#059669" : "#dc2626" }}>
+                  {reviewState.submittedReview.attested ? "YES" : "NO"}
                 </div>
               </div>
-              <div
-                style={{ fontSize: 13, maxHeight: 300, overflow: "auto", background: "#f8fafc", padding: 12, borderRadius: 4 }}
-                dangerouslySetInnerHTML={{ __html: reviewState.generatedDocument.content }}
-              />
+              <div style={{ padding: 12, background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0", textAlign: "center" }}>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", marginBottom: 4 }}>Review Time</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a" }}>
+                  {reviewState.submittedReview.time_spent_seconds > 0
+                    ? `${Math.floor(reviewState.submittedReview.time_spent_seconds / 60)}m ${reviewState.submittedReview.time_spent_seconds % 60}s`
+                    : "N/A"}
+                </div>
+              </div>
             </div>
-          )}
 
-          {/* EHR Orders Display */}
-          {reviewState.ehrOrders && reviewState.ehrOrders.length > 0 && (
-            <div style={{ marginTop: 16, padding: 12, background: "white", borderRadius: 6, border: "1px solid #e2e8f0" }}>
-              <h5 style={{ margin: "0 0 8px" }}>EHR Orders Created ({reviewState.ehrOrders.length})</h5>
-              {reviewState.ehrOrders.map((order, i) => (
-                <div key={i} style={{ padding: 8, background: "#f0f9ff", borderRadius: 4, marginBottom: 4, fontSize: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontWeight: 600 }}>{order.description}</span>
+            {/* Physician Signature */}
+            {reviewState.submittedReview.signature_datetime && (
+              <div style={{ padding: "10px 14px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, marginBottom: 16, fontSize: 12 }}>
+                <strong>Electronically signed</strong> by {reviewState.submittedReview.physician_name}
+                {reviewState.submittedReview.physician_npi && <> (NPI: {reviewState.submittedReview.physician_npi})</>}
+                {reviewState.submittedReview.physician_specialty && <> &middot; {reviewState.submittedReview.physician_specialty}</>}
+                <> on {new Date(reviewState.submittedReview.signature_datetime).toLocaleString()}</>
+              </div>
+            )}
+
+            {/* Final Codes */}
+            {(reviewState.submittedReview.final_icd10_codes?.length > 0 || reviewState.submittedReview.final_cpt_codes?.length > 0) && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                {reviewState.submittedReview.final_icd10_codes?.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1e40af", textTransform: "uppercase", marginBottom: 6 }}>Final ICD-10 Codes</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {reviewState.submittedReview.final_icd10_codes.map((code, i) => (
+                        <span key={i} style={{ padding: "4px 10px", background: "#dbeafe", border: "1px solid #93c5fd", borderRadius: 4, fontSize: 11, fontWeight: 600, color: "#1e40af" }}>
+                          {code.code}
+                          {code.description && <span style={{ fontWeight: 400, color: "#64748b", marginLeft: 4 }}>{code.description}</span>}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {reviewState.submittedReview.final_cpt_codes?.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#059669", textTransform: "uppercase", marginBottom: 6 }}>Final CPT Codes</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {reviewState.submittedReview.final_cpt_codes.map((code, i) => (
+                        <span key={i} style={{ padding: "4px 10px", background: "#dcfce7", border: "1px solid #86efac", borderRadius: 4, fontSize: 11, fontWeight: 600, color: "#059669" }}>
+                          {code.code}
+                          {code.description && <span style={{ fontWeight: 400, color: "#64748b", marginLeft: 4 }}>{code.description}</span>}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Post-Review Action Buttons */}
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", padding: "16px 0 0", borderTop: "1px solid #e2e8f0" }}>
+              <button
+                onClick={onGenerateDocument}
+                disabled={isGeneratingDocument}
+                style={{
+                  padding: "10px 20px",
+                  background: isGeneratingDocument ? "#94a3b8" : "#4f46e5",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: isGeneratingDocument ? "not-allowed" : "pointer",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              >
+                {isGeneratingDocument ? "Generating..." : "Generate Clinical Document"}
+              </button>
+
+              <button
+                onClick={onCreateEHROrders}
+                disabled={isCreatingOrders || reviewState.submittedReview.decision === "rejected"}
+                style={{
+                  padding: "10px 20px",
+                  background: isCreatingOrders || reviewState.submittedReview.decision === "rejected" ? "#94a3b8" : "#0891b2",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: isCreatingOrders || reviewState.submittedReview.decision === "rejected" ? "not-allowed" : "pointer",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              >
+                {isCreatingOrders ? "Creating Orders..." : "Create EHR Orders"}
+              </button>
+            </div>
+
+            {/* Generated Document Display */}
+            {reviewState.generatedDocument && (
+              <div style={{ marginTop: 16, border: "1px solid #e2e8f0", borderRadius: 6, overflow: "hidden" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: "#0f172a" }}>{reviewState.generatedDocument.title}</div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await downloadClinicalDocument(reviewState.generatedDocument!.id, reviewState.generatedDocument!.title, "pdf");
+                        } catch (err) {
+                          console.error("PDF download failed:", err);
+                          alert("Failed to download PDF. Please try again.");
+                        }
+                      }}
+                      style={{
+                        padding: "4px 12px", background: "#dc2626", color: "white",
+                        border: "none", borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                      }}
+                    >
+                      PDF
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await downloadClinicalDocument(reviewState.generatedDocument!.id, reviewState.generatedDocument!.title, "html");
+                        } catch (err) {
+                          console.error("HTML download failed:", err);
+                          alert("Failed to download HTML. Please try again.");
+                        }
+                      }}
+                      style={{
+                        padding: "4px 12px", background: "#2563eb", color: "white",
+                        border: "none", borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                      }}
+                    >
+                      HTML
+                    </button>
                     <span style={{
-                      padding: "2px 6px",
-                      background: order.status === "submitted" ? "#dcfce7" : "#fef3c7",
-                      borderRadius: 4,
-                      fontSize: 10,
+                      padding: "3px 8px",
+                      background: reviewState.generatedDocument.status === "final" ? "#dcfce7" : "#fef3c7",
+                      color: reviewState.generatedDocument.status === "final" ? "#166534" : "#92400e",
+                      borderRadius: 4, fontSize: 10, fontWeight: 700, textTransform: "uppercase",
                     }}>
-                      {order.status.toUpperCase()}
+                      {reviewState.generatedDocument.status}
                     </span>
                   </div>
-                  <div style={{ color: "#64748b", marginTop: 4 }}>
-                    Type: {order.order_type} {order.cpt_code && `• CPT: ${order.cpt_code}`}
-                    {order.ehr_order_id && ` • EHR ID: ${order.ehr_order_id}`}
-                  </div>
                 </div>
-              ))}
-            </div>
-          )}
+                <div
+                  style={{ fontSize: 13, maxHeight: 300, overflow: "auto", background: "white", padding: 16 }}
+                  dangerouslySetInnerHTML={{ __html: reviewState.generatedDocument.content }}
+                />
+              </div>
+            )}
+
+            {/* EHR Orders Display */}
+            {reviewState.ehrOrders && reviewState.ehrOrders.length > 0 && (
+              <div style={{ marginTop: 16, border: "1px solid #e2e8f0", borderRadius: 6, overflow: "hidden" }}>
+                <div style={{ padding: "10px 14px", background: "#f0f9ff", borderBottom: "1px solid #e2e8f0", fontWeight: 600, fontSize: 13, color: "#0369a1" }}>
+                  EHR Orders Created ({reviewState.ehrOrders.length})
+                </div>
+                <div style={{ padding: 12 }}>
+                  {reviewState.ehrOrders.map((order, i) => (
+                    <div key={i} style={{
+                      padding: "10px 12px", background: "#fafbfc", borderRadius: 4,
+                      marginBottom: i < reviewState.ehrOrders!.length - 1 ? 6 : 0,
+                      border: "1px solid #e2e8f0", fontSize: 12,
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontWeight: 600, color: "#0f172a" }}>{order.description}</span>
+                        <span style={{
+                          padding: "2px 8px",
+                          background: order.status === "submitted" ? "#dcfce7" : "#fef3c7",
+                          color: order.status === "submitted" ? "#166534" : "#92400e",
+                          borderRadius: 4, fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+                        }}>
+                          {order.status}
+                        </span>
+                      </div>
+                      <div style={{ color: "#64748b", marginTop: 4, fontSize: 11 }}>
+                        Type: {order.order_type}
+                        {order.cpt_code && <> &middot; CPT: <strong>{order.cpt_code}</strong></>}
+                        {order.ehr_order_id && <> &middot; EHR ID: {order.ehr_order_id}</>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Critical Findings */}
+      {/* Critical Findings Alert */}
       {assessment.critical_findings.length > 0 && (
-        <div style={{ ...cardStyle, background: "#fef2f2", border: "1px solid #fecaca" }}>
-          <h4 style={{ margin: "0 0 12px", color: "#dc2626" }}>Critical Findings</h4>
-          {assessment.critical_findings.map((finding, i) => (
-            <FindingCard key={i} finding={finding} />
-          ))}
-        </div>
-      )}
-
-      {/* Main Content Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        {/* Diagnoses */}
-        <div style={cardStyle}>
-          <h4 style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
-            <span>🩺</span> Diagnoses
-            <span style={{ fontSize: 12, color: "#64748b", fontWeight: 400 }}>
-              ({assessment.diagnoses.length})
+        <div style={{ ...sectionStyle, borderColor: "#dc2626", borderWidth: 2 }}>
+          <div style={{ ...sectionHeaderStyle, background: "#fef2f2", color: "#dc2626", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontWeight: 700 }}>CRITICAL FINDINGS</span>
+            <span style={{ padding: "2px 8px", background: "#dc2626", color: "white", borderRadius: 10, fontSize: 11 }}>
+              {assessment.critical_findings.length}
             </span>
-          </h4>
-          {assessment.diagnoses.length > 0 ? (
-            assessment.diagnoses.map((dx, i) => (
-              <DiagnosisCard key={i} diagnosis={dx} />
-            ))
-          ) : (
-            <div style={{ color: "#64748b", fontSize: 13 }}>No diagnoses identified</div>
-          )}
-        </div>
-
-        {/* Treatments */}
-        <div style={cardStyle}>
-          <h4 style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
-            <span>💊</span> Treatment Recommendations
-            <span style={{ fontSize: 12, color: "#64748b", fontWeight: 400 }}>
-              ({assessment.treatments.length})
-            </span>
-          </h4>
-          {assessment.treatments.length > 0 ? (
-            assessment.treatments.map((tx, i) => (
-              <TreatmentCard key={i} treatment={tx} />
-            ))
-          ) : (
-            <div style={{ color: "#64748b", fontSize: 13 }}>No specific treatments recommended</div>
-          )}
-        </div>
-      </div>
-
-      {/* Clinical Codes */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        {/* ICD-10 Codes */}
-        <div style={cardStyle}>
-          <h4 style={{ margin: "0 0 12px" }}>ICD-10 Codes</h4>
-          {assessment.icd10_codes.length > 0 ? (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {assessment.icd10_codes.map((code, i) => (
-                <div
-                  key={i}
-                  style={{
-                    padding: "6px 10px",
-                    background: "#dbeafe",
-                    borderRadius: 6,
-                    fontSize: 12,
-                  }}
-                  title={code.description}
-                >
-                  <strong>{code.code}</strong>
-                  <span style={{ color: "#64748b", marginLeft: 4 }}>
-                    ({(code.confidence * 100).toFixed(0)}%)
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ color: "#64748b", fontSize: 13 }}>No ICD-10 codes suggested</div>
-          )}
-        </div>
-
-        {/* CPT Codes */}
-        <div style={cardStyle}>
-          <h4 style={{ margin: "0 0 12px" }}>CPT Codes</h4>
-          {assessment.cpt_codes.length > 0 ? (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {assessment.cpt_codes.map((code, i) => (
-                <div
-                  key={i}
-                  style={{
-                    padding: "6px 10px",
-                    background: "#dcfce7",
-                    borderRadius: 6,
-                    fontSize: 12,
-                  }}
-                  title={code.description}
-                >
-                  <strong>{code.code}</strong>
-                  <span style={{ color: "#64748b", marginLeft: 4 }}>
-                    {code.category}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ color: "#64748b", fontSize: 13 }}>No CPT codes suggested</div>
-          )}
-        </div>
-      </div>
-
-      {/* All Findings */}
-      {assessment.findings.length > 0 && (
-        <div style={cardStyle}>
-          <h4 style={{ margin: "0 0 12px" }}>Clinical Findings ({assessment.findings.length})</h4>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-            {assessment.findings.map((finding, i) => (
-              <FindingCard key={i} finding={finding} compact />
+          </div>
+          <div style={sectionBodyStyle}>
+            {assessment.critical_findings.map((finding, i) => (
+              <FindingCard key={i} finding={finding} />
             ))}
           </div>
         </div>
       )}
 
-      {/* Reasoning Toggle */}
-      <div style={cardStyle}>
-        <button
-          onClick={onToggleReasoning}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            color: "#0284c7",
-            fontWeight: 500,
-          }}
-        >
-          <span>{showReasoning ? "▼" : "▶"}</span>
-          Clinical Reasoning ({assessment.reasoning.length} steps)
-        </button>
+      {/* Diagnoses Section */}
+      <div style={sectionStyle}>
+        <div style={{ ...sectionHeaderStyle, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>AI-Generated Diagnoses ({assessment.diagnoses.length})</span>
+        </div>
+        <div style={sectionBodyStyle}>
+          {assessment.diagnoses.length > 0 ? (
+            <div style={{ display: "grid", gap: 12 }}>
+              {assessment.diagnoses.map((dx, i) => (
+                <DiagnosisCard key={i} diagnosis={dx} index={i + 1} />
+              ))}
+            </div>
+          ) : (
+            <div style={{ color: "#94a3b8", fontSize: 13, textAlign: "center", padding: 20 }}>No diagnoses identified from available clinical data</div>
+          )}
+        </div>
+      </div>
 
+      {/* Treatment Recommendations Section */}
+      <div style={sectionStyle}>
+        <div style={{ ...sectionHeaderStyle, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>Treatment Recommendations ({assessment.treatments.length})</span>
+        </div>
+        <div style={sectionBodyStyle}>
+          {assessment.treatments.length > 0 ? (
+            <div style={{ display: "grid", gap: 12 }}>
+              {assessment.treatments.map((tx, i) => (
+                <TreatmentCard key={i} treatment={tx} index={i + 1} />
+              ))}
+            </div>
+          ) : (
+            <div style={{ color: "#94a3b8", fontSize: 13, textAlign: "center", padding: 20 }}>No specific treatments recommended</div>
+          )}
+        </div>
+      </div>
+
+      {/* Clinical Codes Section */}
+      <div style={sectionStyle}>
+        <div style={sectionHeaderStyle}>Clinical Billing Codes</div>
+        <div style={sectionBodyStyle}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#1e40af", marginBottom: 8, textTransform: "uppercase" }}>ICD-10 Diagnosis Codes</div>
+              {assessment.icd10_codes.length > 0 ? (
+                <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                      <th style={{ textAlign: "left", padding: "6px 8px", color: "#64748b", fontWeight: 600 }}>Code</th>
+                      <th style={{ textAlign: "left", padding: "6px 8px", color: "#64748b", fontWeight: 600 }}>Description</th>
+                      <th style={{ textAlign: "right", padding: "6px 8px", color: "#64748b", fontWeight: 600 }}>Conf.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {assessment.icd10_codes.map((code, i) => (
+                      <tr key={i} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <td style={{ padding: "6px 8px", fontWeight: 600, color: "#1e40af" }}>{code.code}</td>
+                        <td style={{ padding: "6px 8px", color: "#334155" }}>{code.description}</td>
+                        <td style={{ padding: "6px 8px", textAlign: "right", color: "#64748b" }}>{(code.confidence * 100).toFixed(0)}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ color: "#94a3b8", fontSize: 12 }}>No ICD-10 codes suggested</div>
+              )}
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#059669", marginBottom: 8, textTransform: "uppercase" }}>CPT Procedure Codes</div>
+              {assessment.cpt_codes.length > 0 ? (
+                <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                      <th style={{ textAlign: "left", padding: "6px 8px", color: "#64748b", fontWeight: 600 }}>Code</th>
+                      <th style={{ textAlign: "left", padding: "6px 8px", color: "#64748b", fontWeight: 600 }}>Description</th>
+                      <th style={{ textAlign: "left", padding: "6px 8px", color: "#64748b", fontWeight: 600 }}>Category</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {assessment.cpt_codes.map((code, i) => (
+                      <tr key={i} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <td style={{ padding: "6px 8px", fontWeight: 600, color: "#059669" }}>{code.code}</td>
+                        <td style={{ padding: "6px 8px", color: "#334155" }}>{code.description}</td>
+                        <td style={{ padding: "6px 8px", color: "#64748b", textTransform: "capitalize" }}>{code.category}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ color: "#94a3b8", fontSize: 12 }}>No CPT codes suggested</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Clinical Findings Grid */}
+      {assessment.findings.length > 0 && (
+        <div style={sectionStyle}>
+          <div style={sectionHeaderStyle}>Clinical Findings ({assessment.findings.length})</div>
+          <div style={sectionBodyStyle}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              {assessment.findings.map((finding, i) => (
+                <FindingCard key={i} finding={finding} compact />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Clinical Reasoning */}
+      <div style={sectionStyle}>
+        <div
+          style={{ ...sectionHeaderStyle, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+          onClick={onToggleReasoning}
+        >
+          <span>AI Clinical Reasoning ({assessment.reasoning.length} steps)</span>
+          <span style={{ fontSize: 11, color: "#64748b", fontWeight: 400 }}>
+            {showReasoning ? "Click to collapse" : "Click to expand"}
+          </span>
+        </div>
         {showReasoning && (
-          <div style={{ marginTop: 12, maxHeight: 400, overflow: "auto" }}>
+          <div style={{ ...sectionBodyStyle, maxHeight: 400, overflow: "auto" }}>
             {assessment.reasoning.map((step, i) => (
               <div
                 key={i}
                 style={{
-                  padding: 8,
-                  background: i % 2 === 0 ? "#f8fafc" : "#fff",
-                  borderRadius: 4,
+                  padding: "10px 12px",
+                  background: i % 2 === 0 ? "#f8fafc" : "#ffffff",
+                  borderBottom: "1px solid #f1f5f9",
                   fontSize: 13,
-                  fontFamily: "monospace",
+                  fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                  lineHeight: 1.5,
                   whiteSpace: "pre-wrap",
+                  display: "flex",
+                  gap: 10,
                 }}
               >
-                {step}
+                <span style={{ color: "#94a3b8", fontWeight: 600, minWidth: 24, textAlign: "right" }}>{i + 1}.</span>
+                <span style={{ color: "#334155" }}>{step}</span>
               </div>
             ))}
           </div>
@@ -1016,49 +1343,88 @@ function FindingCard({ finding, compact }: { finding: ClinicalFinding; compact?:
 }
 
 // Diagnosis Card Component
-function DiagnosisCard({ diagnosis }: { diagnosis: DiagnosisRecommendation }) {
+function DiagnosisCard({ diagnosis, index }: { diagnosis: DiagnosisRecommendation; index?: number }) {
   const [expanded, setExpanded] = useState(false);
+  const confidenceColor = diagnosis.confidence >= 0.8 ? "#059669" : diagnosis.confidence >= 0.5 ? "#d97706" : "#dc2626";
 
   return (
     <div
       style={{
-        padding: 12,
-        background: "#f8fafc",
         border: "1px solid #e2e8f0",
         borderRadius: 8,
-        marginBottom: 8,
+        overflow: "hidden",
+        background: "white",
       }}
     >
       <div
-        style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", cursor: "pointer" }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "12px 16px",
+          cursor: "pointer",
+          background: "#fafbfc",
+        }}
         onClick={() => setExpanded(!expanded)}
       >
-        <div>
-          <div style={{ fontWeight: 600, color: "#1e293b" }}>{diagnosis.diagnosis}</div>
-          <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-            ICD-10: <strong style={{ color: "#2563eb" }}>{diagnosis.icd10_code}</strong>
-            <span style={{ marginLeft: 12 }}>
-              Confidence: <strong>{(diagnosis.confidence * 100).toFixed(0)}%</strong>
+        {index && (
+          <div style={{
+            width: 28, height: 28, borderRadius: "50%", background: "#1e40af", color: "white",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0,
+          }}>{index}</div>
+        )}
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 600, fontSize: 14, color: "#0f172a" }}>{diagnosis.diagnosis}</div>
+          <div style={{ display: "flex", gap: 16, marginTop: 4, fontSize: 12, color: "#64748b" }}>
+            <span>ICD-10: <strong style={{ color: "#1e40af" }}>{diagnosis.icd10_code}</strong></span>
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              Confidence:
+              <span style={{
+                padding: "1px 6px", borderRadius: 4, fontWeight: 700, fontSize: 11,
+                background: `${confidenceColor}15`, color: confidenceColor,
+              }}>
+                {(diagnosis.confidence * 100).toFixed(0)}%
+              </span>
             </span>
           </div>
         </div>
-        <span style={{ color: "#64748b" }}>{expanded ? "▼" : "▶"}</span>
+        <span style={{ color: "#94a3b8", fontSize: 12 }}>{expanded ? "\u25BC" : "\u25B6"}</span>
       </div>
 
       {expanded && (
-        <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #e2e8f0" }}>
-          <div style={{ fontSize: 13, color: "#475569", marginBottom: 8 }}>{diagnosis.rationale}</div>
+        <div style={{ padding: "12px 16px", borderTop: "1px solid #e2e8f0", fontSize: 13 }}>
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", marginBottom: 4 }}>Clinical Rationale</div>
+            <div style={{ color: "#334155", lineHeight: 1.5 }}>{diagnosis.rationale}</div>
+          </div>
+
+          {diagnosis.supporting_findings && diagnosis.supporting_findings.length > 0 && (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", marginBottom: 4 }}>Supporting Findings</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                {diagnosis.supporting_findings.map((f, i) => (
+                  <span key={i} style={{ padding: "3px 8px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: 4, fontSize: 11 }}>
+                    {f.name}: {f.value} {f.unit || ""}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {diagnosis.differential_diagnoses && diagnosis.differential_diagnoses.length > 0 && (
-            <div style={{ marginTop: 8 }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: "#64748b", marginBottom: 4 }}>
-                Differential Diagnoses:
-              </div>
-              {diagnosis.differential_diagnoses.map((diff, i) => (
-                <div key={i} style={{ fontSize: 12, color: "#64748b", padding: "4px 0" }}>
-                  • {diff.diagnosis} ({diff.icd10}) - {(diff.confidence * 100).toFixed(0)}%
-                </div>
-              ))}
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", marginBottom: 4 }}>Differential Diagnoses</div>
+              <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+                <tbody>
+                  {diagnosis.differential_diagnoses.map((diff, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td style={{ padding: "4px 0", color: "#334155" }}>{diff.diagnosis}</td>
+                      <td style={{ padding: "4px 8px", color: "#1e40af", fontWeight: 500 }}>{diff.icd10}</td>
+                      <td style={{ padding: "4px 0", textAlign: "right", color: "#64748b" }}>{(diff.confidence * 100).toFixed(0)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
@@ -1068,60 +1434,60 @@ function DiagnosisCard({ diagnosis }: { diagnosis: DiagnosisRecommendation }) {
 }
 
 // Treatment Card Component
-function TreatmentCard({ treatment }: { treatment: TreatmentRecommendation }) {
-  const priorityColors = {
-    immediate: { bg: "#fee2e2", text: "#dc2626" },
-    urgent: { bg: "#fef3c7", text: "#d97706" },
-    routine: { bg: "#dbeafe", text: "#2563eb" },
+function TreatmentCard({ treatment, index }: { treatment: TreatmentRecommendation; index?: number }) {
+  const priorityConfig = {
+    immediate: { bg: "#dc2626", text: "white" },
+    urgent: { bg: "#d97706", text: "white" },
+    routine: { bg: "#3b82f6", text: "white" },
+    elective: { bg: "#8b5cf6", text: "white" },
   };
 
-  const colors = priorityColors[treatment.priority as keyof typeof priorityColors] || priorityColors.routine;
+  const pConfig = priorityConfig[treatment.priority as keyof typeof priorityConfig] || priorityConfig.routine;
 
   return (
-    <div
-      style={{
-        padding: 12,
-        background: "#f8fafc",
-        border: "1px solid #e2e8f0",
-        borderRadius: 8,
-        marginBottom: 8,
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+    <div style={{ border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden", background: "white" }}>
+      <div style={{ padding: "12px 16px", display: "flex", alignItems: "flex-start", gap: 12 }}>
+        {index && (
+          <div style={{
+            width: 28, height: 28, borderRadius: "50%", background: "#059669", color: "white",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0, marginTop: 2,
+          }}>{index}</div>
+        )}
         <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span
-              style={{
-                padding: "2px 6px",
-                background: colors.bg,
-                color: colors.text,
-                borderRadius: 4,
-                fontSize: 10,
-                fontWeight: 600,
-                textTransform: "uppercase",
-              }}
-            >
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <span style={{
+              padding: "2px 8px", background: pConfig.bg, color: pConfig.text,
+              borderRadius: 4, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em",
+            }}>
               {treatment.priority}
             </span>
-            <span style={{ fontSize: 11, color: "#64748b", textTransform: "capitalize" }}>
+            <span style={{ fontSize: 11, color: "#64748b", textTransform: "capitalize", fontWeight: 500 }}>
               {treatment.treatment_type}
             </span>
+            {treatment.cpt_code && (
+              <span style={{ marginLeft: "auto", padding: "2px 8px", background: "#dcfce7", color: "#059669", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
+                CPT: {treatment.cpt_code}
+              </span>
+            )}
           </div>
-          <div style={{ fontWeight: 500, marginTop: 6, color: "#1e293b" }}>{treatment.description}</div>
-          <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{treatment.rationale}</div>
-        </div>
-        {treatment.cpt_code && (
-          <div style={{ padding: "4px 8px", background: "#dcfce7", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
-            CPT: {treatment.cpt_code}
-          </div>
-        )}
-      </div>
+          <div style={{ fontWeight: 600, fontSize: 14, color: "#0f172a" }}>{treatment.description}</div>
+          <div style={{ fontSize: 12, color: "#64748b", marginTop: 4, lineHeight: 1.4 }}>{treatment.rationale}</div>
 
-      {treatment.contraindications && treatment.contraindications.length > 0 && (
-        <div style={{ marginTop: 8, fontSize: 12, color: "#dc2626" }}>
-          ⚠️ Contraindications: {treatment.contraindications.join(", ")}
+          {treatment.contraindications && treatment.contraindications.length > 0 && (
+            <div style={{ marginTop: 8, padding: "6px 10px", background: "#fef2f2", borderRadius: 4, border: "1px solid #fecaca", fontSize: 12 }}>
+              <strong style={{ color: "#dc2626" }}>Contraindications:</strong>
+              <span style={{ color: "#991b1b", marginLeft: 4 }}>{treatment.contraindications.join("; ")}</span>
+            </div>
+          )}
+
+          {treatment.monitoring && treatment.monitoring.length > 0 && (
+            <div style={{ marginTop: 6, padding: "6px 10px", background: "#f0f9ff", borderRadius: 4, border: "1px solid #bae6fd", fontSize: 12 }}>
+              <strong style={{ color: "#0369a1" }}>Monitoring:</strong>
+              <span style={{ color: "#0c4a6e", marginLeft: 4 }}>{treatment.monitoring.join("; ")}</span>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
