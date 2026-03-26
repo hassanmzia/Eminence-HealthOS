@@ -691,89 +691,139 @@ function AssessmentTab({
 
         {assessment?.assessment && !loading && (
           <>
-            {/* Confidence & Provider */}
-            <div className="flex items-center gap-3">
-              <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                (assessment.assessment.confidence ?? 0) >= 0.8
-                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                  : (assessment.assessment.confidence ?? 0) >= 0.5
-                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+            {/* Status Banner */}
+            <div className={`rounded-lg border-2 overflow-hidden ${
+              assessment.assessment.requires_human_review
+                ? "border-amber-400 dark:border-amber-600"
+                : "border-emerald-400 dark:border-emerald-600"
+            }`}>
+              <div className={`px-5 py-4 flex items-center justify-between ${
+                assessment.assessment.requires_human_review
+                  ? "bg-amber-50 dark:bg-amber-900/20"
+                  : "bg-emerald-50 dark:bg-emerald-900/20"
               }`}>
-                Confidence: {((assessment.assessment.confidence ?? 0) * 100).toFixed(0)}%
-              </span>
-              {assessment.llm_provider && (
-                <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                  LLM: {assessment.llm_provider}
-                </span>
-              )}
-              {assessment.assessment.requires_human_review && (
-                <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                  Requires Physician Review
-                </span>
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-lg font-bold ${
+                    assessment.assessment.requires_human_review ? "bg-amber-500" : "bg-emerald-500"
+                  }`}>
+                    {assessment.assessment.requires_human_review ? "!" : "\u2713"}
+                  </div>
+                  <div>
+                    <p className={`font-bold text-sm ${
+                      assessment.assessment.requires_human_review
+                        ? "text-amber-800 dark:text-amber-400"
+                        : "text-emerald-800 dark:text-emerald-400"
+                    }`}>
+                      {assessment.assessment.requires_human_review ? "REQUIRES PHYSICIAN REVIEW" : "ASSESSMENT COMPLETE"}
+                    </p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                      AI Confidence: <strong>{((assessment.assessment.confidence ?? 0) * 100).toFixed(0)}%</strong>
+                      {assessment.llm_provider && <> &middot; Engine: {assessment.llm_provider}</>}
+                    </p>
+                  </div>
+                </div>
+                {assessment.assessment.requires_human_review && (
+                  <span className="px-4 py-2 rounded-md bg-red-600 text-white text-xs font-bold shadow-sm">REVIEW REQUIRED</span>
+                )}
+              </div>
+              {(assessment.assessment.warnings?.length ?? 0) > 0 && (
+                <div className="px-5 py-3 space-y-1.5 border-t border-gray-200/50 dark:border-gray-700/50">
+                  {assessment.assessment.warnings!.map((w, i) => (
+                    <div key={i} className="px-3 py-2 rounded bg-red-100 dark:bg-red-900/20 text-xs text-red-700 dark:text-red-400">
+                      <strong>WARNING:</strong> {w}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
-            {/* Warnings */}
-            {(assessment.assessment.warnings?.length ?? 0) > 0 && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
-                <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300">Warnings</h4>
-                <ul className="mt-1 list-inside list-disc text-sm text-amber-700 dark:text-amber-400">
-                  {assessment.assessment.warnings!.map((w, i) => <li key={i}>{w}</li>)}
-                </ul>
-              </div>
-            )}
-
             {/* Diagnoses */}
             {(assessment.assessment.diagnoses?.length ?? 0) > 0 && (
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:bg-gray-800">
-                <h4 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">Diagnoses</h4>
-                <div className="space-y-3">
-                  {assessment.assessment.diagnoses!.map((d, i) => (
-                    <div key={i} className="rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-4 dark:border-gray-600 dark:bg-gray-700/50">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{d.diagnosis}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-mono text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                            {d.icd10_code}
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">{(d.confidence * 100).toFixed(0)}%</span>
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                  AI-Generated Diagnoses ({assessment.assessment.diagnoses!.length})
+                </div>
+                <div className="p-4 space-y-3">
+                  {assessment.assessment.diagnoses!.map((d, i) => {
+                    const confColor = d.confidence >= 0.8 ? "text-emerald-600" : d.confidence >= 0.5 ? "text-amber-600" : "text-red-600";
+                    return (
+                      <div key={i} className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-900">
+                        <div className="flex items-center gap-3 px-4 py-3 bg-gray-50/50 dark:bg-gray-800/30">
+                          <span className="w-7 h-7 rounded-full bg-blue-800 text-white text-[11px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{d.diagnosis}</p>
+                            <div className="flex gap-4 mt-1 text-[11px] text-gray-500">
+                              <span>ICD-10: <strong className="text-blue-700 dark:text-blue-400">{d.icd10_code}</strong></span>
+                              <span>Confidence: <strong className={confColor}>{(d.confidence * 100).toFixed(0)}%</strong></span>
+                            </div>
+                          </div>
                         </div>
+                        <div className="px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-600 dark:text-gray-400">{d.rationale}</div>
                       </div>
-                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{d.rationale}</p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Treatments */}
             {(assessment.assessment.treatments?.length ?? 0) > 0 && (
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm dark:bg-gray-800">
-                <h4 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">Treatment Recommendations</h4>
-                <div className="space-y-2">
-                  {assessment.assessment.treatments!.map((t, i) => (
-                    <div key={i} className="flex items-start gap-3 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-3 dark:border-gray-600 dark:bg-gray-700/50">
-                      <span className={`mt-0.5 inline-flex rounded px-2 py-0.5 text-xs font-semibold ${
-                        t.priority === "immediate" || t.priority === "urgent"
-                          ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 dark:bg-gray-600 dark:text-gray-300"
-                      }`}>
-                        {t.priority}
-                      </span>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{t.description}</span>
-                          {t.cpt_code && (
-                            <span className="rounded bg-green-100 px-1.5 py-0.5 text-xs font-mono text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                              CPT {t.cpt_code}
-                            </span>
-                          )}
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                  Treatment Recommendations ({assessment.assessment.treatments!.length})
+                </div>
+                <div className="p-4 space-y-3">
+                  {assessment.assessment.treatments!.map((t, i) => {
+                    const pCfg: Record<string, string> = { immediate: "bg-red-600", urgent: "bg-amber-600", routine: "bg-blue-600", elective: "bg-purple-600" };
+                    const pBg = pCfg[t.priority] || pCfg.routine;
+                    return (
+                      <div key={i} className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-900">
+                        <div className="flex items-start gap-3 px-4 py-3">
+                          <span className="w-7 h-7 rounded-full bg-emerald-700 text-white text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className={`${pBg} text-white px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide`}>{t.priority}</span>
+                              <span className="text-[10px] text-gray-500 capitalize font-medium">{t.treatment_type}</span>
+                              {t.cpt_code && <span className="ml-auto px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-semibold">CPT: {t.cpt_code}</span>}
+                            </div>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t.description}</p>
+                            <p className="text-[11px] text-gray-500 mt-1">{t.rationale}</p>
+                          </div>
                         </div>
-                        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-500">{t.rationale}</p>
                       </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Billing Codes */}
+            {((assessment.assessment.icd10_codes?.length ?? 0) > 0 || (assessment.assessment.cpt_codes?.length ?? 0) > 0) && (
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                  Clinical Billing Codes
+                </div>
+                <div className="p-4 grid grid-cols-2 gap-5">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 mb-2">ICD-10 Codes</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(assessment.assessment.icd10_codes ?? []).map((c, i) => (
+                        <span key={i} className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 text-[10px] font-semibold border border-blue-200 dark:border-blue-700">
+                          {c.code} <span className="text-gray-500 font-normal">{((c as Record<string, unknown>).confidence as number) ? `(${(((c as Record<string, unknown>).confidence as number) * 100).toFixed(0)}%)` : ""}</span>
+                        </span>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-2">CPT Codes</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(assessment.assessment.cpt_codes ?? []).map((c, i) => (
+                        <span key={i} className="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 text-[10px] font-semibold border border-emerald-200 dark:border-emerald-700">
+                          {c.code}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

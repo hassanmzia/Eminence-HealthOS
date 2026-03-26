@@ -36,6 +36,7 @@ import { PatientHeader } from "@/components/patients/PatientHeader";
 import { VitalsTrendChart } from "@/components/patients/VitalsTrendChart";
 import { RiskScoreGauge } from "@/components/patients/RiskScoreGauge";
 import { PatientAlerts } from "@/components/patients/PatientAlerts";
+import { AIAssessmentPanel } from "@/components/patients/AIAssessmentPanel";
 
 /* ── Tiny inline icons ─────────────────────────────────────────────────────── */
 const IconPlus = () => (
@@ -809,6 +810,42 @@ function DevicesTab({ patientId }: { patientId: string }) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
+   TAB: AI Assessment (HITL Clinical Decision Support)
+   ══════════════════════════════════════════════════════════════════════════════ */
+function AIAssessmentTab({ patientId, patient }: { patientId: string; patient: PatientData }) {
+  const [allergies, setAllergies] = useState<AllergyResponse[]>([]);
+  const [meds, setMeds] = useState<PrescriptionResponse[]>([]);
+  const [dx, setDx] = useState<DiagnosisResponse[]>([]);
+  const [mh, setMh] = useState<MedicalHistoryResponse[]>([]);
+  const [fh, setFh] = useState<FamilyHistoryResponse[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      fetchAllergies(patientId).then(r => setAllergies(r.results)).catch(() => {}),
+      fetchPrescriptions(patientId).then(r => setMeds(r.results)).catch(() => {}),
+      fetchDiagnoses(patientId).then(r => setDx(r.results)).catch(() => {}),
+      fetchMedicalHistory(patientId).then(r => setMh(r.results)).catch(() => {}),
+      fetchFamilyHistory(patientId).then(r => setFh(r.results)).catch(() => {}),
+    ]).then(() => setLoaded(true));
+  }, [patientId]);
+
+  if (!loaded) return <div className="flex justify-center py-8"><div className="h-6 w-6 animate-spin rounded-full border-2 border-healthos-500 border-t-transparent" /></div>;
+
+  return (
+    <AIAssessmentPanel
+      patient={patient}
+      fhirId={(patient.demographics as Record<string, unknown>)?.fhir_id as string | undefined}
+      allergies={allergies}
+      medications={meds}
+      diagnoses={dx}
+      medicalHistory={mh}
+      familyHistory={fh}
+    />
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
    MAIN PAGE
    ══════════════════════════════════════════════════════════════════════════════ */
 const TABS = [
@@ -822,6 +859,7 @@ const TABS = [
   { key: "social-history", label: "Social History" },
   { key: "labs", label: "Lab Results" },
   { key: "ai-recommendations", label: "AI Recommendations" },
+  { key: "ai-assessment", label: "AI Assessment" },
   { key: "devices", label: "Devices" },
 ] as const;
 
@@ -888,6 +926,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         {activeTab === "social-history" && <SocialHistoryTab patientId={id} />}
         {activeTab === "labs" && <LabResultsTab patientId={id} />}
         {activeTab === "ai-recommendations" && <AIRecommendationsTab patientId={id} />}
+        {activeTab === "ai-assessment" && patient && <AIAssessmentTab patientId={id} patient={patient} />}
         {activeTab === "devices" && <DevicesTab patientId={id} />}
       </div>
     </div>
