@@ -845,8 +845,8 @@ function CostRiskAnalysis({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {costDrivers.map((d) => (
-                <tr key={d.category} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              {costDrivers.map((d, i) => (
+                <tr key={`${d.category}-${i}`} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                   <td className="py-3 font-medium text-gray-900 dark:text-gray-100">{d.category}</td>
                   <td className="py-3 text-right font-semibold text-gray-900 dark:text-gray-100">{d.amount}</td>
                   <td className={`py-3 text-right font-semibold ${d.trendUp ? "text-red-500" : "text-emerald-600"}`}>
@@ -873,7 +873,7 @@ function CostRiskAnalysis({
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Savings Opportunities</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {opportunities.map((opp, i) => (
-            <div key={opp.title} className="card card-hover animate-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
+            <div key={`${opp.title}-${i}`} className="card card-hover animate-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
               <div className="flex items-start justify-between">
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">{opp.title}</h3>
                 <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700">
@@ -1180,8 +1180,8 @@ function CohortBuilder({
                 <div className="text-sm">
                   <span className="text-gray-500 dark:text-gray-400">Top Conditions:</span>
                   <div className="mt-1 flex flex-wrap gap-1">
-                    {((clinical?.top_conditions as string[]) || []).map((c) => (
-                      <span key={c} className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                    {((clinical?.top_conditions as string[]) || []).map((c, ci) => (
+                      <span key={`${c}-${ci}`} className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-300">
                         {c}
                       </span>
                     ))}
