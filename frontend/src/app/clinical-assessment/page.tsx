@@ -1199,37 +1199,8 @@ function AssessmentTab({
     const allApproved = rejectedDx.length === 0 && rejectedTx.length === 0;
     const decision = allApproved ? "approved" : "approved_modified";
 
-    try {
-      // Call the real backend endpoint
-      const result = await fetch("/api/v1/clinical/reviews/submit/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...getAuth() },
-        body: JSON.stringify({
-          assessment_id: assessment?.assessment?.review_reason || assessment?.patient_id || "assessment",
-          patient_id: assessment?.patient_id || "1",
-          physician_name: physicianName,
-          physician_specialty: "Internal Medicine",
-          decision,
-          approved_diagnoses: approvedDx,
-          rejected_diagnoses: rejectedDx,
-          approved_treatments: approvedTx,
-          rejected_treatments: rejectedTx,
-          physician_notes: clinicalNotes,
-          clinical_rationale: clinicalNotes,
-          attest: attestChecked,
-          review_started_at: reviewStartedAt,
-          diagnoses: allDiagnoses,
-          treatments: allTreatments,
-          icd10_codes: assessment?.assessment?.icd10_codes || [],
-          cpt_codes: assessment?.assessment?.cpt_codes || [],
-        }),
-      });
-      if (result.ok) {
-        const data = await result.json();
-        setWorkflowResult(data);
-      }
-    } catch {
-      // Demo fallback — simulate the workflow result
+    // Helper: create demo workflow result + persist to localStorage
+    const applyDemoFallback = () => {
       setWorkflowResult({
         id: `review-${Date.now()}`,
         decision,
@@ -1267,6 +1238,8 @@ function AssessmentTab({
           .map(i => allTreatments[i])
           .filter(t => t && ["lifestyle", "diet", "exercise", "counseling"].some(k => t.treatment_type?.toLowerCase().includes(k)))
           .map(t => t!.description);
+        // Include ALL approved treatments as medications if no specific type matched
+        const allApprovedItems = approvedTx.map(i => allTreatments[i]).filter(Boolean);
         const plan = {
           id: planId,
           patient_id: assessment?.patient_id || selectedPatient.id,
@@ -1274,7 +1247,7 @@ function AssessmentTab({
           plan_title: `Treatment Plan — ${selectedPatient.name} — ${new Date().toLocaleDateString()}`,
           status: "active",
           treatment_goals: `Approved ${approvedDx.length} diagnoses and ${approvedTx.length} treatments. ${approvedDx.map(i => allDiagnoses[i]?.diagnosis).filter(Boolean).join(", ")}.`,
-          medications: approvedMeds.length > 0 ? approvedMeds : null,
+          medications: approvedMeds.length > 0 ? approvedMeds : allApprovedItems.length > 0 ? allApprovedItems.map(t => ({ name: t!.description, dosage: "", frequency: "", type: t!.treatment_type })) : null,
           procedures: approvedProcs.length > 0 ? approvedProcs : null,
           lifestyle_modifications: lifestyleMods.length > 0 ? lifestyleMods : null,
           dietary_recommendations: null,
@@ -1286,7 +1259,6 @@ function AssessmentTab({
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
-        // Save to localStorage keyed by patient ID
         try {
           const storeKey = "healthos_treatment_plans";
           const existing = JSON.parse(localStorage.getItem(storeKey) || "[]");
@@ -1294,7 +1266,45 @@ function AssessmentTab({
           localStorage.setItem(storeKey, JSON.stringify(existing));
         } catch { /* localStorage not available */ }
       }
+    };
+
+    let backendSucceeded = false;
+    try {
+      const result = await fetch("/api/v1/clinical/reviews/submit/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuth() },
+        body: JSON.stringify({
+          assessment_id: assessment?.assessment?.review_reason || assessment?.patient_id || "assessment",
+          patient_id: assessment?.patient_id || "1",
+          physician_name: physicianName,
+          physician_specialty: "Internal Medicine",
+          decision,
+          approved_diagnoses: approvedDx,
+          rejected_diagnoses: rejectedDx,
+          approved_treatments: approvedTx,
+          rejected_treatments: rejectedTx,
+          physician_notes: clinicalNotes,
+          clinical_rationale: clinicalNotes,
+          attest: attestChecked,
+          review_started_at: reviewStartedAt,
+          diagnoses: allDiagnoses,
+          treatments: allTreatments,
+          icd10_codes: assessment?.assessment?.icd10_codes || [],
+          cpt_codes: assessment?.assessment?.cpt_codes || [],
+        }),
+      });
+      if (result.ok) {
+        const data = await result.json();
+        setWorkflowResult(data);
+        backendSucceeded = true;
+      }
+    } catch { /* network error — will fallback below */ }
+
+    // Fallback when backend is unavailable or returned an error
+    if (!backendSucceeded) {
+      applyDemoFallback();
     }
+
     setReviewSubmitted(true);
     setSubmitting(false);
   };
