@@ -5,18 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth, type Role } from "@/contexts/AuthContext";
 
-/** Return the correct landing page for each role. */
-function getLandingPage(role: string): string {
-  switch (role) {
-    case "patient":
-      return "/patient-portal";
-    case "clinician":
-      return "/clinical-workspace";
-    case "office_admin":
-      return "/operations";
-    default:
-      return "/dashboard";
-  }
+/** All roles land on the dashboard after login. */
+function getLandingPage(_role: string): string {
+  return "/dashboard";
 }
 
 export default function LoginPage() {
