@@ -9,7 +9,7 @@ import { ToastProvider } from "@/contexts/ToastContext";
 import { AuthProvider, useAuth, canAccessRoute, type Role } from "@/contexts/AuthContext";
 import { CommandPalette } from "@/components/shared/CommandPalette";
 
-const PUBLIC_ROUTES = ["/login", "/register"];
+const PUBLIC_ROUTES = ["/login", "/register", "/signup"];
 
 /** Return the correct home page for a given role. */
 function getHomePage(role: Role): string {

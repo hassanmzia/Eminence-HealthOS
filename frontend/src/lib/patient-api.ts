@@ -23,9 +23,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (res.status === 401 && typeof window !== "undefined") {
+    const onPublicPage = ["/login", "/register", "/signup"].some(p => window.location.pathname.startsWith(p));
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    window.location.href = "/login";
+    if (!onPublicPage) {
+      window.location.href = "/login";
+    }
     throw new Error("Unauthorized");
   }
 
