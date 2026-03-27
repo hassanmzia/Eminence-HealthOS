@@ -1251,6 +1251,49 @@ function AssessmentTab({
         approved_treatments: approvedTx,
         rejected_treatments: rejectedTx,
       });
+
+      // Persist treatment plan to localStorage so other pages can read it
+      if (decision !== "rejected") {
+        const planId = `tp-${Date.now()}`;
+        const approvedMeds = approvedTx
+          .map(i => allTreatments[i])
+          .filter(t => t && ["medication", "anticoagulation", "antihypertensive", "statin", "diuretic"].some(k => t.treatment_type?.toLowerCase().includes(k)))
+          .map(t => ({ name: t!.description, dosage: "", frequency: "", type: t!.treatment_type }));
+        const approvedProcs = approvedTx
+          .map(i => allTreatments[i])
+          .filter(t => t && ["lab", "procedure", "referral", "imaging", "diagnostic", "test"].some(k => t.treatment_type?.toLowerCase().includes(k)))
+          .map(t => ({ description: t!.description, cpt_code: t!.cpt_code }));
+        const lifestyleMods = approvedTx
+          .map(i => allTreatments[i])
+          .filter(t => t && ["lifestyle", "diet", "exercise", "counseling"].some(k => t.treatment_type?.toLowerCase().includes(k)))
+          .map(t => t!.description);
+        const plan = {
+          id: planId,
+          patient_id: assessment?.patient_id || selectedPatient.id,
+          provider_id: null,
+          plan_title: `Treatment Plan — ${selectedPatient.name} — ${new Date().toLocaleDateString()}`,
+          status: "active",
+          treatment_goals: `Approved ${approvedDx.length} diagnoses and ${approvedTx.length} treatments. ${approvedDx.map(i => allDiagnoses[i]?.diagnosis).filter(Boolean).join(", ")}.`,
+          medications: approvedMeds.length > 0 ? approvedMeds : null,
+          procedures: approvedProcs.length > 0 ? approvedProcs : null,
+          lifestyle_modifications: lifestyleMods.length > 0 ? lifestyleMods : null,
+          dietary_recommendations: null,
+          exercise_recommendations: null,
+          follow_up_instructions: approvedTx.length > 0 ? "Follow up in 2-4 weeks to assess treatment response. Sooner if symptoms worsen." : null,
+          warning_signs: ["Chest pain or shortness of breath", "Sudden severe headache", "Unexplained swelling or weight gain", "Fever above 101.5\u00B0F"],
+          emergency_instructions: "Call 911 or go to the nearest emergency department for chest pain, difficulty breathing, or sudden neurological changes.",
+          is_visible_to_patient: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        // Save to localStorage keyed by patient ID
+        try {
+          const storeKey = "healthos_treatment_plans";
+          const existing = JSON.parse(localStorage.getItem(storeKey) || "[]");
+          existing.push(plan);
+          localStorage.setItem(storeKey, JSON.stringify(existing));
+        } catch { /* localStorage not available */ }
+      }
     }
     setReviewSubmitted(true);
     setSubmitting(false);

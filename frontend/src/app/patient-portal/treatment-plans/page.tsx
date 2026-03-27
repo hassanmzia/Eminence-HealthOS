@@ -23,10 +23,17 @@ export default function TreatmentPlansPage() {
       fetchAllPrescriptions("active").catch(() => []),
     ])
       .then(([tp, rx]) => {
-        setPlans((tp as DoctorTreatmentPlanResponse[]) ?? []);
+        let tpList = (tp as DoctorTreatmentPlanResponse[]) ?? [];
+        // Fallback: read from localStorage if API returned empty
+        if (tpList.length === 0) {
+          try {
+            const stored = JSON.parse(localStorage.getItem("healthos_treatment_plans") || "[]") as DoctorTreatmentPlanResponse[];
+            if (stored.length > 0) tpList = stored;
+          } catch { /* ignore */ }
+        }
+        setPlans(tpList);
         setPrescriptions((rx as PrescriptionResponse[]) ?? []);
-        // Auto-expand the first plan
-        if (Array.isArray(tp) && tp.length > 0) setExpandedPlan(tp[0].id);
+        if (tpList.length > 0) setExpandedPlan(tpList[0].id);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
