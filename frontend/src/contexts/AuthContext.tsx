@@ -149,7 +149,7 @@ const ROLE_PERMISSIONS: Record<Role, Set<Permission>> = {
 
 // Route → allowed roles mapping for frontend route guards
 export const ROUTE_ACCESS: Record<string, Role[]> = {
-  "/dashboard": ["super_admin", "admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing", "read_only"],
+  "/dashboard": ["super_admin", "admin", "clinician", "care_manager", "nurse", "office_admin", "patient", "lab_tech", "pharmacist", "billing", "read_only"],
   "/clinical-workspace": ["super_admin", "admin", "clinician", "care_manager", "nurse"],
   "/patients": ["super_admin", "admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing", "read_only"],
   "/alerts": ["super_admin", "admin", "clinician", "care_manager", "nurse", "office_admin", "lab_tech", "pharmacist", "billing", "read_only"],

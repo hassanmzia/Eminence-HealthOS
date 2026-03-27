@@ -11,18 +11,9 @@ import { CommandPalette } from "@/components/shared/CommandPalette";
 
 const PUBLIC_ROUTES = ["/login", "/register", "/signup"];
 
-/** Return the correct home page for a given role. */
-function getHomePage(role: Role): string {
-  switch (role) {
-    case "patient":
-      return "/patient-portal";
-    case "clinician":
-      return "/clinical-workspace";
-    case "office_admin":
-      return "/operations";
-    default:
-      return "/dashboard";
-  }
+/** All roles use the dashboard as home page. */
+function getHomePage(_role: Role): string {
+  return "/dashboard";
 }
 
 function RouteGuard({ children }: { children: React.ReactNode }) {
@@ -40,14 +31,6 @@ function RouteGuard({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
-  }
-
-  // Patient users trying to access staff routes → redirect to patient portal
-  if (isPatient && pathname && !pathname.startsWith("/patient-portal") && pathname !== "/messaging" && pathname !== "/profile") {
-    if (typeof window !== "undefined") {
-      router.replace("/patient-portal");
-    }
-    return null;
   }
 
   // Check route-level access
