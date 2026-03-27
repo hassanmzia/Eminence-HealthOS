@@ -21,7 +21,7 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("clinician");
+  const [role, setRole] = useState("patient");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -153,6 +153,7 @@ export default function RegisterPage() {
             <div>
               <label htmlFor="role" className={labelCls}>Role</label>
               <select id="role" value={role} onChange={(e) => setRole(e.target.value)} className={selectCls}>
+                <option value="patient">Patient</option>
                 <option value="clinician">Clinician / Physician</option>
                 <option value="nurse">Nurse</option>
                 <option value="office_admin">Office Admin</option>
@@ -161,7 +162,6 @@ export default function RegisterPage() {
                 <option value="pharmacist">Pharmacist</option>
                 <option value="billing">Billing</option>
                 <option value="read_only">Read Only</option>
-                <option value="patient">Patient</option>
               </select>
             </div>
 
