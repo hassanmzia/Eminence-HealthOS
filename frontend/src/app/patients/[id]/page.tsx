@@ -852,7 +852,7 @@ function AIAssessmentTab({ patientId, patient }: { patientId: string; patient: P
    TREATMENT PLANS TAB (Doctor View)
    ══════════════════════════════════════════════════════════════════════════════ */
 
-function TreatmentPlansTab({ patientId }: { patientId: string }) {
+function TreatmentPlansTab({ patientId, patientName }: { patientId: string; patientName?: string }) {
   const [plans, setPlans] = useState<DoctorTreatmentPlanResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -873,8 +873,12 @@ function TreatmentPlansTab({ patientId }: { patientId: string }) {
 
     // Fallback: read from localStorage (plans created by clinical-assessment workflow)
     try {
-      const stored = JSON.parse(localStorage.getItem("healthos_treatment_plans") || "[]") as DoctorTreatmentPlanResponse[];
-      const forPatient = stored.filter(p => p.patient_id === patientId);
+      const stored = JSON.parse(localStorage.getItem("healthos_treatment_plans") || "[]") as (DoctorTreatmentPlanResponse & { patient_name?: string })[];
+      // Match by patient_id OR by patient name in the plan title
+      const forPatient = stored.filter(p =>
+        p.patient_id === patientId ||
+        (patientName && p.plan_title?.toLowerCase().includes(patientName.toLowerCase()))
+      );
       if (forPatient.length > 0) {
         setPlans(forPatient);
       }
@@ -1141,7 +1145,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         {activeTab === "demographics" && patient && <div className="card !p-5"><DemographicsTab patient={patient} /></div>}
         {activeTab === "diagnoses" && <DiagnosesTab patientId={id} />}
         {activeTab === "medications" && <MedicationsTab patientId={id} />}
-        {activeTab === "treatment-plans" && <TreatmentPlansTab patientId={id} />}
+        {activeTab === "treatment-plans" && <TreatmentPlansTab patientId={id} patientName={(patient?.demographics as Record<string, unknown>)?.name as string | undefined} />}
         {activeTab === "allergies" && <AllergiesTab patientId={id} />}
         {activeTab === "medical-history" && <MedicalHistoryTab patientId={id} />}
         {activeTab === "family-history" && <FamilyHistoryTab patientId={id} />}
