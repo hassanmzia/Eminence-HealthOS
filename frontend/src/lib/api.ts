@@ -24,10 +24,13 @@ async function request<T>(path: string, options?: RequestOptions): Promise<T> {
   });
 
   if (res.status === 401 && typeof window !== "undefined") {
+    const onPublicPage = ["/login", "/register", "/signup"].some(p => window.location.pathname.startsWith(p));
     if (!noAuthRedirect) {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
-      window.location.href = "/login";
+      if (!onPublicPage) {
+        window.location.href = "/login";
+      }
     }
     throw new Error("Unauthorized");
   }
@@ -88,9 +91,12 @@ export async function uploadAvatar(file: File) {
     body: formData,
   });
   if (res.status === 401 && typeof window !== "undefined") {
+    const onPublicPage = ["/login", "/register", "/signup"].some(p => window.location.pathname.startsWith(p));
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    window.location.href = "/login";
+    if (!onPublicPage) {
+      window.location.href = "/login";
+    }
     throw new Error("Unauthorized");
   }
   if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
