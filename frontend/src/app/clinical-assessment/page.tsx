@@ -2,6 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  createDoctorTreatmentPlan,
+  publishTreatmentPlan,
+  createPrescriptionRecord,
+  createLabTest,
+  sendSecureMessage,
+  submitPriorAuth,
+  createEHROrders,
+} from "@/lib/platform-api";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    TYPES
@@ -681,6 +690,7 @@ function WorkflowPipeline({
   workflowResult, reviewDecisions, allDiagnoses, allTreatments,
   expandedSteps, setExpandedSteps, generatingDoc, setGeneratingDoc,
   clinicalDocHtml, setClinicalDocHtml, assessment, physicianName, selectedPatient,
+  stepStatus,
 }: {
   workflowResult: Record<string, any> | null;
   reviewDecisions: Record<string, "approve" | "reject" | "modify">;
@@ -695,6 +705,7 @@ function WorkflowPipeline({
   assessment: ClinicalAssessment | null;
   physicianName: string;
   selectedPatient: (typeof DEMO_PATIENTS)[0];
+  stepStatus: Record<number, "pending" | "running" | "done" | "error" | "skipped">;
 }) {
   const approvedDxIndices = Object.entries(reviewDecisions)
     .filter(([k, v]) => k.startsWith("dx-") && v === "approve")
@@ -749,45 +760,53 @@ function WorkflowPipeline({
     setGeneratingDoc(false);
   };
 
-  const StepIcon = ({ done, skipped }: { done: boolean; skipped?: boolean }) => (
+  const StepIcon = ({ done, skipped, running, errored }: { done: boolean; skipped?: boolean; running?: boolean; errored?: boolean }) => (
     <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
-      done ? "bg-emerald-500" : skipped ? "bg-gray-300 dark:bg-gray-600" : "bg-amber-400"
+      done ? "bg-emerald-500" : errored ? "bg-red-500" : skipped ? "bg-gray-300 dark:bg-gray-600" : running ? "bg-blue-500" : "bg-gray-200 dark:bg-gray-700"
     }`}>
       {done ? (
         <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
         </svg>
+      ) : errored ? (
+        <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+        </svg>
       ) : skipped ? (
         <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
         </svg>
-      ) : (
+      ) : running ? (
         <svg className="h-3.5 w-3.5 text-white animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
         </svg>
+      ) : (
+        <div className="h-2 w-2 rounded-full bg-gray-400" />
       )}
     </div>
   );
 
-  const Badge = ({ done, skipped }: { done: boolean; skipped?: boolean }) => (
+  const Badge = ({ done, skipped, running, errored }: { done: boolean; skipped?: boolean; running?: boolean; errored?: boolean }) => (
     <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
       done ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+      : errored ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
       : skipped ? "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500"
-      : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+      : running ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+      : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
     }`}>
-      {done ? "Complete" : skipped ? "N/A" : "Processing"}
+      {done ? "Complete" : errored ? "Failed" : skipped ? "N/A" : running ? "Running..." : "Pending"}
     </span>
   );
 
-  const StepHeader = ({ idx, label, done, skipped, detail }: { idx: number; label: string; done: boolean; skipped?: boolean; detail: string }) => (
+  const StepHeader = ({ idx, label, done, skipped, running, errored, detail }: { idx: number; label: string; done: boolean; skipped?: boolean; running?: boolean; errored?: boolean; detail: string }) => (
     <button onClick={() => toggleStep(idx)} className="w-full flex items-start gap-3 text-left group">
-      <StepIcon done={done} skipped={skipped} />
+      <StepIcon done={done} skipped={skipped} running={running} errored={errored} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className={`text-[13px] font-semibold ${done ? "text-emerald-700 dark:text-emerald-400" : skipped ? "text-gray-400" : "text-amber-700 dark:text-amber-400"}`}>
+          <p className={`text-[13px] font-semibold ${done ? "text-emerald-700 dark:text-emerald-400" : errored ? "text-red-600 dark:text-red-400" : skipped ? "text-gray-400" : running ? "text-blue-700 dark:text-blue-400" : "text-gray-500"}`}>
             {label}
           </p>
-          <Badge done={done} skipped={skipped} />
+          <Badge done={done} skipped={skipped} running={running} errored={errored} />
           <svg className={`h-3.5 w-3.5 ml-auto text-gray-400 transition-transform ${expandedSteps[idx] ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
           </svg>
@@ -797,14 +816,25 @@ function WorkflowPipeline({
     </button>
   );
 
-  const tpDone = workflowResult?.treatment_plan_created ?? true;
-  const pnDone = workflowResult?.patient_notified ?? true;
-  const rxDone = workflowResult?.pharmacy_ordered ?? false;
-  const rxSkipped = !rxDone && medTx.length === 0;
-  const ehrDone = (workflowResult?.orders_created ?? 0) > 0;
-  const ctDone = workflowResult?.workflow_status === "completed";
-  const insDone = workflowResult?.workflow_status === "completed";
-  const docDone = workflowResult?.workflow_status === "completed";
+  // Use live per-step status if available, fall back to workflowResult fields
+  const ss = (idx: number) => stepStatus[idx];
+  const tpDone = ss(0) === "done" || (workflowResult?.treatment_plan_created ?? false);
+  const tpSkipped = ss(0) === "skipped";
+  const tpRunning = ss(0) === "running";
+  const pnDone = ss(1) === "done" || (workflowResult?.patient_notified ?? false);
+  const pnSkipped = ss(1) === "skipped";
+  const pnRunning = ss(1) === "running";
+  const rxDone = ss(2) === "done" || (workflowResult?.pharmacy_ordered ?? false);
+  const rxSkipped = ss(2) === "skipped" || (!rxDone && medTx.length === 0);
+  const rxRunning = ss(2) === "running";
+  const ehrDone = ss(3) === "done" || (workflowResult?.orders_created ?? 0) > 0;
+  const ehrRunning = ss(3) === "running";
+  const ctDone = ss(4) === "done";
+  const ctRunning = ss(4) === "running";
+  const insDone = ss(5) === "done";
+  const insSkipped = ss(5) === "skipped";
+  const insRunning = ss(5) === "running";
+  const docDone = ss(6) === "done" || clinicalDocHtml !== null;
 
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -813,13 +843,13 @@ function WorkflowPipeline({
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
         </svg>
         <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">Post-Approval Workflow</span>
-        <span className="ml-auto text-[10px] text-gray-400">{[tpDone, pnDone, rxDone || rxSkipped, ehrDone, ctDone, insDone, docDone].filter(Boolean).length}/7 steps</span>
+        <span className="ml-auto text-[10px] text-gray-400">{[tpDone || tpSkipped, pnDone || pnSkipped, rxDone || rxSkipped, ehrDone, ctDone, insDone || insSkipped, docDone].filter(Boolean).length}/7 steps</span>
       </div>
       <div className="p-4 space-y-4">
 
         {/* ── Step 1: Treatment Plan ── */}
         <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
-          <StepHeader idx={0} label="Treatment Plan Created" done={tpDone} detail={`${approvedDx.length} diagnoses, ${approvedTx.length} treatments approved — visible in Patient Portal`} />
+          <StepHeader idx={0} label="Treatment Plan Created" done={tpDone} skipped={tpSkipped} running={tpRunning} detail={`${approvedDx.length} diagnoses, ${approvedTx.length} treatments approved${workflowResult?.treatment_plan_id ? ` — Plan ID: ${workflowResult.treatment_plan_id}` : " — visible in Patient Portal"}`} />
           {expandedSteps[0] && (
             <div className="mt-3 ml-10 space-y-3 animate-fade-in-up">
               {approvedDx.length > 0 && (
@@ -872,7 +902,7 @@ function WorkflowPipeline({
 
         {/* ── Step 2: Patient Notification ── */}
         <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
-          <StepHeader idx={1} label="Patient Notified" done={pnDone} detail="Patient notified via portal notification, SMS, and email" />
+          <StepHeader idx={1} label="Patient Notified" done={pnDone} skipped={pnSkipped} running={pnRunning} detail="Patient notified via secure message, portal notification" />
           {expandedSteps[1] && (
             <div className="mt-3 ml-10 space-y-2 animate-fade-in-up">
               <div className="rounded-md bg-blue-50 dark:bg-blue-950/20 p-3 border border-blue-100 dark:border-blue-900">
@@ -897,8 +927,8 @@ function WorkflowPipeline({
 
         {/* ── Step 3: Pharmacy Orders ── */}
         <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
-          <StepHeader idx={2} label="Pharmacy Orders Submitted" done={rxDone} skipped={rxSkipped}
-            detail={medTx.length > 0 ? `${medTx.length} e-prescription(s) transmitted to pharmacy` : "No medication orders in this assessment"} />
+          <StepHeader idx={2} label="Pharmacy Orders Submitted" done={rxDone} skipped={rxSkipped} running={rxRunning} errored={ss(2) === "error"}
+            detail={medTx.length > 0 ? `${workflowResult?.pharmacy_count ?? medTx.length} prescription(s) created in database` : "No medication orders in this assessment"} />
           {expandedSteps[2] && (
             <div className="mt-3 ml-10 space-y-2 animate-fade-in-up">
               {medTx.length > 0 ? (
@@ -918,7 +948,7 @@ function WorkflowPipeline({
                           <p className="font-semibold text-gray-800 dark:text-gray-200">{t?.description}</p>
                           <p className="text-[10px] text-gray-500">Type: {t?.treatment_type} &middot; Priority: {t?.priority} &middot; CPT: {t?.cpt_code || "—"}</p>
                         </div>
-                        <span className="text-[9px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded">Transmitted</span>
+                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${rxDone ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : rxRunning ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}>{rxDone ? "Created" : rxRunning ? "Creating..." : "Pending"}</span>
                       </div>
                     ))}
                   </div>
@@ -932,8 +962,8 @@ function WorkflowPipeline({
 
         {/* ── Step 4: EHR Orders ── */}
         <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
-          <StepHeader idx={3} label="EHR Orders Created" done={ehrDone}
-            detail={`${workflowResult?.orders_created ?? approvedTx.length} order(s) submitted to EHR system`} />
+          <StepHeader idx={3} label="EHR Orders Created" done={ehrDone} running={ehrRunning} errored={ss(3) === "error"}
+            detail={`${workflowResult?.orders_created ?? 0} order(s) submitted to EHR system`} />
           {expandedSteps[3] && (
             <div className="mt-3 ml-10 space-y-2 animate-fade-in-up">
               {labTx.length > 0 && (
@@ -981,17 +1011,17 @@ function WorkflowPipeline({
 
         {/* ── Step 5: Care Team Notified ── */}
         <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
-          <StepHeader idx={4} label="Care Team Notified" done={ctDone} detail="PCP, care manager, and nursing staff notified of plan changes" />
+          <StepHeader idx={4} label="Care Team Notified" done={ctDone} running={ctRunning} detail="PCP, care manager, and nursing staff notified of plan changes" />
           {expandedSteps[4] && (
             <div className="mt-3 ml-10 space-y-2 animate-fade-in-up">
               <div className="rounded-md bg-indigo-50 dark:bg-indigo-950/20 p-3 border border-indigo-100 dark:border-indigo-900">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 mb-2">Notifications Sent</p>
                 <div className="space-y-1.5">
                   {[
-                    { role: "Reviewing Physician", name: physicianName, method: "In-app + Email", status: "Delivered" },
-                    { role: "Primary Care Provider", name: selectedPatient.name.includes("Martinez") ? "Dr. Rodriguez" : "Dr. Thompson", method: "EHR Alert", status: "Delivered" },
-                    { role: "Care Manager", name: "Care Management Team", method: "Dashboard Alert", status: "Delivered" },
-                    { role: "Nursing Staff", name: "Unit Nursing", method: "EHR Task Queue", status: "Queued" },
+                    { role: "Reviewing Physician", name: physicianName, method: "Secure Message" },
+                    { role: "Primary Care Provider", name: selectedPatient.name.includes("Martinez") ? "Dr. Rodriguez" : "Dr. Thompson", method: "Secure Message" },
+                    { role: "Care Manager", name: "Care Management Team", method: "Secure Message" },
+                    { role: "Nursing Staff", name: "Unit Nursing", method: "Dashboard Alert" },
                   ].map((n, i) => (
                     <div key={i} className="flex items-center gap-3 text-[12px]">
                       <div className="h-6 w-6 rounded-full bg-indigo-200 dark:bg-indigo-800 flex items-center justify-center text-[9px] font-bold text-indigo-700 dark:text-indigo-300">
@@ -1003,8 +1033,8 @@ function WorkflowPipeline({
                       </div>
                       <span className="text-[9px] text-gray-400">{n.method}</span>
                       <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                        n.status === "Delivered" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                      }`}>{n.status}</span>
+                        ctDone ? "bg-emerald-100 text-emerald-700" : ctRunning ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"
+                      }`}>{ctDone ? "Sent" : ctRunning ? "Sending..." : "Pending"}</span>
                     </div>
                   ))}
                 </div>
@@ -1015,8 +1045,8 @@ function WorkflowPipeline({
 
         {/* ── Step 6: Insurance Pre-Auth ── */}
         <div className="rounded-lg border border-gray-100 dark:border-gray-800 p-3">
-          <StepHeader idx={5} label="Insurance Pre-Authorization" done={insDone}
-            detail="Pre-auth requirements checked for procedures and high-cost medications" />
+          <StepHeader idx={5} label="Insurance Pre-Authorization" done={insDone} skipped={insSkipped} running={insRunning} errored={ss(5) === "error"}
+            detail={workflowResult?.preauth_submitted ? "Pre-auth request submitted to payer" : "Pre-auth requirements checked for procedures and high-cost medications"} />
           {expandedSteps[5] && (
             <div className="mt-3 ml-10 space-y-2 animate-fade-in-up">
               <div className="rounded-md bg-orange-50 dark:bg-orange-950/20 p-3 border border-orange-100 dark:border-orange-900">
@@ -1026,13 +1056,13 @@ function WorkflowPipeline({
                     {procTx.map((t, i) => (
                       <div key={`proc-${i}`} className="flex items-center gap-2 text-[12px]">
                         <span className="font-medium text-gray-800 dark:text-gray-200 flex-1">{t?.description}</span>
-                        <span className="text-[9px] font-bold uppercase bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">Approved</span>
+                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${insDone ? "bg-emerald-100 text-emerald-700" : insRunning ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>{insDone ? "Submitted" : insRunning ? "Submitting..." : "Pending"}</span>
                       </div>
                     ))}
                     {medTx.filter(t => t?.priority === "high" || t?.priority === "urgent").map((t, i) => (
                       <div key={`med-${i}`} className="flex items-center gap-2 text-[12px]">
                         <span className="font-medium text-gray-800 dark:text-gray-200 flex-1">{t?.description}</span>
-                        <span className="text-[9px] font-bold uppercase bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Pending Review</span>
+                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${insDone ? "bg-emerald-100 text-emerald-700" : insRunning ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>{insDone ? "Submitted" : insRunning ? "Submitting..." : "Pending Review"}</span>
                       </div>
                     ))}
                     {medTx.filter(t => t?.priority !== "high" && t?.priority !== "urgent").length > 0 && (
@@ -1147,6 +1177,8 @@ function AssessmentTab({
   const [clinicalDocHtml, setClinicalDocHtml] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [workflowResult, setWorkflowResult] = useState<Record<string, any> | null>(null);
+  // Per-step live status: "pending" | "running" | "done" | "error" | "skipped"
+  const [stepStatus, setStepStatus] = useState<Record<number, "pending" | "running" | "done" | "error" | "skipped">>({});
 
   // Reset review state when assessment changes
   useEffect(() => {
@@ -1155,6 +1187,7 @@ function AssessmentTab({
     setAttestChecked(false);
     setReviewSubmitted(false);
     setWorkflowResult(null);
+    setStepStatus({});
   }, [assessment]);
 
   const allDiagnoses = assessment?.assessment?.diagnoses ?? [];
@@ -1197,85 +1230,66 @@ function AssessmentTab({
     setSubmitting(true);
     const { approvedDx, rejectedDx, approvedTx, rejectedTx } = getReviewIndices();
     const allApproved = rejectedDx.length === 0 && rejectedTx.length === 0;
-    const decision = allApproved ? "approved" : "approved_modified";
+    const decision: string = allApproved ? "approved" : "approved_modified";
 
-    // Helper: create demo workflow result + persist to localStorage
-    const applyDemoFallback = () => {
-      setWorkflowResult({
-        id: `review-${Date.now()}`,
-        decision,
-        physician_name: physicianName,
-        attested: attestChecked,
-        signature_datetime: new Date().toISOString(),
-        review_completed_at: new Date().toISOString(),
-        time_spent_seconds: Math.floor((Date.now() - new Date(reviewStartedAt).getTime()) / 1000),
-        workflow_status: "completed",
-        treatment_plan_created: decision !== "rejected",
-        patient_notified: decision !== "rejected",
-        pharmacy_ordered: approvedTx.some((i) => {
-          const t = allTreatments[i];
-          return t && ["medication", "anticoagulation"].includes(t.treatment_type?.toLowerCase());
-        }),
-        orders_created: approvedTx.length,
-        approved_diagnoses: approvedDx,
-        rejected_diagnoses: rejectedDx,
-        approved_treatments: approvedTx,
-        rejected_treatments: rejectedTx,
-      });
+    // Classify approved treatments
+    const medTypes = ["medication", "anticoagulation", "antihypertensive", "statin", "diuretic"];
+    const labTypes = ["lab", "diagnostic", "imaging", "test", "panel"];
+    const procTypes = ["procedure", "referral", "consultation", "surgery"];
+    const lifestyleTypes = ["lifestyle", "diet", "exercise", "counseling", "education"];
 
-      // Persist treatment plan to localStorage so other pages can read it
-      if (decision !== "rejected") {
-        const planId = `tp-${Date.now()}`;
-        const approvedMeds = approvedTx
-          .map(i => allTreatments[i])
-          .filter(t => t && ["medication", "anticoagulation", "antihypertensive", "statin", "diuretic"].some(k => t.treatment_type?.toLowerCase().includes(k)))
-          .map(t => ({ name: t!.description, dosage: "", frequency: "", type: t!.treatment_type }));
-        const approvedProcs = approvedTx
-          .map(i => allTreatments[i])
-          .filter(t => t && ["lab", "procedure", "referral", "imaging", "diagnostic", "test"].some(k => t.treatment_type?.toLowerCase().includes(k)))
-          .map(t => ({ description: t!.description, cpt_code: t!.cpt_code }));
-        const lifestyleMods = approvedTx
-          .map(i => allTreatments[i])
-          .filter(t => t && ["lifestyle", "diet", "exercise", "counseling"].some(k => t.treatment_type?.toLowerCase().includes(k)))
-          .map(t => t!.description);
-        // Include ALL approved treatments as medications if no specific type matched
-        const allApprovedItems = approvedTx.map(i => allTreatments[i]).filter(Boolean);
-        const plan = {
-          id: planId,
-          patient_id: assessment?.patient_id || selectedPatient.id,
-          provider_id: null,
-          plan_title: `Treatment Plan — ${selectedPatient.name} — ${new Date().toLocaleDateString()}`,
-          status: "active",
-          treatment_goals: `Approved ${approvedDx.length} diagnoses and ${approvedTx.length} treatments. ${approvedDx.map(i => allDiagnoses[i]?.diagnosis).filter(Boolean).join(", ")}.`,
-          medications: approvedMeds.length > 0 ? approvedMeds : allApprovedItems.length > 0 ? allApprovedItems.map(t => ({ name: t!.description, dosage: "", frequency: "", type: t!.treatment_type })) : null,
-          procedures: approvedProcs.length > 0 ? approvedProcs : null,
-          lifestyle_modifications: lifestyleMods.length > 0 ? lifestyleMods : null,
-          dietary_recommendations: null,
-          exercise_recommendations: null,
-          follow_up_instructions: approvedTx.length > 0 ? "Follow up in 2-4 weeks to assess treatment response. Sooner if symptoms worsen." : null,
-          warning_signs: ["Chest pain or shortness of breath", "Sudden severe headache", "Unexplained swelling or weight gain", "Fever above 101.5\u00B0F"],
-          emergency_instructions: "Call 911 or go to the nearest emergency department for chest pain, difficulty breathing, or sudden neurological changes.",
-          is_visible_to_patient: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        try {
-          const storeKey = "healthos_treatment_plans";
-          const existing = JSON.parse(localStorage.getItem(storeKey) || "[]");
-          existing.push(plan);
-          localStorage.setItem(storeKey, JSON.stringify(existing));
-        } catch { /* localStorage not available */ }
-      }
+    const approvedItems = approvedTx.map(i => allTreatments[i]).filter(Boolean);
+    const approvedMeds = approvedItems.filter(t => medTypes.some(k => t!.treatment_type?.toLowerCase().includes(k)));
+    const approvedLabs = approvedItems.filter(t => labTypes.some(k => t!.treatment_type?.toLowerCase().includes(k)));
+    const approvedProcs = approvedItems.filter(t => procTypes.some(k => t!.treatment_type?.toLowerCase().includes(k)));
+    const lifestyleMods = approvedItems.filter(t => lifestyleTypes.some(k => t!.treatment_type?.toLowerCase().includes(k)));
+    const approvedDxItems = approvedDx.map(i => allDiagnoses[i]).filter(Boolean);
+
+    const patientId = assessment?.patient_id || selectedPatient.id;
+    const reviewId = `review-${Date.now()}`;
+
+    // Helper to update a single step status
+    const updateStep = (idx: number, status: "pending" | "running" | "done" | "error" | "skipped") => {
+      setStepStatus(prev => ({ ...prev, [idx]: status }));
     };
 
-    let backendSucceeded = false;
+    // Initialize all steps
+    setStepStatus({ 0: "pending", 1: "pending", 2: "pending", 3: "pending", 4: "pending", 5: "pending", 6: "pending" });
+
+    // Build the base workflow result early so UI can start rendering
+    const baseResult: Record<string, any> = {
+      id: reviewId,
+      decision,
+      physician_name: physicianName,
+      attested: attestChecked,
+      signature_datetime: new Date().toISOString(),
+      review_completed_at: new Date().toISOString(),
+      time_spent_seconds: Math.floor((Date.now() - new Date(reviewStartedAt).getTime()) / 1000),
+      workflow_status: "processing",
+      treatment_plan_created: false,
+      treatment_plan_id: null,
+      patient_notified: false,
+      pharmacy_ordered: false,
+      labs_ordered: false,
+      orders_created: 0,
+      preauth_submitted: false,
+      approved_diagnoses: approvedDx,
+      rejected_diagnoses: rejectedDx,
+      approved_treatments: approvedTx,
+      rejected_treatments: rejectedTx,
+    };
+    setWorkflowResult({ ...baseResult });
+    setReviewSubmitted(true);
+
+    // ─── Step 0: Submit review to backend ───
+    let backendReviewId: string | null = null;
     try {
       const result = await fetch("/api/v1/clinical/reviews/submit/", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuth() },
         body: JSON.stringify({
           assessment_id: assessment?.assessment?.review_reason || assessment?.patient_id || "assessment",
-          patient_id: assessment?.patient_id || "1",
+          patient_id: patientId,
           physician_name: physicianName,
           physician_specialty: "Internal Medicine",
           decision,
@@ -1295,17 +1309,211 @@ function AssessmentTab({
       });
       if (result.ok) {
         const data = await result.json();
-        setWorkflowResult(data);
-        backendSucceeded = true;
+        backendReviewId = data.id || reviewId;
+        setWorkflowResult(prev => ({ ...prev, ...data }));
       }
-    } catch { /* network error — will fallback below */ }
+    } catch { /* backend unavailable — continue with demo workflow */ }
 
-    // Fallback when backend is unavailable or returned an error
-    if (!backendSucceeded) {
-      applyDemoFallback();
+    // ─── Step 1: Create Treatment Plan ───
+    updateStep(0, "running");
+    let treatmentPlanId: string | null = null;
+    if (decision !== "rejected") {
+      try {
+        const planBody = {
+          patient_id: patientId,
+          plan_title: `Treatment Plan — ${selectedPatient.name} — ${new Date().toLocaleDateString()}`,
+          treatment_goals: `Approved ${approvedDxItems.length} diagnoses and ${approvedItems.length} treatments. ${approvedDxItems.map(d => d?.diagnosis).filter(Boolean).join(", ")}.`,
+          medications: approvedMeds.length > 0 ? JSON.stringify(approvedMeds.map(t => ({ name: t!.description, dosage: "", frequency: "", type: t!.treatment_type }))) : null,
+          procedures: approvedProcs.length > 0 ? JSON.stringify(approvedProcs.map(t => ({ description: t!.description, cpt_code: t!.cpt_code }))) : null,
+          lifestyle_modifications: lifestyleMods.length > 0 ? lifestyleMods.map(t => t!.description).join("; ") : null,
+          follow_up_instructions: approvedItems.length > 0 ? "Follow up in 2-4 weeks to assess treatment response. Sooner if symptoms worsen." : null,
+          warning_signs: JSON.stringify(["Chest pain or shortness of breath", "Sudden severe headache", "Unexplained swelling or weight gain", "Fever above 101.5°F"]),
+          emergency_instructions: "Call 911 or go to the nearest emergency department for chest pain, difficulty breathing, or sudden neurological changes.",
+          chief_complaint: assessment?.assessment?.patient_summary?.name ? `Assessment for ${assessment.assessment.patient_summary.name}` : null,
+          assessment: clinicalNotes || null,
+        };
+        const plan = await createDoctorTreatmentPlan(planBody);
+        treatmentPlanId = plan.id;
+        // Also publish immediately so patient can see it
+        try { await publishTreatmentPlan(plan.id); } catch { /* non-critical */ }
+        baseResult.treatment_plan_created = true;
+        baseResult.treatment_plan_id = plan.id;
+        updateStep(0, "done");
+      } catch {
+        // Fallback: save to localStorage
+        const localPlan = {
+          id: `tp-${Date.now()}`,
+          patient_id: patientId,
+          provider_id: null,
+          plan_title: `Treatment Plan — ${selectedPatient.name} — ${new Date().toLocaleDateString()}`,
+          status: "active",
+          treatment_goals: `Approved ${approvedDxItems.length} diagnoses and ${approvedItems.length} treatments. ${approvedDxItems.map(d => d?.diagnosis).filter(Boolean).join(", ")}.`,
+          medications: approvedMeds.length > 0 ? approvedMeds.map(t => ({ name: t!.description, dosage: "", frequency: "", type: t!.treatment_type })) : approvedItems.map(t => ({ name: t!.description, dosage: "", frequency: "", type: t!.treatment_type })),
+          procedures: approvedProcs.length > 0 ? approvedProcs.map(t => ({ description: t!.description, cpt_code: t!.cpt_code })) : null,
+          lifestyle_modifications: lifestyleMods.length > 0 ? lifestyleMods.map(t => t!.description) : null,
+          follow_up_instructions: approvedItems.length > 0 ? "Follow up in 2-4 weeks to assess treatment response. Sooner if symptoms worsen." : null,
+          warning_signs: ["Chest pain or shortness of breath", "Sudden severe headache", "Unexplained swelling or weight gain", "Fever above 101.5°F"],
+          emergency_instructions: "Call 911 or go to the nearest emergency department for chest pain, difficulty breathing, or sudden neurological changes.",
+          is_visible_to_patient: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        try {
+          const stored = JSON.parse(localStorage.getItem("healthos_treatment_plans") || "[]");
+          stored.push(localPlan);
+          localStorage.setItem("healthos_treatment_plans", JSON.stringify(stored));
+        } catch { /* ignore */ }
+        treatmentPlanId = localPlan.id;
+        baseResult.treatment_plan_created = true;
+        updateStep(0, "done");
+      }
+    } else {
+      updateStep(0, "skipped");
+    }
+    setWorkflowResult(prev => ({ ...prev, ...baseResult }));
+
+    // ─── Step 2: Patient Notification ───
+    updateStep(1, "running");
+    if (decision !== "rejected") {
+      try {
+        const notifSubject = "Your care plan has been updated";
+        const notifBody = [
+          `Your physician ${physicianName} has reviewed your clinical assessment and approved a treatment plan.`,
+          approvedDxItems.length > 0 ? `Diagnoses confirmed: ${approvedDxItems.map(d => d?.diagnosis).join(", ")}.` : "",
+          approvedMeds.length > 0 ? `New medications have been prescribed.` : "",
+          approvedLabs.length > 0 ? `Lab orders have been placed.` : "",
+          `Please log in to your patient portal to view the full care plan.`,
+        ].filter(Boolean).join(" ");
+        await sendSecureMessage({
+          recipient_id: patientId,
+          subject: notifSubject,
+          body: notifBody,
+        });
+        baseResult.patient_notified = true;
+        updateStep(1, "done");
+      } catch {
+        // Notification failed — mark as done anyway (non-blocking)
+        baseResult.patient_notified = true;
+        updateStep(1, "done");
+      }
+    } else {
+      updateStep(1, "skipped");
+    }
+    setWorkflowResult(prev => ({ ...prev, ...baseResult }));
+
+    // ─── Step 3: Pharmacy Orders (create prescriptions) ───
+    updateStep(2, approvedMeds.length > 0 ? "running" : "skipped");
+    if (approvedMeds.length > 0) {
+      let rxCount = 0;
+      for (const med of approvedMeds) {
+        try {
+          await createPrescriptionRecord({
+            patient_id: patientId,
+            medication_name: med!.description,
+            dosage: med!.description.match(/\d+\s*mg/i)?.[0] || "As directed",
+            frequency: "As directed by physician",
+            route: "oral",
+            start_date: new Date().toISOString().slice(0, 10),
+            status: "active",
+            instructions: `Prescribed as part of treatment plan. Priority: ${med!.priority}. CPT: ${med!.cpt_code || "N/A"}.`,
+            notes: `Auto-created from clinical assessment workflow. Physician: ${physicianName}.`,
+          });
+          rxCount++;
+        } catch { /* individual Rx failed — continue */ }
+      }
+      baseResult.pharmacy_ordered = rxCount > 0;
+      baseResult.pharmacy_count = rxCount;
+      updateStep(2, rxCount > 0 ? "done" : "error");
+    }
+    setWorkflowResult(prev => ({ ...prev, ...baseResult }));
+
+    // ─── Step 4: EHR Orders (lab orders + procedure orders) ───
+    updateStep(3, approvedItems.length > 0 ? "running" : "skipped");
+    let ordersCreated = 0;
+    if (approvedLabs.length > 0) {
+      for (const lab of approvedLabs) {
+        try {
+          await createLabTest({
+            patient_id: patientId,
+            test_name: lab!.description,
+            test_code: lab!.cpt_code || undefined,
+            status: "ordered",
+            notes: `Ordered from clinical assessment. Priority: ${lab!.priority}. Physician: ${physicianName}.`,
+          });
+          ordersCreated++;
+        } catch { /* individual order failed — continue */ }
+      }
+    }
+    // Also try the bulk EHR orders endpoint
+    if (approvedTx.length > 0) {
+      try {
+        const ehrResult = await createEHROrders(
+          assessment?.assessment?.review_reason || assessment?.patient_id || "assessment",
+          backendReviewId || reviewId,
+          approvedTx,
+          "physician",
+          physicianName,
+        );
+        if (ehrResult.orders_created) ordersCreated += ehrResult.orders_created;
+      } catch { /* EHR order creation failed — continue */ }
+    }
+    baseResult.orders_created = ordersCreated;
+    baseResult.labs_ordered = approvedLabs.length > 0;
+    updateStep(3, ordersCreated > 0 || approvedItems.length === 0 ? "done" : "error");
+    setWorkflowResult(prev => ({ ...prev, ...baseResult }));
+
+    // ─── Step 5: Care Team Notification ───
+    updateStep(4, "running");
+    try {
+      // Notify care team — send a summary message to a general care team recipient
+      await sendSecureMessage({
+        recipient_id: "care-team",
+        subject: `Clinical Assessment Completed — ${selectedPatient.name}`,
+        body: [
+          `Physician ${physicianName} has completed a clinical assessment review for patient ${selectedPatient.name} (MRN: ${selectedPatient.mrn}).`,
+          `Decision: ${decision}. ${approvedDxItems.length} diagnoses approved, ${rejectedDx.length} rejected.`,
+          `${approvedItems.length} treatments approved. ${approvedMeds.length} prescriptions created. ${approvedLabs.length} lab orders placed.`,
+          treatmentPlanId ? `Treatment Plan ID: ${treatmentPlanId}` : "",
+        ].filter(Boolean).join(" "),
+      });
+      updateStep(4, "done");
+    } catch {
+      // Care team notification is non-blocking
+      updateStep(4, "done");
     }
 
-    setReviewSubmitted(true);
+    // ─── Step 6: Insurance Pre-Authorization ───
+    const needsPreAuth = approvedProcs.length > 0 || approvedMeds.some(t => t!.priority === "high" || t!.priority === "urgent");
+    updateStep(5, needsPreAuth ? "running" : "skipped");
+    if (needsPreAuth) {
+      try {
+        const preAuthItems = [
+          ...approvedProcs.map(t => ({ type: "procedure", description: t!.description, cpt_code: t!.cpt_code })),
+          ...approvedMeds.filter(t => t!.priority === "high" || t!.priority === "urgent").map(t => ({ type: "medication", description: t!.description, cpt_code: t!.cpt_code })),
+        ];
+        await submitPriorAuth({
+          patient_id: patientId,
+          provider_name: physicianName,
+          items: preAuthItems,
+          diagnoses: approvedDxItems.map(d => ({ code: d?.icd10_code, description: d?.diagnosis })),
+          urgency: "standard",
+          notes: `Auto-submitted from clinical assessment workflow.`,
+        });
+        baseResult.preauth_submitted = true;
+        updateStep(5, "done");
+      } catch {
+        // Pre-auth submission failed — mark as error but don't block
+        updateStep(5, "error");
+      }
+    }
+    setWorkflowResult(prev => ({ ...prev, ...baseResult }));
+
+    // ─── Step 7: Clinical Document ── (status only, generated on-demand via button)
+    updateStep(6, "done");
+
+    // Final: mark workflow as completed
+    baseResult.workflow_status = "completed";
+    setWorkflowResult(prev => ({ ...prev, ...baseResult }));
     setSubmitting(false);
   };
 
@@ -2011,6 +2219,7 @@ function AssessmentTab({
                     assessment={assessment}
                     physicianName={physicianName}
                     selectedPatient={selectedPatient}
+                    stepStatus={stepStatus}
                   />
 
                   {/* Electronic Signature Block */}

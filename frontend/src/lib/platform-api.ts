@@ -1557,6 +1557,28 @@ export async function fetchDoctorTreatmentPlan(planId: string): Promise<DoctorTr
   return request<DoctorTreatmentPlanResponse>(`/treatment-plans/doctor-plans/${planId}`);
 }
 
+export async function createDoctorTreatmentPlan(body: {
+  patient_id: string;
+  plan_title: string;
+  treatment_goals: string;
+  medications?: string | null;
+  procedures?: string | null;
+  lifestyle_modifications?: string | null;
+  dietary_recommendations?: string | null;
+  exercise_recommendations?: string | null;
+  follow_up_instructions?: string | null;
+  warning_signs?: string | null;
+  emergency_instructions?: string | null;
+  chief_complaint?: string | null;
+  assessment?: string | null;
+  additional_notes?: string | null;
+}): Promise<DoctorTreatmentPlanResponse> {
+  return request<DoctorTreatmentPlanResponse>("/treatment-plans/doctor-plans", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export async function publishTreatmentPlan(planId: string): Promise<{ status: string }> {
   return request<{ status: string }>(`/treatment-plans/doctor-plans/${planId}/publish`, { method: "POST" });
 }
