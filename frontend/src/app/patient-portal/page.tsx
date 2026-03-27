@@ -4,17 +4,31 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   fetchPatientProfile,
+  fetchPatientAlerts,
+  fetchPatientAppointments,
   type PatientHealthSummary,
+  type PatientAlert,
+  type PatientAppointment,
 } from "@/lib/patient-api";
 
 export default function PatientPortalHome() {
   const [data, setData] = useState<PatientHealthSummary | null>(null);
+  const [portalAlerts, setPortalAlerts] = useState<PatientAlert[]>([]);
+  const [upcomingAppts, setUpcomingAppts] = useState<PatientAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchPatientProfile()
-      .then(setData)
+    Promise.all([
+      fetchPatientProfile(),
+      fetchPatientAlerts().catch(() => []),
+      fetchPatientAppointments("scheduled").catch(() => []),
+    ])
+      .then(([profile, al, appts]) => {
+        setData(profile);
+        setPortalAlerts(al as PatientAlert[]);
+        setUpcomingAppts(appts as PatientAppointment[]);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
@@ -37,7 +51,13 @@ export default function PatientPortalHome() {
 
   const patientName = data?.patient?.name || "Patient";
   const upcomingVitals = data?.latest_vitals?.slice(0, 3) ?? [];
-  const alerts = data?.active_alerts ?? [];
+  // Merge alerts from profile summary + dedicated endpoint (deduplicate by id)
+  const summaryAlerts = data?.active_alerts ?? [];
+  const allAlertMap = new Map<string, PatientAlert>();
+  for (const a of [...summaryAlerts, ...portalAlerts]) {
+    allAlertMap.set(a.id, a);
+  }
+  const alerts = Array.from(allAlertMap.values());
   const medicationCount = data?.medications?.length ?? 0;
 
   return (
@@ -73,9 +93,9 @@ export default function PatientPortalHome() {
           color="purple"
         />
         <SummaryCard
-          title="Conditions"
-          value={String(data?.conditions?.length ?? 0)}
-          subtitle="on record"
+          title="Appointments"
+          value={String(upcomingAppts.length)}
+          subtitle="upcoming scheduled"
           color="amber"
         />
       </div>
@@ -113,6 +133,48 @@ export default function PatientPortalHome() {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {/* Upcoming Appointments */}
+      {upcomingAppts.length > 0 && (
+        <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Upcoming Appointments
+            </h2>
+            <Link
+              href="/patient-portal/appointments"
+              className="text-sm font-medium text-healthos-600 hover:text-healthos-700"
+            >
+              View all
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {upcomingAppts.slice(0, 3).map((appt) => (
+              <div
+                key={appt.id}
+                className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-4"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">{appt.type} Visit</p>
+                  {appt.reason && <p className="text-xs text-gray-500 dark:text-gray-400">{appt.reason}</p>}
+                </div>
+                <div className="text-right">
+                  {appt.scheduled_at && (
+                    <p className="text-sm font-semibold text-healthos-600">
+                      {new Date(appt.scheduled_at).toLocaleDateString()} at{" "}
+                      {new Date(appt.scheduled_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  )}
+                  <span className={clsx(
+                    "text-xs font-bold uppercase",
+                    appt.status === "scheduled" ? "text-blue-600" : appt.status === "confirmed" ? "text-emerald-600" : "text-gray-500",
+                  )}>{appt.status}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 

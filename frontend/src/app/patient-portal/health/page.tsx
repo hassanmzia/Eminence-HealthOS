@@ -5,9 +5,13 @@ import {
   fetchPatientProfile,
   fetchPatientVitals,
   fetchPatientCarePlans,
+  fetchPatientAlerts,
+  fetchPatientAppointments,
   type PatientHealthSummary,
   type PatientVitalsResponse,
   type CarePlan,
+  type PatientAlert,
+  type PatientAppointment,
 } from "@/lib/patient-api";
 import {
   fetchDoctorTreatmentPlans,
@@ -22,6 +26,8 @@ export default function MyHealthPage() {
   const [carePlans, setCarePlans] = useState<CarePlan[]>([]);
   const [treatmentPlans, setTreatmentPlans] = useState<DoctorTreatmentPlanResponse[]>([]);
   const [prescriptions, setPrescriptions] = useState<PrescriptionResponse[]>([]);
+  const [alerts, setAlerts] = useState<PatientAlert[]>([]);
+  const [appointments, setAppointments] = useState<PatientAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,8 +38,10 @@ export default function MyHealthPage() {
       fetchPatientCarePlans(),
       fetchDoctorTreatmentPlans(undefined, "active").catch(() => []),
       fetchAllPrescriptions("active").catch(() => []),
+      fetchPatientAlerts().catch(() => []),
+      fetchPatientAppointments("scheduled").catch(() => []),
     ])
-      .then(([p, v, c, tp, rx]) => {
+      .then(([p, v, c, tp, rx, al, appts]) => {
         setProfile(p);
         setVitals(v);
         setCarePlans(c);
@@ -47,6 +55,8 @@ export default function MyHealthPage() {
         }
         setTreatmentPlans(tpList);
         setPrescriptions((rx as PrescriptionResponse[]) ?? []);
+        setAlerts((al as PatientAlert[]) ?? []);
+        setAppointments((appts as PatientAppointment[]) ?? []);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -138,6 +148,73 @@ export default function MyHealthPage() {
           </p>
         )}
       </section>
+
+      {/* Active Alerts */}
+      {alerts.length > 0 && (
+        <section className="rounded-xl border-2 border-amber-200 dark:border-amber-800 bg-white dark:bg-gray-900 p-6">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Active Alerts
+          </h2>
+          <div className="space-y-2">
+            {alerts.map((alert) => (
+              <div
+                key={alert.id}
+                className={`flex items-start gap-3 rounded-lg border p-3 ${
+                  alert.priority === "critical" ? "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20" :
+                  alert.priority === "high" ? "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20" :
+                  "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
+                }`}
+              >
+                <span className={`mt-0.5 text-xs font-bold uppercase px-2 py-0.5 rounded ${
+                  alert.priority === "critical" ? "bg-red-100 text-red-700" :
+                  alert.priority === "high" ? "bg-amber-100 text-amber-700" :
+                  "bg-gray-100 text-gray-600"
+                }`}>{alert.priority}</span>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{alert.type}</p>
+                  {alert.message && <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{alert.message}</p>}
+                </div>
+                {alert.created_at && (
+                  <span className="text-xs text-gray-400">{new Date(alert.created_at).toLocaleDateString()}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Upcoming Appointments */}
+      {appointments.length > 0 && (
+        <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Upcoming Appointments
+          </h2>
+          <div className="space-y-2">
+            {appointments.map((appt) => (
+              <div
+                key={appt.id}
+                className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-4"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">{appt.type} Visit</p>
+                  {appt.reason && <p className="text-xs text-gray-500 dark:text-gray-400">{appt.reason}</p>}
+                </div>
+                <div className="text-right">
+                  {appt.scheduled_at && (
+                    <p className="text-sm font-semibold text-healthos-600">
+                      {new Date(appt.scheduled_at).toLocaleDateString()} at{" "}
+                      {new Date(appt.scheduled_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  )}
+                  <span className={`text-xs font-bold uppercase ${
+                    appt.status === "scheduled" ? "text-blue-600" : appt.status === "confirmed" ? "text-emerald-600" : "text-gray-500"
+                  }`}>{appt.status}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Active Medications */}
       <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">

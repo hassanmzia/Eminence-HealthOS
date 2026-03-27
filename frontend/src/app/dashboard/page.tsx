@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
@@ -14,6 +15,13 @@ import { ReadOnlyDashboard } from "@/components/dashboard/ReadOnlyDashboard";
 export default function DashboardPage() {
   const { role, user, loading } = useAuth();
   const router = useRouter();
+
+  // Patients land on /dashboard after login, then redirect to their portal
+  useEffect(() => {
+    if (!loading && role === "patient") {
+      router.replace("/patient-portal");
+    }
+  }, [loading, role, router]);
 
   if (loading || !user || !role) {
     return (
@@ -45,9 +53,12 @@ export default function DashboardPage() {
     case "read_only":
       return <ReadOnlyDashboard />;
     case "patient":
-      // Patient shouldn't be on /dashboard — RouteGuard handles redirect
-      router.replace("/patient-portal");
-      return null;
+      // Redirect happens in useEffect above — show spinner while navigating
+      return (
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-healthos-500 border-t-transparent" />
+        </div>
+      );
     default:
       return <NurseDashboard />;
   }
