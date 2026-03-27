@@ -864,10 +864,21 @@ function TreatmentPlansTab({ patientId }: { patientId: string }) {
     setError(null);
     try {
       const data = await fetchDoctorTreatmentPlans(patientId);
-      setPlans(data);
-    } catch {
-      setError("Unable to load treatment plans");
-    }
+      if (data && data.length > 0) {
+        setPlans(data);
+        setLoading(false);
+        return;
+      }
+    } catch { /* API not available, try localStorage */ }
+
+    // Fallback: read from localStorage (plans created by clinical-assessment workflow)
+    try {
+      const stored = JSON.parse(localStorage.getItem("healthos_treatment_plans") || "[]") as DoctorTreatmentPlanResponse[];
+      const forPatient = stored.filter(p => p.patient_id === patientId);
+      if (forPatient.length > 0) {
+        setPlans(forPatient);
+      }
+    } catch { /* localStorage not available */ }
     setLoading(false);
   }, [patientId]);
 

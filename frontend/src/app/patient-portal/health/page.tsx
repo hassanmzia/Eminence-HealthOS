@@ -37,7 +37,15 @@ export default function MyHealthPage() {
         setProfile(p);
         setVitals(v);
         setCarePlans(c);
-        setTreatmentPlans((tp as DoctorTreatmentPlanResponse[]) ?? []);
+        let tpList = (tp as DoctorTreatmentPlanResponse[]) ?? [];
+        // Fallback: read from localStorage if API returned empty
+        if (tpList.length === 0) {
+          try {
+            const stored = JSON.parse(localStorage.getItem("healthos_treatment_plans") || "[]") as DoctorTreatmentPlanResponse[];
+            if (stored.length > 0) tpList = stored;
+          } catch { /* ignore */ }
+        }
+        setTreatmentPlans(tpList);
         setPrescriptions((rx as PrescriptionResponse[]) ?? []);
       })
       .catch((e) => setError(e.message))
