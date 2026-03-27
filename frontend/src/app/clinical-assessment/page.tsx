@@ -11,6 +11,7 @@ import {
   submitPriorAuth,
   createEHROrders,
 } from "@/lib/platform-api";
+import { syncEHRPatient } from "@/lib/api";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    TYPES
@@ -729,31 +730,66 @@ function WorkflowPipeline({
 
   const toggleStep = (i: number) => setExpandedSteps({ ...expandedSteps, [i]: !expandedSteps[i] });
 
+  const [docId, setDocId] = useState<string | null>(null);
+
   const handleGenerateDoc = async () => {
     setGeneratingDoc(true);
+    let generated = false;
     try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
       const res = await fetch("/api/v1/clinical/documents/generate/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           assessment_id: assessment?.assessment?.review_reason || "assessment",
           patient_id: assessment?.patient_id || selectedPatient.id,
+          review_id: workflowResult?.id || null,
+          document_type: "clinical_assessment_summary",
+          format: "html",
+          physician_name: physicianName,
+          include_reasoning: true,
         }),
       });
       if (res.ok) {
         const data = await res.json();
-        setClinicalDocHtml(data.content);
+        setClinicalDocHtml(data.content || data.html || data.document);
+        if (data.document_id || data.id) setDocId(data.document_id || data.id);
+        generated = true;
       }
-    } catch {
-      // Demo fallback
+    } catch { /* backend unavailable */ }
+
+    // Fallback: generate comprehensive HTML locally
+    if (!generated) {
+      const rejectedDxLocal = Object.entries(reviewDecisions)
+        .filter(([k, v]) => k.startsWith("dx-") && v === "reject")
+        .map(([k]) => parseInt(k.replace("dx-", "")));
+      const rejectedTxLocal = Object.entries(reviewDecisions)
+        .filter(([k, v]) => k.startsWith("tx-") && v === "reject")
+        .map(([k]) => parseInt(k.replace("tx-", "")));
       setClinicalDocHtml(`<div style="font-family:system-ui;padding:24px;max-width:800px">
         <h1 style="color:#0f766e;border-bottom:2px solid #0f766e;padding-bottom:8px">Clinical Assessment Summary</h1>
         <p><strong>Patient:</strong> ${selectedPatient.name} &middot; <strong>MRN:</strong> ${selectedPatient.mrn} &middot; <strong>Age:</strong> ${selectedPatient.age}</p>
         <p><strong>Reviewing Physician:</strong> ${physicianName} &middot; <strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-        <h2 style="color:#1e40af;margin-top:20px">Approved Diagnoses</h2>
+        <p><strong>Decision:</strong> ${workflowResult?.decision || "approved"} &middot; <strong>Review ID:</strong> ${workflowResult?.id || "N/A"}</p>
+        ${workflowResult?.treatment_plan_id ? `<p><strong>Treatment Plan ID:</strong> ${workflowResult.treatment_plan_id}</p>` : ""}
+        <h2 style="color:#1e40af;margin-top:20px">Approved Diagnoses (${approvedDx.length})</h2>
         <ul>${approvedDx.map(d => `<li><strong>${d?.diagnosis}</strong> (${d?.icd10_code}) — Confidence: ${((d?.confidence ?? 0) * 100).toFixed(0)}%</li>`).join("")}</ul>
-        <h2 style="color:#1e40af;margin-top:20px">Approved Treatments</h2>
+        ${rejectedDxLocal.length > 0 ? `<h2 style="color:#dc2626;margin-top:20px">Rejected Diagnoses (${rejectedDxLocal.length})</h2>
+        <ul>${rejectedDxLocal.map(i => { const d = allDiagnoses?.[i]; return d ? `<li style="text-decoration:line-through">${d.diagnosis} (${d.icd10_code})</li>` : ""; }).join("")}</ul>` : ""}
+        <h2 style="color:#1e40af;margin-top:20px">Approved Treatments (${approvedTx.length})</h2>
         <ul>${approvedTx.map(t => `<li>[${t?.priority?.toUpperCase()}] ${t?.description} (${t?.cpt_code})</li>`).join("")}</ul>
+        ${rejectedTxLocal.length > 0 ? `<h2 style="color:#dc2626;margin-top:20px">Rejected Treatments (${rejectedTxLocal.length})</h2>
+        <ul>${rejectedTxLocal.map(i => { const t = allTreatments?.[i]; return t ? `<li style="text-decoration:line-through">${t.description} (${t.cpt_code})</li>` : ""; }).join("")}</ul>` : ""}
+        <h2 style="color:#1e40af;margin-top:20px">Workflow Summary</h2>
+        <ul>
+          <li>Treatment Plan: ${workflowResult?.treatment_plan_created ? "Created" : "N/A"}</li>
+          <li>Prescriptions: ${workflowResult?.pharmacy_count ?? 0} created</li>
+          <li>Lab Orders: ${workflowResult?.orders_created ?? 0} submitted</li>
+          <li>Patient Notified: ${workflowResult?.patient_notified ? "Yes" : "No"}</li>
+          <li>Pre-Auth: ${workflowResult?.preauth_submitted ? "Submitted" : "N/A"}</li>
+        </ul>
         <hr style="margin-top:24px"/><p style="font-size:12px;color:#6b7280">Electronically signed by ${physicianName} on ${new Date().toLocaleString()}</p>
       </div>`);
     }
@@ -1104,6 +1140,7 @@ function WorkflowPipeline({
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="text-[9px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded">Document Ready</span>
+                    {docId && <span className="text-[9px] text-gray-400 font-mono">ID: {docId}</span>}
                     <button
                       onClick={() => {
                         const win = window.open("", "_blank");
@@ -1510,6 +1547,19 @@ function AssessmentTab({
 
     // ─── Step 7: Clinical Document ── (status only, generated on-demand via button)
     updateStep(6, "done");
+
+    // ─── EHR Sync: Push patient data to connected EHR systems ───
+    try {
+      await syncEHRPatient({
+        connector_id: "default",
+        patient_id: patientId,
+        direction: "push",
+      });
+      baseResult.ehr_synced = true;
+    } catch {
+      // EHR sync failure is non-blocking — no external EHR may be configured
+      baseResult.ehr_synced = false;
+    }
 
     // Final: mark workflow as completed
     baseResult.workflow_status = "completed";
