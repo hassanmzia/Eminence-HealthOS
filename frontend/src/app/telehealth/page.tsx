@@ -427,6 +427,7 @@ export default function TelehealthPage() {
   const [amendingNote, setAmendingNote] = useState<string | null>(null);
   const [amendText, setAmendText] = useState("");
   const [dateFilter, setDateFilter] = useState({ from: "2026-03-13", to: "2026-03-15" });
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Load sessions from API on mount (fall back to demo data)
   useEffect(() => {
@@ -487,9 +488,25 @@ export default function TelehealthPage() {
   const handleGenerateNote = useCallback(async (sessionId: string) => {
     setActionLoading(sessionId, "note");
     try {
-      await generateClinicalNote(sessionId, { auto_generate: true });
+      const result = await generateClinicalNote(sessionId, { auto_generate: true });
+      if (result) {
+        const newNote: ClinicalNote = {
+          note_id: result.note_id || `cn-${Date.now()}`,
+          session_id: sessionId,
+          status: result.status || "draft",
+          sections: result.sections || [
+            { section: "Chief Complaint", content: "AI-generated — pending review", confidence: 0.85 },
+            { section: "Assessment", content: "AI-generated — pending review", confidence: 0.85 },
+            { section: "Plan", content: "AI-generated — pending review", confidence: 0.82 },
+          ],
+          generated_at: result.generated_at || new Date().toISOString(),
+          generated_by: result.generated_by || "AI Clinical Scribe",
+          overall_confidence: result.overall_confidence ?? 0.86,
+        };
+        setNotes((prev) => [newNote, ...prev]);
+      }
     } catch {
-      // Demo mode — add a demo note
+      // Fallback: create local note with warning
       const session = sessions.find((s) => s.session_id === sessionId);
       if (session) {
         const newNote: ClinicalNote = {
@@ -507,6 +524,7 @@ export default function TelehealthPage() {
         };
         setNotes((prev) => [newNote, ...prev]);
       }
+      setApiError("Note generated locally — backend unavailable");
     }
     clearActionLoading(sessionId);
   }, [sessions]);
@@ -515,16 +533,23 @@ export default function TelehealthPage() {
     setActionLoading(note.note_id, "sign");
     try {
       await signClinicalNote(note.session_id, note.note_id);
+      setNotes((prev) =>
+        prev.map((n) =>
+          n.note_id === note.note_id
+            ? { ...n, status: "signed" as const, signed_at: new Date().toISOString(), signed_by: "Dr. Provider" }
+            : n
+        )
+      );
     } catch {
-      // Demo mode
+      setNotes((prev) =>
+        prev.map((n) =>
+          n.note_id === note.note_id
+            ? { ...n, status: "signed" as const, signed_at: new Date().toISOString(), signed_by: "Dr. Provider" }
+            : n
+        )
+      );
+      setApiError("Note signed locally — server sync pending");
     }
-    setNotes((prev) =>
-      prev.map((n) =>
-        n.note_id === note.note_id
-          ? { ...n, status: "signed" as const, signed_at: new Date().toISOString(), signed_by: "Dr. Provider" }
-          : n
-      )
-    );
     clearActionLoading(note.note_id);
   }, []);
 
@@ -536,22 +561,35 @@ export default function TelehealthPage() {
         await amendClinicalNote(note.session_id, note.note_id, [
           { section: "Amendment", content: amendText },
         ]);
+        setNotes((prev) =>
+          prev.map((n) =>
+            n.note_id === note.note_id
+              ? {
+                  ...n,
+                  amendments: [
+                    ...(n.amendments || []),
+                    { section: "Amendment", content: amendText, amended_at: new Date().toISOString() },
+                  ],
+                }
+              : n
+          )
+        );
       } catch {
-        // Demo mode
+        setNotes((prev) =>
+          prev.map((n) =>
+            n.note_id === note.note_id
+              ? {
+                  ...n,
+                  amendments: [
+                    ...(n.amendments || []),
+                    { section: "Amendment", content: amendText, amended_at: new Date().toISOString() },
+                  ],
+                }
+              : n
+          )
+        );
+        setApiError("Amendment saved locally — server sync pending");
       }
-      setNotes((prev) =>
-        prev.map((n) =>
-          n.note_id === note.note_id
-            ? {
-                ...n,
-                amendments: [
-                  ...(n.amendments || []),
-                  { section: "Amendment", content: amendText, amended_at: new Date().toISOString() },
-                ],
-              }
-            : n
-        )
-      );
       setAmendText("");
       setAmendingNote(null);
       clearActionLoading(note.note_id);
@@ -603,9 +641,17 @@ export default function TelehealthPage() {
   }, [videoSession]);
 
   // Filtered history entries
-  const filteredHistory = HISTORY_ENTRIES.filter(
-    (h) => h.date >= dateFilter.from && h.date <= dateFilter.to
-  );
+  const filteredHistory = sessions
+    .map((s) => ({
+      id: s.session_id,
+      date: new Date(s.created_at).toISOString().slice(0, 10),
+      patient: s.patient_name,
+      visitType: s.visit_type,
+      duration: s.status === "completed" ? "—" : "—",
+      status: s.status,
+      noteStatus: notes.find((n) => n.session_id === s.session_id)?.status || "—",
+    }))
+    .filter((h) => h.date >= dateFilter.from && h.date <= dateFilter.to);
 
   // ── Tab definitions ──
   const tabs: { key: TabKey; label: string; count?: number }[] = [
@@ -717,6 +763,13 @@ export default function TelehealthPage() {
           </div>
         ))}
       </div>
+
+      {apiError && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-700 flex items-center justify-between">
+          <span><span className="font-medium">Note:</span> {apiError}</span>
+          <button onClick={() => setApiError(null)} className="text-amber-700 hover:text-amber-900 font-bold ml-3">&times;</button>
+        </div>
+      )}
 
       {/* ── Tabs ── */}
       <div className="border-b border-gray-200 dark:border-gray-700">
@@ -1228,7 +1281,22 @@ export default function TelehealthPage() {
                             )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <button className="text-xs text-healthos-600 hover:text-healthos-700 font-medium">
+                            <button
+                              onClick={() => {
+                                const session = sessions.find((s) => s.session_id === entry.id);
+                                if (session && session.status !== "completed") {
+                                  handleStartVideo(session);
+                                } else {
+                                  // Switch to notes tab and find associated note
+                                  const note = notes.find((n) => n.session_id === entry.id);
+                                  if (note) {
+                                    setActiveTab("notes");
+                                    setExpandedNote(note.note_id);
+                                  }
+                                }
+                              }}
+                              className="text-xs text-healthos-600 hover:text-healthos-700 font-medium"
+                            >
                               View Details
                             </button>
                           </td>

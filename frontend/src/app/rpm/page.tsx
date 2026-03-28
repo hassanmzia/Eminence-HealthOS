@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { fetchRPMDashboard, ingestRPMData, type RPMDashboard } from "@/lib/api";
+import { fetchRPMDashboard, ingestRPMData, fetchAlerts, acknowledgeAlert, fetchVitals, fetchPatients, type RPMDashboard, type AlertData, type VitalData } from "@/lib/api";
 import {
   fetchDevices,
   fetchDeviceAlertRules,
@@ -187,6 +187,10 @@ export default function RPMPage() {
   const [ingesting, setIngesting] = useState(false);
   const [ingestSuccess, setIngestSuccess] = useState(false);
 
+  const [apiAlerts, setApiAlerts] = useState<AlertData[]>([]);
+  const [apiAlertsLoading, setApiAlertsLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
+
   const [realDevices, setRealDevices] = useState<DeviceInfoResponse[]>([]);
   const [alertRules, setAlertRules] = useState<DeviceAlertRuleResponse[]>([]);
   const [devicesLoading, setDevicesLoading] = useState(true);
@@ -222,6 +226,27 @@ export default function RPMPage() {
       .then((rules) => setAlertRules(rules))
       .catch(() => { /* keep demo fallback */ })
       .finally(() => setAlertRulesLoading(false));
+
+    fetchAlerts({ status: "active" })
+      .then((data) => {
+        if (data && data.length > 0) {
+          setApiAlerts(data);
+        }
+      })
+      .catch(() => {
+        setApiError("Could not load alerts from API");
+      })
+      .finally(() => setApiAlertsLoading(false));
+  }, [loadDashboard]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadDashboard();
+      fetchAlerts({ status: "active" })
+        .then((data) => { if (data?.length > 0) setApiAlerts(data); })
+        .catch(() => {});
+    }, 30000);
+    return () => clearInterval(interval);
   }, [loadDashboard]);
 
   const handleIngest = async (e: React.FormEvent) => {
@@ -243,7 +268,13 @@ export default function RPMPage() {
     }
   };
 
-  const handleAcknowledge = (alertId: string) => {
+  const handleAcknowledge = async (alertId: string) => {
+    try {
+      await acknowledgeAlert(alertId);
+      setApiAlerts((prev) => prev.map((a) => a.id === alertId ? { ...a, status: "acknowledged", acknowledged_at: new Date().toISOString() } : a));
+    } catch {
+      // Fallback to local state update
+    }
     setAlerts((prev) => prev.map((a) => a.id === alertId ? { ...a, status: "acknowledged" as const } : a));
   };
 
@@ -256,7 +287,21 @@ export default function RPMPage() {
   const devicesOnline = dashboard?.devices_online ?? DEMO_DEVICES.filter((d) => d.status === "active").length;
   const criticalAlerts = dashboard?.critical_alerts ?? alerts.filter((a) => a.priority === "critical" && a.status === "active").length;
   const avgAdherence = dashboard?.avg_adherence ?? Math.round(DEMO_PATIENTS.reduce((s, p) => s + p.adherence, 0) / DEMO_PATIENTS.length);
-  const vitalsToday = 1247;
+  const vitalsToday = (dashboard as Record<string, unknown>)?.vitals_today as number ?? 1247;
+
+  const displayAlerts = apiAlerts.length > 0
+    ? apiAlerts.map(a => ({
+        id: a.id,
+        patient: a.patient_id,
+        patientId: a.patient_id,
+        vitalType: a.alert_type,
+        currentValue: a.message || "\u2014",
+        threshold: "\u2014",
+        time: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        priority: (a.priority as "critical" | "high" | "moderate" | "low") || "moderate",
+        status: (a.status === "acknowledged" ? "acknowledged" : "active") as "active" | "acknowledged",
+      }))
+    : alerts;
 
   const selectedPatientData = DEMO_PATIENTS.find((p) => p.id === selectedVitalPatient) ?? DEMO_PATIENTS[0];
 
@@ -270,6 +315,11 @@ export default function RPMPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
+      {apiError && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-700">
+          <span className="font-medium">Note:</span> {apiError} — showing demo data.
+        </div>
+      )}
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
@@ -593,7 +643,7 @@ export default function RPMPage() {
           {/* Active Alert Cards */}
           <div>
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Active Alerts</h3>
-            <div className="space-y-3"> {alerts.map((a) => { const pc = priorityColors[a.priority] ?? priorityColors.moderate; return ( <div key={a.id} className={`card card-hover rounded-xl border bg-white dark:bg-gray-900 p-4 transition-all ${ a.priority ==="critical" ? "border-red-300 shadow-red-100 shadow-sm" : "border-gray-200 dark:border-gray-700"
+            <div className="space-y-3"> {displayAlerts.map((a) => { const pc = priorityColors[a.priority] ?? priorityColors.moderate; return ( <div key={a.id} className={`card card-hover rounded-xl border bg-white dark:bg-gray-900 p-4 transition-all ${ a.priority ==="critical" ? "border-red-300 shadow-red-100 shadow-sm" : "border-gray-200 dark:border-gray-700"
                     } ${a.status === "acknowledged" ? "opacity-70" : ""}`}
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
