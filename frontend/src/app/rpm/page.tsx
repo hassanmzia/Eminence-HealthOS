@@ -178,8 +178,9 @@ export default function RPMPage() {
   const [dashboard, setDashboard] = useState<RPMDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedPatient, setExpandedPatient] = useState<string | null>(null);
-  const [selectedVitalPatient, setSelectedVitalPatient] = useState(DEMO_PATIENTS[0].id);
-  const [alerts, setAlerts] = useState(DEMO_ALERTS);
+  const [patients, setPatients] = useState<typeof DEMO_PATIENTS>([]);
+  const [selectedVitalPatient, setSelectedVitalPatient] = useState("");
+  const [alerts, setAlerts] = useState<typeof DEMO_ALERTS>([]);
   const [showIngestModal, setShowIngestModal] = useState(false);
   const [showProvisionModal, setShowProvisionModal] = useState(false);
   const [ingestForm, setIngestForm] = useState({ patientId: "", vitalType: "heart_rate", value: "", unit: "bpm" });
@@ -215,6 +216,25 @@ export default function RPMPage() {
 
   useEffect(() => {
     loadDashboard();
+
+    fetchPatients()
+      .then((data) => {
+        if (data?.patients && data.patients.length > 0) {
+          setPatients(data.patients.map((p: Record<string, unknown>) => ({
+            id: String(p.id || p.patient_id || ""),
+            name: String((p.demographics as Record<string, unknown>)?.first_name || "") + " " + String((p.demographics as Record<string, unknown>)?.last_name || ""),
+            mrn: String(p.mrn || ""),
+            risk: (String(p.risk_level || "low")) as "critical" | "high" | "moderate" | "low",
+            deviceStatus: "online" as const,
+            device: "Connected Device",
+            hr: 72, bp: "120/80", spo2: 98, temp: 98.6, glucose: 100,
+            adherence: 85, lastReading: "\u2014", alerts: 0,
+            hrHistory: [72, 72, 72, 72, 72, 72], bpHistory: [120, 120, 120, 120, 120, 120],
+            spo2History: [98, 98, 98, 98, 98, 98], tempHistory: [98.6, 98.6, 98.6, 98.6, 98.6, 98.6],
+          })));
+        }
+      })
+      .catch(() => {});
 
     // Load real device list from Phase 4 /device/manage/list
     fetchDevices()
@@ -283,10 +303,10 @@ export default function RPMPage() {
   };
 
   /* ── Computed KPIs ── */
-  const activePatients = dashboard?.active_patients ?? DEMO_PATIENTS.length;
+  const activePatients = dashboard?.active_patients ?? patients.length;
   const devicesOnline = dashboard?.devices_online ?? DEMO_DEVICES.filter((d) => d.status === "active").length;
   const criticalAlerts = dashboard?.critical_alerts ?? alerts.filter((a) => a.priority === "critical" && a.status === "active").length;
-  const avgAdherence = dashboard?.avg_adherence ?? Math.round(DEMO_PATIENTS.reduce((s, p) => s + p.adherence, 0) / DEMO_PATIENTS.length);
+  const avgAdherence = dashboard?.avg_adherence ?? (patients.length > 0 ? Math.round(patients.reduce((s, p) => s + p.adherence, 0) / patients.length) : 0);
   const vitalsToday = (dashboard as Record<string, unknown>)?.vitals_today as number ?? 1247;
 
   const displayAlerts = apiAlerts.length > 0
@@ -303,7 +323,7 @@ export default function RPMPage() {
       }))
     : alerts;
 
-  const selectedPatientData = DEMO_PATIENTS.find((p) => p.id === selectedVitalPatient) ?? DEMO_PATIENTS[0];
+  const selectedPatientData = patients.find((p) => p.id === selectedVitalPatient) ?? patients[0];
 
   if (loading) {
     return (
@@ -386,7 +406,12 @@ export default function RPMPage() {
          ══════════════════════════════════════════════════════════════════════ */}
       {tab === "Dashboard" && (
         <div className="space-y-4 animate-fade-in-up">
-          {DEMO_PATIENTS.map((p) => {
+          {patients.length === 0 ? (
+            <div className="card p-8 text-center text-gray-500 dark:text-gray-400">
+              <p className="font-medium">No patients enrolled in RPM</p>
+              <p className="text-sm mt-1">Patient data will appear here once available from the system.</p>
+            </div>
+          ) : patients.map((p) => {
             const rc = riskColors[p.risk] ?? riskColors.low;
             const isExpanded = expandedPatient === p.id;
             return (
@@ -514,6 +539,12 @@ export default function RPMPage() {
       {tab === "Real-Time Vitals" && (
         <div className="space-y-6 animate-fade-in-up">
           {/* Patient Selector */}
+          {patients.length === 0 ? (
+            <div className="card p-8 text-center text-gray-500 dark:text-gray-400">
+              <p className="font-medium">No patients available</p>
+              <p className="text-sm mt-1">Real-time vitals will appear here once patients are enrolled.</p>
+            </div>
+          ) : (<>
           <div className="card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Patient</label>
             <select
@@ -521,7 +552,7 @@ export default function RPMPage() {
               onChange={(e) => setSelectedVitalPatient(e.target.value)}
               className="w-full sm:w-80 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
             >
-              {DEMO_PATIENTS.map((p) => (
+              {patients.map((p) => (
                 <option key={p.id} value={p.id}>{p.name} ({p.mrn}) — {p.risk} risk</option>
               ))}
             </select>
@@ -582,7 +613,7 @@ export default function RPMPage() {
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   <option value="">Select patient...</option>
-                  {DEMO_PATIENTS.map((p) => (
+                  {patients.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
@@ -632,6 +663,7 @@ export default function RPMPage() {
               </div>
             )}
           </div>
+          </>)}
         </div>
       )}
 
@@ -693,7 +725,9 @@ export default function RPMPage() {
           <div>
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Trend Analysis &amp; Risk Predictions</h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {DEMO_TRENDS.map((t, i) => (
+              {(dashboard?.trends as typeof DEMO_TRENDS || []).length === 0 ? (
+              <div className="col-span-2 text-center py-8 text-gray-500 dark:text-gray-400 text-sm">No trend data available yet.</div>
+            ) : (dashboard?.trends as typeof DEMO_TRENDS || []).map((t, i) => (
                 <div key={i} className="card card-hover rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t.patient}</p>
@@ -710,7 +744,7 @@ export default function RPMPage() {
                     </p>
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
           </div>
         </div>
@@ -898,7 +932,7 @@ export default function RPMPage() {
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   <option value="">Select patient...</option>
-                  {DEMO_PATIENTS.map((p) => (
+                  {patients.map((p) => (
                     <option key={p.id} value={p.id}>{p.name} ({p.mrn})</option>
                   ))}
                 </select>
@@ -1026,7 +1060,7 @@ export default function RPMPage() {
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:border-healthos-500 focus:outline-none focus:ring-1 focus:ring-healthos-500"
                 >
                   <option value="">Unassigned</option>
-                  {DEMO_PATIENTS.map((p) => (
+                  {patients.map((p) => (
                     <option key={p.id} value={p.name}>{p.name} ({p.mrn})</option>
                   ))}
                 </select>
