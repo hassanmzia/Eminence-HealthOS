@@ -409,8 +409,8 @@ function VideoSessionUI({
 type TabKey = "active" | "waiting" | "notes" | "history";
 
 export default function TelehealthPage() {
-  const [sessions, setSessions] = useState<TelehealthSession[]>(DEMO_SESSIONS);
-  const [notes, setNotes] = useState<ClinicalNote[]>(DEMO_NOTES);
+  const [sessions, setSessions] = useState<TelehealthSession[]>([]);
+  const [notes, setNotes] = useState<ClinicalNote[]>([]);
   const [activeTab, setActiveTab] = useState<TabKey>("active");
   const [showNewSession, setShowNewSession] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -429,17 +429,27 @@ export default function TelehealthPage() {
   const [dateFilter, setDateFilter] = useState({ from: "2026-03-13", to: "2026-03-15" });
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Load sessions from API on mount (fall back to demo data)
+  // Load sessions and notes from API on mount
   useEffect(() => {
     fetchTelehealthSessions()
       .then((data) => {
         if (data.sessions && data.sessions.length > 0) {
           setSessions(data.sessions);
+          // Fetch clinical notes for each session
+          const notePromises = data.sessions.map((s: TelehealthSession) =>
+            fetchClinicalNotes(s.session_id)
+              .then((result) => (result.notes && Array.isArray(result.notes) ? result.notes : []))
+              .catch(() => [] as ClinicalNote[])
+          );
+          Promise.all(notePromises).then((results) => {
+            const allNotes = results.flat();
+            if (allNotes.length > 0) {
+              setNotes(allNotes);
+            }
+          });
         }
       })
-      .catch(() => {
-        // Keep demo data
-      });
+      .catch(() => {});
   }, []);
 
   // Derived stats

@@ -385,11 +385,11 @@ type TabKey = "live-sessions" | "soap-notes" | "encounter-coding" | "attestation
 
 export default function AmbientAIPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("live-sessions");
-  const [liveSessions, setLiveSessions] = useState<LiveSession[]>(DEMO_LIVE_SESSIONS);
-  const [completedSessions, setCompletedSessions] = useState<CompletedSession[]>(DEMO_COMPLETED_SESSIONS);
-  const [soapNotes, setSoapNotes] = useState<SOAPNote[]>(DEMO_SOAP_NOTES);
-  const [codingResults, setCodingResults] = useState<CodingResult[]>(DEMO_CODING_RESULTS);
-  const [attestations, setAttestations] = useState<AttestationItem[]>(DEMO_ATTESTATIONS);
+  const [liveSessions, setLiveSessions] = useState<LiveSession[]>([]);
+  const [completedSessions, setCompletedSessions] = useState<CompletedSession[]>([]);
+  const [soapNotes, setSoapNotes] = useState<SOAPNote[]>([]);
+  const [codingResults, setCodingResults] = useState<CodingResult[]>([]);
+  const [attestations, setAttestations] = useState<AttestationItem[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
 
   // Start session form
@@ -832,8 +832,9 @@ export default function AmbientAIPage() {
           <div>
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Active Sessions</h2>
             {liveSessions.filter((s) => s.status !== "completed").length === 0 ? (
-              <div className="card p-4 sm:p-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                No active sessions. Click &quot;Start Session&quot; to begin.
+              <div className="card p-8 text-center text-gray-500 dark:text-gray-400">
+                <p className="font-medium">No Active Sessions</p>
+                <p className="text-sm mt-1">No active sessions. Click &quot;Start Session&quot; to begin recording.</p>
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -892,6 +893,12 @@ export default function AmbientAIPage() {
           {/* Recent Completed Sessions */}
           <div>
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Recent Completed Sessions</h2>
+            {completedSessions.length === 0 ? (
+              <div className="card p-8 text-center text-gray-500 dark:text-gray-400">
+                <p className="font-medium">No Completed Sessions</p>
+                <p className="text-sm mt-1">No completed sessions yet.</p>
+              </div>
+            ) : (
             <div className="card overflow-hidden">
               <div className="overflow-x-auto -mx-4 sm:mx-0"><table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-800">
@@ -932,6 +939,7 @@ export default function AmbientAIPage() {
                 </tbody>
               </table></div>
             </div>
+            )}
           </div>
         </div>
       )}
@@ -939,7 +947,12 @@ export default function AmbientAIPage() {
       {/* ── Tab: SOAP Notes ──────────────────────────────────────────────── */}
       {activeTab === "soap-notes" && (
         <div className="space-y-4 animate-fade-in-up">
-          {soapNotes.map((note) => (
+          {soapNotes.length === 0 ? (
+            <div className="card p-8 text-center text-gray-500 dark:text-gray-400">
+              <p className="font-medium">No SOAP Notes</p>
+              <p className="text-sm mt-1">No SOAP notes generated yet. Generate notes from a completed session.</p>
+            </div>
+          ) : soapNotes.map((note) => (
             <div key={note.noteId} className="card card-hover overflow-hidden">
               {/* Note Header */}
               <div
@@ -1103,7 +1116,12 @@ export default function AmbientAIPage() {
           </div>
 
           {/* Coding Results */}
-          {codingResults.map((cr) => (
+          {codingResults.length === 0 ? (
+            <div className="card p-8 text-center text-gray-500 dark:text-gray-400">
+              <p className="font-medium">No Coding Results</p>
+              <p className="text-sm mt-1">No encounter coding results yet.</p>
+            </div>
+          ) : codingResults.map((cr) => (
             <div key={cr.sessionId} className="card card-hover p-5 animate-fade-in-up">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -1189,8 +1207,9 @@ export default function AmbientAIPage() {
               </span>
             </div>
             {pendingAttestations.length === 0 ? (
-              <div className="card p-4 sm:p-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                No pending attestations. All documentation is up to date.
+              <div className="card p-8 text-center text-gray-500 dark:text-gray-400">
+                <p className="font-medium">No Attestations Pending</p>
+                <p className="text-sm mt-1">No attestations pending.</p>
               </div>
             ) : (
               <div className="space-y-4">
