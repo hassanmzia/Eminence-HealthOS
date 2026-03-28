@@ -744,7 +744,7 @@ export default function RPMPage() {
                     </p>
                   </div>
                 </div>
-              )))}
+              ))}
             </div>
           </div>
         </div>
