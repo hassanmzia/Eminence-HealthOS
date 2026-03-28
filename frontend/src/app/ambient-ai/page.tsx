@@ -390,6 +390,7 @@ export default function AmbientAIPage() {
   const [soapNotes, setSoapNotes] = useState<SOAPNote[]>(DEMO_SOAP_NOTES);
   const [codingResults, setCodingResults] = useState<CodingResult[]>(DEMO_CODING_RESULTS);
   const [attestations, setAttestations] = useState<AttestationItem[]>(DEMO_ATTESTATIONS);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Start session form
   const [showStartForm, setShowStartForm] = useState(false);
@@ -425,26 +426,39 @@ export default function AmbientAIPage() {
 
   const handleStartSession = useCallback(async () => {
     const sessionId = `SES-${7203 + Math.floor(Math.random() * 100)}`;
+    setApiError(null);
     try {
-      await startAmbientSession({
+      const result = await startAmbientSession({
         patient_id: newPatientId,
         encounter_type: newEncounterType,
         provider: newProvider,
         timestamp: new Date().toISOString(),
       });
+      // Use API response if available
+      const newSession: LiveSession = {
+        sessionId: result?.session_id || sessionId,
+        patientName: result?.patient_name || `Patient ${newPatientId}`,
+        patientId: newPatientId,
+        provider: newProvider,
+        encounterType: newEncounterType,
+        startTime: new Date().toISOString(),
+        status: "recording",
+      };
+      setLiveSessions((prev) => [newSession, ...prev]);
     } catch {
-      // API unavailable - use demo mode
+      // API unavailable — create local session
+      const newSession: LiveSession = {
+        sessionId,
+        patientName: `Patient ${newPatientId}`,
+        patientId: newPatientId,
+        provider: newProvider,
+        encounterType: newEncounterType,
+        startTime: new Date().toISOString(),
+        status: "recording",
+      };
+      setLiveSessions((prev) => [newSession, ...prev]);
+      setApiError("Session started locally — backend unavailable");
     }
-    const newSession: LiveSession = {
-      sessionId,
-      patientName: `Patient ${newPatientId}`,
-      patientId: newPatientId,
-      provider: newProvider,
-      encounterType: newEncounterType,
-      startTime: new Date().toISOString(),
-      status: "recording",
-    };
-    setLiveSessions((prev) => [newSession, ...prev]);
     setShowStartForm(false);
     setNewPatientId("");
   }, [newPatientId, newEncounterType, newProvider]);
@@ -453,12 +467,11 @@ export default function AmbientAIPage() {
     try {
       await endAmbientSession({ session_id: sessionId, timestamp: new Date().toISOString() });
     } catch {
-      // API unavailable - demo mode
+      setApiError("Could not end session on server — updating locally");
     }
     setLiveSessions((prev) =>
       prev.map((s) => (s.sessionId === sessionId ? { ...s, status: "processing" as const } : s))
     );
-    // Simulate processing completing
     setTimeout(() => {
       setLiveSessions((prev) =>
         prev.map((s) => (s.sessionId === sessionId ? { ...s, status: "completed" as const } : s))
@@ -467,22 +480,48 @@ export default function AmbientAIPage() {
   }, []);
 
   const handleGenerateSOAP = useCallback(async (sessionId: string) => {
+    setApiError(null);
     try {
-      await generateSOAPNote({ session_id: sessionId });
+      const result = await generateSOAPNote({ session_id: sessionId });
+      if (result) {
+        // Use backend-generated SOAP note
+        const session = liveSessions.find((s) => s.sessionId === sessionId) ||
+          completedSessions.find((s) => s.sessionId === sessionId);
+        const newNote: SOAPNote = {
+          noteId: result.note_id || `NOTE-${Date.now()}`,
+          sessionId,
+          patientName: session?.patientName || `Session ${sessionId}`,
+          status: "draft",
+          overallConfidence: result.overall_confidence ?? 90.0,
+          generatedAt: new Date().toISOString(),
+          sections: {
+            subjective: { text: result.sections?.subjective?.text || result.subjective || "Pending review", confidence: result.sections?.subjective?.confidence ?? 85 },
+            objective: { text: result.sections?.objective?.text || result.objective || "Pending review", confidence: result.sections?.objective?.confidence ?? 85 },
+            assessment: { text: result.sections?.assessment?.text || result.assessment || "Pending review", confidence: result.sections?.assessment?.confidence ?? 85 },
+            plan: { text: result.sections?.plan?.text || result.plan || "Pending review", confidence: result.sections?.plan?.confidence ?? 85 },
+          },
+          amendments: [],
+        };
+        setSoapNotes((prev) => [newNote, ...prev]);
+      }
     } catch {
-      // API unavailable - demo mode
+      setApiError("SOAP note generation unavailable — using demo mode");
     }
-  }, []);
+  }, [liveSessions, completedSessions]);
 
   const handleValidateNote = useCallback(async (noteId: string) => {
     try {
       await validateSOAPNote({ note_id: noteId });
+      setSoapNotes((prev) =>
+        prev.map((n) => (n.noteId === noteId ? { ...n, status: "validated" as const } : n))
+      );
     } catch {
-      // API unavailable - demo mode
+      // Still update locally but show warning
+      setSoapNotes((prev) =>
+        prev.map((n) => (n.noteId === noteId ? { ...n, status: "validated" as const } : n))
+      );
+      setApiError("Note validated locally — server sync pending");
     }
-    setSoapNotes((prev) =>
-      prev.map((n) => (n.noteId === noteId ? { ...n, status: "validated" as const } : n))
-    );
   }, []);
 
   const handleAmendNote = useCallback((noteId: string, section: string) => {
@@ -504,13 +543,38 @@ export default function AmbientAIPage() {
   }, [editText]);
 
   const handleCodeEncounter = useCallback(async () => {
+    setApiError(null);
     try {
-      await codeEncounter({ session_id: codeSessionId });
+      const result = await codeEncounter({ session_id: codeSessionId });
+      if (result && (result.icd_codes || result.cpt_codes)) {
+        const session = [...liveSessions, ...completedSessions].find(s => s.sessionId === codeSessionId);
+        const newCoding: CodingResult = {
+          sessionId: codeSessionId,
+          patientName: session?.patientName || `Session ${codeSessionId}`,
+          provider: session?.provider || "Provider",
+          codedAt: new Date().toISOString(),
+          icdCodes: (result.icd_codes || []).map((c: Record<string, unknown>) => ({
+            code: String(c.code || ""),
+            description: String(c.description || ""),
+            confidence: Number(c.confidence || 80),
+            validationStatus: "auto-coded" as const,
+            type: "ICD-10" as const,
+          })),
+          cptCodes: (result.cpt_codes || []).map((c: Record<string, unknown>) => ({
+            code: String(c.code || ""),
+            description: String(c.description || ""),
+            confidence: Number(c.confidence || 80),
+            validationStatus: "auto-coded" as const,
+            type: "CPT" as const,
+          })),
+        };
+        setCodingResults((prev) => [newCoding, ...prev]);
+      }
     } catch {
-      // API unavailable - demo mode
+      setApiError("Encounter coding unavailable — using demo data");
     }
     setCodeSessionId("");
-  }, [codeSessionId]);
+  }, [codeSessionId, liveSessions, completedSessions]);
 
   const handleValidateCodes = useCallback(async (sessionId: string) => {
     try {
@@ -533,12 +597,15 @@ export default function AmbientAIPage() {
   const handleApproveAttestation = useCallback(async (attestationId: string) => {
     try {
       await approveAttestation({ attestation_id: attestationId });
+      setAttestations((prev) =>
+        prev.map((a) => (a.id === attestationId ? { ...a, status: "approved" as const } : a))
+      );
     } catch {
-      // API unavailable - demo mode
+      setAttestations((prev) =>
+        prev.map((a) => (a.id === attestationId ? { ...a, status: "approved" as const } : a))
+      );
+      setApiError("Attestation approved locally — server sync pending");
     }
-    setAttestations((prev) =>
-      prev.map((a) => (a.id === attestationId ? { ...a, status: "approved" as const } : a))
-    );
     setReviewingAttestation(null);
     setAttestationNotes("");
   }, []);
@@ -547,7 +614,7 @@ export default function AmbientAIPage() {
     try {
       await submitAttestation({ attestation_id: attestationId, action: "request_changes", notes: attestationNotes });
     } catch {
-      // API unavailable - demo mode
+      setApiError("Changes request sent locally — server sync pending");
     }
     setReviewingAttestation(null);
     setAttestationNotes("");
@@ -671,6 +738,13 @@ export default function AmbientAIPage() {
           </div>
         ))}
       </div>
+
+      {apiError && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-700 flex items-center justify-between">
+          <span><span className="font-medium">Note:</span> {apiError}</span>
+          <button onClick={() => setApiError(null)} className="text-amber-700 hover:text-amber-900 font-bold ml-3">&times;</button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-700">
